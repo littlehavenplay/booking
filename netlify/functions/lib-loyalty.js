@@ -1,0 +1,241 @@
+// Shared loyalty punch-card logic, used by loyalty.js (staff tool), book.js
+// (auto-issue codes at booking), and checkin.js (punch at check-in).
+import { getStore } from "@netlify/blobs";
+import { SIGNATURE_HTML } from "./lib-email.js";
+
+export const PUNCHES_FOR_REWARD = 7;      // 7 paid visits → 8th is free
+export const REWARD_EXPIRY_DAYS = 30;
+const REWARD_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+const HERO_IMG = "https://littlehavenplay.com/assets/punch-card-hero.jpg";
+
+export function cleanName(first, last) {
+  return [String(first || "").trim(), String(last || "").trim()].filter(Boolean).join(" ");
+}
+export function last4(phone) {
+  const d = String(phone || "").replace(/\D/g, "");
+  return d.length >= 4 ? d.slice(-4) : "";
+}
+export function normalizeCode(c) { return (c || "").toString().trim().toUpperCase().replace(/[^A-Z0-9-]/g, ""); }
+
+// Resolve a child's card. Default code = first+last initial + last4 (RR4655); on a
+// same-initials sibling collision, use more letters of the first name (RER4655, …).
+// findOnly=true never returns a fresh slot (used for read-only lookups).
+export async function resolveCard(loyalty, first, last, phone4, findOnly = false) {
+  const li = (String(last).trim()[0] || "X").toUpperCase();
+  const fn = String(first).trim();
+  const target = cleanName(first, last).toLowerCase().replace(/\s+/g, " ").trim();
+  const maxLen = Math.min(Math.max(fn.length, 1), 8);
+
+  // Pass 1 — search EVERY base-length code for THIS child's existing card first.
+  // (Don't stop at the first empty slot; the child's card may live at a longer code
+  //  because shorter ones are taken by other children sharing the phone.)
+  let firstEmpty = null;
+  for (let len = 1; len <= maxLen; len++) {
+    const code = (fn.slice(0, len).toUpperCase() + li + phone4).replace(/[^A-Z0-9]/g, "");
+    let rec = null;
+    try { rec = await loyalty.get("card:" + code, { type: "json" }); } catch { rec = null; }
+    if (!rec) { if (firstEmpty === null) firstEmpty = code; continue; }
+    const onFile = (rec.childName || "").toLowerCase().replace(/\s+/g, " ").trim();
+    if (onFile === target) return { code, rec };
+  }
+
+  // Pass 2 — search the -n overflow codes for an existing match.
+  const base = (fn.toUpperCase() + li + phone4).replace(/[^A-Z0-9]/g, "");
+  let firstEmptySuffix = null;
+  for (let n = 2; n <= 20; n++) {
+    const code = base + "-" + n;
+    let rec = null;
+    try { rec = await loyalty.get("card:" + code, { type: "json" }); } catch { rec = null; }
+    if (!rec) { if (firstEmptySuffix === null) firstEmptySuffix = code; continue; }
+    const onFile = (rec.childName || "").toLowerCase().replace(/\s+/g, " ").trim();
+    if (onFile === target) return { code, rec };
+  }
+
+  // No existing card found anywhere.
+  if (findOnly) return { code: null, rec: null };
+  // Create at the first empty slot (prefer the shortest base code).
+  if (firstEmpty) return { code: firstEmpty, rec: null };
+  if (firstEmptySuffix) return { code: firstEmptySuffix, rec: null };
+  return { code: base + "-" + Date.now().toString(36).slice(-3).toUpperCase(), rec: null };
+}
+
+// True if a code belongs to a legacy pre-paid punch card (those never earn loyalty punches).
+export async function isLegacyPassCode(code) {
+  const c = normalizeCode(code);
+  if (!c) return false;
+  try {
+    const rec = await getStore("passes").get("pass:" + c, { type: "json" });
+    return !!rec;
+  } catch { return false; }
+}
+
+// Auto-issue a child's loyalty code (no punch). Creates the card if new and sends
+// the welcome email (with the punch card image). Returns { code, isNew }.
+export async function issueCode(loyalty, { first, last, phone4, email, dob, suppressEmail }) {
+  const { code, rec } = await resolveCard(loyalty, first, last, phone4, false);
+  if (rec) {
+    let changed = false;
+    if (email && !rec.buyerEmail) { rec.buyerEmail = email; changed = true; }
+    if (dob && !rec.dob) { rec.dob = dob; changed = true; }
+    if (changed) { try { await loyalty.setJSON("card:" + code, rec); } catch {} }
+    return { code, isNew: false, childName: rec.childName };
+  }
+  const now = new Date();
+  const fresh = { code, childName: cleanName(first, last), phone4, punches: 0, rewardsEarned: 0, totalVisits: 0,
+    createdAt: now.toISOString(), history: [{ at: now.toISOString(), action: "issued" }], buyerEmail: (email || "").trim(),
+    dob: (dob || "").trim() || undefined };
+  try { await loyalty.setJSON("card:" + code, fresh); } catch {}
+  if (fresh.buyerEmail && !suppressEmail) { try { await sendWelcome(fresh); } catch {} }
+  return { code, isNew: true, childName: fresh.childName, rec: fresh };
+}
+
+// Add ONE punch to a child's card. Creates the card if new (welcome email), and
+// on the 7th punch issues a free-visit reward code (reward email). Returns details.
+export async function addPunch(loyalty, { first, last, phone4, email, code: directCode, suppressEmail }) {
+  let code, existing;
+  if (directCode) {
+    code = normalizeCode(directCode);
+    try { existing = await loyalty.get("card:" + code, { type: "json" }); } catch { existing = null; }
+  } else {
+    ({ code, rec: existing } = await resolveCard(loyalty, first, last, phone4, false));
+  }
+  let rec = existing, isNew = false;
+  if (!rec) {
+    isNew = true;
+    rec = { code, childName: cleanName(first, last), phone4, punches: 0, rewardsEarned: 0, totalVisits: 0,
+      createdAt: new Date().toISOString(), history: [], buyerEmail: (email || "").trim() };
+  } else if (email && !rec.buyerEmail) { rec.buyerEmail = email; }
+
+  rec.punches = (rec.punches || 0) + 1;
+  rec.totalVisits = (rec.totalVisits || 0) + 1;
+  rec.lastVisit = new Date().toISOString();
+  rec.history = Array.isArray(rec.history) ? rec.history : [];
+  rec.history.push({ at: rec.lastVisit, action: "punch", punches: rec.punches });
+
+  if (isNew && rec.buyerEmail && !suppressEmail) { try { await sendWelcome(rec); } catch {} }
+
+  let rewardIssued = null;
+  if (rec.punches >= PUNCHES_FOR_REWARD) {
+    const rewards = getStore("rewards");
+    const rewardCode = await uniqueReward(rewards);
+    const now = new Date();
+    const exp = new Date(now.getTime() + REWARD_EXPIRY_DAYS * 86400000).toISOString().slice(0, 10);
+    try { await rewards.setJSON("reward:" + rewardCode, { code: rewardCode, loyaltyCode: code, childName: rec.childName,
+      type: "free-visit", issuedAt: now.toISOString(), expiry: exp, used: false }); } catch {}
+    rec.punches = 0;
+    rec.rewardsEarned = (rec.rewardsEarned || 0) + 1;
+    rec.lastRewardCode = rewardCode;
+    rec.history.push({ at: now.toISOString(), action: "reward-earned", rewardCode, expiry: exp });
+    rewardIssued = { rewardCode, expiry: exp };
+    if (rec.buyerEmail && !suppressEmail) { try { await sendReward(rec, rewardCode, exp); } catch {} }
+  }
+
+  try { await loyalty.setJSON("card:" + code, rec); } catch { return { error: true }; }
+  return { code, childName: rec.childName, isNew, punches: rec.punches, needed: PUNCHES_FOR_REWARD,
+    rewardIssued: !!rewardIssued, rewardCode: rewardIssued ? rewardIssued.rewardCode : null,
+    rewardExpiry: rewardIssued ? rewardIssued.expiry : null };
+}
+
+async function uniqueReward(store) {
+  for (let i = 0; i < 8; i++) {
+    let s = "FREE";
+    for (let j = 0; j < 4; j++) s += REWARD_ALPHABET[Math.floor(Math.random() * REWARD_ALPHABET.length)];
+    try { const e = await store.get("reward:" + s, { type: "json" }); if (!e) return s; } catch { return s; }
+  }
+  return "FREE" + Date.now().toString(36).toUpperCase().slice(-5);
+}
+
+function studioName() { return process.env.STUDIO_NAME || "Little Haven Play Studio"; }
+function esc(s) { return String(s || "").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+
+// Bright "leave us a review" block appended to loyalty emails (no extra emails sent).
+function reviewFooter() {
+  const btn = (href, bg, label) =>
+    `<a href="${href}" target="_blank" style="display:inline-block;background:${bg};color:#fff;text-decoration:none;font-weight:800;font-size:13px;padding:9px 16px;border-radius:22px;margin:4px 4px">${label}</a>`;
+  return `<div style="margin:20px 0 0;padding:16px;background:#fdf1ec;border:1px solid #f0d9d2;border-radius:14px;text-align:center">
+    <div style="font-size:15px;font-weight:800;color:#a85f59;margin-bottom:2px">Loved your visit? 💛</div>
+    <div style="font-size:13px;color:#5c6470;margin-bottom:10px">A quick review means the world to our small studio!</div>
+    ${btn("https://g.page/r/CRSz8WUH8sS2EBM/review", "#4285F4", "Google")}
+    ${btn("https://www.yelp.com/writeareview/biz/dmZg1HQxKJj2lcQbKFHpaQ?review_origin=writeareview-search", "#d32323", "Yelp")}
+    ${btn("https://www.facebook.com/Littlehavenplay/reviews/", "#1877F2", "Facebook")}
+  </div>`;
+}
+
+export async function sendWelcome(rec) {
+  const key = process.env.RESEND_API_KEY; if (!key || !rec.buyerEmail) return;
+  const from = process.env.EMAIL_FROM || "onboarding@resend.dev";
+  const bcc = process.env.STUDIO_EMAIL || undefined;
+  const studio = studioName();
+  const html = `<div style="font-family:Arial,Helvetica,sans-serif;color:#2a2622;max-width:560px;margin:0 auto;line-height:1.6">
+    <img src="${HERO_IMG}" alt="Little Haven Punch Card" style="width:100%;border-radius:16px;display:block;margin:0 0 16px">
+    <h2 style="color:#a85f59;font-weight:normal;margin:0 0 4px">Welcome to our Punch Card! 🌿</h2>
+    <p style="margin:0 0 12px;color:#5c6470">Thanks for visiting ${esc(studio)}! Here's the punch card code for <b>${esc(rec.childName)}</b> — give it (or their name) each visit and we'll keep track for you.</p>
+    <div style="background:#fcfaf6;border:1px solid #efe7da;border-radius:12px;padding:14px 16px;margin:10px 0;text-align:center">
+      <div style="font-size:13px;color:#5c6470">Punch card code</div>
+      <div style="font-size:26px;font-weight:900;letter-spacing:2px;color:#a85f59;margin:4px 0">${esc(rec.code)}</div>
+    </div>
+    <p style="margin:12px 0 0;font-size:14px;color:#5c6470">After <b>7 visits</b>, your <b>8th visit is on us — free!</b> 🎈 We'll email your free-visit code the moment you earn it.</p>
+    <p style="margin:14px 0 0;font-size:13px;color:#5c6470">See you soon! — ${esc(studio)}</p>
+    ${reviewFooter()}</div>`;
+  await fetch("https://api.resend.com/emails", { method: "POST",
+    headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ from: `${studio} <${from}>`, to: [rec.buyerEmail], bcc: bcc ? [bcc] : undefined,
+      subject: `Your ${studio} punch card code`, html: html + SIGNATURE_HTML }) });
+}
+
+export async function sendReward(rec, rewardCode, expiry) {
+  const key = process.env.RESEND_API_KEY; if (!key || !rec.buyerEmail) return;
+  const from = process.env.EMAIL_FROM || "onboarding@resend.dev";
+  const bcc = process.env.STUDIO_EMAIL || undefined;
+  const studio = studioName();
+  const html = `<div style="font-family:Arial,Helvetica,sans-serif;color:#2a2622;max-width:560px;margin:0 auto;line-height:1.6">
+    <img src="${HERO_IMG}" alt="Little Haven Punch Card" style="width:100%;border-radius:16px;display:block;margin:0 0 16px">
+    <h2 style="color:#4d6b3e;font-weight:normal;margin:0 0 4px">You've earned a FREE visit! 🎉</h2>
+    <p style="margin:0 0 12px;color:#5c6470">Thanks for being part of the ${esc(studio)} family, <b>${esc(rec.childName)}</b>! You've completed 7 visits — so your next one is <b>on us</b>. 🎈</p>
+    <div style="background:#eaf4e4;border:1px solid #cfe6c2;border-radius:12px;padding:14px 16px;margin:10px 0;text-align:center">
+      <div style="font-size:13px;color:#4d6b3e">Your free-visit code</div>
+      <div style="font-size:26px;font-weight:900;letter-spacing:2px;color:#4d6b3e;margin:4px 0">${esc(rewardCode)}</div>
+      <div style="font-size:13px;color:#5c6470">Enter it at checkout on your next online booking</div>
+    </div>
+    <p style="margin:12px 0 0;font-size:13px;color:#5c6470"><i>Valid 30 days — through ${esc(expiry)}. One free open-play admission, any age. One-time use.</i></p>
+    <p style="margin:14px 0 0;font-size:13px;color:#5c6470">Come play soon! — ${esc(studio)}</p>
+    ${reviewFooter()}</div>`;
+  await fetch("https://api.resend.com/emails", { method: "POST",
+    headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ from: `${studio} <${from}>`, to: [rec.buyerEmail], bcc: bcc ? [bcc] : undefined,
+      subject: `🎉 You've earned a free visit at ${studio}!`, html: html + SIGNATURE_HTML }) });
+}
+
+// ONE combined email for a whole family (multiple children punched/created together).
+export async function sendFamilyPunch(email, results) {
+  const key = process.env.RESEND_API_KEY; if (!key || !email || !results.length) return;
+  const from = process.env.EMAIL_FROM || "onboarding@resend.dev";
+  const bcc = process.env.STUDIO_EMAIL || undefined;
+  const studio = studioName();
+  const rewards = results.filter(r => r.rewardIssued);
+  const rows = results.map(r => `<tr>
+      <td style="padding:7px 9px;font-weight:bold;border-top:1px solid #efe7da">${esc(r.childName)}</td>
+      <td style="padding:7px 9px;color:#a85f59;font-weight:900;letter-spacing:1px;border-top:1px solid #efe7da">${esc(r.code)}</td>
+      <td style="padding:7px 9px;color:#5c6470;border-top:1px solid #efe7da">${r.rewardIssued ? "🎉 FREE visit earned!" : (r.punches + "/" + r.needed + " visits")}</td>
+    </tr>`).join("");
+  const rewardBlock = rewards.length ? `<div style="background:#eaf4e4;border:1px solid #cfe6c2;border-radius:12px;padding:14px 16px;margin:12px 0">
+      <b style="color:#4d6b3e">🎉 Free visit${rewards.length > 1 ? "s" : ""} earned!</b>
+      ${rewards.map(r => `<div style="margin-top:6px;font-size:14px;color:#3f5a34">${esc(r.childName)} — code <b>${esc(r.rewardCode)}</b> (expires ${esc(r.rewardExpiry)}). Enter it at checkout on your next booking.</div>`).join("")}
+    </div>` : "";
+  const html = `<div style="font-family:Arial,Helvetica,sans-serif;color:#2a2622;max-width:560px;margin:0 auto;line-height:1.6">
+    <img src="${HERO_IMG}" alt="Little Haven Punch Card" style="width:100%;border-radius:16px;display:block;margin:0 0 16px">
+    <h2 style="color:#a85f59;font-weight:normal;margin:0 0 4px">Your family's punch cards 🌿</h2>
+    <p style="margin:0 0 12px;color:#5c6470">Thanks for visiting ${esc(studio)}! Here are the punch cards for your children — just give their names each visit and we'll keep track for you.</p>
+    <table style="width:100%;border-collapse:collapse;background:#fcfaf6;border:1px solid #efe7da;border-radius:12px;overflow:hidden">
+      <tr style="background:#f3ede3"><th style="padding:7px 9px;text-align:left;font-size:12px;color:#5c6470">Child</th><th style="padding:7px 9px;text-align:left;font-size:12px;color:#5c6470">Code</th><th style="padding:7px 9px;text-align:left;font-size:12px;color:#5c6470">Progress</th></tr>
+      ${rows}
+    </table>
+    ${rewardBlock}
+    <p style="margin:12px 0 0;font-size:14px;color:#5c6470">After <b>7 visits</b> each, the <b>8th visit is free!</b> 🎈 We'll email you the moment anyone earns one.</p>
+    <p style="margin:14px 0 0;font-size:13px;color:#5c6470">See you soon! — ${esc(studio)}</p>
+    ${reviewFooter()}</div>`;
+  await fetch("https://api.resend.com/emails", { method: "POST",
+    headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ from: `${studio} <${from}>`, to: [email], bcc: bcc ? [bcc] : undefined,
+      subject: `Your ${studio} punch cards 🎈`, html: html + SIGNATURE_HTML }) });
+}

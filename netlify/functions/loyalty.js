@@ -1,0 +1,252 @@
+// POST /api/loyalty  — staff/admin loyalty punch card tool + public reward check.
+//   { key, action:"punch",  childFirst, childLast, phone, email? }
+//   { key, action:"lookup", code | childFirst+childLast+phone }
+//   { key, action:"adjust", code | childFirst+childLast+phone, setPunches }
+//   { key, action:"setdob", code, dob }            → backfill/edit a birth date on a card
+//   { key, action:"list" }
+//   { action:"reward-check", rewardCode }          (public — booking page)
+//   { action:"code-check", code }                  (public — booking page, auto-fill by loyalty code)
+import { getStore } from "@netlify/blobs";
+import {
+  PUNCHES_FOR_REWARD, resolveCard, addPunch, cleanName, last4, normalizeCode,
+  isLegacyPassCode, sendFamilyPunch,
+} from "./lib-loyalty.js";
+
+export default async (req) => {
+  if (req.method !== "POST") return json({ error: "Use POST." }, 405);
+  let b;
+  try { b = await req.json(); } catch { return json({ error: "Invalid request." }, 400); }
+  const action = (b.action || "").toString();
+
+  if (action === "reward-check") {
+    const rewards = getStore("rewards");
+    const rc = normalizeCode(b.rewardCode);
+    if (!rc) return json({ valid: false });
+    let r = null;
+    try { r = await rewards.get("reward:" + rc, { type: "json" }); } catch { r = null; }
+    if (!r) return json({ valid: false, reason: "not_found" });
+    if (r.used) return json({ valid: false, reason: "used" });
+    const today = todayPacific();
+    if (r.validFrom && today < r.validFrom) return json({ valid: false, reason: "not_yet", validFrom: r.validFrom });
+    if (today > r.expiry) return json({ valid: false, reason: "expired" });
+    return json({ valid: true, code: rc, childName: r.childName || "", expiry: r.expiry,
+      type: "free-visit", kind: r.kind || "visit", loyaltyCode: r.loyaltyCode || null });
+  }
+
+  // Public, unauthenticated: lets the booking page auto-fill a child's name (and
+  // flag an active birthday gift) from a loyalty code, without exposing anything
+  // sensitive like a full birth date or contact info to whoever holds the code.
+  if (action === "code-check") {
+    const code = normalizeCode(b.code);
+    if (!code) return json({ found: false });
+    const loyaltyPub = getStore("loyalty");
+    let rec = null; try { rec = await loyaltyPub.get("card:" + code, { type: "json" }); } catch { rec = null; }
+    if (!rec) return json({ found: false });
+    let birthday = null;
+    if (rec.activeBirthdayCode && rec.activeBirthdayExpiry) {
+      const today = todayPacific();
+      if (today <= rec.activeBirthdayExpiry) {
+        let r = null; try { r = await getStore("rewards").get("reward:" + rec.activeBirthdayCode, { type: "json" }); } catch {}
+        if (r && !r.used) birthday = { code: rec.activeBirthdayCode, expiry: rec.activeBirthdayExpiry };
+      }
+    }
+    return json({ found: true, code, childName: rec.childName || "", hasDob: !!rec.dob, birthday });
+  }
+
+  const adminKey = process.env.ADMIN_KEY || "";
+  const staffPin = process.env.STAFF_PIN || "";
+  const provided = (b.key || "").toString();
+  if (!adminKey && !staffPin) return json({ error: "Admin key isn't configured." }, 500);
+  if (provided !== adminKey && provided !== staffPin) return json({ error: "Wrong key." }, 401);
+
+  const loyalty = getStore("loyalty");
+
+  if (action === "list") {
+    const out = [];
+    try {
+      const { blobs } = await loyalty.list({ prefix: "card:" });
+      for (const bl of (blobs || [])) {
+        let rec = null;
+        try { rec = await loyalty.get(bl.key, { type: "json" }); } catch { rec = null; }
+        if (!rec) continue;
+        out.push({ code: rec.code, childName: rec.childName || "", email: rec.buyerEmail || "",
+          parentName: rec.parentName || "", phone4: rec.phone4 || "", phone: rec.phone || "", dob: rec.dob || "",
+          punches: rec.punches || 0, needed: PUNCHES_FOR_REWARD,
+          totalVisits: rec.totalVisits || 0, rewardsEarned: rec.rewardsEarned || 0,
+          waiverSigned: rec.waiverSigned || "", waiverExpiry: rec.waiverExpiry || "",
+          lastVisit: rec.lastVisit ? rec.lastVisit.slice(0, 10) : "",
+          createdAt: rec.createdAt ? rec.createdAt.slice(0, 10) : "" });
+      }
+    } catch { return json({ error: "Couldn't load the list." }, 502); }
+    const lastName = n => { const p = (n || "").trim().split(/\s+/); return (p[p.length - 1] || "").toLowerCase(); };
+    out.sort((a, c) => lastName(a.childName).localeCompare(lastName(c.childName)) || (a.childName || "").toLowerCase().localeCompare((c.childName || "").toLowerCase()));
+    return json({ ok: true, count: out.length, customers: out });
+  }
+
+  if (action === "lookup") {
+    const direct = normalizeCode(b.code);
+    if (direct && await isLegacyPassCode(direct)) {
+      return json({ ok: true, legacy: true, code: direct,
+        message: "This is a pre-paid LEGACY punch card — not part of the loyalty program, so it doesn't earn loyalty punches." });
+    }
+    let code = direct, rec = null;
+    if (direct) { try { rec = await loyalty.get("card:" + direct, { type: "json" }); } catch { rec = null; } }
+    // Fall back to name+phone search if a typed code doesn't exist (e.g. staff guessed the
+    // code wrong — a sibling/collision may have pushed this child's real card to a longer code).
+    if (!rec) {
+      const first = (b.childFirst || "").toString().trim(), last = (b.childLast || "").toString().trim(), p4 = last4(b.phone);
+      if (first && last && p4) {
+        const r = await resolveCard(loyalty, first, last, p4, true);
+        if (r.rec) { code = r.code; rec = r.rec; }
+      } else if (!direct) {
+        return json({ error: "Enter a code, or the child's first & last name + phone." }, 400);
+      }
+    }
+    if (!rec) return json({ ok: true, found: false, code: code || "" });
+    return json({ ok: true, found: true, code, childName: rec.childName || "", dob: rec.dob || "",
+      punches: rec.punches || 0, needed: PUNCHES_FOR_REWARD, rewardsEarned: rec.rewardsEarned || 0,
+      lastRewardCode: rec.lastRewardCode || null, createdAt: rec.createdAt });
+  }
+
+  if (action === "setdob") {
+    const direct = normalizeCode(b.code);
+    const dob = (b.dob || "").toString().trim();
+    if (!direct) return json({ error: "Enter the loyalty code." }, 400);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(dob)) return json({ error: "Enter the birth date as YYYY-MM-DD." }, 400);
+    let rec = null; try { rec = await loyalty.get("card:" + direct, { type: "json" }); } catch { rec = null; }
+    if (!rec) return json({ error: `No loyalty card found for ${direct}.` }, 404);
+    rec.dob = dob;
+    try { await loyalty.setJSON("card:" + direct, rec); } catch { return json({ error: "Couldn't save. Try again." }, 502); }
+    return json({ ok: true, message: `Birth date saved for ${rec.childName || direct}.` });
+  }
+
+  if (action === "adjust") {
+    const direct = normalizeCode(b.code);
+    if (direct && await isLegacyPassCode(direct)) {
+      return json({ error: "That's a pre-paid legacy punch card — it can't be adjusted here." }, 409);
+    }
+    let code = direct, rec = null;
+    if (direct) { try { rec = await loyalty.get("card:" + direct, { type: "json" }); } catch { rec = null; } }
+    if (!rec) {
+      const first = (b.childFirst || "").toString().trim(), last = (b.childLast || "").toString().trim(), p4 = last4(b.phone);
+      if (first && last && p4) {
+        // Falls back to the child's real card (by name+phone) if a typed code was wrong/guessed,
+        // instead of silently forking a duplicate card at the mistyped code.
+        const r = await resolveCard(loyalty, first, last, p4, false);
+        code = r.code; rec = r.rec;
+      } else if (!direct) {
+        return json({ error: "Enter the code (or child name + phone) to adjust." }, 400);
+      }
+    }
+    const setP = parseInt(b.setPunches, 10);
+    if (!Number.isFinite(setP) || setP < 0 || setP > 7) return json({ error: "Set punches to a number 0-7." }, 400);
+    if (!rec) {
+      rec = { code, childName: cleanName(b.childFirst, b.childLast) || (b.childName || ""), phone4: last4(b.phone),
+        punches: 0, rewardsEarned: 0, totalVisits: 0, createdAt: new Date().toISOString(), history: [],
+        buyerEmail: (b.email || "").toString().trim() };
+    }
+    rec.punches = setP;
+    rec.history = Array.isArray(rec.history) ? rec.history : [];
+    rec.history.push({ at: new Date().toISOString(), action: "adjusted", to: setP });
+    try { await loyalty.setJSON("card:" + code, rec); } catch { return json({ error: "Couldn't update the card." }, 502); }
+    return json({ ok: true, adjusted: true, code, childName: rec.childName, punches: rec.punches, needed: PUNCHES_FOR_REWARD });
+  }
+
+  if (action === "punch") {
+    const direct = normalizeCode(b.code);
+    if (direct) {
+      if (await isLegacyPassCode(direct)) return json({ error: "That's a legacy prepaid card — don't punch it here." }, 409);
+      let exists = null; try { exists = await loyalty.get("card:" + direct, { type: "json" }); } catch {}
+      if (!exists) return json({ error: "No loyalty card found for that code." }, 404);
+      const r = await addPunch(loyalty, { code: direct });
+      if (r.error) return json({ error: "Couldn't save the punch. Try again." }, 502);
+      return json({ ok: true, ...r,
+        message: r.rewardIssued
+          ? `${r.childName} earned a FREE visit! Reward code ${r.rewardCode} was emailed (expires ${r.rewardExpiry}).`
+          : `Punched! ${r.childName} (${r.code}) now has ${r.punches}/${r.needed} visits toward a free one.` });
+    }
+    const first = (b.childFirst || "").toString().trim();
+    const last  = (b.childLast || "").toString().trim();
+    const phone4 = last4(b.phone);
+    if (!first || !last) return json({ error: "Enter the child's first and last name." }, 400);
+    if (!phone4)        return json({ error: "Enter the parent's phone (at least the last 4 digits)." }, 400);
+    const email = (b.email || "").toString().slice(0, 160).trim();
+    const r = await addPunch(loyalty, { first, last, phone4, email });
+    if (r.error) return json({ error: "Couldn't save the punch. Try again." }, 502);
+    return json({ ok: true, ...r,
+      message: r.rewardIssued
+        ? `${r.childName} earned a FREE visit! Reward code ${r.rewardCode} was emailed (expires ${r.rewardExpiry}).`
+        : `Punched! ${r.childName} (${r.code}) now has ${r.punches}/${r.needed} visits toward a free one.` });
+  }
+
+  if (action === "delete") {
+    const direct = normalizeCode(b.code);
+    if (direct && await isLegacyPassCode(direct)) {
+      return json({ error: "That's a pre-paid legacy punch card — it can't be deleted here." }, 409);
+    }
+    let code = direct, rec = null;
+    if (direct) { try { rec = await loyalty.get("card:" + direct, { type: "json" }); } catch { rec = null; } }
+    else {
+      const first = (b.childFirst || "").toString().trim(), last = (b.childLast || "").toString().trim(), p4 = last4(b.phone);
+      if (!first || !last || !p4) return json({ error: "Enter the code (or child name + phone) to delete." }, 400);
+      const r = await resolveCard(loyalty, first, last, p4, false);
+      code = r.code; rec = r.rec;
+    }
+    if (!code || !rec) return json({ error: "No loyalty card found for that code." }, 404);
+    const name = rec.childName || "";
+    try { await loyalty.delete("card:" + code); } catch { return json({ error: "Couldn't delete the card. Try again." }, 502); }
+    return json({ ok: true, deleted: true, code, childName: name });
+  }
+
+  if (action === "family-punch") {
+    const email = (b.email || "").toString().slice(0, 160).trim();
+    const phone4 = last4(b.phone);
+    if (!phone4) return json({ error: "Enter the parent's phone (at least the last 4 digits)." }, 400);
+    const kids = (Array.isArray(b.children) ? b.children : [])
+      .map(c => ({ first: (c && c.first || "").toString().trim(), last: (c && c.last || "").toString().trim() }))
+      .filter(c => c.first && c.last)
+      .slice(0, 4);
+    if (!kids.length) return json({ error: "Enter at least one child's first and last name." }, 400);
+    const results = [];
+    for (const c of kids) {
+      const r = await addPunch(loyalty, { first: c.first, last: c.last, phone4, email, suppressEmail: true });
+      if (!r.error) results.push(r);
+    }
+    if (!results.length) return json({ error: "Couldn't save the punches. Try again." }, 502);
+    if (email) { try { await sendFamilyPunch(email, results); } catch {} }
+    const rewardCount = results.filter(r => r.rewardIssued).length;
+    return json({ ok: true, results, count: results.length, rewardCount,
+      message: `Punched ${results.length} child${results.length === 1 ? "" : "ren"}${email ? " — one combined email sent" : ""}${rewardCount ? ` · ${rewardCount} free visit${rewardCount === 1 ? "" : "s"} earned!` : ""}.` });
+  }
+
+  // Set a waiver "signed" date for a child (or the whole family by phone). Expiry = signed + 365 days.
+  if (action === "set-waiver") {
+    const signed = (b.signed || "").toString().slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(signed)) return json({ error: "Enter a valid waiver date (YYYY-MM-DD)." }, 400);
+    const exp = new Date(signed + "T12:00:00"); exp.setDate(exp.getDate() + 365);
+    const expiry = exp.toISOString().slice(0, 10);
+    const applyFamily = !!b.family;
+    const code = normalizeCode(b.code);
+    let targets = [];
+    if (applyFamily && b.phone4) {
+      try {
+        const { blobs } = await loyalty.list({ prefix: "card:" });
+        for (const bl of (blobs || [])) { let r = null; try { r = await loyalty.get(bl.key, { type: "json" }); } catch {} if (r && r.phone4 === (b.phone4 || "").toString()) targets.push(r); }
+      } catch {}
+    } else if (code) {
+      let r = null; try { r = await loyalty.get("card:" + code, { type: "json" }); } catch {}
+      if (r) targets.push(r);
+    }
+    if (!targets.length) return json({ error: "No matching loyalty card found." }, 404);
+    for (const r of targets) { r.waiverSigned = signed; r.waiverExpiry = expiry; try { await loyalty.setJSON("card:" + r.code, r); } catch {} }
+    return json({ ok: true, signed, expiry, count: targets.length });
+  }
+
+  return json({ error: "Unknown action." }, 400);
+};
+
+function todayPacific() { return new Date().toLocaleDateString("en-CA", { timeZone: "America/Los_Angeles" }); }
+function json(obj, status = 200) {
+  return new Response(JSON.stringify(obj), { status, headers: { "content-type": "application/json", "cache-control": "no-store" } });
+}
+export const config = { path: "/api/loyalty" };
