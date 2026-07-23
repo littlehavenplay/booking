@@ -1,0 +1,10 @@
+{
+  "name": "square-booking",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Open Play booking page with shared 15-child capacity and Square payments, deployable on Netlify.",
+  "dependencies": {
+    "@netlify/blobs": "^8.1.0"
+  }
+}

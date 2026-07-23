@@ -1,0 +1,6 @@
+[build]
+  publish = "public"
+  functions = "netlify/functions"
+
+# Functions use the modern v2 format and declare their own paths
+# (/api/config, /api/capacity, /api/book) via export const config.
