@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Your Guest List · Little Haven Play Studio</title>
+<link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#c97d76">
+<style>
+  :root{--cream:#fbf8f3;--ink:#2a2622;--rose:#c97d76;--rose-deep:#a85f59;--sage:#8a9a7e;--taupe:#8a7d6a;--slate:#5c6470;--line:#efe7da}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--cream);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;line-height:1.55}
+  .wrap{max-width:600px;margin:0 auto;padding:22px 16px 70px}
+  h1{font-size:1.6rem;margin:4px 0 2px;color:var(--rose-deep)}
+  .sub{color:var(--taupe);font-size:.92rem;margin-bottom:4px}
+  .card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:18px;margin:16px 0;box-shadow:0 6px 18px -14px rgba(0,0,0,.3)}
+  label{font-weight:700;font-size:.82rem;color:var(--slate)}
+  input[type=text],input[type=email]{width:100%;padding:11px;border:1px solid var(--line);border-radius:10px;background:#fcfaf6;font:inherit;margin-top:3px}
+  button{background:var(--rose);color:#fff;border:none;font-weight:800;padding:12px 18px;border-radius:12px;cursor:pointer;font:inherit;font-weight:800}
+  button.ghost{background:#fff;color:var(--rose-deep);border:1.5px solid var(--rose)}
+  button:disabled{opacity:.5}
+  .grow{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:center;margin:8px 0}
+  .grow input{margin-top:0}
+  .rm{background:#f0ece4;color:#8a7d6a;width:40px;height:40px;border-radius:10px;padding:0;font-size:1.2rem}
+  .toggle{display:flex;gap:10px;align-items:flex-start;background:#f6f3ee;border-radius:12px;padding:12px 14px;margin:10px 0;cursor:pointer}
+  .toggle input{margin-top:3px;transform:scale(1.3)}
+  .out{margin-top:10px;padding:11px 14px;border-radius:10px;font-weight:700;display:none}
+  .out.ok{background:#e7f0df;color:#4f6b43}
+  .out.err{background:#fbe7e4;color:#b0473f}
+  .waiverbox{background:#f3f0ff;border-radius:12px;padding:14px 16px;margin-top:8px}
+  a.btn{display:inline-block;background:#7a6253;color:#fff;text-decoration:none;font-weight:bold;padding:10px 18px;border-radius:10px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Your Party Guest List</h1>
+  <div class="sub" id="partyInfo">Loading…</div>
+
+  <div id="main" style="display:none">
+    <div class="card">
+      <div style="font-weight:800;margin-bottom:4px">Add your guests 🎈</div>
+      <div class="sub" style="margin-bottom:10px">Add each guest's name and email. You can come back to this page anytime to update the list — it saves to our system automatically.</div>
+      <div id="rows"></div>
+      <button class="ghost" id="addRow" style="margin-top:6px">+ Add a guest</button>
+    </div>
+
+    <div class="card">
+      <div style="font-weight:800;margin-bottom:6px">Waiver reminders</div>
+      <div class="sub" style="margin-bottom:6px">Every guest needs a signed waiver before they play. Choose how you'd like reminders handled:</div>
+      <label class="toggle"><input type="radio" name="pref" value="self" id="prefSelf"><span><b>I'll remind my guests myself.</b> You can use the button below to email them the waiver whenever you like.</span></label>
+      <label class="toggle"><input type="radio" name="pref" value="studio" id="prefStudio"><span><b>Little Haven, please email my guests a waiver reminder the day before.</b> We'll send everyone on this list a friendly reminder automatically.</span></label>
+      <div class="waiverbox">
+        <div style="font-weight:bold;color:#5b4636;margin-bottom:6px">The waiver link</div>
+        <a class="btn" id="waiverLink" href="#" target="_blank">Open the waiver →</a>
+      </div>
+    </div>
+
+    <div class="card">
+      <button id="save">Save my guest list</button>
+      <button class="ghost" id="sendNow" style="margin-left:8px">Email my guests the waiver now</button>
+      <div class="out" id="out"></div>
+    </div>
+  </div>
+  <div class="out err" id="gateErr" style="display:none"></div>
+</div>
+
+<script>
+var $=s=>document.querySelector(s);
+var P=new URLSearchParams(location.search), D=P.get("d"), S=P.get("s"), T=P.get("t");
+function esc(s){return (s||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+
+function rowHtml(g){g=g||{};return '<div class="grow"><input type="text" class="gn" placeholder="Guest name" value="'+esc(g.name)+'"><input type="email" class="ge" placeholder="email@example.com" value="'+esc(g.email)+'"><button class="rm" onclick="this.parentNode.remove()">×</button></div>';}
+function addRow(g){var d=document.createElement("div");d.innerHTML=rowHtml(g);$("#rows").appendChild(d.firstChild);}
+function collect(){return [].map.call(document.querySelectorAll(".grow"),function(r){return {name:r.querySelector(".gn").value.trim(),email:r.querySelector(".ge").value.trim()};}).filter(function(g){return g.name||g.email;});}
+
+async function api(action,extra){
+  var body=Object.assign({d:D,s:S,t:T,action:action},extra||{});
+  return (await fetch("/api/rsvp",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)})).json();
+}
+
+async function load(){
+  if(!D||!S||!T){ $("#partyInfo").textContent=""; $("#gateErr").style.display=""; $("#gateErr").textContent="This link is missing some info. Please use the full link from your confirmation email."; return; }
+  var r=await api("get");
+  if(!r.ok){ $("#partyInfo").textContent=""; $("#gateErr").style.display=""; $("#gateErr").textContent=r.error||"This guest-list link isn't valid."; return; }
+  $("#partyInfo").innerHTML="For <b>"+esc(r.childName)+"</b>'s "+esc(r.packageLabel)+" on <b>"+esc(r.date)+"</b>"+(r.slotLabel?" · "+esc(r.slotLabel):"");
+  $("#waiverLink").href=r.waiverUrl||"#";
+  (r.guests&&r.guests.length?r.guests:[{},{}]).forEach(addRow);
+  (r.reminderPref==="studio"?$("#prefStudio"):$("#prefSelf")).checked=true;
+  $("#main").style.display="";
+}
+
+$("#addRow").onclick=function(){addRow();};
+$("#save").onclick=async function(){
+  var out=$("#out"); $("#save").disabled=true;
+  var pref=document.querySelector('input[name=pref]:checked'); pref=pref?pref.value:"self";
+  var r=await api("save",{guests:collect(),reminderPref:pref});
+  out.style.display=""; out.className="out "+(r.ok?"ok":"err"); out.textContent=r.ok?("Saved! "+r.count+" guest"+(r.count===1?"":"s")+" on your list. 💛"):(r.error||"Couldn't save.");
+  $("#save").disabled=false;
+};
+$("#sendNow").onclick=async function(){
+  var out=$("#out");
+  if(!confirm("Email the waiver reminder to everyone on your list now?")) return;
+  $("#sendNow").disabled=true;
+  await api("save",{guests:collect(),reminderPref:(document.querySelector('input[name=pref]:checked')||{}).value||"self"});
+  var r=await api("send-now");
+  out.style.display=""; out.className="out "+(r.ok?"ok":"err"); out.textContent=r.ok?("Sent the waiver to "+r.sent+" guest"+(r.sent===1?"":"s")+"! ✉️"):(r.error||"Couldn't send.");
+  $("#sendNow").disabled=false;
+};
+load();
+</script>
+</body>
+</html>

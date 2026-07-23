@@ -1,0 +1,20 @@
+{
+  "name": "Little Haven Play Studio",
+  "short_name": "Little Haven",
+  "description": "Book open play, parties, punch cards and more at Little Haven Play Studio.",
+  "start_url": "/?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#fbf6ee",
+  "theme_color": "#7a6253",
+  "icons": [
+    { "src": "/assets/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/assets/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/assets/icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Book a visit", "short_name": "Book", "url": "/book.html" },
+    { "name": "Staff dashboard", "short_name": "Staff", "url": "/staff.html" }
+  ]
+}

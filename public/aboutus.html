@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>About Us · Little Haven Play Studio</title>
+<meta name="description" content="Little Haven was born from a simple feeling: our littles deserve a place of their own. A safe, welcoming indoor play space in the high desert." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400&family=Nunito+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --brown:      #4a3526;
+    --brown-soft: #6b5444;
+    --sage:       #889a76;
+    --sage-deep:  #6f8160;
+    --pink:       #f1d6d2;
+    --pink-deep:  #e4b8b1;
+    --mint:       #cfe6d6;
+    --mint-deep:  #a9d2b6;
+    --cream:      #fbf3e7;
+    --paper:      #fdfaf5;
+    --white:      #ffffff;
+
+    --display: "Fraunces", Georgia, serif;
+    --body: "Nunito Sans", system-ui, -apple-system, sans-serif;
+
+    --maxw: 1080px;
+  }
+
+  * { box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    margin: 0;
+    font-family: var(--body);
+    color: var(--brown);
+    background: var(--paper);
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.7;
+  }
+
+  a { color: inherit; }
+
+  /* ---------- Header ---------- */
+  .site-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1.4rem clamp(1.25rem, 5vw, 3rem);
+    max-width: var(--maxw);
+    margin: 0 auto;
+  }
+  .brand { text-decoration: none; line-height: 1; display: inline-block; }
+  .brand .word {
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: 1.35rem;
+    letter-spacing: 0.14em;
+    color: var(--brown);
+    text-transform: uppercase;
+  }
+  .brand .sub {
+    font-family: var(--display);
+    font-style: italic;
+    font-size: 0.95rem;
+    color: var(--sage-deep);
+    margin-top: 2px;
+    letter-spacing: 0.02em;
+  }
+  .nav-cta {
+    font-family: var(--body);
+    font-weight: 700;
+    font-size: 0.9rem;
+    text-decoration: none;
+    color: var(--brown);
+    background: var(--mint);
+    padding: 0.7rem 1.4rem;
+    border-radius: 999px;
+    transition: transform .2s ease, background .2s ease;
+    white-space: nowrap;
+  }
+  .nav-cta:hover { background: var(--mint-deep); transform: translateY(-1px); }
+
+  /* ---------- Hero ---------- */
+  .hero {
+    position: relative;
+    max-width: var(--maxw);
+    margin: 0 auto;
+    padding: clamp(2.5rem, 7vw, 5.5rem) clamp(1.25rem, 5vw, 3rem) clamp(2rem, 5vw, 3.5rem);
+    text-align: center;
+    overflow: hidden;
+  }
+  .hero .eyebrow {
+    font-weight: 700;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    font-size: 0.72rem;
+    color: var(--sage-deep);
+    margin-bottom: 1.4rem;
+  }
+  .hero h1 {
+    font-family: var(--display);
+    font-weight: 500;
+    font-size: clamp(2.4rem, 6vw, 4rem);
+    line-height: 1.08;
+    margin: 0 auto 1.3rem;
+    max-width: 16ch;
+    color: var(--brown);
+  }
+  .hero h1 em {
+    font-style: italic;
+    color: var(--sage-deep);
+  }
+  .hero .lede {
+    font-size: clamp(1.05rem, 2.2vw, 1.3rem);
+    max-width: 38ch;
+    margin: 0 auto;
+    color: var(--brown-soft);
+  }
+  /* soft organic blobs */
+  .blob {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(2px);
+    opacity: 0.55;
+    z-index: -1;
+  }
+  .blob.b1 { width: 220px; height: 220px; background: var(--pink);  top: -40px; left: -60px; }
+  .blob.b2 { width: 180px; height: 180px; background: var(--mint);  top: 20px;  right: -50px; }
+  .blob.b3 { width: 120px; height: 120px; background: var(--cream); bottom: -30px; left: 18%; }
+
+  /* ---------- Story ---------- */
+  .story {
+    max-width: 660px;
+    margin: 0 auto;
+    padding: clamp(1.5rem, 4vw, 3rem) clamp(1.25rem, 5vw, 2rem) clamp(2.5rem, 6vw, 4rem);
+  }
+  .story p {
+    font-size: 1.12rem;
+    margin: 0 0 1.5rem;
+    color: var(--brown-soft);
+  }
+  .pull {
+    font-family: var(--display);
+    font-style: italic;
+    font-size: clamp(1.4rem, 3vw, 1.9rem);
+    line-height: 1.35;
+    color: var(--brown);
+    text-align: center;
+    margin: 3rem auto;
+    max-width: 24ch;
+    position: relative;
+  }
+  .pull::before, .pull::after { content: ""; display: block; width: 46px; height: 3px; border-radius: 3px; background: var(--pink-deep); margin: 1.1rem auto; }
+
+  /* ---------- Science section ---------- */
+  .science {
+    background: var(--cream);
+    padding: clamp(3rem, 7vw, 5.5rem) clamp(1.25rem, 5vw, 3rem);
+    border-radius: 40px 40px 0 0;
+  }
+  .science-inner { max-width: var(--maxw); margin: 0 auto; }
+  .science .eyebrow {
+    text-align: center;
+    font-weight: 700;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    font-size: 0.72rem;
+    color: var(--sage-deep);
+    margin-bottom: 0.9rem;
+  }
+  .science h2 {
+    font-family: var(--display);
+    font-weight: 500;
+    font-size: clamp(1.9rem, 4.5vw, 2.9rem);
+    text-align: center;
+    line-height: 1.12;
+    margin: 0 auto 0.9rem;
+    max-width: 18ch;
+    color: var(--brown);
+  }
+  .science .intro {
+    text-align: center;
+    max-width: 46ch;
+    margin: 0 auto 3.2rem;
+    color: var(--brown-soft);
+    font-size: 1.08rem;
+  }
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+  }
+  .card {
+    background: var(--white);
+    border-radius: 28px;
+    padding: 2.2rem 1.8rem;
+    text-align: center;
+    box-shadow: 0 18px 40px -28px rgba(74, 53, 38, 0.45);
+  }
+  .card .icon {
+    width: 76px; height: 76px;
+    margin: 0 auto 1.3rem;
+  }
+  .card .stat {
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: 2rem;
+    color: var(--sage-deep);
+    line-height: 1;
+    margin-bottom: 0.55rem;
+  }
+  .card h3 {
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: 1.18rem;
+    margin: 0 0 0.7rem;
+    color: var(--brown);
+  }
+  .card p {
+    margin: 0;
+    font-size: 0.98rem;
+    color: var(--brown-soft);
+    line-height: 1.6;
+  }
+
+  /* ---------- Closing ---------- */
+  .closing {
+    background: var(--sage);
+    color: var(--cream);
+    text-align: center;
+    padding: clamp(3rem, 7vw, 5rem) clamp(1.25rem, 5vw, 3rem);
+  }
+  .closing p {
+    font-family: var(--display);
+    font-style: italic;
+    font-size: clamp(1.5rem, 3.5vw, 2.2rem);
+    line-height: 1.4;
+    max-width: 22ch;
+    margin: 0 auto 1.8rem;
+  }
+  .closing .btn {
+    display: inline-block;
+    text-decoration: none;
+    font-family: var(--body);
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--brown);
+    background: var(--cream);
+    padding: 0.95rem 2.2rem;
+    border-radius: 999px;
+    transition: transform .2s ease, background .2s ease;
+  }
+  .closing .btn:hover { background: var(--white); transform: translateY(-2px); }
+
+  /* ---------- Footer ---------- */
+  .site-footer {
+    background: var(--brown);
+    color: var(--cream);
+    text-align: center;
+    padding: 2.6rem 1.5rem;
+  }
+  .site-footer .word {
+    font-family: var(--display);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    font-size: 1.05rem;
+    margin-bottom: 0.6rem;
+  }
+  .site-footer a { color: var(--mint); text-decoration: none; font-weight: 600; }
+  .site-footer a:hover { text-decoration: underline; }
+  .site-footer .links { font-size: 0.95rem; margin-bottom: 0.5rem; }
+  .site-footer .fine { font-size: 0.8rem; opacity: 0.7; margin-top: 0.9rem; }
+
+  /* ---------- Reveal animation ---------- */
+  .reveal { opacity: 0; transform: translateY(22px); transition: opacity .7s ease, transform .7s ease; }
+  .reveal.in { opacity: 1; transform: none; }
+
+  @media (max-width: 760px) {
+    .cards { grid-template-columns: 1fr; max-width: 380px; margin: 0 auto; }
+    .nav-cta { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    .reveal { opacity: 1; transform: none; transition: none; }
+  }
+</style>
+<link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#7a6253"><link rel="apple-touch-icon" href="/assets/icons/apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="Little Haven"><link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32.png"></head>
+<body>
+
+  <header class="site-header">
+    <a class="brand" href="/">
+      <div class="word">Little Haven</div>
+      <div class="sub">Play Studio</div>
+    </a>
+    <a href="/index.html#peek" style="text-decoration:none;font-weight:700;color:inherit;margin-right:16px;align-self:center">Photos</a><a class="nav-cta" href="/book">Book Play</a>
+  </header>
+
+  <main>
+    <!-- HERO -->
+    <section class="hero">
+      <span class="blob b1"></span>
+      <span class="blob b2"></span>
+      <span class="blob b3"></span>
+      <p class="eyebrow reveal">Our Story</p>
+      <h1 class="reveal">A place for our <em>littles</em> to grow, play &amp; belong.</h1>
+      <p class="lede reveal">Little Haven was born from a simple feeling: our littles deserve a space of their very own.</p>
+    </section>
+
+    <!-- STORY -->
+    <section class="story">
+      <p class="reveal">Here in the high desert, our lives are always in motion — families passing through on their way to Joshua Tree, military families settling in and finding their footing, and longtime neighbors raising their littles right alongside ours. Through all of it, there was never a space made just for the smallest among us. So we made one, with love, for you.</p>
+
+      <p class="reveal">We believe the years from birth to age six are some of the most precious a person will ever know. This is when our littles learn to share, to play side by side, to make their very first friends, and to discover the whole wide world through their senses and their imaginations. Every pretend tea party, every squish of sensory play, every shy little hello is doing big, beautiful work.</p>
+
+      <p class="reveal">We also know the desert doesn't always make that easy. When it's too hot, too cold, or too windy to play outside, it can feel like the weather is standing between us and the time we long to spend together. Little Haven is our answer — a safe, cozy indoor space where mamas, dadas, nanas, and every caregiver can slow down, be fully present, and make the kind of memories that stay.</p>
+
+      <div class="pull reveal">There's nothing sweeter than watching your little one light up while you're right there beside them.</div>
+
+      <p class="reveal">Yes, we live in a fast-paced world, and screens fill so much of our days. We feel it too — and it's exactly why we built this place. In these early years, real play, real movement, and real connection matter more than ever. Watching a little one beam while their grown-up plays along, and seeing the quiet relief on a caregiver's face knowing their child is safe and free to explore — that's the most fulfilling part of what we do.</p>
+
+      <p class="reveal" style="text-align:center; font-family:var(--display); font-style:italic; color:var(--sage-deep); font-size:1.25rem;">That's what Little Haven is for.</p>
+    </section>
+
+    <!-- SCIENCE -->
+    <section class="science">
+      <div class="science-inner">
+        <p class="eyebrow reveal">The Science</p>
+        <h2 class="reveal">Why the first years matter so much</h2>
+        <p class="intro reveal">We didn't build Little Haven on a feeling alone. The science of early childhood backs up what we see on the play floor every day.</p>
+
+        <div class="cards">
+          <!-- Card 1 -->
+          <div class="card reveal">
+            <svg class="icon" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <path d="M22 18c-6 0-10 4-10 10 0 3 1 5 3 7-1 2-1 5 1 7 2 2 5 2 7 1 1 2 4 3 6 3V20c-2 0-5 1-7 3-0-3-0-5 0-5z" fill="#cfe6d6" stroke="#4a3526" stroke-width="2.2" stroke-linejoin="round"/>
+              <path d="M42 18c6 0 10 4 10 10 0 3-1 5-3 7 1 2 1 5-1 7-2 2-5 2-7 1-1 2-4 3-6 3V20c2 0 5 1 7 3 0-3 0-5 0-5z" fill="#f1d6d2" stroke="#4a3526" stroke-width="2.2" stroke-linejoin="round"/>
+              <path d="M32 14v4M28 10l3 4M36 10l-3 4" stroke="#6f8160" stroke-width="2.2" stroke-linecap="round"/>
+              <circle cx="32" cy="8" r="2.6" fill="#a9d2b6" stroke="#4a3526" stroke-width="1.6"/>
+            </svg>
+            <div class="stat">80%</div>
+            <h3>A brain growing fast</h3>
+            <p>From birth to age three, a child's brain develops faster than at any other time in life, reaching about 80% of its adult size.</p>
+          </div>
+
+          <!-- Card 2 -->
+          <div class="card reveal">
+            <svg class="icon" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <line x1="16" y1="20" x2="32" y2="14" stroke="#889a76" stroke-width="2.2" stroke-linecap="round"/>
+              <line x1="32" y1="14" x2="48" y2="22" stroke="#889a76" stroke-width="2.2" stroke-linecap="round"/>
+              <line x1="16" y1="20" x2="22" y2="40" stroke="#889a76" stroke-width="2.2" stroke-linecap="round"/>
+              <line x1="48" y1="22" x2="44" y2="42" stroke="#889a76" stroke-width="2.2" stroke-linecap="round"/>
+              <line x1="22" y1="40" x2="38" y2="50" stroke="#889a76" stroke-width="2.2" stroke-linecap="round"/>
+              <line x1="44" y1="42" x2="38" y2="50" stroke="#889a76" stroke-width="2.2" stroke-linecap="round"/>
+              <line x1="32" y1="14" x2="22" y2="40" stroke="#889a76" stroke-width="2.2" stroke-linecap="round"/>
+              <circle cx="16" cy="20" r="5" fill="#f1d6d2" stroke="#4a3526" stroke-width="2"/>
+              <circle cx="32" cy="14" r="5" fill="#cfe6d6" stroke="#4a3526" stroke-width="2"/>
+              <circle cx="48" cy="22" r="5" fill="#cfe6d6" stroke="#4a3526" stroke-width="2"/>
+              <circle cx="22" cy="40" r="5" fill="#cfe6d6" stroke="#4a3526" stroke-width="2"/>
+              <circle cx="44" cy="42" r="5" fill="#f1d6d2" stroke="#4a3526" stroke-width="2"/>
+              <circle cx="38" cy="50" r="5" fill="#f1d6d2" stroke="#4a3526" stroke-width="2"/>
+            </svg>
+            <div class="stat">1 million+</div>
+            <h3>Connections each second</h3>
+            <p>In these first years the brain forms over a million new neural connections every second, keeping the pathways that early experiences reinforce.</p>
+          </div>
+
+          <!-- Card 3 -->
+          <div class="card reveal">
+            <svg class="icon" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <path d="M44 18c-3.2 0-6 1.8-7.5 4.4C35 19.8 32.2 18 29 18c-4.7 0-8.5 3.8-8.5 8.5 0 7 8 12 16 18 8-6 16-11 16-18C52.5 21.8 48.7 18 44 18z" fill="#f1d6d2" stroke="#4a3526" stroke-width="2.2" stroke-linejoin="round"/>
+              <path d="M14 32c-2.2 0-4 1.8-4 4 0 3.4 4 6 8 9 4-3 8-5.6 8-9 0-2.2-1.8-4-4-4-1.5 0-2.8.8-3.5 2-.7-1.2-2-2-4.5-2z" fill="#cfe6d6" stroke="#4a3526" stroke-width="2" stroke-linejoin="round"/>
+            </svg>
+            <div class="stat">A lifelong blueprint</div>
+            <h3>Connection that lasts</h3>
+            <p>The warmth and responsiveness a child feels from caregivers in these years shapes how they handle stress, form relationships, and see themselves for decades to come.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CLOSING -->
+    <section class="closing">
+      <p>Every hour of play here helps shape the wonderful little person your child is becoming.</p>
+      <a class="btn" href="/book">Come play with us</a>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="word">Little Haven Play Studio</div>
+    <div class="links">
+      <a href="https://instagram.com/littlehavenplay" target="_blank" rel="noopener">Instagram</a> ·
+      <a href="https://facebook.com/littlehavenplay" target="_blank" rel="noopener">Facebook</a>
+      <a href="https://www.tiktok.com/@littlehavenplay" target="_blank" rel="noopener">TikTok</a> ·
+      <a href="mailto:hello@littlehavenplay.com">hello@littlehavenplay.com</a>
+    </div>
+    <div class="fine">Yucca Valley, California · A space made for our littles.</div>
+  </footer>
+
+  <script>
+    (function () {
+      var els = document.querySelectorAll('.reveal');
+      if (!('IntersectionObserver' in window) || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        els.forEach(function (el) { el.classList.add('in'); });
+        return;
+      }
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) {
+          if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+        });
+      }, { threshold: 0.12 });
+      els.forEach(function (el) { io.observe(el); });
+    })();
+  </script>
+
+<script>if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("/sw.js").catch(function(){});});}</script></body>
+</html>

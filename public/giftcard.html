@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gift Cards — Little Haven Play Studio</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,400&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{--cream:#faf7f3;--blush-pale:#fdf1ec;--rose:#c97d76;--rose-deep:#a85f59;--sage:#7ba676;--sage-dark:#4d7848;--slate:#5c6470;--charcoal:#2a2622;--taupe:#aea298;--purple:#b9a7d8;}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Nunito',sans-serif;color:var(--charcoal);line-height:1.7;
+    background:radial-gradient(1100px 480px at 110% -8%,var(--blush-pale) 0,transparent 55%),var(--cream);min-height:100vh}
+  .topbar{position:sticky;top:0;z-index:10;background:rgba(250,247,243,.95);backdrop-filter:blur(16px);border-bottom:1px solid rgba(0,0,0,.05);display:flex;align-items:center;justify-content:space-between;padding:.85rem 1.4rem}
+  .topbar .name{font-family:'Cormorant Garamond',serif;font-weight:500;font-size:1.25rem}
+  .topbar .name em{font-style:italic;color:var(--rose)}
+  .topbar a{font-size:.66rem;letter-spacing:.09em;text-transform:uppercase;color:var(--slate);text-decoration:none;font-weight:700}
+  .wrap{max-width:680px;margin:0 auto;padding:30px 20px 70px}
+  h1{font-family:'Cormorant Garamond',serif;font-weight:300;font-size:clamp(2rem,6vw,2.7rem);text-align:center}
+  .sub{text-align:center;color:var(--slate);font-weight:600;font-size:.88rem;margin:4px 0 22px}
+  .hero{width:100%;border-radius:20px;box-shadow:0 4px 24px rgba(0,0,0,.1);display:block;margin-bottom:20px}
+  .amts{display:flex;gap:10px;justify-content:center;margin-bottom:18px;flex-wrap:wrap}
+  .amts span{background:#fff;border:1.5px solid #e7ddd0;border-radius:30px;padding:8px 20px;font-weight:800;color:var(--rose-deep)}
+  .cta{display:block;text-align:center;background:var(--rose);color:#fff;text-decoration:none;font-weight:800;font-size:.82rem;letter-spacing:.07em;text-transform:uppercase;padding:16px;border-radius:30px;box-shadow:0 8px 20px -8px var(--rose-deep)}
+  .cta:hover{background:var(--rose-deep)}
+  .card{background:#fff;border:1px solid rgba(0,0,0,.05);border-radius:20px;padding:22px 24px;box-shadow:0 4px 24px rgba(0,0,0,.07);margin:18px 0}
+  h2{font-family:'Cormorant Garamond',serif;font-weight:500;font-size:1.5rem;color:var(--rose-deep);margin-bottom:14px}
+  ul{margin:0;padding-left:20px;color:var(--slate)}li{margin-bottom:7px}
+  .q{font-weight:800;color:var(--charcoal);margin:16px 0 2px}
+  p{color:var(--slate);margin-bottom:6px}
+  .verify{background:var(--blush-pale);border-radius:12px;padding:14px 16px;font-weight:700;color:var(--rose-deep);font-size:.88rem;margin-bottom:18px}
+</style>
+<link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#7a6253"><link rel="apple-touch-icon" href="/assets/icons/apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="Little Haven"><link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32.png"></head>
+<body>
+<div class="topbar"><a class="name" href="/index.html" style="text-decoration:none;color:inherit">Little <em>Haven</em> Play Studio</a><a href="/index.html#peek" style="text-decoration:none">Photos</a><a href="/index.html">← Back to site</a></div>
+<div class="wrap">
+  <h1>E-Gift Cards</h1>
+  <div class="sub">The perfect gift for little ones — play, learn, imagine 🌿</div>
+
+  <img class="hero" src="/assets/gift-card.png" alt="Little Haven Play Studio E-Gift Card">
+
+
+  <div class="verify">💌 Please double-check your recipient's email before submitting so their gift card is delivered correctly.</div>
+
+  <div class="verify">🎁 Choose your preferred gift card amount on the Square checkout page. Please double-check your recipient's email before submitting.</div>
+
+  <a class="cta" id="buyBtn" href="#">Buy an E-Gift Card →</a>
+
+  <div class="card">
+    <h2>Gift Card Policy</h2>
+    <ul>
+      <li>E-Gift Cards are delivered by email to the recipient address entered at checkout.</li>
+      <li>Please verify the recipient's email address before submitting — we are not responsible for gift cards sent to an incorrect address.</li>
+      <li>Gift cards never expire and carry no fees.</li>
+      <li>Gift cards are non-refundable and cannot be redeemed for cash, except where required by law.</li>
+      <li>Gift cards may be used toward open play admissions and bookings online, and for snacks and beverages in studio.</li>
+      <li>Treat your gift card like cash; lost or stolen cards cannot be replaced.</li>
+      <li>Your remaining balance is shown at checkout each time you use your card and after each purchase.</li>
+      <li>Little Haven reserves the right to modify gift card policies at any time.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>Frequently Asked Questions</h2>
+    <p class="q">How do I buy a gift card?</p>
+    <p>Tap "Buy an E-Gift Card" above, choose your preferred amount on the Square checkout page, enter the recipient's details, and pay securely. The card is emailed to your recipient.</p>
+    <p class="q">Do gift cards expire?</p>
+    <p>No. Little Haven gift cards never expire.</p>
+    <p class="q">Where can I use my gift card?</p>
+    <p>Toward open play bookings online, and for snacks and beverages in studio.</p>
+    <p class="q">How do I redeem it when booking online?</p>
+    <p>At checkout, choose "Using a gift card? Yes," enter your code, and the balance is applied to your total. Any remainder is charged to your card.</p>
+    <p class="q">How do I check my balance?</p>
+    <p>Your remaining balance shows at checkout when you enter your code, and in the confirmation after each use.</p>
+    <p class="q">Are gift cards refundable?</p>
+    <p>No. Gift card purchases are non-refundable.</p>
+    <p class="q">What if I sent it to the wrong email?</p>
+    <p>Please verify the recipient's email before submitting. Contact us right away if you notice an error and we'll do our best to help.</p>
+  </div>
+</div>
+<script>
+  // Point the Buy button at your Square eGift Card Order Site (set GIFTCARD_URL in Netlify).
+  (async()=>{
+    try{
+      const cfg=await (await fetch("/api/config")).json();
+      if(cfg.giftCardUrl){ document.getElementById("buyBtn").href=cfg.giftCardUrl; }
+      else { document.getElementById("buyBtn").addEventListener("click",e=>{e.preventDefault();alert("Gift card store link isn't set yet. Add GIFTCARD_URL in Netlify.");}); }
+    }catch(e){}
+  })();
+</script>
+<script>if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("/sw.js").catch(function(){});});}</script></body>
+</html>

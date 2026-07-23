@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Leave us a review — Little Haven Play Studio</title>
+<meta name="description" content="Loved your visit to Little Haven Play Studio? Leave us a review on Google, Yelp, or Facebook — it means the world to our little studio!">
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,400&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cream:#faf7f3;--blush-pale:#fdf1ec;--blush:#efcfc4;--rose:#c97d76;--rose-deep:#a85f59;
+    --sage-pale:#ecf1e8;--sage:#7ba676;--sage-dark:#4d7848;--slate:#5c6470;--taupe:#aea298;--charcoal:#2a2622;
+    --shadow:0 4px 24px rgba(0,0,0,.07);
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Nunito',sans-serif;color:var(--charcoal);line-height:1.6;
+    background:radial-gradient(1100px 480px at 110% -8%,var(--blush-pale) 0,transparent 55%),
+               radial-gradient(900px 480px at -10% 110%,var(--sage-pale) 0,transparent 50%),var(--cream);min-height:100vh;}
+  .topbar{position:sticky;top:0;z-index:10;background:rgba(250,247,243,.95);backdrop-filter:blur(16px);border-bottom:1px solid rgba(0,0,0,.05);display:flex;align-items:center;justify-content:space-between;padding:.85rem 1.4rem;}
+  .topbar .name{font-family:'Cormorant Garamond',serif;font-weight:500;font-size:1.25rem;}
+  .topbar .name em{font-style:italic;color:var(--rose);}
+  .topbar a{font-size:.66rem;letter-spacing:.09em;text-transform:uppercase;color:var(--slate);text-decoration:none;font-weight:700;}
+  .wrap{max-width:540px;margin:0 auto;padding:30px 20px 70px;text-align:center;}
+  .logo{width:210px;max-width:60%;display:block;margin:6px auto 10px;}
+  h1{font-family:'Cormorant Garamond',serif;font-weight:300;font-size:clamp(2.1rem,7vw,2.8rem);line-height:1.15;margin-top:6px;}
+  .sub{color:var(--slate);font-weight:600;font-size:.96rem;margin:12px auto 30px;max-width:420px;}
+  .btns{display:flex;flex-direction:column;gap:14px;max-width:400px;margin:0 auto;}
+  .rbtn{display:flex;align-items:center;gap:16px;text-decoration:none;background:#fff;border:1.5px solid rgba(0,0,0,.06);
+    border-radius:18px;padding:17px 20px;box-shadow:var(--shadow);transition:transform .15s,box-shadow .15s;text-align:left;}
+  .rbtn:hover{transform:translateY(-2px);box-shadow:0 10px 30px rgba(0,0,0,.1);}
+  .rbtn .ic{width:46px;height:46px;border-radius:12px;flex:none;display:grid;place-items:center;color:#fff;font-weight:800;font-size:1.5rem;font-family:'Nunito';}
+  .rbtn .tx{flex:1;min-width:0;}
+  .rbtn .t1{font-weight:800;font-size:1.05rem;color:var(--charcoal);}
+  .rbtn .t2{font-size:.8rem;color:var(--taupe);font-weight:700;}
+  .rbtn .arr{color:var(--taupe);font-weight:800;font-size:1.2rem;}
+  .ic.google{background:#fff;border:1.5px solid #ececec;color:#4285F4;}
+  .ic.yelp{background:#d32323;}
+  .ic.fb{background:#1877F2;}
+  .heart{display:inline-block;}
+  .footer{margin-top:34px;font-size:.85rem;color:var(--slate);font-weight:600;line-height:1.7;}
+  .footer a{color:var(--rose-deep);text-decoration:none;font-weight:800;}
+  .thanks{margin-top:26px;background:#fff;border:1px solid rgba(0,0,0,.05);border-radius:18px;padding:16px 18px;box-shadow:var(--shadow);font-weight:700;color:var(--sage-dark);font-size:.92rem;}
+
+  .gbadge{display:inline-flex;align-items:center;gap:9px;background:#fff;border:1.5px solid rgba(0,0,0,.06);border-radius:40px;padding:10px 20px;box-shadow:var(--shadow);text-decoration:none;color:var(--charcoal);font-weight:800;margin:6px auto 4px;}
+  .gbadge .gstars{color:#f5b301;font-size:1.15rem;letter-spacing:1px;}
+  .gbadge .num{font-size:1.15rem;color:var(--charcoal);}
+  .gbadge .cnt{color:var(--slate);font-weight:700;font-size:.9rem;}
+  .gbadge .glogo{font-weight:800;color:#4285F4;}
+  .gallery-wrap{max-width:1040px;margin:26px auto 0;padding:0 16px;}
+  .gallery{columns:2;column-gap:16px;}
+  .gallery img{width:100%;display:block;border-radius:14px;box-shadow:var(--shadow);margin:0 0 16px;break-inside:avoid;border:1px solid rgba(0,0,0,.04);cursor:pointer;}
+  @media(max-width:760px){.gallery{columns:1;}}
+  #rvLightbox{position:fixed;inset:0;background:rgba(20,15,10,.92);display:none;align-items:center;justify-content:center;z-index:999;padding:24px;}
+  #rvLightbox.open{display:flex;}
+  #rvLightbox img{max-width:94vw;max-height:90vh;border-radius:10px;box-shadow:0 20px 60px rgba(0,0,0,.5);}
+  #rvLightbox button{position:absolute;top:18px;right:22px;background:rgba(255,255,255,.15);color:#fff;border:none;border-radius:50%;width:40px;height:40px;font-size:1.3rem;cursor:pointer;}
+  .sechead{font-family:'Cormorant Garamond',serif;font-weight:400;font-size:clamp(1.6rem,5vw,2.2rem);text-align:center;margin:44px 0 4px;}
+  .sechead-sub{text-align:center;color:var(--slate);font-weight:600;font-size:.92rem;margin-bottom:6px;}
+</style>
+<link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#7a6253"><link rel="apple-touch-icon" href="/assets/icons/apple-touch-icon.png"><link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32.png"></head>
+<body>
+<div class="topbar">
+  <a href="/" style="text-decoration:none"><span class="name">Little <em>Haven</em></span></a>
+  <a href="/">← Home</a>
+</div>
+<div class="wrap">
+  <img class="logo" src="/assets/logo-littlehaven.png" alt="Little Haven Play Studio">
+  <h1>What families are saying <span class="heart">💛</span></h1>
+  <a class="gbadge" href="https://g.page/r/CRSz8WUH8sS2EBM/review" target="_blank" rel="noopener">
+    <span class="gstars" id="rvStars">★★★★★</span><span class="num" id="rvAvg">5.0</span><span class="cnt">· <span class="glogo">Google</span> · <span id="rvCount">10 reviews</span></span>
+  </a>
+</div>
+<div class="gallery-wrap">
+  <div class="gallery" id="gallery"></div>
+</div>
+<div id="rvLightbox" role="dialog" aria-modal="true" aria-label="Enlarged photo"><img id="rvLightboxImg" src="" alt=""><button id="rvLightboxClose" aria-label="Close">×</button></div>
+<div class="wrap" style="padding-top:0">
+  <h2 class="sechead">Loved your visit?</h2>
+  <p class="sechead-sub">A quick review means the world to our small studio — tap wherever you'd like to leave one:</p>
+
+  <div class="btns">
+    <a class="rbtn" href="https://g.page/r/CRSz8WUH8sS2EBM/review" target="_blank" rel="noopener">
+      <span class="ic google">G</span>
+      <span class="tx"><span class="t1">Review us on Google</span></span>
+      <span class="arr">→</span>
+    </a>
+    <a class="rbtn" href="https://www.yelp.com/writeareview/biz/dmZg1HQxKJj2lcQbKFHpaQ?review_origin=writeareview-search" target="_blank" rel="noopener">
+      <span class="ic yelp">Y</span>
+      <span class="tx"><span class="t1">Review us on Yelp</span></span>
+      <span class="arr">→</span>
+    </a>
+    <a class="rbtn" href="https://www.facebook.com/Littlehavenplay/reviews/" target="_blank" rel="noopener">
+      <span class="ic fb">f</span>
+      <span class="tx"><span class="t1">Review us on Facebook</span></span>
+      <span class="arr">→</span>
+    </a>
+  </div>
+
+  <div class="thanks">Thank you for being part of the Little Haven family! 🐻🐰</div>
+
+  <p class="footer">
+    Follow along <a href="https://instagram.com/littlehavenplay" target="_blank" rel="noopener">@littlehavenplay</a><br>
+    littlehavenplay.com
+  </p>
+</div>
+<script>
+(function(){
+  var g=document.getElementById("gallery"); if(!g) return;
+  var lb=document.getElementById("rvLightbox"), lbImg=document.getElementById("rvLightboxImg"), lbClose=document.getElementById("rvLightboxClose");
+  function openLb(src,alt){ lbImg.src=src; lbImg.alt=alt||""; lb.classList.add("open"); document.body.style.overflow="hidden"; }
+  function closeLb(){ lb.classList.remove("open"); lbImg.src=""; document.body.style.overflow=""; }
+  if(lb){ lb.addEventListener("click",closeLb); lbImg.addEventListener("click",function(e){e.stopPropagation();}); lbClose.addEventListener("click",function(e){e.stopPropagation();closeLb();}); document.addEventListener("keydown",function(e){ if(e.key==="Escape"&&lb.classList.contains("open"))closeLb(); }); }
+  (async function(){
+    try{
+      var rr=await (await fetch("/api/site-photos?set=reviews")).json();
+      (rr.photos||[]).forEach(function(p){
+        var im=document.createElement("img"); im.alt="Little Haven review"; im.loading="lazy"; im.src=p.src;
+        im.addEventListener("click",function(){ openLb(im.currentSrc||im.src, im.alt); });
+        g.appendChild(im);
+      });
+    }catch(e){}
+  })();
+})();
+</script>
+<script>
+(async function(){
+  var elS=document.getElementById("rvStars"), elA=document.getElementById("rvAvg"), elC=document.getElementById("rvCount");
+  if(!elS&&!elA&&!elC) return;
+  try{
+    var rr=await (await fetch("/api/review-rating")).json();
+    if(rr&&rr.ok){
+      var full=Math.max(0,Math.min(5,Math.round(Number(rr.stars)||5)));
+      if(elS) elS.textContent="★".repeat(full)+"☆".repeat(5-full);
+      if(elA) elA.textContent=(Number(rr.stars)||0).toFixed(1);
+      if(elC) elC.textContent=rr.count+" review"+(rr.count===1?"":"s");
+    }
+  }catch(e){}
+})();
+</script>
+<script>if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("/sw.js").catch(function(){});});}</script>
+</body>
+</html>

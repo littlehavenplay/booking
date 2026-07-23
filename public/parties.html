@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Book a Private Party — Little Haven Play Studio</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,400&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{--cream:#faf7f3;--blush-pale:#fdf1ec;--rose:#c97d76;--rose-deep:#a85f59;--sage:#7ba676;--sage-dark:#4d7848;--slate:#5c6470;--charcoal:#2a2622;--taupe:#aea298;}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Nunito',sans-serif;color:var(--charcoal);line-height:1.6;background:radial-gradient(1100px 480px at 110% -8%,var(--blush-pale) 0,transparent 55%),var(--cream);min-height:100vh}
+  .topbar{position:sticky;top:0;z-index:10;background:rgba(250,247,243,.95);backdrop-filter:blur(16px);border-bottom:1px solid rgba(0,0,0,.05);display:flex;align-items:center;justify-content:space-between;padding:.85rem 1.4rem}
+  .topbar .name{font-family:'Cormorant Garamond',serif;font-weight:500;font-size:1.25rem}
+  .topbar .name em{font-style:italic;color:var(--rose)}
+  .topbar a.back{font-size:.66rem;letter-spacing:.09em;text-transform:uppercase;color:var(--slate);text-decoration:none;font-weight:700}
+  .wrap{max-width:620px;margin:0 auto;padding:26px 18px 70px}
+  h1{font-family:'Cormorant Garamond',serif;font-weight:300;font-size:clamp(2rem,6vw,2.7rem);text-align:center}
+  .sub{text-align:center;color:var(--slate);font-weight:600;font-size:.9rem;margin:4px 0 22px}
+  .card{background:#fff;border:1px solid rgba(0,0,0,.05);border-radius:20px;padding:20px;box-shadow:0 4px 24px rgba(0,0,0,.07);margin-bottom:18px}
+  .step{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+  .step .n{width:30px;height:30px;border-radius:50%;background:var(--rose);color:#fff;font-weight:800;display:flex;align-items:center;justify-content:center;font-size:.9rem}
+  .step h2{font-family:'Cormorant Garamond',serif;font-weight:500;font-size:1.4rem}
+  label{display:block;font-size:.66rem;font-weight:800;color:var(--taupe);text-transform:uppercase;letter-spacing:.08em;margin:13px 0 5px}
+  input,select,textarea{width:100%;border:1.5px solid #e7ddd0;border-radius:12px;padding:11px 13px;font-family:'Nunito';font-weight:600;font-size:.95rem;background:#fcfaf6;outline:none}
+  input:focus,select:focus,textarea:focus{border-color:var(--rose)}
+  textarea{min-height:90px;resize:vertical}
+  .row{display:flex;gap:12px}.row>div{flex:1}
+  .slot{display:flex;justify-content:space-between;align-items:center;border:1.5px solid #e7ddd0;border-radius:14px;padding:13px 15px;margin-top:10px;cursor:pointer;background:#fcfaf6}
+  .slot.sel{border-color:var(--rose);background:#fdeee9}
+  .slot.taken{opacity:.5;cursor:not-allowed}
+  .slot .t{font-weight:800}
+  .slot .tag{font-size:.72rem;font-weight:800;padding:4px 10px;border-radius:20px}
+  .pkg{display:flex;gap:10px;flex-wrap:wrap}
+  .pkg .opt{flex:1;min-width:150px;border:1.5px solid #e7ddd0;border-radius:14px;padding:13px;cursor:pointer;text-align:center;background:#fcfaf6}
+  .pkg .opt.sel{border-color:var(--rose);background:#fdeee9}
+  .pkg .opt .pl{font-weight:800}
+  .pkg .opt .pd{font-size:.8rem;color:var(--slate)}
+  .agree{display:flex;gap:10px;align-items:flex-start;margin-top:14px;font-size:.85rem}
+  .agree input{width:auto;margin-top:4px}
+  .pay{width:100%;border:none;border-radius:40px;padding:15px;font-family:'Nunito';font-weight:800;font-size:.8rem;letter-spacing:.08em;text-transform:uppercase;color:#fff;background:var(--rose);cursor:pointer;box-shadow:0 8px 20px -8px var(--rose-deep);margin-top:8px}
+  .pay:hover{background:var(--rose-deep)}.pay:disabled{opacity:.5;cursor:not-allowed}
+  .msg{font-weight:700;font-size:.88rem;margin-top:12px;padding:11px 13px;border-radius:11px;display:none}
+  .msg.err{display:block;background:#f7e3df;color:#b8524a}
+  .note{font-size:.78rem;color:var(--taupe);font-weight:700;margin-top:8px}
+  .hidden{display:none!important}
+  .policy h3,.faq h3{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:1.05rem;margin-top:12px;color:var(--rose-deep)}
+  .policy p,.faq p{font-size:.86rem;color:var(--slate);margin-top:3px}
+  .done{text-align:center}.done .big{font-size:46px}
+  details{border-top:1px solid #efe7da;padding:10px 0}details summary{font-weight:800;cursor:pointer;font-size:.92rem}
+</style>
+<link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#7a6253"><link rel="apple-touch-icon" href="/assets/icons/apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="Little Haven"><link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32.png"></head>
+<body>
+<div class="topbar"><a class="name" href="/index.html" style="text-decoration:none;color:inherit">Little <em>Haven</em> Play Studio</a><a href="/index.html#peek" style="text-decoration:none">Photos</a><a class="back" href="/index.html">← Back to site</a></div>
+<div class="wrap">
+  <h1>Book a Private Party</h1>
+  <div class="sub">2-hour private parties · Friday, Saturday & Sunday · pay a deposit to reserve 🎈</div>
+
+  <div id="form">
+    <div class="card">
+      <div class="step"><div class="n">1</div><h2>Pick a date</h2></div>
+      <input type="date" id="date">
+      <div class="note">Parties are Fri/Sat/Sun and must be booked at least 2 weeks ahead.</div>
+    </div>
+
+    <div class="card">
+      <div class="step"><div class="n">2</div><h2>Choose a time</h2></div>
+      <div id="slots"><div class="note">Pick a date to see available party times.</div></div>
+    </div>
+
+    <div class="card">
+      <div class="step"><div class="n">3</div><h2>Choose a package</h2></div>
+      <div class="pkg" id="pkg"></div>
+      <div id="pkgNudge" style="display:none;background:#eef5e8;border:1px solid #d6e6c8;border-radius:12px;padding:11px 14px;margin-top:10px;font-size:.88rem;color:#4f6b43;font-weight:600"></div>
+      <div class="note">Deposit applies toward your package total. Packages can't be modified, but add-ons are available.</div>
+    </div>
+
+    <div class="card">
+      <div class="step"><div class="n">4</div><h2>Party details</h2></div>
+      <label>Birthday child's name *</label>
+      <input type="text" id="childName" placeholder="Child's name">
+      <div class="row">
+        <div><label>Your name *</label><input type="text" id="name" placeholder="Full name"></div>
+        <div><label>Phone *</label><input type="tel" id="phone" placeholder="(555) 555-5555"></div>
+      </div>
+      <label>Email *</label>
+      <input type="email" id="email" placeholder="you@email.com">
+      <div class="row">
+        <div><label>Children (estimate)</label><input type="text" id="kids" inputmode="numeric" placeholder="e.g. 10"></div>
+        <div><label>Adults (estimate)</label><input type="text" id="adults" inputmode="numeric" placeholder="e.g. 15"></div>
+      </div>
+      <label>Anything else? (theme, add-ons, questions)</label>
+      <textarea id="comment" placeholder="Tell us about your celebration…"></textarea>
+    </div>
+
+    <div class="card policy">
+      <div class="step"><div class="n">5</div><h2>Deposit & cancellation policy</h2></div>
+      <div id="policyBox" style="max-height:230px;overflow:auto;border:1px solid #efe7da;border-radius:12px;padding:12px;background:#fcfaf6"></div>
+      <div class="agree"><input type="checkbox" id="agree"><label for="agree" style="text-transform:none;letter-spacing:0;color:var(--charcoal);font-weight:700;font-size:.85rem;margin:0">I have read and agree to the deposit & cancellation policy. I understand my party is not confirmed until the deposit is paid, and the remaining balance is due the day of the party.</label></div>
+      <button class="pay" id="pay" disabled>Continue to deposit</button>
+      <div class="msg" id="msg"></div>
+      <div class="note">Paying the deposit holds your reservation. We'll follow up to finalize the details (including your color selections, due at least 1 week before your party).</div>
+    </div>
+  </div>
+
+  <div class="card hidden done" id="done">
+    <div class="big">🎉</div>
+    <h1 style="font-size:1.9rem">Almost there!</h1>
+    <p style="color:var(--slate);font-weight:700" id="doneMsg"></p>
+    <a class="pay" id="depositBtn" style="display:block;text-decoration:none;text-align:center;max-width:300px;margin:16px auto 0" href="#" target="_blank" rel="noopener">Pay deposit now</a>
+    <div id="qWrap" style="max-width:480px;margin:22px auto 0;text-align:left"></div>
+    <p class="note" style="text-align:center">After paying, you'll get a Square receipt. We'll confirm your reservation and follow up with details. Questions? Email hello@littlehavenplay.com.</p>
+  </div>
+
+  <div class="card faq">
+    <div class="step"><div class="n">?</div><h2>Party FAQ</h2></div>
+    <details><summary>How far in advance do I book, and how is my date held?</summary><p>Parties must be booked at least 2 weeks in advance. A deposit reserves your date and time — your party isn't confirmed until the deposit is paid.</p></details>
+    <details><summary>Is the deposit refundable?</summary><p>Deposits are non-refundable unless you cancel at least 2 weeks before the party date. Cancellations made less than 2 weeks before the party are not eligible for a deposit refund. The deposit applies toward your package total.</p></details>
+    <details><summary>When is the rest of the balance due?</summary><p>The remaining balance is due on the day of the party. Any approved add-ons are charged at the end of the event.</p></details>
+    <details><summary>Can I customize or change a package?</summary><p>Party packages cannot be substituted, modified, or customized. Add-ons may be available and can be added to an existing package.</p></details>
+    <details><summary>What if I'm running late?</summary><p>Party time begins and ends at the scheduled reserved time; late arrival doesn't extend it. Extra time may be available only if approved in advance and may carry an additional fee.</p></details>
+    <details><summary>What if I need to cancel for an emergency?</summary><p>For illness, emergencies, or unexpected circumstances, Little Haven may offer store credit at our discretion, usable toward a future booking, Open Play, punch card, or other eligible purchase.</p></details>
+    <details><summary>What if Little Haven has to cancel?</summary><p>If we must cancel due to an emergency, facility issue, or unexpected closure, you may reschedule, receive store credit, or a refund of any amount paid.</p></details>
+  </div>
+</div>
+
+<script>
+const $=s=>document.querySelector(s);
+let CFG={}, state={date:"",slot:"",pkg:""};
+const POLICY=[
+  ["",""],
+  ["Booking","Private parties and birthday parties must be booked at least 2 weeks in advance. A deposit is required to reserve your party date and time. Your party is not confirmed until the deposit has been paid."],
+  ["Deposit","Party deposits are non-refundable unless the cancellation is made at least 2 weeks before the scheduled party date. If cancellation is made less than 2 weeks before the party date, the deposit will be forfeited."],
+  ["Cancellations","Because private party reservations require Little Haven to close the studio to the public during your reserved time, we ask that all cancellation requests be made as early as possible. Cancellations made at least 2 weeks before the party date may be eligible for a deposit refund. Cancellations made less than 2 weeks before the party date are not eligible for a deposit refund."],
+  ["Store Credit","In cases of illness, emergency, or unexpected circumstances, Little Haven may offer store credit at our discretion. Store credit may be used toward a future booking, Open Play visit, punch card, or other eligible Little Haven purchase."],
+  ["Remaining Balance","The remaining party balance is due on the day of the party."],
+  ["No-Shows","If you do not show up for your scheduled party and do not contact Little Haven in advance, the deposit will be forfeited."],
+  ["Late Arrival","Party time begins and ends at the scheduled reserved time. Late arrival does not extend the party time. Additional time may be available only if approved by Little Haven and may be subject to an additional fee."],
+  ["Package Changes","Party packages cannot be substituted, modified, or customized. Add-ons may be available and can be added to an existing package."],
+  ["Little Haven Cancellations","If Little Haven must cancel your party due to an emergency, facility issue, or unexpected closure, we will offer the option to reschedule, issue store credit, or provide a refund of any amount paid."],
+  ["Contact","Email: hello@littlehavenplay.com · Website: littlehavenplay.com. Message us @littlehavenplay on Instagram, Facebook & TikTok!"],
+];
+
+function money(c){return "$"+(c/100).toFixed(2);}
+
+(async function init(){
+  $("#policyBox").innerHTML=POLICY.filter(p=>p[1]).map(p=>`<div style="margin-bottom:8px"><b>${p[0]}</b><br><span style="font-size:.84rem;color:var(--slate)">${p[1]}</span></div>`).join("");
+  try{ CFG=await (await fetch("/api/config")).json(); }catch(e){ CFG={}; }
+  // packages
+  const pk=(CFG.partyPackages||[{id:"sweet",label:"Sweet Party",deposit:10000},{id:"haven",label:"Haven Party",deposit:15000},{id:"dream",label:"Dream Party",deposit:20000}]);
+  $("#pkg").innerHTML=pk.map(p=>`<div class="opt" data-pkg="${p.id}"><div class="pl">${p.label}</div><div class="pd">${money(p.deposit)} deposit</div></div>`).join("");
+  document.querySelectorAll(".opt").forEach(o=>o.onclick=()=>{state.pkg=o.dataset.pkg;document.querySelectorAll(".opt").forEach(x=>x.classList.remove("sel"));o.classList.add("sel");var nd=document.getElementById("pkgNudge");if(nd){if(state.pkg==="sweet"){nd.style.display="";nd.innerHTML="\u2728 Adding extra guests? The <b>Haven Party</b> may be a better value \u2014 it includes 3 more kids, 2 large pizzas, an ice chest, bubble time, and extra d\u00e9cor for just $120 more.";}else{nd.style.display="none";}}check();});
+  // min date = today + party min days
+  const min=new Date(); min.setMinutes(min.getMinutes()-min.getTimezoneOffset()); min.setDate(min.getDate()+(CFG.partyMinDays||14));
+  $("#date").min=min.toISOString().slice(0,10);
+  $("#date").onchange=loadSlots;
+  ["childName","name","phone","email","agree"].forEach(id=>{ const el=$("#"+id); el.addEventListener(el.type==="checkbox"?"change":"input",check); });
+})();
+
+async function loadSlots(){
+  state.date=$("#date").value; state.slot=""; const host=$("#slots");
+  if(!state.date){ host.innerHTML='<div class="note">Pick a date to see available party times.</div>'; check(); return; }
+  host.innerHTML='<div class="note">Loading…</div>';
+  let d;
+  try{
+    const res=await fetch("/api/party-availability?date="+encodeURIComponent(state.date));
+    d=await res.json();
+  }catch(e){
+    host.innerHTML='<div class="msg err" style="display:block">We couldn\u2019t load party times right now. Please refresh the page and try again, or email hello@littlehavenplay.com.</div>';
+    return;
+  }
+  if(d && d.error){ host.innerHTML='<div class="msg err" style="display:block">'+d.error+'</div>'; check(); return; }
+  if(!d.partyDay){ host.innerHTML='<div class="msg err" style="display:block">Parties are available Friday, Saturday & Sunday only.</div>'; check(); return; }
+  if(d.tooSoon){ host.innerHTML='<div class="msg err" style="display:block">Please choose a date at least 2 weeks away.</div>'; check(); return; }
+  host.innerHTML="";
+  d.slots.forEach(s=>{
+    const el=document.createElement("div");
+    el.className="slot"+(s.available?"":" taken");
+    el.innerHTML=`<span class="t">${s.label}</span><span class="tag" style="background:${s.available?'#e4f0e7':'#f1dbd4'};color:${s.available?'#3f7d5c':'#b8524a'}">${s.available?'Available':'Booked'}</span>`;
+    if(s.available) el.onclick=()=>{ state.slot=s.id; document.querySelectorAll(".slot").forEach(x=>x.classList.remove("sel")); el.classList.add("sel"); check(); };
+    host.appendChild(el);
+  });
+  check();
+}
+
+function check(){
+  const ok = state.date && state.slot && state.pkg
+    && $("#childName").value.trim() && $("#name").value.trim()
+    && $("#phone").value.replace(/\D/g,"").length>=7
+    && /^\S+@\S+\.\S+$/.test($("#email").value.trim())
+    && $("#agree").checked;
+  $("#pay").disabled=!ok;
+}
+
+$("#pay").onclick=async()=>{
+  const m=$("#msg"); m.className="msg";
+  $("#pay").disabled=true; $("#pay").textContent="Saving…";
+  try{
+    const r=await (await fetch("/api/party-book",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({
+      date:state.date, partySlot:state.slot, package:state.pkg,
+      childName:$("#childName").value.trim(), name:$("#name").value.trim(),
+      phone:$("#phone").value.trim(), email:$("#email").value.trim(),
+      kids:$("#kids").value.trim(), adults:$("#adults").value.trim(),
+      comment:$("#comment").value.trim(), agree:$("#agree").checked
+    })})).json();
+    if(r.ok){
+      $("#form").classList.add("hidden"); $("#done").classList.remove("hidden"); renderQuestionnaire(state.pkg);
+      $("#doneMsg").textContent=r.message||"Pay your deposit to confirm your reservation.";
+      if(r.depositLink){ $("#depositBtn").href=r.depositLink; } else { $("#depositBtn").style.display="none"; }
+      window.scrollTo({top:0,behavior:"smooth"});
+    } else {
+      m.className="msg err"; m.textContent=r.message||r.error||"Couldn't save. Please try again.";
+      $("#pay").disabled=false; $("#pay").textContent="Continue to deposit";
+      if(r.error==="taken") loadSlots();
+    }
+  }catch(e){ m.className="msg err"; m.textContent="Network error. Please try again."; $("#pay").disabled=false; $("#pay").textContent="Continue to deposit"; }
+};
+
+var PARTY_Q={
+  sweet:[{id:"tablecloth",label:"Tablecloth color",opt:["Black","White"]}],
+  haven:[{id:"tablecloth",label:"Tablecloth color",opt:["Black","White"]},
+         {id:"pizza1",label:"Pizza #1 topping",opt:["Cheese","Pepperoni"]},
+         {id:"pizza2",label:"Pizza #2 topping",opt:["Cheese","Pepperoni"]}],
+  dream:[{id:"tablecloth",label:"Tablecloth color",opt:["Black","White"]},
+         {id:"pizza1",label:"Pizza #1 topping",opt:["Cheese","Pepperoni"]},
+         {id:"pizza2",label:"Pizza #2 topping",opt:["Cheese","Pepperoni"]},
+         {id:"pizza3",label:"Pizza #3 topping",opt:["Cheese","Pepperoni"]},
+         {id:"balloons",label:"Balloon colors (up to 3)",text:true},
+         {id:"mascot",label:"Mascot appearance (based on availability)",opt:["Bluey","Chase (Paw Patrol)","Minty the Bunny","No preference"]}]
+};
+var PKG_LABEL={sweet:"Sweet Party",haven:"Haven Party",dream:"Dream Party"};
+function renderQuestionnaire(pkg){
+  var fields=PARTY_Q[pkg]||PARTY_Q.sweet;
+  var h='<div style="border-top:1px solid #efe7da;padding-top:18px"><h2 style="font-size:1.25rem;margin:0 0 4px">Tell us your party preferences \ud83c\udf88</h2><p class="note" style="margin:0 0 12px">Fill this out so we can plan your d\u00e9cor and food \u2014 do it now or after paying, it all comes to us.</p>';
+  fields.forEach(function(f){
+    h+='<label style="display:block;font-weight:700;font-size:.85rem;color:var(--slate);margin:10px 0 3px">'+f.label+'</label>';
+    if(f.text){ h+='<input type="text" id="q_'+f.id+'" data-label="'+f.label+'" style="width:100%" placeholder="e.g., sage, brown, cream">'; }
+    else { h+='<select id="q_'+f.id+'" data-label="'+f.label+'" style="width:100%"><option value="">Choose\u2026</option>'+f.opt.map(function(o){return '<option>'+o+'</option>';}).join('')+'</select>'; }
+  });
+  h+='<label style="display:block;font-weight:700;font-size:.85rem;color:var(--slate);margin:10px 0 3px">Party theme (e.g., Paw Patrol, Hello Kitty, sage &amp; brown)</label><input type="text" id="q_theme" data-label="Party theme" style="width:100%" placeholder="Theme or color scheme">';
+  h+='<label style="display:block;font-weight:700;font-size:.85rem;color:var(--slate);margin:10px 0 3px">Comments, add-ons, or questions</label><textarea id="q_comments" rows="3" style="width:100%" placeholder="Anything you would like us to know or plan together"></textarea>';
+  h+='<button id="qSubmit" style="margin-top:14px">Send my preferences</button><div class="msg" id="qMsg" style="margin-top:8px"></div></div>';
+  $("#qWrap").innerHTML=h;
+  $("#qSubmit").onclick=submitQuestionnaire;
+}
+async function submitQuestionnaire(){
+  var msg=$("#qMsg"); msg.className="msg";
+  var items=[];
+  document.querySelectorAll("#qWrap [data-label]").forEach(function(el){ items.push({label:el.dataset.label,value:el.value}); });
+  var comments=$("#q_comments")?$("#q_comments").value.trim():"";
+  $("#qSubmit").disabled=true; $("#qSubmit").textContent="Sending\u2026";
+  try{
+    var r=await (await fetch("/api/party-questionnaire",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({
+      date:state.date,partySlot:state.slot,packageLabel:PKG_LABEL[state.pkg]||state.pkg,
+      name:$("#name").value.trim(),email:$("#email").value.trim(),items:items,comments:comments
+    })})).json();
+    if(r.ok){ $("#qWrap").innerHTML='<div style="border-top:1px solid #efe7da;padding-top:18px;text-align:center"><div style="font-size:38px">\ud83c\udf89</div><p style="font-weight:800;color:#5f7d52">Thank you! Your preferences are in \u2014 we will be in touch to finalize everything.</p></div>'; }
+    else { msg.className="msg err"; msg.textContent=r.error||"Couldn't send. Please try again."; $("#qSubmit").disabled=false; $("#qSubmit").textContent="Send my preferences"; }
+  }catch(e){ msg.className="msg err"; msg.textContent="Network error. Please try again."; $("#qSubmit").disabled=false; $("#qSubmit").textContent="Send my preferences"; }
+}
+</script>
+<script>if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("/sw.js").catch(function(){});});}</script></body>
+</html>

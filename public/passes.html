@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Punch Cards — Little Haven Play Studio</title>
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,400&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cream:#faf7f3;--blush-pale:#fdf1ec;--blush:#efcfc4;--rose:#c97d76;--rose-deep:#a85f59;--rose-light:#e8a99f;
+    --sage-pale:#ecf1e8;--sage:#7ba676;--sage-dark:#4d7848;--slate:#5c6470;--taupe:#aea298;--charcoal:#2a2622;
+    --shadow:0 4px 24px rgba(0,0,0,.07);
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Nunito',sans-serif;color:var(--charcoal);line-height:1.6;
+    background:radial-gradient(1100px 480px at 110% -8%,var(--blush-pale) 0,transparent 55%),
+               radial-gradient(900px 480px at -10% 110%,var(--sage-pale) 0,transparent 50%),var(--cream);min-height:100vh;}
+  .topbar{position:sticky;top:0;z-index:10;background:rgba(250,247,243,.95);backdrop-filter:blur(16px);border-bottom:1px solid rgba(0,0,0,.05);display:flex;align-items:center;justify-content:space-between;padding:.85rem 1.4rem;}
+  .topbar .name{font-family:'Cormorant Garamond',serif;font-weight:500;font-size:1.25rem;}
+  .topbar .name em{font-style:italic;color:var(--rose);}
+  .topbar a{font-size:.66rem;letter-spacing:.09em;text-transform:uppercase;color:var(--slate);text-decoration:none;font-weight:700;}
+  .wrap{max-width:620px;margin:0 auto;padding:26px 18px 70px;}
+  h1{font-family:'Cormorant Garamond',serif;font-weight:300;font-size:clamp(2rem,6vw,2.6rem);text-align:center;}
+  .sub{text-align:center;color:var(--slate);font-weight:600;font-size:.86rem;margin:4px 0 24px;}
+  .card{background:#fff;border:1px solid rgba(0,0,0,.05);border-radius:20px;padding:18px;box-shadow:var(--shadow);margin-bottom:16px;}
+  .step{font-family:'Cormorant Garamond',serif;font-weight:500;font-size:1.25rem;margin:0 0 14px;display:flex;align-items:center;gap:10px;}
+  .step .n{width:26px;height:26px;border-radius:50%;background:var(--rose);color:#fff;display:grid;place-items:center;font-size:.8rem;font-weight:800;}
+  .pass{display:flex;gap:14px;align-items:center;border:1.5px solid #e7ddd0;border-radius:16px;padding:12px;margin-bottom:12px;background:#fcfaf6;}
+  .pass img{width:120px;border-radius:10px;flex:none;}
+  .pass .info{flex:1;min-width:0;}
+  .pass .pl{font-weight:800;font-size:.98rem;}
+  .pass .pp{color:var(--sage-dark);font-weight:800;}
+  .pass .pmeta{font-size:.78rem;color:var(--taupe);font-weight:700;}
+  .stepper{display:flex;align-items:center;gap:8px;background:#fff;border:1.5px solid #e7ddd0;border-radius:11px;padding:4px;margin-top:8px;width:max-content;}
+  .stepper button{width:30px;height:30px;border-radius:8px;border:none;background:var(--blush-pale);color:var(--rose-deep);font-weight:800;font-size:1.1rem;cursor:pointer;}
+  .stepper .num{min-width:24px;text-align:center;font-weight:800;}
+  .childname{margin-top:8px;width:100%;border:1.5px solid #e7ddd0;border-radius:10px;padding:8px 10px;font-family:'Nunito';font-weight:600;font-size:.85rem;background:#fff;outline:none;}
+  .childname:focus{border-color:var(--rose);}
+  label.fld{display:block;font-size:.66rem;font-weight:800;color:var(--taupe);text-transform:uppercase;letter-spacing:.08em;margin:0 0 6px;}
+  input[type=text],input[type=email],input[type=tel]{width:100%;border:1.5px solid #e7ddd0;border-radius:12px;padding:11px 13px;font-family:'Nunito';font-weight:600;font-size:.95rem;background:#fcfaf6;outline:none;}
+  input:focus{border-color:var(--rose);}
+  .grid2{display:flex;gap:12px;flex-wrap:wrap;}.grid2>div{flex:1;min-width:160px;}
+  .totals{margin-top:6px;}
+  .totals .r{display:flex;justify-content:space-between;margin:4px 0;font-weight:700;}
+  .totals .due{font-family:'Cormorant Garamond',serif;font-weight:500;font-size:1.5rem;border-top:1px solid #efe7da;padding-top:10px;margin-top:8px;}
+  .policy{background:#fcfaf6;border:1px solid #efe7da;border-radius:12px;padding:14px;font-size:.8rem;line-height:1.55;color:var(--slate);max-height:200px;overflow:auto;}
+  .policy h4{font-family:'Cormorant Garamond',serif;font-weight:500;font-size:1.05rem;margin:0 0 8px;color:var(--charcoal);}
+  .policy ul{margin:0;padding-left:18px;}.policy li{margin:0 0 6px;}
+  .agree{display:flex;align-items:flex-start;gap:11px;margin-top:14px;font-weight:700;font-size:.9rem;cursor:pointer;}
+  .agree input{width:20px;height:20px;margin-top:1px;accent-color:var(--rose);flex:none;}
+  .pay{width:100%;border:none;border-radius:40px;padding:15px;font-family:'Nunito';font-weight:800;font-size:.8rem;letter-spacing:.08em;text-transform:uppercase;color:#fff;background:var(--rose);cursor:pointer;box-shadow:0 8px 20px -8px var(--rose-deep);transition:.2s;margin-top:4px;}
+  .pay:hover{background:var(--rose-deep);transform:translateY(-2px);}
+  .pay:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none;}
+  .msg{font-weight:700;font-size:.88rem;margin-top:12px;padding:11px 13px;border-radius:11px;display:none;}
+  .msg.err{display:block;background:#f7e3df;color:#b8524a;}
+  .note{font-size:.78rem;color:var(--taupe);font-weight:700;margin-top:10px;}
+  .banner{background:var(--blush-pale);color:var(--rose-deep);font-weight:700;font-size:.82rem;border-radius:12px;padding:11px 13px;margin-bottom:14px;}
+  .hidden{display:none!important;}
+  .codecard{background:#fcfaf6;border:1px solid #efe7da;border-radius:12px;padding:14px;margin:10px 0;text-align:center;}
+  .codecard .c{font-size:24px;font-weight:800;color:var(--rose-deep);letter-spacing:1px;margin:4px 0;}
+</style>
+<link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#7a6253"><link rel="apple-touch-icon" href="/assets/icons/apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="Little Haven"><link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32.png"></head>
+<body>
+<div class="topbar"><a class="name" href="/index.html" style="text-decoration:none;color:inherit">Little <em>Haven</em> Play Studio</a><a href="/index.html#peek" style="text-decoration:none">Photos</a><a href="/index.html">← Back to site</a></div>
+<div class="wrap">
+  <h1>Loyalty Punch Card</h1>
+  <div class="sub">No cards to buy — just play! Pay your normal admission each visit, and your 8th visit is on us. 🎈</div>
+
+  <img src="/assets/punch-card-hero.jpg" alt="Little Haven Loyalty Punch Card — 7 visits and your 8th visit is free" style="width:100%;border-radius:20px;box-shadow:0 4px 24px rgba(0,0,0,.1);display:block;margin:18px 0 22px">
+
+  <div style="background:#fcfaf6;border:1.5px solid #e7ddd0;border-radius:18px;padding:22px 20px;margin-bottom:18px">
+    <h2 style="font-family:'Cormorant Garamond',serif;font-weight:500;font-size:1.5rem;margin:0 0 14px;color:var(--rose-deep)">How it works</h2>
+    <ol style="margin:0;padding-left:20px;line-height:1.9;color:#5c6470;font-size:.98rem">
+      <li><b>Pay your normal admission</b> each visit — nothing to buy upfront.</li>
+      <li><b>Give your child's code</b> (or just their name) when you check in, online or in person. Each child has their own code — their initials plus the last 4 digits of your phone.</li>
+      <li>We <b>add a punch</b> for each paid visit. After <b>7 visits</b>, your <b>8th visit is free!</b></li>
+      <li>When you earn it, we <b>email you a free-visit code</b> — enter it at checkout on your next online booking and one child's admission is on us.</li>
+    </ol>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px">
+    <div style="background:#eaf4e4;border:1px solid #cfe6c2;border-radius:14px;padding:16px;text-align:center">
+      <div style="font-size:1.6rem">🎈</div>
+      <div style="font-weight:800;margin:6px 0 2px;color:#4d6b3e">Every child qualifies</div>
+      <div style="font-size:.85rem;color:#5c6470">Any age. Your free visit is free no matter the price when you redeem it — you earned it!</div>
+    </div>
+    <div style="background:#fdf1ec;border:1px solid #f0d9d2;border-radius:14px;padding:16px;text-align:center">
+      <div style="font-size:1.6rem">📱</div>
+      <div style="font-weight:800;margin:6px 0 2px;color:#a85f59">Tracked for you</div>
+      <div style="font-size:.85rem;color:#5c6470">No card to carry or lose. Just give your code each visit and we keep count.</div>
+    </div>
+  </div>
+
+  <div class="note" style="text-align:center;font-size:.82rem;color:var(--slate);line-height:1.6;margin-bottom:20px">
+    Your free-visit code is valid for 30 days from the day you earn it, and it's one-time use. First visit? We'll set up your code and email it to you.<br>
+    <b>Already have a pre-paid punch card?</b> It still works! Keep using it (with your free coffee) until it's finished, then you'll roll into the loyalty program automatically.
+  </div>
+
+  <div style="text-align:center">
+    <a href="/book.html" style="display:inline-block;background:var(--rose);color:#fff;text-decoration:none;font-weight:800;font-size:.95rem;padding:13px 30px;border-radius:40px">Book Your Visit →</a>
+  </div>
+</div>
+<script>if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("/sw.js").catch(function(){});});}</script></body>
+</html>

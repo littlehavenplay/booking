@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Head Count · Little Haven Play Studio</title>
+<link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#7a6253">
+<style>
+  :root{--cream:#fbf8f3;--ink:#2a2622;--rose:#c97d76;--rose-deep:#a85f59;--sage:#8a9a7e;--taupe:#8a7d6a;--slate:#5c6470;--line:#efe7da}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--cream);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;line-height:1.5}
+  .wrap{max-width:560px;margin:0 auto;padding:18px 16px 60px}
+  h1{font-size:1.5rem;margin:6px 0 2px}
+  .note{color:var(--taupe);font-size:.86rem}
+  .card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px;margin:14px 0;box-shadow:0 6px 18px -14px rgba(0,0,0,.3)}
+  input,button{font:inherit}
+  input[type=password],input[type=text]{width:100%;padding:12px;border:1px solid var(--line);border-radius:12px;background:#fcfaf6}
+  button{background:var(--rose);color:#fff;border:none;font-weight:800;padding:12px 18px;border-radius:12px;cursor:pointer}
+  button:disabled{opacity:.5}
+  .pcard{border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin:8px 0;cursor:pointer;background:#fff}
+  .pcard:hover{border-color:var(--rose)}
+  .pcard.sel{border-color:var(--rose);background:#fdf3f1}
+  .counter{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:10px 0}
+  .counter .lbl{font-weight:800;font-size:1.05rem}
+  .pm{display:flex;align-items:center;gap:14px}
+  .pm button{width:54px;height:54px;font-size:1.6rem;border-radius:50%;padding:0;display:flex;align-items:center;justify-content:center}
+  .pm .val{font-size:1.9rem;font-weight:800;min-width:54px;text-align:center}
+  .cap{font-size:.8rem;color:var(--taupe);text-align:center}
+  .over{background:#fbe7e4;color:#b0473f;border-radius:12px;padding:12px 14px;font-weight:800;text-align:center;margin-top:10px}
+  .ok{background:#e7f0df;color:#4f6b43;border-radius:12px;padding:12px 14px;font-weight:800;text-align:center;margin-top:10px}
+  .err{color:#b0473f;font-weight:700;margin-top:8px}
+  a.back{color:var(--rose-deep);text-decoration:none;font-weight:700;font-size:.9rem}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="/staff.html">← Staff tools</a>
+  <h1>Head Count</h1>
+  <div class="note">Count kids and adults as guests arrive. Caps and overage charges come from each party's package automatically.</div>
+
+  <div class="card" id="gate">
+    <label style="font-weight:700;font-size:.85rem;color:var(--slate)">Staff PIN</label>
+    <input type="password" id="pin" placeholder="Enter your staff PIN" autocomplete="current-password">
+    <button id="load" style="margin-top:10px">Load parties</button>
+    <div class="err" id="gerr" style="display:none"></div>
+  </div>
+
+  <div id="list" style="display:none"></div>
+  <div id="panel" style="display:none"></div>
+</div>
+
+<script>
+var $=s=>document.querySelector(s);
+var PARTIES=[], SEL=null, ADDC=2500, ADDA=1500, SAVET=null;
+function pin(){ return $("#pin").value.trim(); }
+function money(c){ return "$"+(c/100).toFixed(2); }
+function esc(s){ return (s||"").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+
+window.addEventListener("load",function(){
+  try{ var p=localStorage.getItem("lh_pin"); if(p) $("#pin").value=p; }catch(e){}
+});
+
+$("#load").onclick=loadParties;
+async function loadParties(){
+  var err=$("#gerr"); err.style.display="none";
+  if(!pin()){ err.style.display=""; err.textContent="Enter your staff PIN."; return; }
+  $("#load").disabled=true;
+  try{
+    var r=await (await fetch("/api/headcount",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key:pin(),action:"list"})})).json();
+    if(r.ok){
+      try{ localStorage.setItem("lh_pin", pin()); }catch(e){}
+      PARTIES=r.parties||[]; ADDC=r.addChild||2500; ADDA=r.addAdult||1500;
+      renderList();
+    } else { err.style.display=""; err.textContent=r.error||"Couldn't load."; }
+  }catch(e){ err.style.display=""; err.textContent="Network error."; }
+  $("#load").disabled=false;
+}
+
+function renderList(){
+  var el=$("#list"); el.style.display="";
+  if(!PARTIES.length){ el.innerHTML='<div class="card"><div class="note">No upcoming parties.</div></div>'; return; }
+  var h='<div class="card"><div style="font-weight:800;margin-bottom:6px">Pick a party</div>';
+  PARTIES.forEach(function(p,i){
+    h+='<div class="pcard'+(SEL===i?' sel':'')+'" onclick="pick('+i+')"><div style="font-weight:800">'+esc(p.date)+' · '+esc(p.slotLabel)+'</div>'
+      +'<div style="color:var(--rose-deep);font-weight:700;font-size:.9rem">'+esc(p.packageLabel)+'</div>'
+      +'<div style="font-size:.86rem">'+esc(p.name||"—")+(p.childName?' — for '+esc(p.childName):"")+'</div></div>';
+  });
+  el.innerHTML=h+'</div>';
+}
+
+window.pick=function(i){ SEL=i; renderList(); renderPanel(); window.scrollTo({top:document.body.scrollHeight,behavior:"smooth"}); };
+
+function renderPanel(){
+  var p=PARTIES[SEL]; if(!p) return;
+  var el=$("#panel"); el.style.display="";
+  el.innerHTML='<div class="card">'
+    +'<div style="font-weight:800;font-size:1.1rem">'+esc(p.childName||p.name)+"'s party</div>"
+    +'<div class="note">'+esc(p.packageLabel)+' · includes '+p.kidsIncl+' kids + '+p.adultsIncl+' adults</div>'
+    +'<div class="counter"><div class="lbl">👧 Kids</div><div class="pm"><button onclick="bump(\'kids\',-1)">−</button><div class="val" id="vKids">'+(p.headKids||0)+'</div><button onclick="bump(\'kids\',1)">+</button></div></div>'
+    +'<div class="cap" id="capKids"></div>'
+    +'<div class="counter"><div class="lbl">🧑 Adults</div><div class="pm"><button onclick="bump(\'adults\',-1)">−</button><div class="val" id="vAdults">'+(p.headAdults||0)+'</div><button onclick="bump(\'adults\',1)">+</button></div></div>'
+    +'<div class="cap" id="capAdults"></div>'
+    +'<div id="overBox"></div>'
+    +'<label style="display:flex;align-items:center;gap:9px;margin-top:12px;font-weight:700;cursor:pointer"><input type="checkbox" id="compTog" '+(p.comp?"checked":"")+' style="width:auto;transform:scale(1.3)"> Comp — no additional charge (waive overage)</label>'
+    +'<div style="border-top:1px dashed #e2d9cc;margin-top:14px;padding-top:12px">'
+      +'<div style="font-weight:800;margin-bottom:8px">💵 Deposit</div>'
+      +'<div style="display:flex;align-items:center;gap:8px"><span>$</span><input type="number" id="depPaid" min="0" step="1" value="'+(p.depositPaid?(p.depositPaid/100):"")+'" placeholder="0" style="width:120px;padding:8px 10px;border:1.5px solid #e7ddd0;border-radius:9px"><span class="note" style="margin:0">paid · balance due day of party</span></div>'
+    +'</div>'
+    +'<div style="border-top:1px dashed #e2d9cc;margin-top:14px;padding-top:12px">'
+      +'<div style="font-weight:800;margin-bottom:8px">🎨 Party preferences</div>'
+      +'<label style="font-size:.8rem;color:#6b6157">Theme</label><input type="text" id="prTheme" value="'+esc((p.prefs||{}).theme||"")+'" placeholder="e.g. Two Wild" style="width:100%;padding:8px 10px;border:1.5px solid #e7ddd0;border-radius:9px;margin-bottom:8px">'
+      +'<label style="font-size:.8rem;color:#6b6157">Color palette</label><input type="text" id="prColors" value="'+esc((p.prefs||{}).colors||"")+'" placeholder="e.g. pink, sage, white, gold, light pink" style="width:100%;padding:8px 10px;border:1.5px solid #e7ddd0;border-radius:9px;margin-bottom:8px">'
+      +'<label style="font-size:.8rem;color:#6b6157">Food</label><input type="text" id="prFood" value="'+esc((p.prefs||{}).food||"")+'" placeholder="e.g. 2 large pepperoni pizzas" style="width:100%;padding:8px 10px;border:1.5px solid #e7ddd0;border-radius:9px">'
+    +'</div>'
+    +'<div style="border-top:1px dashed #e2d9cc;margin-top:14px;padding-top:12px">'
+      +'<div style="font-weight:800;margin-bottom:8px">📝 Staff notes <span style="font-weight:400;color:#6b6157;font-size:.85rem">(internal — for you & staff)</span></div>'
+      +'<textarea id="stNotes" rows="3" placeholder="Any notes for your team…" style="width:100%;padding:9px 11px;border:1.5px solid #e7ddd0;border-radius:9px">'+esc(p.staffNotes||"")+'</textarea>'
+    +'</div>'
+    +'<div class="note" id="saveNote" style="text-align:center;margin-top:10px"></div>'
+    +'<button id="sendConfirm" style="width:100%;margin-top:10px" onclick="sendConfirm()">📩 Send confirmation email to customer</button>'
+    +(p.confirmSentAt?'<div class="note" style="text-align:center;color:#4d7848;margin-top:6px">✓ Confirmation sent '+new Date(p.confirmSentAt).toLocaleString()+'</div>':'')
+    +'<div class="note" id="confNote" style="text-align:center;margin-top:6px"></div>'
+    +'</div>';
+  paint();
+  ["compTog","depPaid","prTheme","prColors","prFood","stNotes"].forEach(function(id){ var e=$("#"+id); if(e){ e.addEventListener(e.type==="checkbox"?"change":"input", function(){ if(id==="compTog") paint(); scheduleSave(); }); } });
+}
+
+window.bump=function(which,delta){
+  var p=PARTIES[SEL];
+  if(which==="kids") p.headKids=Math.max(0,(p.headKids||0)+delta);
+  else p.headAdults=Math.max(0,(p.headAdults||0)+delta);
+  $("#vKids").textContent=p.headKids||0; $("#vAdults").textContent=p.headAdults||0;
+  paint(); scheduleSave();
+};
+
+function paint(){
+  var p=PARTIES[SEL];
+  var kOver=Math.max(0,(p.headKids||0)-p.kidsIncl), aOver=Math.max(0,(p.headAdults||0)-p.adultsIncl);
+  $("#capKids").textContent=(p.headKids||0)+" / "+p.kidsIncl+" included"+(kOver?"  (+"+kOver+" extra)":"");
+  $("#capAdults").textContent=(p.headAdults||0)+" / "+p.adultsIncl+" included"+(aOver?"  (+"+aOver+" extra)":"");
+  var charge=kOver*ADDC+aOver*ADDA;
+  var comp=($("#compTog")||{}).checked;
+  var box=$("#overBox");
+  if(comp){ box.className="ok"; box.textContent="Comped — no additional charge ✓"; }
+  else if(charge>0){
+    box.className="over";
+    box.innerHTML="Collect "+money(charge)+" at pickup<br><span style=\"font-weight:600;font-size:.85rem\">"+(kOver?kOver+" extra kid"+(kOver>1?"s":"")+" × "+money(ADDC):"")+(kOver&&aOver?" · ":"")+(aOver?aOver+" extra adult"+(aOver>1?"s":"")+" × "+money(ADDA):"")+"</span>";
+  } else { box.className="ok"; box.textContent="Within package — no additional charge ✓"; }
+}
+
+function scheduleSave(){
+  var note=$("#saveNote"); note.textContent="Saving…";
+  clearTimeout(SAVET);
+  SAVET=setTimeout(async function(){
+    var p=PARTIES[SEL];
+    p.comp=($("#compTog")||{}).checked||false;
+    p.depositPaid=Math.round((parseFloat(($("#depPaid")||{}).value)||0)*100);
+    p.prefs={theme:($("#prTheme")||{}).value||"",colors:($("#prColors")||{}).value||"",food:($("#prFood")||{}).value||""};
+    p.staffNotes=($("#stNotes")||{}).value||"";
+    try{
+      var r=await (await fetch("/api/headcount",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key:pin(),action:"set",date:p.date,partySlot:p.partySlot,kids:p.headKids||0,adults:p.headAdults||0,comp:p.comp,deposit:(parseFloat(($("#depPaid")||{}).value)||0),prefs:p.prefs,notes:p.staffNotes})})).json();
+      note.textContent=r.ok?"Saved ✓":(r.error||"Couldn't save");
+    }catch(e){ note.textContent="Couldn't save (offline?)"; }
+  },600);
+}
+
+window.sendConfirm=async function(){
+  var p=PARTIES[SEL]; if(!p) return;
+  var cn=$("#confNote"); var btn=$("#sendConfirm");
+  if(!confirm("Send the confirmation email to the customer now?")) return;
+  btn.disabled=true; cn.textContent="Sending…";
+  try{
+    var r=await (await fetch("/api/headcount",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key:pin(),action:"confirm-email",date:p.date,partySlot:p.partySlot})})).json();
+    if(r.ok){ cn.style.color="#4d7848"; cn.textContent="✓ Sent to "+r.sentTo; p.confirmSentAt=new Date().toISOString(); }
+    else { cn.style.color="#c0392b"; cn.textContent=r.error||"Couldn't send."; }
+  }catch(e){ cn.style.color="#c0392b"; cn.textContent="Couldn't send (offline?)"; }
+  btn.disabled=false;
+};
+</script>
+</body>
+</html>

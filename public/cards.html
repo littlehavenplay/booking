@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gift &amp; Loyalty Cards — Little Haven Play Studio</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,400&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{--cream:#faf7f3;--blush-pale:#fdf1ec;--rose:#c97d76;--rose-deep:#a85f59;--sage:#7ba676;--sage-dark:#4d7848;--slate:#5c6470;--charcoal:#2a2622;--taupe:#aea298;--mint:#dff0e6;}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Nunito',sans-serif;color:var(--charcoal);line-height:1.7;
+    background:radial-gradient(1100px 480px at 110% -8%,var(--blush-pale) 0,transparent 55%),var(--cream);min-height:100vh}
+  .topbar{position:sticky;top:0;z-index:10;background:rgba(250,247,243,.95);backdrop-filter:blur(16px);border-bottom:1px solid rgba(0,0,0,.05);display:flex;align-items:center;justify-content:space-between;padding:.85rem 1.4rem}
+  .topbar .name{font-family:'Cormorant Garamond',serif;font-weight:500;font-size:1.25rem;text-decoration:none;color:inherit}
+  .topbar .name em{font-style:italic;color:var(--rose)}
+  .topbar a.back{font-size:.66rem;letter-spacing:.09em;text-transform:uppercase;color:var(--slate);text-decoration:none;font-weight:700}
+  .wrap{max-width:680px;margin:0 auto;padding:30px 20px 70px}
+  h1{font-family:'Cormorant Garamond',serif;font-weight:300;font-size:clamp(2rem,6vw,2.7rem);text-align:center}
+  .sub{text-align:center;color:var(--slate);font-weight:600;font-size:.88rem;margin:4px 0 26px}
+  .hero{width:100%;border-radius:20px;box-shadow:0 4px 24px rgba(0,0,0,.1);display:block;margin-bottom:20px}
+  .cta{display:block;text-align:center;background:var(--rose);color:#fff;text-decoration:none;font-weight:800;font-size:.82rem;letter-spacing:.07em;text-transform:uppercase;padding:16px;border-radius:30px;box-shadow:0 8px 20px -8px var(--rose-deep)}
+  .cta:hover{background:var(--rose-deep)}
+  .cta.sage{background:var(--sage)}.cta.sage:hover{background:var(--sage-dark)}
+  .card{background:#fff;border:1px solid rgba(0,0,0,.05);border-radius:20px;padding:22px 24px;box-shadow:0 4px 24px rgba(0,0,0,.07);margin:18px 0}
+  h2{font-family:'Cormorant Garamond',serif;font-weight:500;font-size:1.6rem;color:var(--rose-deep);margin-bottom:14px;display:flex;align-items:center;gap:.5rem}
+  ul{margin:0;padding-left:20px;color:var(--slate)}li{margin-bottom:7px}
+  .q{font-weight:800;color:var(--charcoal);margin:16px 0 2px}
+  p{color:var(--slate);margin-bottom:6px}
+  .verify{background:var(--blush-pale);border-radius:12px;padding:14px 16px;font-weight:700;color:var(--rose-deep);font-size:.88rem;margin-bottom:18px}
+  .steps{list-style:none;padding:0;margin:10px 0 0;counter-reset:s}
+  .steps li{counter-increment:s;padding-left:38px;position:relative;margin-bottom:10px;color:var(--slate)}
+  .steps li::before{content:counter(s);position:absolute;left:0;top:0;width:26px;height:26px;border-radius:50%;background:var(--mint);color:var(--sage-dark);font-weight:800;display:flex;align-items:center;justify-content:center;font-size:.85rem}
+  .divider{text-align:center;color:var(--taupe);font-weight:700;letter-spacing:.1em;text-transform:uppercase;font-size:.7rem;margin:34px 0 6px}
+</style>
+<link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#7a6253"><link rel="apple-touch-icon" href="/assets/icons/apple-touch-icon.png"><link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32.png"></head>
+<body>
+<div class="topbar"><a class="name" href="/index.html">Little <em>Haven</em> Play Studio</a><a class="back" href="/index.html">← Back to site</a></div>
+<div class="wrap">
+  <h1>Gift &amp; Loyalty Cards</h1>
+  <div class="sub">Give the gift of play — and get rewarded for coming back 🌿</div>
+
+  <div class="divider">🎈 Loyalty Punch Card</div>
+  <div class="card">
+    <h2>🎈 Free Loyalty Punch Card</h2>
+    <p>Our punch card is <b>free</b> and rewards your regular visits: collect <b>7 open-play visits and your 8th visit is free!</b></p>
+    <ul class="steps">
+      <li>Book an open-play session online and check in — your child's card is created automatically.</li>
+      <li>Each visit earns a punch. We track it by your child's name, so there's no card to carry or lose.</li>
+      <li>After 7 punches, your 8th open-play visit is on us — we'll email you a free-visit code.</li>
+    </ul>
+    <p style="margin-top:14px"><a class="cta sage" href="/book.html" target="_blank">Book Open Play &amp; Start Earning →</a></p>
+    <p style="text-align:center;margin-top:12px"><a href="/punchcard-faq.html" style="color:var(--rose-deep);font-weight:700;text-decoration:none">Read the punch card FAQ →</a></p>
+  </div>
+
+  <div class="divider">🎁 E-Gift Cards</div>
+  <img class="hero" src="/assets/gift-card.png" alt="Little Haven Play Studio E-Gift Card">
+  <div class="verify">🎁 Choose your preferred gift card amount on the Square checkout page. Please double-check your recipient's email before submitting so it's delivered correctly.</div>
+  <a class="cta" id="buyBtn" href="#">Buy an E-Gift Card →</a>
+
+  <div class="card">
+    <h2>🎁 Gift Card Policy</h2>
+    <ul>
+      <li>E-Gift Cards are delivered by email to the recipient address entered at checkout.</li>
+      <li>Please verify the recipient's email address before submitting — we are not responsible for gift cards sent to an incorrect address.</li>
+      <li>Gift cards never expire and carry no fees.</li>
+      <li>Gift cards are non-refundable and cannot be redeemed for cash, except where required by law.</li>
+      <li>Gift cards may be used toward open play admissions and bookings online, and for snacks and beverages in studio.</li>
+      <li>Treat your gift card like cash; lost or stolen cards cannot be replaced.</li>
+      <li>Your remaining balance is shown at checkout each time you use your card.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>Gift Card FAQ</h2>
+    <p class="q">How do I buy a gift card?</p>
+    <p>Tap "Buy an E-Gift Card" above, choose your amount on the Square checkout page, enter the recipient's details, and pay securely. The card is emailed to your recipient.</p>
+    <p class="q">Do gift cards expire?</p>
+    <p>No. Little Haven gift cards never expire.</p>
+    <p class="q">How do I redeem it when booking online?</p>
+    <p>At checkout, choose "Using a gift card? Yes," enter your code, and the balance is applied to your total. Any remainder is charged to your card.</p>
+    <p class="q">How do I check my balance?</p>
+    <p>Your remaining balance shows at checkout when you enter your code, and in the confirmation after each use.</p>
+    <p class="q">What if I sent it to the wrong email?</p>
+    <p>Please verify the recipient's email before submitting. Contact us right away if you notice an error and we'll do our best to help.</p>
+  </div>
+</div>
+<script>
+  (async()=>{
+    try{
+      const cfg=await (await fetch("/api/config")).json();
+      if(cfg.giftCardUrl){ document.getElementById("buyBtn").href=cfg.giftCardUrl; }
+      else { document.getElementById("buyBtn").addEventListener("click",e=>{e.preventDefault();alert("Gift card store link isn't set yet. Add GIFTCARD_URL in Netlify.");}); }
+    }catch(e){}
+  })();
+</script>
+<script>if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("/sw.js").catch(function(){});});}</script></body>
+</html>
