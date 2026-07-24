@@ -161,11 +161,12 @@ export default async (req) => {
 
   if (action === "punch") {
     const direct = normalizeCode(b.code);
+    const waiverSigned = (b.waiverSigned || "").toString().trim();
     if (direct) {
       if (await isLegacyPassCode(direct)) return json({ error: "That's a legacy prepaid card — don't punch it here." }, 409);
       let exists = null; try { exists = await loyalty.get("card:" + direct, { type: "json" }); } catch {}
       if (!exists) return json({ error: "No loyalty card found for that code." }, 404);
-      const r = await addPunch(loyalty, { code: direct });
+      const r = await addPunch(loyalty, { code: direct, waiverSigned });
       if (r.error) return json({ error: "Couldn't save the punch. Try again." }, 502);
       return json({ ok: true, ...r,
         message: r.rewardIssued
@@ -178,7 +179,7 @@ export default async (req) => {
     if (!first || !last) return json({ error: "Enter the child's first and last name." }, 400);
     if (!phone4)        return json({ error: "Enter the parent's phone (at least the last 4 digits)." }, 400);
     const email = (b.email || "").toString().slice(0, 160).trim();
-    const r = await addPunch(loyalty, { first, last, phone4, email });
+    const r = await addPunch(loyalty, { first, last, phone4, email, waiverSigned });
     if (r.error) return json({ error: "Couldn't save the punch. Try again." }, 502);
     return json({ ok: true, ...r,
       message: r.rewardIssued
@@ -208,6 +209,7 @@ export default async (req) => {
   if (action === "family-punch") {
     const email = (b.email || "").toString().slice(0, 160).trim();
     const phone4 = last4(b.phone);
+    const waiverSigned = (b.waiverSigned || "").toString().trim();
     if (!phone4) return json({ error: "Enter the parent's phone (at least the last 4 digits)." }, 400);
     const kids = (Array.isArray(b.children) ? b.children : [])
       .map(c => ({ first: (c && c.first || "").toString().trim(), last: (c && c.last || "").toString().trim() }))
@@ -216,7 +218,7 @@ export default async (req) => {
     if (!kids.length) return json({ error: "Enter at least one child's first and last name." }, 400);
     const results = [];
     for (const c of kids) {
-      const r = await addPunch(loyalty, { first: c.first, last: c.last, phone4, email, suppressEmail: true });
+      const r = await addPunch(loyalty, { first: c.first, last: c.last, phone4, email, suppressEmail: true, waiverSigned });
       if (!r.error) results.push(r);
     }
     if (!results.length) return json({ error: "Couldn't save the punches. Try again." }, 502);

@@ -91,7 +91,7 @@ export async function issueCode(loyalty, { first, last, phone4, email, dob, supp
 
 // Add ONE punch to a child's card. Creates the card if new (welcome email), and
 // on the 7th punch issues a free-visit reward code (reward email). Returns details.
-export async function addPunch(loyalty, { first, last, phone4, email, code: directCode, suppressEmail }) {
+export async function addPunch(loyalty, { first, last, phone4, email, code: directCode, suppressEmail, waiverSigned }) {
   let code, existing;
   if (directCode) {
     code = normalizeCode(directCode);
@@ -105,6 +105,15 @@ export async function addPunch(loyalty, { first, last, phone4, email, code: dire
     rec = { code, childName: cleanName(first, last), phone4, punches: 0, rewardsEarned: 0, totalVisits: 0,
       createdAt: new Date().toISOString(), history: [], buyerEmail: (email || "").trim() };
   } else if (email && !rec.buyerEmail) { rec.buyerEmail = email; }
+
+  // Saved on the SAME record write as the punch, whether the card is brand new or
+  // already existed — avoids the old two-step flow where a separate waiver save
+  // could run before a freshly-created card was findable yet.
+  if (waiverSigned && /^\d{4}-\d{2}-\d{2}$/.test(waiverSigned)) {
+    rec.waiverSigned = waiverSigned;
+    const exp = new Date(waiverSigned + "T12:00:00"); exp.setDate(exp.getDate() + 365);
+    rec.waiverExpiry = exp.toISOString().slice(0, 10);
+  }
 
   rec.punches = (rec.punches || 0) + 1;
   rec.totalVisits = (rec.totalVisits || 0) + 1;
@@ -133,7 +142,8 @@ export async function addPunch(loyalty, { first, last, phone4, email, code: dire
   try { await loyalty.setJSON("card:" + code, rec); } catch { return { error: true }; }
   return { code, childName: rec.childName, isNew, punches: rec.punches, needed: PUNCHES_FOR_REWARD,
     rewardIssued: !!rewardIssued, rewardCode: rewardIssued ? rewardIssued.rewardCode : null,
-    rewardExpiry: rewardIssued ? rewardIssued.expiry : null };
+    rewardExpiry: rewardIssued ? rewardIssued.expiry : null,
+    waiverSigned: rec.waiverSigned || null, waiverExpiry: rec.waiverExpiry || null };
 }
 
 async function uniqueReward(store) {

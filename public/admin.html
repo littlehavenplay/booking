@@ -132,6 +132,11 @@
       <div><label>Parent phone (for the code)</label><input type="tel" id="loPhone" placeholder="e.g. 7601234"></div>
       <div><label>Email (for their code, optional)</label><input type="email" id="loEmail" placeholder="parent@email.com"></div>
     </div>
+    <div style="background:#fdf1ec;border:1px solid #f0dcd2;border-radius:10px;padding:10px 12px;margin:10px 0">
+      <label style="display:block;font-weight:700;font-size:.82rem;color:var(--charcoal);margin-bottom:6px">📋 Waiver signed date <span style="font-weight:600;color:var(--taupe)">(optional — expires 365 days later)</span></label>
+      <input type="date" id="loWaiverDate">
+      <p class="note" style="margin-top:6px">If they signed on WaiverMaster today, set today's date here to save it with their card — no need to enter it separately below.</p>
+    </div>
     <button id="loPunch">Add a punch</button>
     <div class="out" id="loOut"></div>
     <div style="border-top:1px dashed #e2d9cc;margin-top:12px;padding-top:12px">
@@ -949,7 +954,7 @@ $("#loAddKid").onclick=()=>{
 };
 $("#loPunch").onclick=async()=>{
   const key=$("#key").value.trim(), out=$("#loOut"); out.style.display="block";
-  const phone=$("#loPhone").value.trim(), email=$("#loEmail").value.trim();
+  const phone=$("#loPhone").value.trim(), email=$("#loEmail").value.trim(), waiverSigned=$("#loWaiverDate").value;
   if(!key){ out.className="out err"; out.textContent="Enter your admin key (top of page)."; return; }
   const kids=[...document.querySelectorAll("#loKids .lo-kid")].map(function(r){return {first:r.querySelector(".lokF").value.trim(), last:r.querySelector(".lokL").value.trim()};}).filter(function(c){return c.first&&c.last;});
   if(!kids.length){ out.className="out err"; out.textContent="Enter at least one child's first and last name."; return; }
@@ -957,14 +962,15 @@ $("#loPunch").onclick=async()=>{
   $("#loPunch").disabled=true; $("#loPunch").textContent="Punching…";
   try{
     let r;
+    const waiverLine=waiverSigned?'<br>📋 Waiver signed date saved (expires '+(function(){var d=new Date(waiverSigned+"T12:00:00");d.setDate(d.getDate()+365);return d.toISOString().slice(0,10);})()+').':'';
     if(kids.length===1){
-      r=await (await fetch("/api/loyalty",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key,action:"punch",childFirst:kids[0].first,childLast:kids[0].last,phone,email})})).json();
-      if(r.ok){ if(r.rewardIssued){ out.className="out ok"; out.innerHTML='🎉 <b>'+esc(r.childName)+'</b> earned a FREE visit! Code <b>'+esc(r.rewardCode)+'</b> emailed. Card reset to 0/7.'; } else { out.className="out ok"; out.innerHTML='✅ Punched <b>'+esc(r.childName)+'</b> ('+esc(r.code)+') → <b>'+r.punches+'/'+r.needed+'</b>'+(r.isNew?' · new card created'+(email?', welcome email sent':''):''); } }
+      r=await (await fetch("/api/loyalty",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key,action:"punch",childFirst:kids[0].first,childLast:kids[0].last,phone,email,waiverSigned})})).json();
+      if(r.ok){ if(r.rewardIssued){ out.className="out ok"; out.innerHTML='🎉 <b>'+esc(r.childName)+'</b> earned a FREE visit! Code <b>'+esc(r.rewardCode)+'</b> emailed. Card reset to 0/7.'+waiverLine; } else { out.className="out ok"; out.innerHTML='✅ Punched <b>'+esc(r.childName)+'</b> ('+esc(r.code)+') → <b>'+r.punches+'/'+r.needed+'</b>'+(r.isNew?' · new card created'+(email?', welcome email sent':''):'')+waiverLine; } }
     } else {
-      r=await (await fetch("/api/loyalty",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key,action:"family-punch",children:kids,phone,email})})).json();
-      if(r.ok){ out.className="out ok"; out.innerHTML='✅ '+esc(r.message)+'<br>'+r.results.map(function(x){return '• <b>'+esc(x.childName)+'</b> ('+esc(x.code)+') '+(x.rewardIssued?'🎉 FREE visit! '+esc(x.rewardCode):x.punches+'/'+x.needed);}).join("<br>"); }
+      r=await (await fetch("/api/loyalty",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key,action:"family-punch",children:kids,phone,email,waiverSigned})})).json();
+      if(r.ok){ out.className="out ok"; out.innerHTML='✅ '+esc(r.message)+'<br>'+r.results.map(function(x){return '• <b>'+esc(x.childName)+'</b> ('+esc(x.code)+') '+(x.rewardIssued?'🎉 FREE visit! '+esc(x.rewardCode):x.punches+'/'+x.needed);}).join("<br>")+waiverLine; }
     }
-    if(r.ok){ document.querySelectorAll("#loKids .lo-kid").forEach(function(el,i){ if(i===0){ el.querySelector(".lokF").value="";el.querySelector(".lokL").value="";} else el.remove(); }); $("#loPhone").value="";$("#loEmail").value=""; }
+    if(r.ok){ document.querySelectorAll("#loKids .lo-kid").forEach(function(el,i){ if(i===0){ el.querySelector(".lokF").value="";el.querySelector(".lokL").value="";} else el.remove(); }); $("#loPhone").value="";$("#loEmail").value="";$("#loWaiverDate").value=""; }
     else { out.className="out err"; out.textContent=r.error||"Couldn't add a punch."; }
   }catch(e){ out.className="out err"; out.textContent="Network error."; }
   $("#loPunch").disabled=false; $("#loPunch").textContent="Add a punch";
@@ -1219,7 +1225,8 @@ function renderLoyaltyList(){
   keys.forEach(function(k){
     var kids=fams[k], fam=kids[0], isFam=!!fam.phone4;
     var famName=(fam.childName||"").trim().split(/\s+/).slice(-1)[0]||"\u2014";
-    var waiverInput='<input type="date" value="'+(fam.waiverSigned||"")+'" onchange="setWaiver('+(isFam?"\''+esc(fam.phone4)+'\',null":"null,\''+esc(fam.code)+'\'")+',this.value)" title="Waiver signed date (expires 365 days later)" style="border:1px solid #e0d5c6;border-radius:7px;padding:3px 6px;font-size:.75rem">';
+    var waiverInput='<span style="display:inline-flex;gap:5px;align-items:center"><input type="date" value="'+(fam.waiverSigned||"")+'" title="Waiver signed date (expires 365 days later)" style="border:1px solid #e0d5c6;border-radius:7px;padding:3px 6px;font-size:.75rem">'
+      +'<button type="button" onclick="setWaiver('+(isFam?"\''+esc(fam.phone4)+'\',null":"null,\''+esc(fam.code)+'\'")+',this.previousElementSibling.value)" style="border:none;background:#e7f0df;color:#4d6b3e;border-radius:6px;cursor:pointer;font-weight:800;font-size:.7rem;padding:4px 8px">\uD83D\uDCBE Save</button></span>';
     html+='<div style="border:1px solid #e7ddd0;border-radius:12px;margin-bottom:10px;overflow:hidden">'
       +'<div style="background:#faf5ef;padding:8px 12px;display:flex;flex-wrap:wrap;align-items:center;gap:8px">'
         +'<b>'+esc(famName)+(kids.length>1?" family":"")+'</b>'
