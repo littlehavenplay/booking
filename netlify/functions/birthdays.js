@@ -1,8 +1,9 @@
 // POST /api/birthdays  (admin key or staff PIN)
 //   { key, action:"list", month:"09" | "all" }  → children with birthdays that month + parent contact
-//   { key, action:"setdob", code, dob }          → backfill/edit a birth date on an existing loyalty card
 //   { key, action:"send", code }                 → generate + email that child's birthday gift code now
 //   { key, action:"remove", code }                → forget a child's birthday (keeps the loyalty card + punch history)
+// To set/edit a birth date, use POST /api/loyalty { action:"adjust", code, dob } instead —
+// that's the one place all loyalty-card edits (name, dob, punches) now live.
 //
 // Source of truth: the loyalty card itself (card.dob). Birthday gift codes reuse the
 // free-visit reward mechanism (one free child admission). They are valid on the
@@ -49,18 +50,6 @@ export default async (req) => {
     // group every 1st-of-the-month before every 2nd, regardless of which month.
     rows.sort((a, c) => ((a.month || "") + (a.day || "")).localeCompare((c.month || "") + (c.day || "")));
     return json({ ok: true, month: all ? "all" : month, rows, count: rows.length });
-  }
-
-  if (action === "setdob") {
-    const code = normalizeCode(b.code);
-    const dob = (b.dob || "").toString().trim();
-    if (!code) return json({ error: "Missing loyalty code." }, 400);
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(dob)) return json({ error: "Enter the birth date as YYYY-MM-DD." }, 400);
-    let card = null; try { card = await loyalty.get("card:" + code, { type: "json" }); } catch {}
-    if (!card) return json({ error: `No loyalty card found for ${code}.` }, 404);
-    card.dob = dob;
-    try { await loyalty.setJSON("card:" + code, card); } catch { return json({ error: "Couldn't save. Try again." }, 502); }
-    return json({ ok: true, message: `Birth date saved for ${card.childName || code}.` });
   }
 
   if (action === "remove") {

@@ -1,8 +1,8 @@
 // POST /api/loyalty  — staff/admin loyalty punch card tool + public reward check.
 //   { key, action:"punch",  childFirst, childLast, phone, email? }
 //   { key, action:"lookup", code | childFirst+childLast+phone }
-//   { key, action:"adjust", code | childFirst+childLast+phone, setPunches }
-//   { key, action:"setdob", code, dob }            → backfill/edit a birth date on a card
+//   { key, action:"adjust", code | childFirst+childLast+phone, editFirst?, editLast?, dob?, setPunches? }
+//     — the one edit endpoint: rename, set/correct a birth date, and/or set punches, any combination
 //   { key, action:"list" }
 //   { action:"reward-check", rewardCode }          (public — booking page)
 //   { action:"code-check", code }                  (public — booking page, auto-fill by loyalty code)
@@ -108,18 +108,9 @@ export default async (req) => {
       lastRewardCode: rec.lastRewardCode || null, createdAt: rec.createdAt });
   }
 
-  if (action === "setdob") {
-    const direct = normalizeCode(b.code);
-    const dob = (b.dob || "").toString().trim();
-    if (!direct) return json({ error: "Enter the loyalty code." }, 400);
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(dob)) return json({ error: "Enter the birth date as YYYY-MM-DD." }, 400);
-    let rec = null; try { rec = await loyalty.get("card:" + direct, { type: "json" }); } catch { rec = null; }
-    if (!rec) return json({ error: `No loyalty card found for ${direct}.` }, 404);
-    rec.dob = dob;
-    try { await loyalty.setJSON("card:" + direct, rec); } catch { return json({ error: "Couldn't save. Try again." }, 502); }
-    return json({ ok: true, message: `Birth date saved for ${rec.childName || direct}.` });
-  }
-
+  // "adjust" is the one unified edit endpoint: given a code (or name+phone fallback),
+  // it can rename the child, set/correct their birth date, and/or set their punch
+  // count — any combination, in a single save. Replaces the old separate setdob action.
   if (action === "adjust") {
     const direct = normalizeCode(b.code);
     if (direct && await isLegacyPassCode(direct)) {
@@ -138,18 +129,34 @@ export default async (req) => {
         return json({ error: "Enter the code (or child name + phone) to adjust." }, 400);
       }
     }
-    const setP = parseInt(b.setPunches, 10);
-    if (!Number.isFinite(setP) || setP < 0 || setP > 7) return json({ error: "Set punches to a number 0-7." }, 400);
+
+    const hasSetPunches = b.setPunches !== undefined && b.setPunches !== null && b.setPunches !== "";
+    let setP = null;
+    if (hasSetPunches) {
+      setP = parseInt(b.setPunches, 10);
+      if (!Number.isFinite(setP) || setP < 0 || setP > 7) return json({ error: "Set punches to a number 0-7." }, 400);
+    }
+    const renameFirst = (b.editFirst || "").toString().trim(), renameLast = (b.editLast || "").toString().trim();
+    const wantsRename = renameFirst || renameLast;
+    const dob = (b.dob || "").toString().trim();
+    if (dob && !/^\d{4}-\d{2}-\d{2}$/.test(dob)) return json({ error: "Enter the birth date as YYYY-MM-DD." }, 400);
+
     if (!rec) {
       rec = { code, childName: cleanName(b.childFirst, b.childLast) || (b.childName || ""), phone4: last4(b.phone),
         punches: 0, rewardsEarned: 0, totalVisits: 0, createdAt: new Date().toISOString(), history: [],
         buyerEmail: (b.email || "").toString().trim() };
     }
-    rec.punches = setP;
     rec.history = Array.isArray(rec.history) ? rec.history : [];
-    rec.history.push({ at: new Date().toISOString(), action: "adjusted", to: setP });
+    if (wantsRename) {
+      const before = rec.childName;
+      rec.childName = cleanName(renameFirst || (before || "").split(" ")[0], renameLast || (before || "").split(" ").slice(1).join(" "));
+      rec.history.push({ at: new Date().toISOString(), action: "renamed", from: before, to: rec.childName });
+    }
+    if (dob) { rec.dob = dob; rec.history.push({ at: new Date().toISOString(), action: "dob-set", to: dob }); }
+    if (hasSetPunches) { rec.punches = setP; rec.history.push({ at: new Date().toISOString(), action: "adjusted", to: setP }); }
+
     try { await loyalty.setJSON("card:" + code, rec); } catch { return json({ error: "Couldn't update the card." }, 502); }
-    return json({ ok: true, adjusted: true, code, childName: rec.childName, punches: rec.punches, needed: PUNCHES_FOR_REWARD });
+    return json({ ok: true, adjusted: true, code, childName: rec.childName, dob: rec.dob || "", punches: rec.punches, needed: PUNCHES_FOR_REWARD });
   }
 
   if (action === "punch") {
