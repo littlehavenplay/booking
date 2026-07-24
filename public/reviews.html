@@ -47,6 +47,7 @@
   .gbadge .num{font-size:1.15rem;color:var(--charcoal);}
   .gbadge .cnt{color:var(--slate);font-weight:700;font-size:.9rem;}
   .gbadge .glogo{font-weight:800;color:#4285F4;}
+  .gbadge.yelpbadge .glogo{font-weight:800;color:#d32323;}
   .gallery-wrap{max-width:1040px;margin:26px auto 0;padding:0 16px;}
   .gallery{columns:2;column-gap:16px;}
   .gallery img{width:100%;display:block;border-radius:14px;box-shadow:var(--shadow);margin:0 0 16px;break-inside:avoid;border:1px solid rgba(0,0,0,.04);cursor:pointer;}
@@ -73,6 +74,15 @@
 </div>
 <div class="gallery-wrap">
   <div class="gallery" id="gallery"></div>
+</div>
+<div class="wrap" style="padding-top:0;padding-bottom:0" id="yelpSection">
+  <h2 class="sechead">On Yelp too 🟨</h2>
+  <a class="gbadge yelpbadge" href="https://www.yelp.com/biz/little-haven-play-studio-yucca-valley" target="_blank" rel="noopener">
+    <span class="gstars" id="rvYelpStars" style="color:#d32323">★★★★★</span><span class="num" id="rvYelpAvg">5.0</span><span class="cnt">· <span class="glogo">Yelp</span> · <span id="rvYelpCount">3 reviews</span></span>
+  </a>
+</div>
+<div class="gallery-wrap" id="yelpGalleryWrap" style="display:none">
+  <div class="gallery" id="yelpGallery"></div>
 </div>
 <div id="rvLightbox" role="dialog" aria-modal="true" aria-label="Enlarged photo"><img id="rvLightboxImg" src="" alt=""><button id="rvLightboxClose" aria-label="Close">×</button></div>
 <div class="wrap" style="padding-top:0">
@@ -106,36 +116,48 @@
 </div>
 <script>
 (function(){
-  var g=document.getElementById("gallery"); if(!g) return;
+  var g=document.getElementById("gallery"), yg=document.getElementById("yelpGallery");
   var lb=document.getElementById("rvLightbox"), lbImg=document.getElementById("rvLightboxImg"), lbClose=document.getElementById("rvLightboxClose");
   function openLb(src,alt){ lbImg.src=src; lbImg.alt=alt||""; lb.classList.add("open"); document.body.style.overflow="hidden"; }
   function closeLb(){ lb.classList.remove("open"); lbImg.src=""; document.body.style.overflow=""; }
   if(lb){ lb.addEventListener("click",closeLb); lbImg.addEventListener("click",function(e){e.stopPropagation();}); lbClose.addEventListener("click",function(e){e.stopPropagation();closeLb();}); document.addEventListener("keydown",function(e){ if(e.key==="Escape"&&lb.classList.contains("open"))closeLb(); }); }
-  (async function(){
+  async function loadSet(set,host,altText){
+    if(!host) return;
     try{
-      var rr=await (await fetch("/api/site-photos?set=reviews")).json();
+      var rr=await (await fetch("/api/site-photos?set="+set)).json();
       (rr.photos||[]).forEach(function(p){
-        var im=document.createElement("img"); im.alt="Little Haven review"; im.loading="lazy"; im.src=p.src;
+        var im=document.createElement("img"); im.alt=altText; im.loading="lazy"; im.src=p.src;
         im.addEventListener("click",function(){ openLb(im.currentSrc||im.src, im.alt); });
-        g.appendChild(im);
+        host.appendChild(im);
       });
-    }catch(e){}
+      return (rr.photos||[]).length;
+    }catch(e){ return 0; }
+  }
+  loadSet("reviews",g,"Little Haven review");
+  (async function(){
+    var count=await loadSet("yelp",yg,"Little Haven Yelp review");
+    var wrap=document.getElementById("yelpGalleryWrap"), sec=document.getElementById("yelpSection");
+    if(count>0){ if(wrap) wrap.style.display=""; }
+    else { if(sec) sec.style.display="none"; }   // hide the whole Yelp section until photos are uploaded
   })();
 })();
 </script>
 <script>
 (async function(){
-  var elS=document.getElementById("rvStars"), elA=document.getElementById("rvAvg"), elC=document.getElementById("rvCount");
-  if(!elS&&!elA&&!elC) return;
-  try{
-    var rr=await (await fetch("/api/review-rating")).json();
-    if(rr&&rr.ok){
-      var full=Math.max(0,Math.min(5,Math.round(Number(rr.stars)||5)));
-      if(elS) elS.textContent="★".repeat(full)+"☆".repeat(5-full);
-      if(elA) elA.textContent=(Number(rr.stars)||0).toFixed(1);
-      if(elC) elC.textContent=rr.count+" review"+(rr.count===1?"":"s");
-    }
-  }catch(e){}
+  async function loadBadge(platform,elS,elA,elC){
+    if(!elS&&!elA&&!elC) return;
+    try{
+      var rr=await (await fetch("/api/review-rating?platform="+platform)).json();
+      if(rr&&rr.ok){
+        var full=Math.max(0,Math.min(5,Math.round(Number(rr.stars)||5)));
+        if(elS) elS.textContent="★".repeat(full)+"☆".repeat(5-full);
+        if(elA) elA.textContent=(Number(rr.stars)||0).toFixed(1);
+        if(elC) elC.textContent=rr.count+" review"+(rr.count===1?"":"s");
+      }
+    }catch(e){}
+  }
+  loadBadge("google",document.getElementById("rvStars"),document.getElementById("rvAvg"),document.getElementById("rvCount"));
+  loadBadge("yelp",document.getElementById("rvYelpStars"),document.getElementById("rvYelpAvg"),document.getElementById("rvYelpCount"));
 })();
 </script>
 <script>if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("/sw.js").catch(function(){});});}</script>

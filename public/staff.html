@@ -70,8 +70,8 @@
   </div>
 
   <div id="app" class="hidden">
-<div id="secBar"><button id="secToggle" type="button">Sections ▾</button><div id="secMenu"><a href="#sec-schedule">Daily schedule</a><a href="#sec-walkin">Walk-in check-in</a><a href="#sec-punch">Punch-card check-in</a><a href="#sec-reschedule">Reschedule &amp; cancel</a><a href="#sec-cancel">Cancel a booking</a><a href="#sec-party">Session capacity &amp; blocking</a><a href="#sec-deposit">Record a party deposit</a><a href="#sec-redeem">Redeem a credit</a><a href="#sec-issue">Issue a credit</a><a href="#sec-code">Manage a code</a><a href="#sec-punchissue">Legacy card tools</a><a href="#sec-closures">Closures &amp; hours</a><a href="#sec-passes">Legacy prepaid holders</a><a href="#sec-parties">Party bookings</a><a href="/headcount.html">Head count</a><a href="#sec-weekly">Weekly hours</a><a href="#sec-seasonal">Seasonal hours</a><a href="#sec-discount">Discount codes</a><a href="#sec-news">News banner</a></div></div>
-<nav id="sideNav" aria-label="Sections"><div class="snav-title">Sections</div><a href="#sec-schedule">Daily schedule</a><a href="#sec-walkin">Walk-in check-in</a><a href="#sec-punch">Punch-card check-in</a><a href="#sec-reschedule">Reschedule &amp; cancel</a><a href="#sec-cancel">Cancel a booking</a><a href="#sec-party">Session capacity &amp; blocking</a><a href="#sec-deposit">Record a party deposit</a><a href="#sec-redeem">Redeem a credit</a><a href="#sec-issue">Issue a credit</a><a href="#sec-code">Manage a code</a><a href="#sec-punchissue">Legacy card tools</a><a href="#sec-closures">Closures &amp; hours</a><a href="#sec-passes">Legacy prepaid holders</a><a href="#sec-parties">Party bookings</a><a href="/headcount.html">Head count</a><a href="#sec-weekly">Weekly hours</a><a href="#sec-seasonal">Seasonal hours</a><a href="#sec-discount">Discount codes</a><a href="#sec-news">News banner</a><a href="#sec-rating">Reviews rating</a><a href="#sec-photos">Site photos</a><a href="#sec-birthdays">Birthday club</a></nav>
+<div id="secBar"><button id="secToggle" type="button">Sections ▾</button><div id="secMenu"><a href="#sec-schedule">Daily schedule</a><a href="#sec-walkin">Walk-in check-in</a><a href="#sec-punch">Punch-card check-in</a><a href="#sec-reschedule">Reschedule &amp; cancel</a><a href="#sec-party">Session capacity &amp; blocking</a><a href="#sec-deposit">Record a party deposit</a><a href="#sec-redeem">Redeem a credit</a><a href="#sec-issue">Issue a credit</a><a href="#sec-code">Manage a code</a><a href="#sec-punchissue">Legacy card tools</a><a href="#sec-closures">Closures &amp; hours</a><a href="#sec-passes">Legacy prepaid holders</a><a href="#sec-parties">Party bookings</a><a href="/headcount.html">Head count</a><a href="#sec-weekly">Weekly hours</a><a href="#sec-seasonal">Seasonal hours</a><a href="#sec-discount">Discount codes</a><a href="#sec-news">News banner</a></div></div>
+<nav id="sideNav" aria-label="Sections"><div class="snav-title">Sections</div><a href="#sec-schedule">Daily schedule</a><a href="#sec-walkin">Walk-in check-in</a><a href="#sec-punch">Punch-card check-in</a><a href="#sec-reschedule">Reschedule &amp; cancel</a><a href="#sec-party">Session capacity &amp; blocking</a><a href="#sec-deposit">Record a party deposit</a><a href="#sec-redeem">Redeem a credit</a><a href="#sec-issue">Issue a credit</a><a href="#sec-code">Manage a code</a><a href="#sec-punchissue">Legacy card tools</a><a href="#sec-closures">Closures &amp; hours</a><a href="#sec-passes">Legacy prepaid holders</a><a href="#sec-parties">Party bookings</a><a href="/headcount.html">Head count</a><a href="#sec-weekly">Weekly hours</a><a href="#sec-seasonal">Seasonal hours</a><a href="#sec-discount">Discount codes</a><a href="#sec-news">News banner</a><a href="#sec-rating">Reviews rating</a><a href="#sec-photos">Site photos</a><a href="#sec-birthdays">Birthday club</a></nav>
     <h1>Daily schedule</h1>
     <div class="card" id="sec-schedule">
       <label>Date</label>
@@ -197,7 +197,7 @@
   </div>
 
   <div class="card" id="sec-reschedule">
-      <h2>Reschedule a booking</h2>
+      <h2>Reschedule or cancel a booking</h2>
       <label>Original date</label>
       <div class="row"><div><input type="date" id="rsFromDate"></div><div style="flex:0 0 auto"><button id="rsLoad" style="margin-top:0">Load</button></div></div>
       <label>Which booking?</label>
@@ -244,7 +244,11 @@
           </div>
         </div>
         <label style="display:flex;align-items:center;gap:8px;text-transform:none;letter-spacing:0;color:var(--charcoal);font-weight:700"><input type="checkbox" id="cxNotify" style="width:auto" checked> Email the customer their credit / cancellation</label>
-        <button id="cxGo" style="background:#c4524b">Cancel &amp; refund</button>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button id="cxGo" style="background:#c4524b;margin:0">Cancel &amp; refund</button>
+          <button id="cxGoNoCredit" class="alt" style="margin:0">Just delete — no credit</button>
+        </div>
+        <p class="note" style="margin-top:6px">"Just delete" releases the spot with no credit issued and no punch returned — for test bookings, duplicates, or anything that shouldn't get a refund.</p>
         <div class="out" id="cxOut"></div>
       </div>
       <p class="note">Releases the original spot and books the new one. If the new session is full, you'll be asked to confirm.</p>
@@ -345,15 +349,6 @@
       <button id="issue">Generate code</button>
       <div class="out" id="issueOut"></div>
       <p class="note">Courtesy = single-use, forfeits leftover, online open play only. Standard = balance, usable online or in store. Expires on the date you select above (default 30 days). A copy is always sent to the studio email.</p>
-    </div>
-
-  <div class="card" id="sec-cancel">
-      <h2>Cancel / delete a booking</h2>
-      <label>Date</label>
-      <input type="date" id="cbDate">
-      <button id="cbLoad">Load bookings</button>
-      <div class="out" id="cbOut"></div>
-      <p class="note">Removes an open-play booking and frees the spot online — no credit, no reschedule.</p>
     </div>
 
   <div class="card" id="sec-code">
@@ -510,21 +505,31 @@
     </div>
 
   <div class="card" id="sec-rating">
-      <h2>⭐ Reviews rating badge</h2>
-      <p class="note">Controls the "★★★★★ 5.0 · Google · 10 reviews" badge on the homepage and Reviews page. Update this whenever the Google rating changes.</p>
-      <label>Star rating (0–5)</label>
-      <input type="number" id="rtStars" min="0" max="5" step="0.1" placeholder="5">
-      <label>Number of reviews</label>
-      <input type="number" id="rtCount" min="0" step="1" placeholder="10">
-      <button id="rtSave">Save rating</button>
+      <h2>⭐ Reviews rating badges</h2>
+      <p class="note">Controls the "★★★★★ 5.0 · Google · 10 reviews" and Yelp badges on the homepage and Reviews page. Update these whenever the actual rating changes.</p>
+      <label style="display:block;font-weight:800;font-size:.78rem;color:var(--charcoal);margin-top:4px">🔵 Google</label>
+      <div class="row">
+        <div><label>Star rating (0–5)</label><input type="number" id="rtStars" min="0" max="5" step="0.1" placeholder="5"></div>
+        <div><label>Number of reviews</label><input type="number" id="rtCount" min="0" step="1" placeholder="10"></div>
+      </div>
+      <button id="rtSave">Save Google rating</button>
       <div class="out" id="rtOut"></div>
+      <div style="border-top:1px dashed #e2d9cc;margin:14px 0 10px"></div>
+      <label style="display:block;font-weight:800;font-size:.78rem;color:var(--charcoal)">🟨 Yelp</label>
+      <div class="row">
+        <div><label>Star rating (0–5)</label><input type="number" id="rtYelpStars" min="0" max="5" step="0.1" placeholder="5"></div>
+        <div><label>Number of reviews</label><input type="number" id="rtYelpCount" min="0" step="1" placeholder="3"></div>
+      </div>
+      <button id="rtYelpSave">Save Yelp rating</button>
+      <div class="out" id="rtYelpOut"></div>
     </div>
 
   <div class="card" id="sec-photos">
       <h2>📸 Site photos</h2>
-      <p class="note">Upload, remove, or reorder photos shown on the website. <b>Reviews</b> appear in the homepage review carousel and on the Reviews page. <b>Interior</b> appear in the homepage "Take a Look Inside" slideshow. <b>Customer photos</b> are real photos families attached to Google reviews — they show in the smaller strip right under the review carousel. Photos marked <b>BUILT-IN</b> ship with the site — removing one hides it from the site rather than deleting it. Use ↑ / ↓ to reorder — changes save automatically.</p>
+      <p class="note">Upload, remove, or reorder photos shown on the website. <b>Reviews</b> and <b>Yelp reviews</b> appear in their own carousels on the Reviews page (and Reviews also shows on the homepage). <b>Interior</b> appear in the homepage "Take a Look Inside" slideshow. <b>Customer photos</b> are real photos families attached to Google reviews — they show in the smaller strip right under the review carousel. Photos marked <b>BUILT-IN</b> ship with the site — removing one hides it from the site rather than deleting it. Use ↑ / ↓ to reorder — changes save automatically.</p>
       <div style="display:flex;gap:8px;margin:6px 0 12px;flex-wrap:wrap">
         <button type="button" class="phTab" data-set="reviews">🎈 Reviews</button>
+        <button type="button" class="phTab alt" data-set="yelp">🟨 Yelp reviews</button>
         <button type="button" class="phTab alt" data-set="interior">🏠 Interior photos</button>
         <button type="button" class="phTab alt" data-set="customer">📸 Customer photos</button>
       </div>
@@ -1028,24 +1033,30 @@ if($("#phUpload")) $("#phUpload").onclick=function(){
   rd.readAsDataURL(f);
 };
 phLoad();
-async function rtLoad(){
-  try{ var r=await (await fetch("/api/review-rating")).json(); if(r&&r.ok){ if($("#rtStars"))$("#rtStars").value=r.stars; if($("#rtCount"))$("#rtCount").value=r.count; } }catch(e){}
+async function rtLoad(platform){
+  var starsEl=platform==="yelp"?"#rtYelpStars":"#rtStars", countEl=platform==="yelp"?"#rtYelpCount":"#rtCount";
+  try{ var r=await (await fetch("/api/review-rating?platform="+platform)).json(); if(r&&r.ok){ if($(starsEl))$(starsEl).value=r.stars; if($(countEl))$(countEl).value=r.count; } }catch(e){}
 }
-rtLoad();
-if($("#rtSave")) $("#rtSave").onclick=async function(){
-  var out=$("#rtOut"); out.style.display="block";
-  if(!PIN){ out.className="out err"; out.textContent="Enter your staff PIN first."; return; }
-  var stars=parseFloat($("#rtStars").value), count=parseInt($("#rtCount").value,10);
-  if(!isFinite(stars)||stars<0||stars>5){ out.className="out err"; out.textContent="Star rating must be between 0 and 5."; return; }
-  if(!isFinite(count)||count<0){ out.className="out err"; out.textContent="Enter a valid review count."; return; }
-  out.className="out"; out.textContent="Saving\u2026"; $("#rtSave").disabled=true;
-  try{
-    var r=await (await fetch("/api/review-rating",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key:PIN,action:"save",stars,count})})).json();
-    if(r.ok){ out.className="out ok"; out.textContent="Saved! The badge now shows "+r.stars.toFixed(1)+" stars \u00b7 "+r.count+" reviews."; }
-    else { out.className="out err"; out.textContent=r.error||"Couldn't save."; }
-  }catch(e){ out.className="out err"; out.textContent="Network error."; }
-  $("#rtSave").disabled=false;
-};
+function rtWire(platform){
+  var starsEl=platform==="yelp"?"#rtYelpStars":"#rtStars", countEl=platform==="yelp"?"#rtYelpCount":"#rtCount";
+  var btnEl=platform==="yelp"?"#rtYelpSave":"#rtSave", outEl=platform==="yelp"?"#rtYelpOut":"#rtOut";
+  var btn=$(btnEl); if(!btn) return;
+  btn.onclick=async function(){
+    var out=$(outEl); out.style.display="block";
+    if(!PIN){ out.className="out err"; out.textContent="Enter your staff PIN first."; return; }
+    var stars=parseFloat($(starsEl).value), count=parseInt($(countEl).value,10);
+    if(!isFinite(stars)||stars<0||stars>5){ out.className="out err"; out.textContent="Star rating must be between 0 and 5."; return; }
+    if(!isFinite(count)||count<0){ out.className="out err"; out.textContent="Enter a valid review count."; return; }
+    out.className="out"; out.textContent="Saving\u2026"; btn.disabled=true;
+    try{
+      var r=await (await fetch("/api/review-rating",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key:PIN,action:"save",stars,count,platform})})).json();
+      if(r.ok){ out.className="out ok"; out.textContent="Saved! The badge now shows "+r.stars.toFixed(1)+" stars \u00b7 "+r.count+" reviews."; }
+      else { out.className="out err"; out.textContent=r.error||"Couldn't save."; }
+    }catch(e){ out.className="out err"; out.textContent="Network error."; }
+    btn.disabled=false;
+  };
+}
+rtLoad("google"); rtLoad("yelp"); rtWire("google"); rtWire("yelp");
 $("#wiAdd").onclick=async()=>{
   const out=$("#wiOut"); out.className="out";
   const count=parseInt($("#wiCount").value,10)||0;
@@ -1273,29 +1284,6 @@ window.ledAct=async function(code,type,action){
 };
 $("#ledFilter").onchange=ledLoad;
 $("#ledSearch").oninput=ledRender;
-$("#cbLoad").onclick=async()=>{
-  const out=$("#cbOut"); out.className="out"; out.style.display="block";
-  const date=$("#cbDate").value;
-  if(!PIN){ out.className="out err"; out.textContent="Enter your staff PIN first."; return; }
-  if(!date){ out.className="out err"; out.textContent="Pick a date."; return; }
-  out.textContent="Loading…";
-  try{
-    const r=await (await fetch("/api/reschedule",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key:PIN,action:"list",date})})).json();
-    if(!r.ok){ out.className="out err"; out.textContent=r.error||"Couldn't load."; return; }
-    const bk=r.bookings||[];
-    if(!bk.length){ out.className="out"; out.innerHTML="No open-play bookings for that date."; return; }
-    out.className="out"; out.innerHTML=bk.map(function(e){
-      return '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid #eee4d6"><span><b>'+esc(e.name)+'</b> — '+esc(e.slotLabel)+' · '+e.children+' child'+(e.children===1?"":"ren")+(e.email?'<br><span style="font-size:.8rem;color:var(--slate)">'+esc(e.email)+'</span>':"")+'</span><button class="alt" style="margin:0;flex:0 0 auto" onclick="cbDelete(\''+date+'\',\''+e.slot+'\',\''+e.id+'\',\''+esc(e.name).replace(/[\x27\\]/g,"")+'\')">🗑️ Delete</button></div>';
-    }).join("");
-  }catch(e){ out.className="out err"; out.textContent="Network error."; }
-};
-window.cbDelete=async(date,slot,id,name)=>{
-  if(!confirm("Delete booking for "+name+"? This frees the spot and can't be undone. No credit is issued.")) return;
-  try{
-    const r=await (await fetch("/api/reschedule",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key:PIN,action:"cancel-booking",fromDate:date,fromSlot:slot,entryId:id})})).json();
-    if(r.ok){ $("#cbLoad").click(); } else { alert(r.error||"Couldn't delete."); }
-  }catch(e){ alert("Network error."); }
-};
 function renderLookup(r){
   if(!r.ok) return r.error||"Not found.";
   const m=c=>"$"+((c||0)/100).toFixed(2);
@@ -1448,24 +1436,37 @@ function cxRender(){
 }
 $("#rsSel").addEventListener("change",cxRender);
 $("#cxPartyMode").addEventListener("change",cxPartyModeSync);
-$("#cxGo").onclick=async()=>{
+async function doCancel(noCredit){
   const out=$("#cxOut"); out.className="out";
   const sel=$("#rsSel").value; const it=(sel!==""&&_rsItems[sel])?_rsItems[sel]:null;
   if(!it){ out.className="out err"; out.style.display=""; out.textContent="Pick a reservation above."; return; }
   const notify=$("#cxNotify").checked;
   let body;
   if(it.kind==="party"){
-    const mode=$("#cxPartyMode").value;
-    if(!confirm("Cancel this party and release the slot?"+(mode==="credit"?" A store credit will be issued.":(mode==="dollars"?" Remember to refund the deposit in Square.":"")))) return;
-    body={key:PIN,action:"cancel-party",fromDate:$("#rsFromDate").value,fromSlot:it.slot,mode,creditAmount:$("#cxCreditAmt").value,notify};
+    if(noCredit){
+      if(!confirm("Cancel this party and release the slot? No credit will be issued.")) return;
+      body={key:PIN,action:"cancel-party",fromDate:$("#rsFromDate").value,fromSlot:it.slot,mode:"none",notify};
+    } else {
+      const mode=$("#cxPartyMode").value;
+      if(!confirm("Cancel this party and release the slot?"+(mode==="credit"?" A store credit will be issued.":(mode==="dollars"?" Remember to refund the deposit in Square.":"")))) return;
+      body={key:PIN,action:"cancel-party",fromDate:$("#rsFromDate").value,fromSlot:it.slot,mode,creditAmount:$("#cxCreditAmt").value,notify};
+    }
   } else {
     const hasPunch=(it.passes||[]).length>0;
-    if(!confirm("Cancel this booking and release the spot? Credits / punch returns will be issued as shown.")) return;
-    body={key:PIN,action:"cancel-booking",fromDate:$("#rsFromDate").value,fromSlot:it.slot,entryId:it.id,
-      courtesyAmount:$("#cxCourtesy").value,standardAmount:$("#cxStandard").value,
-      restorePunches:hasPunch&&$("#cxPunch").checked,notify};
+    if(noCredit){
+      if(!confirm("Delete this booking and release the spot? No credit will be issued and no punch returned.")) return;
+      body={key:PIN,action:"cancel-booking",fromDate:$("#rsFromDate").value,fromSlot:it.slot,entryId:it.id,
+        courtesyAmount:0,standardAmount:0,restorePunches:false,notify};
+    } else {
+      if(!confirm("Cancel this booking and release the spot? Credits / punch returns will be issued as shown.")) return;
+      body={key:PIN,action:"cancel-booking",fromDate:$("#rsFromDate").value,fromSlot:it.slot,entryId:it.id,
+        courtesyAmount:$("#cxCourtesy").value,standardAmount:$("#cxStandard").value,
+        restorePunches:hasPunch&&$("#cxPunch").checked,notify};
+    }
   }
-  $("#cxGo").disabled=true; $("#cxGo").textContent="Working…";
+  const btn=noCredit?$("#cxGoNoCredit"):$("#cxGo");
+  const oldTxt=btn.textContent;
+  $("#cxGo").disabled=true; $("#cxGoNoCredit").disabled=true; btn.textContent="Working…";
   try{
     const r=await (await fetch("/api/reschedule",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)})).json();
     out.style.display="";
@@ -1475,8 +1476,10 @@ $("#cxGo").onclick=async()=>{
       $("#cxBooking").style.display="none"; $("#cxParty").style.display="none"; $("#cxInfo").textContent="Done. Pick another reservation if needed.";
     } else { out.className="out err"; out.textContent=r.error||"Couldn't cancel."; }
   }catch(e){ out.className="out err"; out.style.display=""; out.textContent="Network error."; }
-  $("#cxGo").disabled=false; $("#cxGo").textContent="Cancel & refund";
-};
+  $("#cxGo").disabled=false; $("#cxGoNoCredit").disabled=false; btn.textContent=oldTxt;
+}
+$("#cxGo").onclick=()=>doCancel(false);
+$("#cxGoNoCredit").onclick=()=>doCancel(true);
 
 function t2m(v){ if(!v) return NaN; var p=v.split(":"); return (+p[0])*60+(+(p[1]||0)); }
 function m2t(min){ if(min==null||isNaN(min)) return ""; var h=Math.floor(min/60),m=min%60; return String(h).padStart(2,"0")+":"+String(m).padStart(2,"0"); }
@@ -1607,7 +1610,7 @@ if($("#dcLook")) $("#dcLook").onclick=dcLookup;
 <script>
 (function(){
   var GROUPS=[
-    {t:"\u2600\uFE0F Today \u2014 Check-in & Walk-ins", open:true, c:"#7ba676", bg:"#eef4e8", ids:["sec-bookings","sec-schedule","sec-walkin","sec-punch","sec-cancel","sec-loyalty"]},
+    {t:"\u2600\uFE0F Today \u2014 Check-in & Walk-ins", open:true, c:"#7ba676", bg:"#eef4e8", ids:["sec-bookings","sec-schedule","sec-walkin","sec-punch","sec-loyalty"]},
     {t:"\uD83C\uDF88 Loyalty & Punch Cards", c:"#c97d76", bg:"#fdf1ec", ids:["sec-loyalty-list","sec-birthdays","sec-punchissue","sec-passes"]},
     {t:"\uD83D\uDCB3 Credits, Codes & Bookings", c:"#8a94c9", bg:"#eef0f9", ids:["sec-issue","sec-redeem","sec-code","sec-discount","sec-reschedule","sec-deposit"]},
     {t:"\uD83C\uDF89 Parties & Events", c:"#d9a441", bg:"#fbf3e1", ids:["sec-party","sec-parties","sec-events"]},

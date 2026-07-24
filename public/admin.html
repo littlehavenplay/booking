@@ -136,6 +136,9 @@
       <label style="display:block;font-weight:700;font-size:.82rem;color:var(--charcoal);margin-bottom:6px">📋 Waiver signed date <span style="font-weight:600;color:var(--taupe)">(optional — expires 365 days later)</span></label>
       <input type="date" id="loWaiverDate">
       <p class="note" style="margin-top:6px">If they signed on WaiverMaster today, set today's date here to save it with their card — no need to enter it separately below.</p>
+      <label style="display:block;font-weight:700;font-size:.82rem;color:var(--charcoal);margin:10px 0 6px">👥 Adult(s)/supervisor(s) who signed <span style="font-weight:600;color:var(--taupe)">(optional — comma-separate if more than one)</span></label>
+      <input type="text" id="loWaiverAdults" placeholder="e.g. Maria Gomez, John Gomez">
+      <p class="note" style="margin-top:6px">Every adult entering must be signed on WaiverMaster too — track who's already covered for this family here, so a new adult showing up later is easy to spot.</p>
     </div>
     <button id="loPunch">Add a punch</button>
     <div class="out" id="loOut"></div>
@@ -461,21 +464,31 @@
   </div>
 
   <div class="card" id="sec-rating">
-    <h2>⭐ Reviews rating badge</h2>
-    <p class="note">Controls the "★★★★★ 5.0 · Google · 10 reviews" badge on the homepage and Reviews page. Update this whenever your Google rating changes.</p>
-    <label>Star rating (0–5)</label>
-    <input type="number" id="rtStars" min="0" max="5" step="0.1" placeholder="5">
-    <label>Number of reviews</label>
-    <input type="number" id="rtCount" min="0" step="1" placeholder="10">
-    <button id="rtSave">Save rating</button>
+    <h2>⭐ Reviews rating badges</h2>
+    <p class="note">Controls the "★★★★★ 5.0 · Google · 10 reviews" and Yelp badges on the homepage and Reviews page. Update these whenever your actual rating changes.</p>
+    <label style="display:block;font-weight:800;font-size:.78rem;color:var(--charcoal);margin-top:4px">🔵 Google</label>
+    <div class="row">
+      <div><label>Star rating (0–5)</label><input type="number" id="rtStars" min="0" max="5" step="0.1" placeholder="5"></div>
+      <div><label>Number of reviews</label><input type="number" id="rtCount" min="0" step="1" placeholder="10"></div>
+    </div>
+    <button id="rtSave">Save Google rating</button>
     <div class="out" id="rtOut"></div>
+    <div style="border-top:1px dashed #e2d9cc;margin:14px 0 10px"></div>
+    <label style="display:block;font-weight:800;font-size:.78rem;color:var(--charcoal)">🟨 Yelp</label>
+    <div class="row">
+      <div><label>Star rating (0–5)</label><input type="number" id="rtYelpStars" min="0" max="5" step="0.1" placeholder="5"></div>
+      <div><label>Number of reviews</label><input type="number" id="rtYelpCount" min="0" step="1" placeholder="3"></div>
+    </div>
+    <button id="rtYelpSave">Save Yelp rating</button>
+    <div class="out" id="rtYelpOut"></div>
   </div>
 
   <div class="card" id="sec-photos">
     <h2>📸 Site photos</h2>
-    <p class="note">Upload, remove, or reorder photos shown on your website. <b>Reviews</b> appear in the homepage review carousel and on the Reviews page. <b>Interior</b> appear in the homepage "Take a Look Inside" slideshow. <b>Customer photos</b> are real photos your families attached to Google reviews — they show in the smaller strip right under the review carousel. Photos marked <b>BUILT-IN</b> ship with the site — removing one hides it from the site rather than deleting it. Use ↑ / ↓ to reorder — changes save automatically.</p>
+    <p class="note">Upload, remove, or reorder photos shown on your website. <b>Reviews</b> and <b>Yelp reviews</b> appear in their own carousels on the Reviews page (Reviews also shows on the homepage). <b>Interior</b> appear in the homepage "Take a Look Inside" slideshow. <b>Customer photos</b> are real photos your families attached to Google reviews — they show in the smaller strip right under the review carousel. Photos marked <b>BUILT-IN</b> ship with the site — removing one hides it from the site rather than deleting it. Use ↑ / ↓ to reorder — changes save automatically.</p>
     <div style="display:flex;gap:8px;margin:6px 0 12px;flex-wrap:wrap">
       <button type="button" class="phTab" data-set="reviews">🎈 Reviews</button>
+      <button type="button" class="phTab alt" data-set="yelp">🟨 Yelp reviews</button>
       <button type="button" class="phTab alt" data-set="interior">🏠 Interior photos</button>
       <button type="button" class="phTab alt" data-set="customer">📸 Customer photos</button>
     </div>
@@ -955,6 +968,7 @@ $("#loAddKid").onclick=()=>{
 $("#loPunch").onclick=async()=>{
   const key=$("#key").value.trim(), out=$("#loOut"); out.style.display="block";
   const phone=$("#loPhone").value.trim(), email=$("#loEmail").value.trim(), waiverSigned=$("#loWaiverDate").value;
+  const adultNames=$("#loWaiverAdults").value.split(",").map(function(s){return s.trim();}).filter(Boolean);
   if(!key){ out.className="out err"; out.textContent="Enter your admin key (top of page)."; return; }
   const kids=[...document.querySelectorAll("#loKids .lo-kid")].map(function(r){return {first:r.querySelector(".lokF").value.trim(), last:r.querySelector(".lokL").value.trim()};}).filter(function(c){return c.first&&c.last;});
   if(!kids.length){ out.className="out err"; out.textContent="Enter at least one child's first and last name."; return; }
@@ -964,13 +978,13 @@ $("#loPunch").onclick=async()=>{
     let r;
     const waiverLine=waiverSigned?'<br>📋 Waiver signed date saved (expires '+(function(){var d=new Date(waiverSigned+"T12:00:00");d.setDate(d.getDate()+365);return d.toISOString().slice(0,10);})()+').':'';
     if(kids.length===1){
-      r=await (await fetch("/api/loyalty",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key,action:"punch",childFirst:kids[0].first,childLast:kids[0].last,phone,email,waiverSigned})})).json();
+      r=await (await fetch("/api/loyalty",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key,action:"punch",childFirst:kids[0].first,childLast:kids[0].last,phone,email,waiverSigned,adultNames})})).json();
       if(r.ok){ if(r.rewardIssued){ out.className="out ok"; out.innerHTML='🎉 <b>'+esc(r.childName)+'</b> earned a FREE visit! Code <b>'+esc(r.rewardCode)+'</b> emailed. Card reset to 0/7.'+waiverLine; } else { out.className="out ok"; out.innerHTML='✅ Punched <b>'+esc(r.childName)+'</b> ('+esc(r.code)+') → <b>'+r.punches+'/'+r.needed+'</b>'+(r.isNew?' · new card created'+(email?', welcome email sent':''):'')+waiverLine; } }
     } else {
-      r=await (await fetch("/api/loyalty",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key,action:"family-punch",children:kids,phone,email,waiverSigned})})).json();
+      r=await (await fetch("/api/loyalty",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key,action:"family-punch",children:kids,phone,email,waiverSigned,adultNames})})).json();
       if(r.ok){ out.className="out ok"; out.innerHTML='✅ '+esc(r.message)+'<br>'+r.results.map(function(x){return '• <b>'+esc(x.childName)+'</b> ('+esc(x.code)+') '+(x.rewardIssued?'🎉 FREE visit! '+esc(x.rewardCode):x.punches+'/'+x.needed);}).join("<br>")+waiverLine; }
     }
-    if(r.ok){ document.querySelectorAll("#loKids .lo-kid").forEach(function(el,i){ if(i===0){ el.querySelector(".lokF").value="";el.querySelector(".lokL").value="";} else el.remove(); }); $("#loPhone").value="";$("#loEmail").value="";$("#loWaiverDate").value=""; }
+    if(r.ok){ document.querySelectorAll("#loKids .lo-kid").forEach(function(el,i){ if(i===0){ el.querySelector(".lokF").value="";el.querySelector(".lokL").value="";} else el.remove(); }); $("#loPhone").value="";$("#loEmail").value="";$("#loWaiverDate").value="";$("#loWaiverAdults").value=""; }
     else { out.className="out err"; out.textContent=r.error||"Couldn't add a punch."; }
   }catch(e){ out.className="out err"; out.textContent="Network error."; }
   $("#loPunch").disabled=false; $("#loPunch").textContent="Add a punch";
@@ -1140,24 +1154,30 @@ if($("#phUpload")) $("#phUpload").onclick=function(){
   rd.readAsDataURL(f);
 };
 phLoad();
-async function rtLoad(){
-  try{ var r=await (await fetch("/api/review-rating")).json(); if(r&&r.ok){ if($("#rtStars"))$("#rtStars").value=r.stars; if($("#rtCount"))$("#rtCount").value=r.count; } }catch(e){}
+async function rtLoad(platform){
+  var starsEl=platform==="yelp"?"#rtYelpStars":"#rtStars", countEl=platform==="yelp"?"#rtYelpCount":"#rtCount";
+  try{ var r=await (await fetch("/api/review-rating?platform="+platform)).json(); if(r&&r.ok){ if($(starsEl))$(starsEl).value=r.stars; if($(countEl))$(countEl).value=r.count; } }catch(e){}
 }
-rtLoad();
-if($("#rtSave")) $("#rtSave").onclick=async function(){
-  var key=$("#key").value.trim(); var out=$("#rtOut"); out.style.display="block";
-  if(!key){ out.className="out err"; out.textContent="Enter your admin key (top of page)."; return; }
-  var stars=parseFloat($("#rtStars").value), count=parseInt($("#rtCount").value,10);
-  if(!isFinite(stars)||stars<0||stars>5){ out.className="out err"; out.textContent="Star rating must be between 0 and 5."; return; }
-  if(!isFinite(count)||count<0){ out.className="out err"; out.textContent="Enter a valid review count."; return; }
-  out.className="out"; out.textContent="Saving\u2026"; $("#rtSave").disabled=true;
-  try{
-    var r=await (await fetch("/api/review-rating",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key,action:"save",stars,count})})).json();
-    if(r.ok){ out.className="out ok"; out.textContent="Saved! The badge now shows "+r.stars.toFixed(1)+" stars \u00b7 "+r.count+" reviews."; }
-    else { out.className="out err"; out.textContent=r.error||"Couldn't save."; }
-  }catch(e){ out.className="out err"; out.textContent="Network error."; }
-  $("#rtSave").disabled=false;
-};
+function rtWire(platform){
+  var starsEl=platform==="yelp"?"#rtYelpStars":"#rtStars", countEl=platform==="yelp"?"#rtYelpCount":"#rtCount";
+  var btnEl=platform==="yelp"?"#rtYelpSave":"#rtSave", outEl=platform==="yelp"?"#rtYelpOut":"#rtOut";
+  var btn=$(btnEl); if(!btn) return;
+  btn.onclick=async function(){
+    var key=$("#key").value.trim(); var out=$(outEl); out.style.display="block";
+    if(!key){ out.className="out err"; out.textContent="Enter your admin key (top of page)."; return; }
+    var stars=parseFloat($(starsEl).value), count=parseInt($(countEl).value,10);
+    if(!isFinite(stars)||stars<0||stars>5){ out.className="out err"; out.textContent="Star rating must be between 0 and 5."; return; }
+    if(!isFinite(count)||count<0){ out.className="out err"; out.textContent="Enter a valid review count."; return; }
+    out.className="out"; out.textContent="Saving\u2026"; btn.disabled=true;
+    try{
+      var r=await (await fetch("/api/review-rating",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key,action:"save",stars,count,platform})})).json();
+      if(r.ok){ out.className="out ok"; out.textContent="Saved! The badge now shows "+r.stars.toFixed(1)+" stars \u00b7 "+r.count+" reviews."; }
+      else { out.className="out err"; out.textContent=r.error||"Couldn't save."; }
+    }catch(e){ out.className="out err"; out.textContent="Network error."; }
+    btn.disabled=false;
+  };
+}
+rtLoad("google"); rtLoad("yelp"); rtWire("google"); rtWire("yelp");
 function llLastName(n){var pn=(n||"").trim().split(/\s+/);return (pn[pn.length-1]||"").toLowerCase();}
 function llLastFirst(n){var pn=(n||"").trim().split(/\s+/);if(pn.length<2)return n||"\u2014";return esc(pn[pn.length-1])+", "+esc(pn.slice(0,-1).join(" "));}
 function llStatus(c){if((c.rewardsEarned||0)>0||(c.punches||0)>=(c.needed||7))return "\uD83C\uDF89";if((c.punches||0)>0)return "\u2B50";return "\uD83C\uDF88";}
@@ -1226,18 +1246,61 @@ function renderLoyaltyList(){
     var kids=fams[k], fam=kids[0], isFam=!!fam.phone4;
     var famName=(fam.childName||"").trim().split(/\s+/).slice(-1)[0]||"\u2014";
     var waiverInput='<span style="display:inline-flex;gap:5px;align-items:center"><input type="date" value="'+(fam.waiverSigned||"")+'" title="Waiver signed date (expires 365 days later)" style="border:1px solid #e0d5c6;border-radius:7px;padding:3px 6px;font-size:.75rem">'
-      +'<button type="button" onclick="setWaiver('+(isFam?"\''+esc(fam.phone4)+'\',null":"null,\''+esc(fam.code)+'\'")+',this.previousElementSibling.value)" style="border:none;background:#e7f0df;color:#4d6b3e;border-radius:6px;cursor:pointer;font-weight:800;font-size:.7rem;padding:4px 8px">\uD83D\uDCBE Save</button></span>';
+      +'<button type="button" onclick="setWaiver('+(isFam?"\'"+esc(fam.phone4)+"\',null":"null,\'"+esc(fam.code)+"\'")+',this.previousElementSibling.value)" style="border:none;background:#e7f0df;color:#4d6b3e;border-radius:6px;cursor:pointer;font-weight:800;font-size:.7rem;padding:4px 8px">\uD83D\uDCBE Save</button></span>';
+    var famRef=isFam?("\'"+esc(fam.phone4)+"\',null"):("null,\'"+esc(fam.code)+"\'");
+    var adults=Array.isArray(fam.waiverAdults)?fam.waiverAdults:[];
+    var today=new Date().toISOString().slice(0,10);
+    var adultsBlock='<div style="padding:8px 12px;border-top:1px dashed #eee1d2;background:#fffdf9">'
+      +'<span class="note" style="margin:0;font-size:.72rem;font-weight:700">\uD83D\uDC65 Adults/supervisors on waiver:</span> '
+      +(adults.length?adults.map(function(a,i){
+          var exp=a.expiry?new Date(a.expiry+"T12:00:00"):null;
+          var ok=exp && exp>=new Date();
+          var tag=a.expiry?(ok?('<span style="color:#4d7848">valid to '+esc(a.expiry)+'</span>'):('<span style="color:#b5382f">expired '+esc(a.expiry)+'</span>')):'<span style="color:var(--taupe)">no date</span>';
+          return '<span style="display:inline-flex;align-items:center;gap:4px;background:#f0ede5;border-radius:20px;padding:2px 8px 2px 10px;margin:3px 4px 0 0;font-size:.75rem"><b>'+esc(a.name)+'</b> \u00b7 '+tag+' <button type="button" onclick="removeWaiverAdult('+famRef+','+i+')" style="border:none;background:none;color:#b5382f;cursor:pointer;font-weight:900;padding:0 2px">\u2715</button></span>';
+        }).join(""):'<span class="note" style="margin:0;font-size:.75rem">none on file yet</span>')
+      +'<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">'
+        +'<input type="text" placeholder="Add adult name" style="flex:1;min-width:140px;border:1px solid #e0d5c6;border-radius:7px;padding:4px 8px;font-size:.78rem" onkeydown="if(event.key===\'Enter\'){addWaiverAdult('+famRef+',this.value,\'"+today+"\');this.value=\'\';}">'
+        +'<button type="button" onclick="var i=this.previousElementSibling;addWaiverAdult('+famRef+',i.value,\'"+today+"\');i.value=\'\';" style="border:none;background:#e7f0df;color:#4d6b3e;border-radius:6px;cursor:pointer;font-weight:800;font-size:.72rem;padding:4px 9px">+ Add (signed today)</button>'
+      +'</div></div>';
     html+='<div style="border:1px solid #e7ddd0;border-radius:12px;margin-bottom:10px;overflow:hidden">'
       +'<div style="background:#faf5ef;padding:8px 12px;display:flex;flex-wrap:wrap;align-items:center;gap:8px">'
         +'<b>'+esc(famName)+(kids.length>1?" family":"")+'</b>'
         +(fam.phone4?'<span style="color:var(--taupe);font-size:.78rem">\uD83D\uDCDE \u2022\u2022\u2022'+esc(fam.phone4)+'</span>':'')
         +'<span style="margin-left:auto;display:flex;align-items:center;gap:6px"><span class="note" style="margin:0;font-size:.72rem">Waiver signed:</span>'+waiverInput+'</span>'
       +'</div>'
+      +adultsBlock
       +kids.map(llChildRow).join("")
     +'</div>';
   });
   $("#llList").innerHTML=html;
 }
+window.addWaiverAdult=async function(phone4,code,name,signedDate){
+  name=(name||"").trim(); if(!name)return;
+  var key=$("#key").value.trim(); if(!key){alert("Enter your admin key (top of page).");return;}
+  var fam=LOYALTY.find(function(c){return phone4?c.phone4===phone4:c.code===code;});
+  var existing=(fam&&Array.isArray(fam.waiverAdults))?fam.waiverAdults:[];
+  var adults=existing.concat([{name:name,signedDate:signedDate}]);
+  var body={key:key,action:"set-waiver",adults:adults};
+  if(phone4){body.family=true;body.phone4=phone4;}else{body.code=code;}
+  try{
+    var r=await (await fetch("/api/loyalty",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)})).json();
+    if(r.ok){ LOYALTY.forEach(function(c){ if((phone4&&c.phone4===phone4)||(!phone4&&c.code===code)){c.waiverAdults=r.adults;} }); renderLoyaltyList(); }
+    else alert(r.error||"Couldn't save.");
+  }catch(e){alert("Network error.");}
+};
+window.removeWaiverAdult=async function(phone4,code,idx){
+  var key=$("#key").value.trim(); if(!key){alert("Enter your admin key (top of page).");return;}
+  var fam=LOYALTY.find(function(c){return phone4?c.phone4===phone4:c.code===code;});
+  var existing=(fam&&Array.isArray(fam.waiverAdults))?fam.waiverAdults:[];
+  var adults=existing.slice(); adults.splice(idx,1);
+  var body={key:key,action:"set-waiver",adults:adults};
+  if(phone4){body.family=true;body.phone4=phone4;}else{body.code=code;}
+  try{
+    var r=await (await fetch("/api/loyalty",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)})).json();
+    if(r.ok){ LOYALTY.forEach(function(c){ if((phone4&&c.phone4===phone4)||(!phone4&&c.code===code)){c.waiverAdults=r.adults;} }); renderLoyaltyList(); }
+    else alert(r.error||"Couldn't remove.");
+  }catch(e){alert("Network error.");}
+};
 window.markArrived=async(el)=>{
   const id=el.dataset.id, email=el.dataset.email||"", arrived=el.checked, date=$("#rosDate").value, key=$("#key").value.trim();
   el.disabled=true;

@@ -91,7 +91,7 @@ export async function issueCode(loyalty, { first, last, phone4, email, dob, supp
 
 // Add ONE punch to a child's card. Creates the card if new (welcome email), and
 // on the 7th punch issues a free-visit reward code (reward email). Returns details.
-export async function addPunch(loyalty, { first, last, phone4, email, code: directCode, suppressEmail, waiverSigned }) {
+export async function addPunch(loyalty, { first, last, phone4, email, code: directCode, suppressEmail, waiverSigned, adultNames }) {
   let code, existing;
   if (directCode) {
     code = normalizeCode(directCode);
@@ -113,6 +113,15 @@ export async function addPunch(loyalty, { first, last, phone4, email, code: dire
     rec.waiverSigned = waiverSigned;
     const exp = new Date(waiverSigned + "T12:00:00"); exp.setDate(exp.getDate() + 365);
     rec.waiverExpiry = exp.toISOString().slice(0, 10);
+  }
+  if (Array.isArray(adultNames) && adultNames.length) {
+    const signedDate = (waiverSigned && /^\d{4}-\d{2}-\d{2}$/.test(waiverSigned)) ? waiverSigned : "";
+    const expiry = rec.waiverExpiry || "";
+    const existingAdults = Array.isArray(rec.waiverAdults) ? rec.waiverAdults : [];
+    const newAdults = adultNames.map(n => (n || "").toString().slice(0, 80).trim()).filter(Boolean)
+      .filter(n => !existingAdults.some(a => (a.name || "").toLowerCase() === n.toLowerCase()))
+      .map(n => ({ name: n, signedDate, expiry }));
+    rec.waiverAdults = existingAdults.concat(newAdults).slice(0, 20);
   }
 
   rec.punches = (rec.punches || 0) + 1;

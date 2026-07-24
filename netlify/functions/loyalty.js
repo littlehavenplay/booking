@@ -74,6 +74,7 @@ export default async (req) => {
           punches: rec.punches || 0, needed: PUNCHES_FOR_REWARD,
           totalVisits: rec.totalVisits || 0, rewardsEarned: rec.rewardsEarned || 0,
           waiverSigned: rec.waiverSigned || "", waiverExpiry: rec.waiverExpiry || "",
+          waiverAdults: Array.isArray(rec.waiverAdults) ? rec.waiverAdults : [],
           lastVisit: rec.lastVisit ? rec.lastVisit.slice(0, 10) : "",
           createdAt: rec.createdAt ? rec.createdAt.slice(0, 10) : "" });
       }
@@ -162,11 +163,12 @@ export default async (req) => {
   if (action === "punch") {
     const direct = normalizeCode(b.code);
     const waiverSigned = (b.waiverSigned || "").toString().trim();
+    const adultNames = Array.isArray(b.adultNames) ? b.adultNames : [];
     if (direct) {
       if (await isLegacyPassCode(direct)) return json({ error: "That's a legacy prepaid card — don't punch it here." }, 409);
       let exists = null; try { exists = await loyalty.get("card:" + direct, { type: "json" }); } catch {}
       if (!exists) return json({ error: "No loyalty card found for that code." }, 404);
-      const r = await addPunch(loyalty, { code: direct, waiverSigned });
+      const r = await addPunch(loyalty, { code: direct, waiverSigned, adultNames });
       if (r.error) return json({ error: "Couldn't save the punch. Try again." }, 502);
       return json({ ok: true, ...r,
         message: r.rewardIssued
@@ -179,7 +181,7 @@ export default async (req) => {
     if (!first || !last) return json({ error: "Enter the child's first and last name." }, 400);
     if (!phone4)        return json({ error: "Enter the parent's phone (at least the last 4 digits)." }, 400);
     const email = (b.email || "").toString().slice(0, 160).trim();
-    const r = await addPunch(loyalty, { first, last, phone4, email, waiverSigned });
+    const r = await addPunch(loyalty, { first, last, phone4, email, waiverSigned, adultNames });
     if (r.error) return json({ error: "Couldn't save the punch. Try again." }, 502);
     return json({ ok: true, ...r,
       message: r.rewardIssued
@@ -210,6 +212,7 @@ export default async (req) => {
     const email = (b.email || "").toString().slice(0, 160).trim();
     const phone4 = last4(b.phone);
     const waiverSigned = (b.waiverSigned || "").toString().trim();
+    const adultNames = Array.isArray(b.adultNames) ? b.adultNames : [];
     if (!phone4) return json({ error: "Enter the parent's phone (at least the last 4 digits)." }, 400);
     const kids = (Array.isArray(b.children) ? b.children : [])
       .map(c => ({ first: (c && c.first || "").toString().trim(), last: (c && c.last || "").toString().trim() }))
@@ -218,7 +221,7 @@ export default async (req) => {
     if (!kids.length) return json({ error: "Enter at least one child's first and last name." }, 400);
     const results = [];
     for (const c of kids) {
-      const r = await addPunch(loyalty, { first: c.first, last: c.last, phone4, email, suppressEmail: true, waiverSigned });
+      const r = await addPunch(loyalty, { first: c.first, last: c.last, phone4, email, suppressEmail: true, waiverSigned, adultNames });
       if (!r.error) results.push(r);
     }
     if (!results.length) return json({ error: "Couldn't save the punches. Try again." }, 502);
@@ -229,11 +232,36 @@ export default async (req) => {
   }
 
   // Set a waiver "signed" date for a child (or the whole family by phone). Expiry = signed + 365 days.
+  // set-waiver now handles two independent things, either or both in one call:
+  //   b.signed        → the child's own waiver date (existing behavior)
+  //   b.adults        → the FULL list of adults/supervisors on file for this family,
+  //                      each with their own signed date (365-day expiry each) — since
+  //                      different adults often sign on different visits.
   if (action === "set-waiver") {
-    const signed = (b.signed || "").toString().slice(0, 10);
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(signed)) return json({ error: "Enter a valid waiver date (YYYY-MM-DD)." }, 400);
-    const exp = new Date(signed + "T12:00:00"); exp.setDate(exp.getDate() + 365);
-    const expiry = exp.toISOString().slice(0, 10);
+    const hasSigned = !!(b.signed || "").toString().trim();
+    const hasAdults = Array.isArray(b.adults);
+    if (!hasSigned && !hasAdults) return json({ error: "Nothing to save." }, 400);
+
+    let signed = null, expiry = null;
+    if (hasSigned) {
+      signed = (b.signed || "").toString().slice(0, 10);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(signed)) return json({ error: "Enter a valid waiver date (YYYY-MM-DD)." }, 400);
+      const exp = new Date(signed + "T12:00:00"); exp.setDate(exp.getDate() + 365);
+      expiry = exp.toISOString().slice(0, 10);
+    }
+
+    let adults = null;
+    if (hasAdults) {
+      adults = b.adults.slice(0, 20).map(a => {
+        const name = (a && a.name || "").toString().slice(0, 80).trim();
+        const sd = (a && a.signedDate || "").toString().slice(0, 10);
+        const validDate = /^\d{4}-\d{2}-\d{2}$/.test(sd) ? sd : "";
+        let adultExpiry = "";
+        if (validDate) { const e = new Date(validDate + "T12:00:00"); e.setDate(e.getDate() + 365); adultExpiry = e.toISOString().slice(0, 10); }
+        return { name, signedDate: validDate, expiry: adultExpiry };
+      }).filter(a => a.name);
+    }
+
     const applyFamily = !!b.family;
     const code = normalizeCode(b.code);
     let targets = [];
@@ -247,8 +275,12 @@ export default async (req) => {
       if (r) targets.push(r);
     }
     if (!targets.length) return json({ error: "No matching loyalty card found." }, 404);
-    for (const r of targets) { r.waiverSigned = signed; r.waiverExpiry = expiry; try { await loyalty.setJSON("card:" + r.code, r); } catch {} }
-    return json({ ok: true, signed, expiry, count: targets.length });
+    for (const r of targets) {
+      if (hasSigned) { r.waiverSigned = signed; r.waiverExpiry = expiry; }
+      if (hasAdults) { r.waiverAdults = adults; }
+      try { await loyalty.setJSON("card:" + r.code, r); } catch {}
+    }
+    return json({ ok: true, signed, expiry, adults, count: targets.length });
   }
 
   return json({ error: "Unknown action." }, 400);
