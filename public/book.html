@@ -565,23 +565,33 @@ function renderChildNames(){
     if(p && p.code){ cnLookupCode(row, p.code); }
   });
 }
-function cnSetReadonly(row,on){
-  row.querySelector(".cn-f").readOnly=on; row.querySelector(".cn-l").readOnly=on; row.querySelector(".cn-d").readOnly=on;
+function cnSetReadonly(row,on,lockDob){
+  row.querySelector(".cn-f").readOnly=on; row.querySelector(".cn-l").readOnly=on;
   const gray = on ? "#f0ede8" : "";
-  row.querySelector(".cn-f").style.background=gray; row.querySelector(".cn-l").style.background=gray; row.querySelector(".cn-d").style.background=gray;
+  row.querySelector(".cn-f").style.background=gray; row.querySelector(".cn-l").style.background=gray;
+  const d=row.querySelector(".cn-d");
+  d.readOnly = on && lockDob;
+  d.style.background = (on && lockDob) ? "#f0ede8" : "";
 }
 async function cnLookupCode(row, code){
   code=(code||"").trim().toUpperCase();
   const msg=row.querySelector(".cn-codemsg");
-  if(!code){ cnSetReadonly(row,false); msg.style.display="none"; return; }
+  if(!code){ cnSetReadonly(row,false,false); msg.style.display="none"; return; }
   msg.style.display="block"; msg.style.color="var(--ink-soft)"; msg.textContent="Looking up…";
   try{
     const r=await (await fetch("/api/loyalty",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({action:"code-check",code})})).json();
     if(r && r.found){
       const parts=(r.childName||"").trim().split(/\s+/);
       row.querySelector(".cn-f").value=parts[0]||""; row.querySelector(".cn-l").value=parts.slice(1).join(" ")||"";
-      cnSetReadonly(row,true);
-      msg.style.color="#3f7d54"; msg.textContent="✓ Found: "+(r.childName||"")+(r.hasDob?" — birthday on file":"");
+      cnSetReadonly(row,true,r.hasDob);
+      const dInp=row.querySelector(".cn-d");
+      if(r.hasDob){
+        dInp.value=""; dInp.style.borderColor=""; dInp.placeholder="🔒 Birthday on file";
+        msg.style.color="#3f7d54"; msg.textContent="✓ Found: "+(r.childName||"")+" — birthday on file";
+      } else {
+        dInp.value=""; dInp.style.borderColor=""; dInp.placeholder="Add their birthday mm/dd/yyyy (optional)";
+        msg.style.color="#3f7d54"; msg.textContent="✓ Found: "+(r.childName||"")+" — no birthday on file yet, add one below if you'd like 🎂";
+      }
       const bdBox=row.querySelector(".cn-bd"), bdWrap=row.querySelector(".cn-bdwrap"), bdCodeInp=row.querySelector(".cn-bdcode");
       if(r.birthday && r.birthday.code){
         bdBox.checked=true; bdBox.disabled=true; bdWrap.style.display="block";
@@ -589,10 +599,10 @@ async function cnLookupCode(row, code){
         row.querySelector(".cn-bdmsg").style.color="#3f7d54"; row.querySelector(".cn-bdmsg").textContent="🎂 It's their birthday — free admission auto-applied!";
       }
     } else {
-      cnSetReadonly(row,false);
+      cnSetReadonly(row,false,false);
       msg.style.color="#b5382f"; msg.textContent="Code not found — check it, or just enter their name below.";
     }
-  }catch(e){ msg.style.color="#b5382f"; msg.textContent="Couldn't check that code — enter their name below if needed."; cnSetReadonly(row,false); }
+  }catch(e){ msg.style.color="#b5382f"; msg.textContent="Couldn't check that code — enter their name below if needed."; cnSetReadonly(row,false,false); }
 }
 async function cnCheckBirthdayMismatch(row){
   const code=(row.querySelector(".cn-bdcode").value||"").trim().toUpperCase();
