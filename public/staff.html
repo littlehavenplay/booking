@@ -180,10 +180,11 @@
 
   <div class="card" id="sec-birthdays">
     <h2>🎂 Birthday club</h2>
-    <p class="note" style="margin-top:-2px">Children whose families shared a birthday when booking online. A festive email with a free-admission code goes out <b>automatically one week before</b> each birthday — the code works on the birthday itself only, one use. Use this list to text families who have no email on file, or to resend.</p>
+    <p class="note" style="margin-top:-2px">Children whose families shared a birthday when booking online. A festive email with a free-admission code goes out <b>automatically one week before</b> each birthday, plus a short reminder <b>on the birthday itself</b> — the code works on the birthday only, one use. Use this list to text families who have no email on file, or to resend.</p>
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">
       <div><label>Birthday month</label>
         <select id="bdMonth" style="width:auto;min-width:150px">
+          <option value="all">All months (sorted)</option>
           <option value="01">January</option><option value="02">February</option><option value="03">March</option>
           <option value="04">April</option><option value="05">May</option><option value="06">June</option>
           <option value="07">July</option><option value="08">August</option><option value="09">September</option>
@@ -191,6 +192,7 @@
         </select>
       </div>
       <button id="bdLoad" style="margin-top:0">🔄 Show birthdays</button>
+      <button id="bdExport" class="alt" style="margin-top:0">📤 Export contacts (CSV)</button>
     </div>
     <div class="out" id="bdOut"></div>
     <div id="bdTableWrap" style="overflow-x:auto;margin-top:10px"></div>
@@ -387,6 +389,17 @@
       </div>
       <div class="out" id="ccOut"></div>
       <div id="ccResult" style="margin-top:10px"></div>
+
+      <div style="border-top:1px dashed #e2d9cc;margin:14px 0 10px"></div>
+      <label style="display:block;font-weight:700;font-size:.82rem;color:var(--charcoal)">🛠️ Fix codes that won't redeem</label>
+      <p class="note" style="margin-top:2px">If a batch you already printed/handed out isn't working, use this — it forces those exact codes back to valid (unused, unexpired) without changing the codes themselves, so nothing needs to be reprinted. Paste the codes one per line, or leave blank to fix every code already on file for that classroom.</p>
+      <input type="text" id="ccFixLabel" placeholder="Classroom name (must match exactly)" style="text-transform:none">
+      <textarea id="ccFixCodes" rows="4" placeholder="CLASSABCD&#10;CLASSEFGH&#10;(one per line — leave blank to fix the whole classroom)" style="width:100%;font-family:monospace;font-size:.9rem;border:1.5px solid #e7ddd0;border-radius:11px;padding:10px 12px;margin-top:8px"></textarea>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-top:8px">
+        <div><label>New expiry (days)</label><input type="number" id="ccFixDays" min="1" max="365" value="180" style="width:110px"></div>
+        <button id="ccFix" style="margin-top:0">🛠️ Fix these codes now</button>
+      </div>
+      <div class="out" id="ccFixOut"></div>
     </div>
 
   <div class="card" id="sec-punchissue">
@@ -1191,27 +1204,28 @@ async function ledLoad(){
 }
 $("#ledLoad").onclick=ledLoad;
 var bdRows=[];
+var BD_MONTH_NAMES=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+function bdDayLabel(r){ var mi=parseInt(r.month,10)-1; var mn=BD_MONTH_NAMES[mi]||""; return (mn?mn+" ":"")+esc(r.day||""); }
 function bdRender(){
   var wrap=$("#bdTableWrap"); if(!wrap) return;
-  if(!bdRows.length){ wrap.innerHTML='<div class="note">No birthdays on file for that month yet. Families add them (optionally) when booking online.</div>'; return; }
+  if(!bdRows.length){ wrap.innerHTML='<div class="note">No birthdays on file yet. Families add them (optionally) when booking online.</div>'; return; }
   var html='<table style="width:100%;border-collapse:collapse;font-size:.82rem;min-width:660px">'
     +'<thead><tr style="text-align:left;color:#8a8276;font-size:.7rem;text-transform:uppercase;letter-spacing:.05em">'
     +'<th style="padding:6px 8px">Day</th><th style="padding:6px 8px">Child</th><th style="padding:6px 8px">Turning</th>'
-    +'<th style="padding:6px 8px">Parent</th><th style="padding:6px 8px">Email</th><th style="padding:6px 8px">Phone</th>'
+    +'<th style="padding:6px 8px">Email</th><th style="padding:6px 8px">Phone</th>'
     +'<th style="padding:6px 8px">Gift sent</th><th style="padding:6px 8px">Actions</th></tr></thead><tbody>';
   bdRows.forEach(function(r){
     var sentTxt=r.lastSentYear?('✅ '+esc(r.lastSentYear)+(r.lastCode?'<br><span style="font-family:monospace;font-size:.75rem">'+esc(r.lastCode)+'</span>':'')):'<span style="color:#a89a89">—</span>';
     html+='<tr style="border-top:1px solid #efe7da">'
-      +'<td style="padding:7px 8px;font-weight:800;white-space:nowrap">'+esc(r.day)+'</td>'
-      +'<td style="padding:7px 8px;font-weight:700">'+esc(r.first+" "+r.last)+'</td>'
+      +'<td style="padding:7px 8px;font-weight:800;white-space:nowrap">'+bdDayLabel(r)+'</td>'
+      +'<td style="padding:7px 8px;font-weight:700">'+esc(r.first+" "+r.last)+'<br><span style="font-family:monospace;font-size:.72rem;color:#a89a89">'+esc(r.code)+'</span></td>'
       +'<td style="padding:7px 8px;white-space:nowrap">'+(r.turning>0&&r.turning<19?esc(String(r.turning)):"—")+'</td>'
-      +'<td style="padding:7px 8px">'+(esc(r.parentName)||"—")+'</td>'
       +'<td style="padding:7px 8px">'+(r.email?'<a href="mailto:'+esc(r.email)+'">'+esc(r.email)+'</a>':'<span style="color:#b5382f">no email</span>')+'</td>'
       +'<td style="padding:7px 8px;white-space:nowrap">'+(r.phone?'<a href="sms:'+esc(r.phone)+'">'+esc(r.phone)+'</a>':'—')+'</td>'
       +'<td style="padding:7px 8px;white-space:nowrap">'+sentTxt+'</td>'
       +'<td style="padding:7px 8px;white-space:nowrap">'
-        +'<button type="button" onclick="bdSend(\''+esc(r.bkey)+'\')" style="margin:0 4px 0 0;padding:4px 9px;font-size:.7rem;border-radius:7px;background:#e5f2e9;color:#3f7d54;width:auto">Send gift now</button>'
-        +'<button type="button" onclick="bdRemove(\''+esc(r.bkey)+'\')" style="margin:0;padding:4px 9px;font-size:.7rem;border-radius:7px;background:#f7e2e0;color:#b5382f;width:auto">Remove</button>'
+        +'<button type="button" onclick="bdSend(\''+esc(r.code)+'\')" style="margin:0 4px 0 0;padding:4px 9px;font-size:.7rem;border-radius:7px;background:#e5f2e9;color:#3f7d54;width:auto">Send gift now</button>'
+        +'<button type="button" onclick="bdRemove(\''+esc(r.code)+'\')" style="margin:0;padding:4px 9px;font-size:.7rem;border-radius:7px;background:#f7e2e0;color:#b5382f;width:auto">Remove</button>'
       +'</td></tr>';
   });
   wrap.innerHTML=html+'</tbody></table>';
@@ -1228,23 +1242,35 @@ async function bdLoad(){
   }catch(e){ out.className="out err"; out.textContent="Network error."; }
   $("#bdLoad").disabled=false;
 }
-window.bdSend=async function(bkey){
+window.bdSend=async function(code){
   if(!confirm("Send this child's birthday gift code now? The code will only work on their birthday."))return;
   if(!PIN){ alert("Enter your staff PIN first."); return; }
   try{
-    var resp=await fetch("/api/birthdays",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key:PIN,action:"send",bkey})});
+    var resp=await fetch("/api/birthdays",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key:PIN,action:"send",code})});
     var r; try{ r=await resp.json(); }catch(pe){ r=null; }
     if(!resp.ok||!r||!r.ok){ alert((r&&r.error)?r.error:"Couldn't send."); return; }
     alert(r.message||"Sent."); bdLoad();
   }catch(e){ alert("Network error."); }
 };
-window.bdRemove=async function(bkey){
-  if(!confirm("Remove this birthday from your list? The family can add it again on their next booking."))return;
+window.bdRemove=async function(code){
+  if(!confirm("Remove this birthday? Their loyalty card and punch history stay — this only clears the birthday, and the family can add it again on their next booking."))return;
   if(!PIN){ alert("Enter your staff PIN first."); return; }
-  try{ var r=await (await fetch("/api/birthdays",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key:PIN,action:"remove",bkey})})).json(); if(r&&r.ok) bdLoad(); else alert((r&&r.error)||"Couldn't remove."); }catch(e){ alert("Network error."); }
+  try{ var r=await (await fetch("/api/birthdays",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key:PIN,action:"remove",code})})).json(); if(r&&r.ok) bdLoad(); else alert((r&&r.error)||"Couldn't remove."); }catch(e){ alert("Network error."); }
 };
 if($("#bdLoad")) $("#bdLoad").onclick=bdLoad;
 if($("#bdMonth")) $("#bdMonth").value=String(new Date().getMonth()+1).padStart(2,"0");
+window.exportBirthdays=function(){
+  if(!bdRows.length){ alert("Load a list first (pick a month, or \"All months\", then Show birthdays)."); return; }
+  var head="Child,Loyalty Code,Turning,Birthday,Email,Phone\n";
+  var esc2=function(v){ return '"'+String(v==null?"":v).replace(/"/g,'""')+'"'; };
+  var body=bdRows.map(function(r){
+    var label=(BD_MONTH_NAMES[parseInt(r.month,10)-1]||"")+" "+(r.day||"");
+    return [esc2(r.first+" "+r.last), esc2(r.code), esc2(r.turning>0&&r.turning<19?r.turning:""), esc2(label), esc2(r.email), esc2(r.phone)].join(",");
+  }).join("\n");
+  var blob=new Blob([head+body],{type:"text/csv"}); var url=URL.createObjectURL(blob);
+  var a=document.createElement("a"); a.href=url; a.download="little-haven-birthday-club-"+new Date().toISOString().slice(0,10)+".csv"; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+};
+if($("#bdExport")) $("#bdExport").onclick=exportBirthdays;
 if($("#ccGen")) $("#ccGen").onclick=async function(){
   var out=$("#ccOut"); out.style.display="block";
   if(!PIN){ out.className="out err"; out.textContent="Enter your staff PIN first."; return; }

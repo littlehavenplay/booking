@@ -374,6 +374,17 @@
     </div>
     <div class="out" id="ccOut"></div>
     <div id="ccResult" style="margin-top:10px"></div>
+
+    <div style="border-top:1px dashed #e2d9cc;margin:14px 0 10px"></div>
+    <label style="display:block;font-weight:700;font-size:.82rem;color:var(--charcoal)">🛠️ Fix codes that won't redeem</label>
+    <p class="note" style="margin-top:2px">If a batch you already printed/handed out isn't working, use this — it forces those exact codes back to valid (unused, unexpired) without changing the codes themselves, so nothing needs to be reprinted. Paste the codes one per line, or leave blank to fix every code already on file for that classroom.</p>
+    <input type="text" id="ccFixLabel" placeholder="Classroom name (must match exactly)" style="text-transform:none">
+    <textarea id="ccFixCodes" rows="4" placeholder="CLASSABCD&#10;CLASSEFGH&#10;(one per line — leave blank to fix the whole classroom)" style="width:100%;font-family:monospace;font-size:.9rem;border:1.5px solid #e7ddd0;border-radius:11px;padding:10px 12px;margin-top:8px"></textarea>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-top:8px">
+      <div><label>New expiry (days)</label><input type="number" id="ccFixDays" min="1" max="365" value="180" style="width:110px"></div>
+      <button id="ccFix" style="margin:0">🛠️ Fix these codes now</button>
+    </div>
+    <div class="out" id="ccFixOut"></div>
   </div>
 
     <div class="card" id="sec-discount">
@@ -1555,6 +1566,26 @@ if($("#ccGen")) $("#ccGen").onclick=async function(){
     if(typeof ledLoad==="function") ledLoad();
   }catch(e){ out.className="out err"; out.textContent="Network error — please try again."; }
   $("#ccGen").disabled=false;
+};
+if($("#ccFix")) $("#ccFix").onclick=async function(){
+  var out=$("#ccFixOut"); out.style.display="block";
+  var key=$("#key").value.trim();
+  if(!key){ out.className="out err"; out.textContent="Enter your admin key (top of page)."; return; }
+  var label=$("#ccFixLabel").value.trim();
+  if(!label){ out.className="out err"; out.textContent="Enter the classroom name."; return; }
+  var codesRaw=$("#ccFixCodes").value.trim();
+  var codes=codesRaw?codesRaw.split(/[\s,]+/).map(function(s){return s.trim();}).filter(Boolean):undefined;
+  var days=parseInt($("#ccFixDays").value,10);
+  out.className="out"; out.textContent="Fixing…"; $("#ccFix").disabled=true;
+  try{
+    var body={key,action:"repair",label,expiryDays:days};
+    if(codes) body.codes=codes;
+    var resp=await fetch("/api/classroom-codes",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)});
+    var r; try{ r=await resp.json(); }catch(pe){ r=null; }
+    if(!resp.ok||!r||!r.ok){ out.className="out err"; out.textContent=(r&&r.error)?r.error:("Couldn't fix (server said "+resp.status+")."); }
+    else { out.className="out ok"; out.textContent="✅ "+r.message; if(typeof ledLoad==="function") ledLoad(); }
+  }catch(e){ out.className="out err"; out.textContent="Network error — please try again."; }
+  $("#ccFix").disabled=false;
 };
 window.ledAct=async function(code,type,action){
   var word=action==="delete"?"permanently delete":"deactivate";

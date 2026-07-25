@@ -7,6 +7,11 @@
 //
 // Body: { key, action:"generate", label, count, expiryDays? }
 //        { key, action:"list", label? }        — list classroom codes (optionally by label)
+//        { key, action:"repair", label, codes?, expiryDays? }
+//          — force these codes (or, if codes omitted, every code already on file for
+//          that classroom) into a guaranteed-valid state: unused, unexpired, correct
+//          label — recreating any that are missing outright. Use this if a batch that
+//          was already printed/handed out turns out not to redeem — no need to reprint.
 import { getStore } from "@netlify/blobs";
 
 const ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no I,O,0,1 — easy to read/write
@@ -43,6 +48,51 @@ export default async (req) => {
     }
     rows.sort((a, c) => (c.issued || "").localeCompare(a.issued || ""));
     return json({ ok: true, rows });
+  }
+
+  if (action === "repair") {
+    const label = (b.label || "").toString().trim().slice(0, 60);
+    if (!label) return json({ error: "Enter the classroom name these codes belong to." }, 400);
+    let expiryDays = parseInt(b.expiryDays, 10);
+    if (!Number.isFinite(expiryDays) || expiryDays < 1) expiryDays = 180;  // generous default so this doesn't recur
+    expiryDays = Math.min(expiryDays, 365);
+    const now = new Date();
+    const expiry = new Date(now.getTime() + expiryDays * 86400000).toISOString().slice(0, 10);
+
+    // Which codes to fix: an explicit list if given (handles codes that may have
+    // never actually saved), otherwise every code already on file under this label.
+    let codes = Array.isArray(b.codes)
+      ? b.codes.map(c => (c || "").toString().trim().toUpperCase().replace(/[^A-Z0-9]/g, "")).filter(Boolean)
+      : null;
+    if (!codes) {
+      codes = [];
+      try {
+        const r = await store.list({ prefix: "reward:" });
+        for (const bl of (r.blobs || [])) {
+          let rec = null; try { rec = await store.get(bl.key, { type: "json" }); } catch {}
+          if (rec && rec.source === "classroom" && rec.classroom === label) codes.push(rec.code);
+        }
+      } catch {}
+    }
+    if (!codes.length) return json({ error: `No codes found for "${label}" — paste the code list to recreate them.` }, 404);
+
+    let fixed = 0, recreated = 0;
+    for (const code of codes) {
+      let rec = null; try { rec = await store.get("reward:" + code, { type: "json" }); } catch {}
+      if (!rec) {
+        rec = { code, type: "free-visit", source: "classroom", classroom: label, issuedAt: now.toISOString() };
+        recreated++;
+      } else fixed++;
+      rec.used = false;
+      delete rec.usedAt; delete rec.usedBy; delete rec.bookingId;
+      delete rec.validFrom;   // classroom codes are usable immediately, never date-locked
+      rec.expiry = expiry;
+      rec.classroom = label;
+      try { await store.setJSON("reward:" + code, rec); } catch {}
+    }
+    return json({ ok: true, count: codes.length, fixed, recreated, expiry,
+      message: `${codes.length} code${codes.length === 1 ? "" : "s"} for "${label}" are now guaranteed valid through ${expiry}` +
+               (recreated ? ` (${recreated} had to be recreated — they weren't found on file).` : ".") });
   }
 
   if (action !== "generate") return json({ error: "Unknown action." }, 400);
