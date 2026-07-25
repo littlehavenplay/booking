@@ -10,7 +10,7 @@
 //   5. On success, record the booking and increment the slot's child count.
 
 import { getStore } from "@netlify/blobs";
-import { SIGNATURE_HTML } from "./lib-email.js";
+import { SIGNATURE_HTML, sendOwnerAlert } from "./lib-email.js";
 import {
   CAPACITY, PRICES, pricesFor, SLOTS, SLOT_IDS, openPlayForDate, effectivePartyBlocks, hoursFor, slotCap, slotKey, arrivalStartMin, squareApiBase, SQUARE_VERSION, BOOKING_WINDOW_DAYS,
   PARTY_SLOT_IDS, ARRIVAL_TO_LEGACY,
@@ -183,16 +183,26 @@ export default async (req) => {
     const today2 = new Date().toISOString().slice(0, 10);
     const rewardStore = getStore("rewards");
     try { rewardRec = await rewardStore.get("reward:" + rewardCode, { type: "json" }); } catch { rewardRec = null; }
-    if (!rewardRec)                       return json({ error: "reward", message: `Free-visit code ${rewardCode} wasn't found.` }, 409);
-    if (rewardRec.used)                   return json({ error: "reward", message: `Free-visit code ${rewardCode} has already been used.` }, 409);
+    if (!rewardRec) {
+      await logFailedCode({ code: rewardCode, reason: "not found", name, email, phone });
+      return json({ error: "reward", message: `Free-visit code ${rewardCode} wasn't found.` }, 409);
+    }
+    if (rewardRec.used) {
+      await logFailedCode({ code: rewardCode, reason: "already used", name, email, phone });
+      return json({ error: "reward", message: `Free-visit code ${rewardCode} has already been used.` }, 409);
+    }
     if (rewardRec.validFrom && today2 < rewardRec.validFrom) {
+      await logFailedCode({ code: rewardCode, reason: `not valid until ${rewardRec.validFrom}`, name, email, phone });
       return json({ error: "reward", message: rewardRec.kind === "birthday"
         ? `🎂 This birthday gift can be used on ${rewardRec.validFrom} — see you then!`
         : `Free-visit code ${rewardCode} isn't valid until ${rewardRec.validFrom}.` }, 409);
     }
-    if (rewardRec.expiry && rewardRec.expiry < today2) return json({ error: "reward", message: rewardRec.kind === "birthday"
-      ? `🎂 This birthday gift was good on ${rewardRec.expiry} only and has expired.`
-      : `Free-visit code ${rewardCode} has expired.` }, 409);
+    if (rewardRec.expiry && rewardRec.expiry < today2) {
+      await logFailedCode({ code: rewardCode, reason: `expired ${rewardRec.expiry}`, name, email, phone });
+      return json({ error: "reward", message: rewardRec.kind === "birthday"
+        ? `🎂 This birthday gift was good on ${rewardRec.expiry} only and has expired.`
+        : `Free-visit code ${rewardCode} has expired.` }, 409);
+    }
     // Value = one admission of the most expensive child type present in the cart.
     const present = [];
     if (regular > 0) present.push(PRICES.regular);
@@ -220,10 +230,22 @@ export default async (req) => {
       if (usedCodes.has(bc)) return json({ error: "reward", message: `Birthday code ${bc} was entered more than once.` }, 409);
       usedCodes.add(bc);
       let r = null; try { r = await rewardStore.get("reward:" + bc, { type: "json" }); } catch { r = null; }
-      if (!r)      return json({ error: "reward", message: `Birthday code ${bc} wasn't found.` }, 409);
-      if (r.used)  return json({ error: "reward", message: `Birthday code ${bc} has already been used.` }, 409);
-      if (r.validFrom && today2 < r.validFrom) return json({ error: "reward", message: `🎂 Birthday code ${bc} can be used on ${r.validFrom} — see you then!` }, 409);
-      if (r.expiry && r.expiry < today2)       return json({ error: "reward", message: `🎂 Birthday code ${bc} was good on ${r.expiry} only and has expired.` }, 409);
+      if (!r) {
+        await logFailedCode({ code: bc, reason: "not found", name, email, phone });
+        return json({ error: "reward", message: `Birthday code ${bc} wasn't found.` }, 409);
+      }
+      if (r.used) {
+        await logFailedCode({ code: bc, reason: "already used", name, email, phone });
+        return json({ error: "reward", message: `Birthday code ${bc} has already been used.` }, 409);
+      }
+      if (r.validFrom && today2 < r.validFrom) {
+        await logFailedCode({ code: bc, reason: `not valid until ${r.validFrom}`, name, email, phone });
+        return json({ error: "reward", message: `🎂 Birthday code ${bc} can be used on ${r.validFrom} — see you then!` }, 409);
+      }
+      if (r.expiry && r.expiry < today2) {
+        await logFailedCode({ code: bc, reason: `expired ${r.expiry}`, name, email, phone });
+        return json({ error: "reward", message: `🎂 Birthday code ${bc} was good on ${r.expiry} only and has expired.` }, 409);
+      }
       const admissionType = ch.admission || "regular";
       const price = admissionType === "sibling" ? PRICES.sibling : admissionType === "infant" ? PRICES.infant : PRICES.regular;
       birthdayAmount += Math.min(price, subtotal - discountAmount - rewardAmount - birthdayAmount);
@@ -588,6 +610,29 @@ async function chargeSquare(env, { source_id, amount, note, email }) {
     return { ok: false, detail: data?.errors?.[0]?.detail || "Payment was declined." };
   }
   return { ok: true, payment: data.payment };
+}
+
+// Logs a free-visit/birthday/classroom code that failed to redeem at checkout, and
+// emails the studio right away with who tried and why — so a family that got stuck
+// can be followed up with instead of just quietly walking away. Fire-and-forget:
+// never blocks or fails the actual booking-error response it's attached to.
+async function logFailedCode({ code, reason, name, email, phone }) {
+  const at = new Date().toISOString();
+  try {
+    const store = getStore("failed-redemptions");
+    const id = at.replace(/[^0-9]/g, "") + "-" + Math.random().toString(36).slice(2, 6);
+    await store.setJSON("fail:" + id, { code, reason, name, email, phone, at });
+  } catch {}
+  const esc = s => (s || "").toString().replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  try {
+    await sendOwnerAlert(
+      `⚠️ A code failed at checkout: ${code}`,
+      `<h3>A free-visit code didn't redeem</h3>
+       <p><b>Code:</b> ${esc(code)}<br><b>Reason:</b> ${esc(reason)}</p>
+       <p><b>Who tried it:</b><br>Name: ${esc(name) || "—"}<br>Email: ${esc(email) || "—"}<br>Phone: ${esc(phone) || "—"}</p>
+       <p style="color:#8a8276;font-size:13px">Logged ${esc(at)}. You can look this code up or re-issue it from Staff/Admin → Codes ledger.</p>`
+    );
+  } catch {}
 }
 
 function json(obj, status = 200) {

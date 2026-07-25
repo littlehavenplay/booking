@@ -388,6 +388,14 @@
     <div class="out" id="ccFixOut"></div>
   </div>
 
+  <div class="card" id="sec-failed">
+    <h2>⚠️ Codes that failed at checkout</h2>
+    <p class="note" style="margin-top:-2px">Every time a family's free-visit, birthday, or classroom code doesn't go through, it's logged here with their name/email/phone from the booking form — plus you get an email the moment it happens. Use this to follow up directly instead of guessing who tried. Dismiss an entry once you've reached out.</p>
+    <button id="frLoad">🔄 Load list</button>
+    <div class="out" id="frOut"></div>
+    <div id="frTableWrap" style="overflow-x:auto;margin-top:10px"></div>
+  </div>
+
     <div class="card" id="sec-discount">
     <h2>Discount codes (% off)</h2>
     <p class="note" style="margin-bottom:10px">Generate a one-time percent-off code and email it straight to the customer. Online-only, single use, and can't be combined with any other offer.</p>
@@ -1058,6 +1066,26 @@ window.loEditFromList=function(code){
   document.getElementById("sec-loyalty").scrollIntoView({behavior:"smooth",block:"start"});
   $("#loLook").click();
 };
+window.toggleBdayRow=function(code){
+  var row=document.getElementById("bdayRow-"+code); if(!row) return;
+  row.style.display = (row.style.display==="none"||!row.style.display) ? "flex" : "none";
+};
+window.saveBdayFromList=async function(code){
+  var key=$("#key").value.trim(); if(!key){ alert("Enter your admin key (top of page)."); return; }
+  var dob=$("#bdayInput-"+code).value;
+  var msg=document.getElementById("bdayMsg-"+code);
+  if(!dob){ msg.style.color="#b5382f"; msg.textContent="Pick a date."; return; }
+  msg.style.color="var(--ink-soft)"; msg.textContent="Saving…";
+  try{
+    var r=await (await fetch("/api/loyalty",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key,action:"adjust",code,dob})})).json();
+    if(r.ok){
+      msg.style.color="#4d7848"; msg.textContent="✓ Saved!";
+      var c=LOYALTY.find(function(x){return x.code===code;});
+      if(c){ c.dob=r.dob||dob; }
+      setTimeout(function(){ renderLoyaltyList(); },600);
+    } else { msg.style.color="#b5382f"; msg.textContent=r.error||"Couldn't save."; }
+  }catch(e){ msg.style.color="#b5382f"; msg.textContent="Network error."; }
+};
 // ---- Loyalty customers list ----
 var LOYALTY=[];
 $("#llLoad").onclick=async()=>{
@@ -1238,8 +1266,15 @@ function llChildRow(c){
     +'<span style="margin-left:auto;display:flex;gap:5px">'
       +'<button onclick="loEditFromList(\''+esc(c.code)+'\')" title="Edit name, birthday, or punches" style="border:none;background:#eee6f5;color:#5c4a80;border-radius:6px;cursor:pointer;font-weight:800;font-size:.75rem;padding:4px 9px">\u270F\uFE0F Edit</button>'
       +'<button onclick="punchFromList(\''+esc(c.code)+'\',\''+esc((c.childName||"").replace(/[\x27\\]/g,""))+'\')" title="Add a punch" style="border:none;background:#e7f0df;color:#4d6b3e;border-radius:6px;cursor:pointer;font-weight:800;font-size:.75rem;padding:4px 9px">\u2795 Punch</button>'
+      +'<button onclick="toggleBdayRow(\''+esc(c.code)+'\')" title="Set this child\'s birthday" style="border:none;background:#fdeedd;color:#a5651a;border-radius:6px;cursor:pointer;font-weight:800;font-size:.75rem;padding:4px 9px">\uD83C\uDF82 Birthday</button>'
       +'<button onclick="deleteLoyalty(\''+esc(c.code)+'\',\''+esc((c.childName||"").replace(/[\x27\\]/g,""))+'\')" title="Delete card" style="border:none;background:#fbe6e2;color:#b5382f;border-radius:6px;cursor:pointer;font-size:.8rem;padding:3px 7px">\uD83D\uDDD1\uFE0F</button>'
     +'</span>'
+    +'<div id="bdayRow-'+esc(c.code)+'" style="display:none;width:100%;align-items:center;gap:8px;background:#fdf9f4;border:1px solid #efe4d5;border-radius:9px;padding:8px 10px;margin-top:2px">'
+      +'<span style="font-size:.78rem;font-weight:700;color:var(--charcoal)">\uD83C\uDF82 Birthday for '+esc(c.childName)+':</span>'
+      +'<input type="date" id="bdayInput-'+esc(c.code)+'" value="'+(c.dob||"")+'" style="border:1px solid #e0d5c6;border-radius:7px;padding:4px 8px;font-size:.8rem">'
+      +'<button onclick="saveBdayFromList(\''+esc(c.code)+'\')" style="border:none;background:#e7f0df;color:#4d6b3e;border-radius:6px;cursor:pointer;font-weight:800;font-size:.72rem;padding:5px 10px">\uD83D\uDCBE Save</button>'
+      +'<span id="bdayMsg-'+esc(c.code)+'" style="font-size:.75rem"></span>'
+    +'</div>'
     +'<div style="width:100%;display:flex;align-items:center;gap:10px;font-size:.76rem">'
       +(c.dob?'<span style="color:#4d7848;font-weight:700">\uD83C\uDF82 Birthday on file: '+esc(c.dob)+'</span>':'<span style="color:#b5382f;font-weight:700">\uD83C\uDF82 No birthday on file — tap Edit to add one</span>')
       +waiverBadge(c.waiverExpiry)
@@ -1588,6 +1623,43 @@ if($("#ccFix")) $("#ccFix").onclick=async function(){
   }catch(e){ out.className="out err"; out.textContent="Network error — please try again."; }
   $("#ccFix").disabled=false;
 };
+async function frLoad(){
+  var out=$("#frOut"); out.style.display="block";
+  var key=$("#key").value.trim();
+  if(!key){ out.className="out err"; out.textContent="Enter your admin key (top of page)."; return; }
+  out.className="out"; out.textContent="Loading…"; $("#frLoad").disabled=true;
+  try{
+    var resp=await fetch("/api/failed-redemptions",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key,action:"list"})});
+    var r; try{ r=await resp.json(); }catch(pe){ r=null; }
+    if(!resp.ok||!r||!r.ok){ out.className="out err"; out.textContent=(r&&r.error)?r.error:("Couldn't load (server said "+resp.status+")."); $("#frLoad").disabled=false; return; }
+    out.style.display="none"; frRender(r.rows||[]);
+  }catch(e){ out.className="out err"; out.textContent="Network error."; }
+  $("#frLoad").disabled=false;
+}
+function frRender(rows){
+  var wrap=$("#frTableWrap");
+  if(!rows.length){ wrap.innerHTML='<div class="note">🎉 No failed codes on file — everyone who tried a code got through.</div>'; return; }
+  var html='<table style="width:100%;border-collapse:collapse;font-size:.82rem;min-width:640px">'
+    +'<thead><tr style="text-align:left;color:#8a8276;font-size:.7rem;text-transform:uppercase;letter-spacing:.05em">'
+    +'<th style="padding:6px 8px">When</th><th style="padding:6px 8px">Code</th><th style="padding:6px 8px">Reason</th><th style="padding:6px 8px">Name</th><th style="padding:6px 8px">Email</th><th style="padding:6px 8px">Phone</th><th style="padding:6px 8px">Actions</th></tr></thead><tbody>';
+  rows.forEach(function(r){
+    html+='<tr style="border-top:1px solid #efe7da">'
+      +'<td style="padding:7px 8px;white-space:nowrap;color:#8a8276">'+esc((r.at||"").slice(0,16).replace("T"," "))+'</td>'
+      +'<td style="padding:7px 8px;font-weight:800">'+esc(r.code)+'</td>'
+      +'<td style="padding:7px 8px;color:#b5382f">'+esc(r.reason)+'</td>'
+      +'<td style="padding:7px 8px">'+(esc(r.name)||"—")+'</td>'
+      +'<td style="padding:7px 8px">'+(r.email?'<a href="mailto:'+esc(r.email)+'">'+esc(r.email)+'</a>':"—")+'</td>'
+      +'<td style="padding:7px 8px;white-space:nowrap">'+(r.phone?'<a href="sms:'+esc(r.phone)+'">'+esc(r.phone)+'</a>':"—")+'</td>'
+      +'<td style="padding:7px 8px;white-space:nowrap"><button type="button" onclick="frClear(\''+esc(r.id)+'\')" style="border:none;background:#e7f0df;color:#4d6b3e;border-radius:6px;cursor:pointer;font-weight:800;font-size:.72rem;padding:4px 9px">✓ Followed up</button></td>'
+      +'</tr>';
+  });
+  wrap.innerHTML=html+'</tbody></table>';
+}
+window.frClear=async function(id){
+  var key=$("#key").value.trim(); if(!key){ alert("Enter your admin key (top of page)."); return; }
+  try{ await fetch("/api/failed-redemptions",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key,action:"clear",id})}); frLoad(); }catch(e){ alert("Network error."); }
+};
+if($("#frLoad")) $("#frLoad").onclick=frLoad;
 window.ledAct=async function(code,type,action){
   var word=action==="delete"?"permanently delete":"deactivate";
   var msg=action==="delete"

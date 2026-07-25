@@ -128,25 +128,39 @@
         <div><label>Parent phone (for the code)</label><input type="tel" id="loPhone" placeholder="e.g. 7601234"></div>
         <div><label>Email (for their code, optional)</label><input type="email" id="loEmail" placeholder="parent@email.com"></div>
       </div>
-      <div style="background:#fdf5ee;border:1px solid #f0e2d2;border-radius:10px;padding:9px 12px;margin:8px 0 4px">
-        <label style="display:block;text-transform:none;letter-spacing:0;color:var(--charcoal);font-weight:700;font-size:.82rem;margin:0 0 5px">📋 Waiver signed date <span style="font-weight:600;color:var(--taupe)">(optional — expires 365 days later)</span></label>
-        <input type="date" id="loWaiver" style="margin:0">
-        <p class="note" style="margin:6px 0 0">If they signed on WaiverMaster today, set today's date here to save it with their card — no need to enter it separately below.</p>
+      <div style="background:#fdf1ec;border:1px solid #f0dcd2;border-radius:10px;padding:10px 12px;margin:10px 0">
+        <label style="display:block;font-weight:700;font-size:.82rem;color:var(--charcoal);margin-bottom:6px">📋 Waiver signed date <span style="font-weight:600;color:var(--taupe)">(optional — expires 365 days later)</span></label>
+        <input type="date" id="loWaiverDate">
+        <p class="note" style="margin-top:6px">If they signed on WaiverMaster today, set today's date here to save it with their card — no need to enter it separately below.</p>
+        <label style="display:block;font-weight:700;font-size:.82rem;color:var(--charcoal);margin:10px 0 6px">👥 Adult(s)/supervisor(s) who signed <span style="font-weight:600;color:var(--taupe)">(optional — comma-separate if more than one)</span></label>
+        <input type="text" id="loWaiverAdults" placeholder="e.g. Maria Gomez, John Gomez">
+        <p class="note" style="margin-top:6px">Every adult entering must be signed on WaiverMaster too — track who's already covered for this family here, so a new adult showing up later is easy to spot.</p>
       </div>
       <button id="loPunch">Add a punch</button>
       <div class="out" id="loOut"></div>
       <div style="border-top:1px dashed #e2d9cc;margin-top:12px;padding-top:12px">
-        <label>Look up / adjust a card (owner)</label>
-        <div class="row">
-          <div><input type="text" id="loLookCode" placeholder="Code, or use name+phone above"></div>
-          <div style="flex:0 0 auto;display:flex;gap:6px">
-            <button id="loLook" style="margin-top:0">Look up</button>
-            <input type="number" id="loSet" min="0" max="7" placeholder="Set 0-7" style="width:90px">
-            <button id="loAdjust" style="margin-top:0">Set</button>
-          </div>
+        <label>✏️ Manage an existing card</label>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+          <input type="text" id="loLookCode" placeholder="Code, or use name+phone above" style="flex:1;min-width:150px">
+          <button id="loLook" style="margin-top:0">Look up</button>
         </div>
-        <p class="note">Look up shows current punches. To set an exact count (clean-start goodwill or a fix), enter 0–7 and Set. Owner/staff only.</p>
         <div class="out" id="loLookOut"></div>
+        <div id="loEditWrap" style="display:none;margin-top:10px;background:#fdf9f4;border:1px solid #efe4d5;border-radius:10px;padding:10px 12px">
+          <div class="row">
+            <div><label>First name</label><input type="text" id="loEditFirst"></div>
+            <div><label>Last name</label><input type="text" id="loEditLast"></div>
+          </div>
+          <div class="row">
+            <div><label>Birthday</label><input type="date" id="loEditDob"></div>
+            <div><label>Punches (0–7)</label><input type="number" id="loEditPunches" min="0" max="7"></div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+            <button id="loEditSave" style="margin:0">💾 Save changes</button>
+            <button id="loEditDelete" class="alt" style="margin:0;background:#fbe6e2;color:#b5382f">🗑️ Delete card</button>
+          </div>
+          <div class="out" id="loEditOut"></div>
+        </div>
+        <p class="note">Look up a card by code (or name+phone above), then fix a misspelled name, add/correct a birthday, adjust punches, or delete the card — all in one place. Changes save immediately.</p>
       </div>
     </div>
 
@@ -401,6 +415,14 @@
         <button id="ccFix" style="margin-top:0">🛠️ Fix these codes now</button>
       </div>
       <div class="out" id="ccFixOut"></div>
+    </div>
+
+  <div class="card" id="sec-failed">
+      <h2>⚠️ Codes that failed at checkout</h2>
+      <p class="note" style="margin-top:-2px">Every time a family's free-visit, birthday, or classroom code doesn't go through, it's logged here with their name/email/phone from the booking form — plus the owner gets an email the moment it happens. Use this to follow up directly instead of guessing who tried. Dismiss an entry once you've reached out.</p>
+      <button id="frLoad">🔄 Load list</button>
+      <div class="out" id="frOut"></div>
+      <div id="frTableWrap" style="overflow-x:auto;margin-top:10px"></div>
     </div>
 
   <div class="card" id="sec-punchissue">
@@ -788,67 +810,104 @@ $("#loAddKid").onclick=()=>{
 };
 $("#loPunch").onclick=async()=>{
   const out=$("#loOut"); out.style.display="block";
+  const phone=$("#loPhone").value.trim(), email=$("#loEmail").value.trim(), waiverSigned=$("#loWaiverDate").value;
+  const adultNames=$("#loWaiverAdults").value.split(",").map(function(s){return s.trim();}).filter(Boolean);
   if(!PIN){ out.className="out err"; out.textContent="Enter your staff PIN first."; return; }
-  const phone=$("#loPhone").value.trim(), email=$("#loEmail").value.trim();
-  const waiverDate=($("#loWaiver")||{}).value||"";
   const kids=[...document.querySelectorAll("#loKids .lo-kid")].map(function(r){return {first:r.querySelector(".lokF").value.trim(), last:r.querySelector(".lokL").value.trim()};}).filter(function(c){return c.first&&c.last;});
   if(!kids.length){ out.className="out err"; out.textContent="Enter at least one child's first and last name."; return; }
   if(phone.replace(/\D/g,"").length<4){ out.className="out err"; out.textContent="Enter at least the last 4 digits of the parent's phone."; return; }
   $("#loPunch").disabled=true; $("#loPunch").textContent="Punching…";
   try{
     let r;
+    const waiverLine=waiverSigned?'<br>📋 Waiver signed date saved (expires '+(function(){var d=new Date(waiverSigned+"T12:00:00");d.setDate(d.getDate()+365);return d.toISOString().slice(0,10);})()+').':'';
     if(kids.length===1){
-      r=await (await fetch("/api/loyalty",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key:PIN,action:"punch",childFirst:kids[0].first,childLast:kids[0].last,phone,email})})).json();
-      if(r.ok){ if(r.rewardIssued){ out.className="out ok"; out.innerHTML='🎉 <b>'+esc(r.childName)+'</b> earned a FREE visit! Code <b>'+esc(r.rewardCode)+'</b> emailed. Card reset to 0/7.'; } else { out.className="out ok"; out.innerHTML='✅ Punched <b>'+esc(r.childName)+'</b> ('+esc(r.code)+') → <b>'+r.punches+'/'+r.needed+'</b>'+(r.isNew?' · new card created'+(email?', welcome email sent':''):''); } }
+      r=await (await fetch("/api/loyalty",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key:PIN,action:"punch",childFirst:kids[0].first,childLast:kids[0].last,phone,email,waiverSigned,adultNames})})).json();
+      if(r.ok){ if(r.rewardIssued){ out.className="out ok"; out.innerHTML='🎉 <b>'+esc(r.childName)+'</b> earned a FREE visit! Code <b>'+esc(r.rewardCode)+'</b> emailed. Card reset to 0/7.'+waiverLine; } else { out.className="out ok"; out.innerHTML='✅ Punched <b>'+esc(r.childName)+'</b> ('+esc(r.code)+') → <b>'+r.punches+'/'+r.needed+'</b>'+(r.isNew?' · new card created'+(email?', welcome email sent':''):'')+waiverLine; } }
     } else {
-      r=await (await fetch("/api/loyalty",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key:PIN,action:"family-punch",children:kids,phone,email})})).json();
-      if(r.ok){ out.className="out ok"; out.innerHTML='✅ '+esc(r.message)+'<br>'+r.results.map(function(x){return '• <b>'+esc(x.childName)+'</b> ('+esc(x.code)+') '+(x.rewardIssued?'🎉 FREE visit! '+esc(x.rewardCode):x.punches+'/'+x.needed);}).join("<br>"); }
+      r=await (await fetch("/api/loyalty",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key:PIN,action:"family-punch",children:kids,phone,email,waiverSigned,adultNames})})).json();
+      if(r.ok){ out.className="out ok"; out.innerHTML='✅ '+esc(r.message)+'<br>'+r.results.map(function(x){return '• <b>'+esc(x.childName)+'</b> ('+esc(x.code)+') '+(x.rewardIssued?'🎉 FREE visit! '+esc(x.rewardCode):x.punches+'/'+x.needed);}).join("<br>")+waiverLine; }
     }
-    if(r.ok){ document.querySelectorAll("#loKids .lo-kid").forEach(function(el,i){ if(i===0){ el.querySelector(".lokF").value="";el.querySelector(".lokL").value="";} else el.remove(); }); $("#loPhone").value="";$("#loEmail").value="";
-      if(waiverDate){
-        var codes=[];
-        if(r.code) codes.push(r.code);
-        if(r.results&&r.results.length) r.results.forEach(function(x){ if(x.code) codes.push(x.code); });
-        try{
-          var okCount=0, failMsg="";
-          for(var ci=0;ci<codes.length;ci++){
-            var wr=await (await fetch("/api/loyalty",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key:PIN,action:"set-waiver",code:codes[ci],signed:waiverDate})})).json();
-            if(wr&&wr.ok){ okCount++; var wexp=wr.expiry||""; }
-            else if(wr&&wr.error){ failMsg=wr.error; }
-          }
-          if(okCount===codes.length&&okCount>0){ out.innerHTML+='<br>📋 Waiver date saved to '+(okCount>1?(okCount+' cards'):'their card')+'.'; }
-          else if(okCount>0){ out.innerHTML+='<br>📋 Waiver saved to '+okCount+' of '+codes.length+' cards'+(failMsg?' ('+esc(failMsg)+')':'')+'.'; }
-          else { out.innerHTML+='<br>⚠️ Punch saved, but couldn\'t save the waiver date'+(failMsg?': '+esc(failMsg):'')+'. Try setting it from the customer list.'; }
-        }catch(e){ out.innerHTML+='<br>⚠️ Punch saved, but the waiver date didn\'t save (network). Try setting it from the customer list.'; }
-        if($("#loWaiver")) $("#loWaiver").value="";
-      }
-    }
+    if(r.ok){ document.querySelectorAll("#loKids .lo-kid").forEach(function(el,i){ if(i===0){ el.querySelector(".lokF").value="";el.querySelector(".lokL").value="";} else el.remove(); }); $("#loPhone").value="";$("#loEmail").value="";$("#loWaiverDate").value="";$("#loWaiverAdults").value=""; }
     else { out.className="out err"; out.textContent=r.error||"Couldn't add a punch."; }
   }catch(e){ out.className="out err"; out.textContent="Network error."; }
   $("#loPunch").disabled=false; $("#loPunch").textContent="Add a punch";
 };
 $("#loLook").onclick=async()=>{
   const out=$("#loLookOut"); out.style.display="block";
-  if(!PIN){ out.className="out err"; out.textContent="Enter your staff PIN first."; return; }
   const code=$("#loLookCode").value.trim(), childFirst=$("#loFirst").value.trim(), childLast=$("#loLast").value.trim(), phone=$("#loPhone").value.trim();
+  if(!PIN){ out.className="out err"; out.textContent="Enter your staff PIN first."; return; }
   try{
     const r=await (await fetch("/api/loyalty",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key:PIN,action:"lookup",code,childFirst,childLast,phone})})).json();
-    if(r.ok&&r.found){ out.className="out ok"; out.innerHTML='<b>'+esc(r.childName)+'</b> ('+esc(r.code)+') → <b>'+r.punches+'/'+r.needed+'</b> punches · rewards earned: '+r.rewardsEarned; }
-    else if(r.ok){ out.className="out"; out.textContent='No card yet for '+(r.code||'that')+' — first punch will create it.'; }
-    else { out.className="out err"; out.textContent=r.error||"Not found."; }
+    if(r.ok&&r.found){
+      out.className="out ok"; out.innerHTML='<b>'+esc(r.childName)+'</b> ('+esc(r.code)+') → <b>'+r.punches+'/'+r.needed+'</b> punches · rewards earned: '+r.rewardsEarned+(r.dob?' · 🎂 birthday on file: '+esc(r.dob):' · <span style="color:#b5382f">no birthday on file</span>');
+      if(r.code) $("#loLookCode").value=r.code;
+      const parts=(r.childName||"").trim().split(/\s+/);
+      $("#loEditFirst").value=parts[0]||""; $("#loEditLast").value=parts.slice(1).join(" ")||"";
+      $("#loEditDob").value=r.dob||""; $("#loEditPunches").value=r.punches!=null?r.punches:"";
+      $("#loEditWrap").style.display="block";
+    }
+    else if(r.ok){ out.className="out"; out.textContent='No card yet for '+(r.code||'that')+' — first punch will create it.'; $("#loEditWrap").style.display="none"; }
+    else { out.className="out err"; out.textContent=r.error||"Not found."; $("#loEditWrap").style.display="none"; }
   }catch(e){ out.className="out err"; out.textContent="Network error."; }
 };
-$("#loAdjust").onclick=async()=>{
-  const out=$("#loLookOut"); out.style.display="block";
+$("#loEditSave").onclick=async()=>{
+  const out=$("#loEditOut"); out.style.display="block";
+  const code=$("#loLookCode").value.trim();
   if(!PIN){ out.className="out err"; out.textContent="Enter your staff PIN first."; return; }
-  const code=$("#loLookCode").value.trim(), setPunches=$("#loSet").value.trim();
-  const childFirst=$("#loFirst").value.trim(), childLast=$("#loLast").value.trim(), phone=$("#loPhone").value.trim();
-  if(setPunches===""||isNaN(parseInt(setPunches,10))){ out.className="out err"; out.textContent="Enter a number 0–7 to set."; return; }
+  if(!code){ out.className="out err"; out.textContent="Look up a card first."; return; }
+  const editFirst=$("#loEditFirst").value.trim(), editLast=$("#loEditLast").value.trim();
+  const dob=$("#loEditDob").value, punchesRaw=$("#loEditPunches").value;
+  const body={key:PIN,action:"adjust",code};
+  if(editFirst) body.editFirst=editFirst;
+  if(editLast) body.editLast=editLast;
+  if(dob) body.dob=dob;
+  if(punchesRaw!=="") body.setPunches=parseInt(punchesRaw,10);
   try{
-    const r=await (await fetch("/api/loyalty",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key:PIN,action:"adjust",code,childFirst,childLast,phone,setPunches:parseInt(setPunches,10)})})).json();
-    if(r.ok){ out.className="out ok"; out.innerHTML='✅ Set <b>'+esc(r.childName||r.code)+'</b> to <b>'+r.punches+'/'+r.needed+'</b> punches.'; $("#loSet").value=""; }
-    else { out.className="out err"; out.textContent=r.error||"Couldn't adjust."; }
+    const r=await (await fetch("/api/loyalty",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)})).json();
+    if(r.ok){
+      out.className="out ok"; out.innerHTML='✅ Saved — <b>'+esc(r.childName||code)+'</b>, <b>'+r.punches+'/'+r.needed+'</b> punches'+(r.dob?', birthday '+esc(r.dob):'')+'.';
+      var c=LOYALTY.find(function(x){return x.code===code;});
+      if(c){ c.childName=r.childName; c.punches=r.punches; c.dob=r.dob; renderLoyaltyList(); }
+    }
+    else { out.className="out err"; out.textContent=r.error||"Couldn't save."; }
   }catch(e){ out.className="out err"; out.textContent="Network error."; }
+};
+$("#loEditDelete").onclick=async()=>{
+  const out=$("#loEditOut"); out.style.display="block";
+  const code=$("#loLookCode").value.trim();
+  if(!PIN){ out.className="out err"; out.textContent="Enter your staff PIN first."; return; }
+  if(!code){ out.className="out err"; out.textContent="Look up a card first."; return; }
+  if(!confirm("Delete this loyalty card ("+code+")? This can't be undone.")) return;
+  try{
+    const r=await (await fetch("/api/loyalty",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key:PIN,action:"delete",code})})).json();
+    if(r.ok){ out.className="out ok"; out.textContent="Deleted."; $("#loEditWrap").style.display="none"; $("#loLookOut").style.display="none"; LOYALTY=LOYALTY.filter(function(c){return c.code!==code;}); renderLoyaltyList(); }
+    else { out.className="out err"; out.textContent=r.error||"Couldn't delete."; }
+  }catch(e){ out.className="out err"; out.textContent="Network error."; }
+};
+window.loEditFromList=function(code){
+  $("#loLookCode").value=code;
+  document.getElementById("sec-loyalty").scrollIntoView({behavior:"smooth",block:"start"});
+  $("#loLook").click();
+};
+window.toggleBdayRow=function(code){
+  var row=document.getElementById("bdayRow-"+code); if(!row) return;
+  row.style.display = (row.style.display==="none"||!row.style.display) ? "flex" : "none";
+};
+window.saveBdayFromList=async function(code){
+  if(!PIN){ alert("Enter your staff PIN first."); return; }
+  var dob=$("#bdayInput-"+code).value;
+  var msg=document.getElementById("bdayMsg-"+code);
+  if(!dob){ msg.style.color="#b5382f"; msg.textContent="Pick a date."; return; }
+  msg.style.color="var(--ink-soft)"; msg.textContent="Saving…";
+  try{
+    var r=await (await fetch("/api/loyalty",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key:PIN,action:"adjust",code,dob})})).json();
+    if(r.ok){
+      msg.style.color="#4d7848"; msg.textContent="✓ Saved!";
+      var c=LOYALTY.find(function(x){return x.code===code;});
+      if(c){ c.dob=r.dob||dob; }
+      setTimeout(function(){ renderLoyaltyList(); },600);
+    } else { msg.style.color="#b5382f"; msg.textContent=r.error||"Couldn't save."; }
+  }catch(e){ msg.style.color="#b5382f"; msg.textContent="Network error."; }
 };
 // ---- Loyalty customers list ----
 var LOYALTY=[];
@@ -937,7 +996,7 @@ function llChildRow(c){
   return '<div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:9px 12px;border-top:1px solid #f0e9df">'
     +'<span style="font-size:1.15rem">'+llStatus(c)+'</span>'
     +'<b style="min-width:130px">'+llLastFirst(c.childName)+'</b>'
-    +'<span style="color:var(--rose);font-weight:800;letter-spacing:.5px">'+esc(c.code)+'</span>'
+    +'<span style="color:var(--rose-deep);font-weight:800;letter-spacing:.5px">'+esc(c.code)+'</span>'
     +'<button onclick="copyCode(\''+esc(c.code)+'\',this)" title="Copy code" style="border:none;background:#f0e9df;border-radius:6px;cursor:pointer;font-size:.72rem;padding:2px 6px">\uD83D\uDCCB</button>'
     +'<span style="display:inline-flex;align-items:center;gap:5px;background:#f7f2ec;border-radius:8px;padding:2px 6px">'
       +'<button onclick="adjustPunch(\''+esc(c.code)+'\',-1)" style="border:1px solid #d9a79e;background:#f0cfc8;color:#a5352b;border-radius:6px;width:27px;height:27px;cursor:pointer;font-weight:900;font-size:1.15rem;line-height:1">\u2212</button>'
@@ -945,11 +1004,23 @@ function llChildRow(c){
       +'<button onclick="adjustPunch(\''+esc(c.code)+'\',1)" style="border:1px solid #a9cf90;background:#cfe6bd;color:#33521f;border-radius:6px;width:27px;height:27px;cursor:pointer;font-weight:900;font-size:1.15rem;line-height:1">+</button>'
     +'</span>'
     +'<span title="Free visits earned" style="font-size:.8rem;color:var(--taupe)">\uD83C\uDF81 '+(c.rewardsEarned||0)+'</span>'
-    +' '+waiverBadge(c.waiverExpiry)
     +'<span style="margin-left:auto;display:flex;gap:5px">'
+      +'<button onclick="loEditFromList(\''+esc(c.code)+'\')" title="Edit name, birthday, or punches" style="border:none;background:#eee6f5;color:#5c4a80;border-radius:6px;cursor:pointer;font-weight:800;font-size:.75rem;padding:4px 9px">\u270F\uFE0F Edit</button>'
       +'<button onclick="punchFromList(\''+esc(c.code)+'\',\''+esc((c.childName||"").replace(/[\x27\\]/g,""))+'\')" title="Add a punch" style="border:none;background:#e7f0df;color:#4d6b3e;border-radius:6px;cursor:pointer;font-weight:800;font-size:.75rem;padding:4px 9px">\u2795 Punch</button>'
+      +'<button onclick="toggleBdayRow(\''+esc(c.code)+'\')" title="Set this child\'s birthday" style="border:none;background:#fdeedd;color:#a5651a;border-radius:6px;cursor:pointer;font-weight:800;font-size:.75rem;padding:4px 9px">\uD83C\uDF82 Birthday</button>'
       +'<button onclick="deleteLoyalty(\''+esc(c.code)+'\',\''+esc((c.childName||"").replace(/[\x27\\]/g,""))+'\')" title="Delete card" style="border:none;background:#fbe6e2;color:#b5382f;border-radius:6px;cursor:pointer;font-size:.8rem;padding:3px 7px">\uD83D\uDDD1\uFE0F</button>'
-    +'</span></div>';
+    +'</span>'
+    +'<div id="bdayRow-'+esc(c.code)+'" style="display:none;width:100%;align-items:center;gap:8px;background:#fdf9f4;border:1px solid #efe4d5;border-radius:9px;padding:8px 10px;margin-top:2px">'
+      +'<span style="font-size:.78rem;font-weight:700;color:var(--charcoal)">\uD83C\uDF82 Birthday for '+esc(c.childName)+':</span>'
+      +'<input type="date" id="bdayInput-'+esc(c.code)+'" value="'+(c.dob||"")+'" style="border:1px solid #e0d5c6;border-radius:7px;padding:4px 8px;font-size:.8rem">'
+      +'<button onclick="saveBdayFromList(\''+esc(c.code)+'\')" style="border:none;background:#e7f0df;color:#4d6b3e;border-radius:6px;cursor:pointer;font-weight:800;font-size:.72rem;padding:5px 10px">\uD83D\uDCBE Save</button>'
+      +'<span id="bdayMsg-'+esc(c.code)+'" style="font-size:.75rem"></span>'
+    +'</div>'
+    +'<div style="width:100%;display:flex;align-items:center;gap:10px;font-size:.76rem">'
+      +(c.dob?'<span style="color:#4d7848;font-weight:700">\uD83C\uDF82 Birthday on file: '+esc(c.dob)+'</span>':'<span style="color:#b5382f;font-weight:700">\uD83C\uDF82 No birthday on file — tap Edit to add one</span>')
+      +waiverBadge(c.waiverExpiry)
+    +'</div>'
+    +'</div>';
 }
 function renderLoyaltyList(){
   var q=($("#llSearch").value||"").toLowerCase().trim();
@@ -957,28 +1028,68 @@ function renderLoyaltyList(){
   if(!rows.length){$("#llList").innerHTML='<div class="note">'+(LOYALTY.length?"No matches.":"No loyalty customers yet.")+'</div>';return;}
   var fams={};
   rows.forEach(function(c){var k=c.phone4?("fam:"+c.phone4):("solo:"+c.code);(fams[k]=fams[k]||[]).push(c);});
-  var sortMode=($("#llSort")||{}).value||"name";
-  function famTime(k){ return Math.max.apply(null, fams[k].map(function(c){ return new Date(c.createdAt||c.addedAt||c.issuedAt||0).getTime()||0; })); }
-  var keys=Object.keys(fams);
-  if(sortMode==="recent"){ keys.sort(function(a,b){ return famTime(b)-famTime(a); }); }
-  else if(sortMode==="oldest"){ keys.sort(function(a,b){ return famTime(a)-famTime(b); }); }
-  else { keys.sort(function(a,b){return llLastName(fams[a][0].childName).localeCompare(llLastName(fams[b][0].childName));}); }
+  var keys=Object.keys(fams).sort(function(a,b){return llLastName(fams[a][0].childName).localeCompare(llLastName(fams[b][0].childName));});
   var html="";
   keys.forEach(function(k){
     var kids=fams[k], fam=kids[0], isFam=!!fam.phone4;
     var famName=(fam.childName||"").trim().split(/\s+/).slice(-1)[0]||"\u2014";
-    var waiverInput='<input type="date" value="'+(fam.waiverSigned||"")+'" onchange="setWaiver('+(isFam?"\''+esc(fam.phone4)+'\',null":"null,\''+esc(fam.code)+'\'")+',this.value)" title="Waiver signed date (expires 365 days later)" style="border:1px solid #e0d5c6;border-radius:7px;padding:3px 6px;font-size:.75rem">';
+    var waiverInput='<span style="display:inline-flex;gap:5px;align-items:center"><input type="date" value="'+(fam.waiverSigned||"")+'" title="Waiver signed date (expires 365 days later)" style="border:1px solid #e0d5c6;border-radius:7px;padding:3px 6px;font-size:.75rem">'
+      +'<button type="button" onclick="setWaiver('+(isFam?"\'"+esc(fam.phone4)+"\',null":"null,\'"+esc(fam.code)+"\'")+',this.previousElementSibling.value)" style="border:none;background:#e7f0df;color:#4d6b3e;border-radius:6px;cursor:pointer;font-weight:800;font-size:.7rem;padding:4px 8px">\uD83D\uDCBE Save</button></span>';
+    var famRef=isFam?("\'"+esc(fam.phone4)+"\',null"):("null,\'"+esc(fam.code)+"\'");
+    var adults=Array.isArray(fam.waiverAdults)?fam.waiverAdults:[];
+    var today=new Date().toISOString().slice(0,10);
+    var adultsBlock='<div style="padding:8px 12px;border-top:1px dashed #eee1d2;background:#fffdf9">'
+      +'<span class="note" style="margin:0;font-size:.72rem;font-weight:700">\uD83D\uDC65 Adults/supervisors on waiver:</span> '
+      +(adults.length?adults.map(function(a,i){
+          var exp=a.expiry?new Date(a.expiry+"T12:00:00"):null;
+          var ok=exp && exp>=new Date();
+          var tag=a.expiry?(ok?('<span style="color:#4d7848">valid to '+esc(a.expiry)+'</span>'):('<span style="color:#b5382f">expired '+esc(a.expiry)+'</span>')):'<span style="color:var(--taupe)">no date</span>';
+          return '<span style="display:inline-flex;align-items:center;gap:4px;background:#f0ede5;border-radius:20px;padding:2px 8px 2px 10px;margin:3px 4px 0 0;font-size:.75rem"><b>'+esc(a.name)+'</b> \u00b7 '+tag+' <button type="button" onclick="removeWaiverAdult('+famRef+','+i+')" style="border:none;background:none;color:#b5382f;cursor:pointer;font-weight:900;padding:0 2px">\u2715</button></span>';
+        }).join(""):'<span class="note" style="margin:0;font-size:.75rem">none on file yet</span>')
+      +'<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">'
+        +'<input type="text" placeholder="Add adult name" style="flex:1;min-width:140px;border:1px solid #e0d5c6;border-radius:7px;padding:4px 8px;font-size:.78rem" onkeydown="if(event.key===\'Enter\'){addWaiverAdult('+famRef+',this.value,\'"+today+"\');this.value=\'\';}">'
+        +'<button type="button" onclick="var i=this.previousElementSibling;addWaiverAdult('+famRef+',i.value,\'"+today+"\');i.value=\'\';" style="border:none;background:#e7f0df;color:#4d6b3e;border-radius:6px;cursor:pointer;font-weight:800;font-size:.72rem;padding:4px 9px">+ Add (signed today)</button>'
+      +'</div></div>';
     html+='<div style="border:1px solid #e7ddd0;border-radius:12px;margin-bottom:10px;overflow:hidden">'
       +'<div style="background:#faf5ef;padding:8px 12px;display:flex;flex-wrap:wrap;align-items:center;gap:8px">'
         +'<b>'+esc(famName)+(kids.length>1?" family":"")+'</b>'
         +(fam.phone4?'<span style="color:var(--taupe);font-size:.78rem">\uD83D\uDCDE \u2022\u2022\u2022'+esc(fam.phone4)+'</span>':'')
         +'<span style="margin-left:auto;display:flex;align-items:center;gap:6px"><span class="note" style="margin:0;font-size:.72rem">Waiver signed:</span>'+waiverInput+'</span>'
       +'</div>'
+      +adultsBlock
       +kids.map(llChildRow).join("")
     +'</div>';
   });
   $("#llList").innerHTML=html;
 }
+window.addWaiverAdult=async function(phone4,code,name,signedDate){
+  name=(name||"").trim(); if(!name)return;
+  if(!PIN){alert("Enter your staff PIN first.");return;}
+  var fam=LOYALTY.find(function(c){return phone4?c.phone4===phone4:c.code===code;});
+  var existing=(fam&&Array.isArray(fam.waiverAdults))?fam.waiverAdults:[];
+  var adults=existing.concat([{name:name,signedDate:signedDate}]);
+  var body={key:PIN,action:"set-waiver",adults:adults};
+  if(phone4){body.family=true;body.phone4=phone4;}else{body.code=code;}
+  try{
+    var r=await (await fetch("/api/loyalty",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)})).json();
+    if(r.ok){ LOYALTY.forEach(function(c){ if((phone4&&c.phone4===phone4)||(!phone4&&c.code===code)){c.waiverAdults=r.adults;} }); renderLoyaltyList(); }
+    else alert(r.error||"Couldn't save.");
+  }catch(e){alert("Network error.");}
+};
+window.removeWaiverAdult=async function(phone4,code,idx){
+  if(!PIN){alert("Enter your staff PIN first.");return;}
+  var fam=LOYALTY.find(function(c){return phone4?c.phone4===phone4:c.code===code;});
+  var existing=(fam&&Array.isArray(fam.waiverAdults))?fam.waiverAdults:[];
+  var adults=existing.slice(); adults.splice(idx,1);
+  var body={key:PIN,action:"set-waiver",adults:adults};
+  if(phone4){body.family=true;body.phone4=phone4;}else{body.code=code;}
+  try{
+    var r=await (await fetch("/api/loyalty",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)})).json();
+    if(r.ok){ LOYALTY.forEach(function(c){ if((phone4&&c.phone4===phone4)||(!phone4&&c.code===code)){c.waiverAdults=r.adults;} }); renderLoyaltyList(); }
+    else alert(r.error||"Couldn't remove.");
+  }catch(e){alert("Network error.");}
+};
+
 async function snCall(action){
   const out=$("#snOut"); out.className="out";
   if(action==="clear" && !confirm("Clear the news banner from the homepage?")) return;
@@ -1296,6 +1407,61 @@ if($("#ccGen")) $("#ccGen").onclick=async function(){
   }catch(e){ out.className="out err"; out.textContent="Network error — please try again."; }
   $("#ccGen").disabled=false;
 };
+if($("#ccFix")) $("#ccFix").onclick=async function(){
+  var out=$("#ccFixOut"); out.style.display="block";
+  if(!PIN){ out.className="out err"; out.textContent="Enter your staff PIN first."; return; }
+  var label=$("#ccFixLabel").value.trim();
+  if(!label){ out.className="out err"; out.textContent="Enter the classroom name."; return; }
+  var codesRaw=$("#ccFixCodes").value.trim();
+  var codes=codesRaw?codesRaw.split(/[\s,]+/).map(function(s){return s.trim();}).filter(Boolean):undefined;
+  var days=parseInt($("#ccFixDays").value,10);
+  out.className="out"; out.textContent="Fixing…"; $("#ccFix").disabled=true;
+  try{
+    var body={key:PIN,action:"repair",label,expiryDays:days};
+    if(codes) body.codes=codes;
+    var resp=await fetch("/api/classroom-codes",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)});
+    var r; try{ r=await resp.json(); }catch(pe){ r=null; }
+    if(!resp.ok||!r||!r.ok){ out.className="out err"; out.textContent=(r&&r.error)?r.error:("Couldn't fix (server said "+resp.status+")."); }
+    else { out.className="out ok"; out.textContent="✅ "+r.message; if(typeof ledLoad==="function") ledLoad(); }
+  }catch(e){ out.className="out err"; out.textContent="Network error — please try again."; }
+  $("#ccFix").disabled=false;
+};
+async function frLoad(){
+  var out=$("#frOut"); out.style.display="block";
+  if(!PIN){ out.className="out err"; out.textContent="Enter your staff PIN first."; return; }
+  out.className="out"; out.textContent="Loading…"; $("#frLoad").disabled=true;
+  try{
+    var resp=await fetch("/api/failed-redemptions",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key:PIN,action:"list"})});
+    var r; try{ r=await resp.json(); }catch(pe){ r=null; }
+    if(!resp.ok||!r||!r.ok){ out.className="out err"; out.textContent=(r&&r.error)?r.error:("Couldn't load (server said "+resp.status+")."); $("#frLoad").disabled=false; return; }
+    out.style.display="none"; frRender(r.rows||[]);
+  }catch(e){ out.className="out err"; out.textContent="Network error."; }
+  $("#frLoad").disabled=false;
+}
+function frRender(rows){
+  var wrap=$("#frTableWrap");
+  if(!rows.length){ wrap.innerHTML='<div class="note">🎉 No failed codes on file — everyone who tried a code got through.</div>'; return; }
+  var html='<table style="width:100%;border-collapse:collapse;font-size:.82rem;min-width:640px">'
+    +'<thead><tr style="text-align:left;color:#8a8276;font-size:.7rem;text-transform:uppercase;letter-spacing:.05em">'
+    +'<th style="padding:6px 8px">When</th><th style="padding:6px 8px">Code</th><th style="padding:6px 8px">Reason</th><th style="padding:6px 8px">Name</th><th style="padding:6px 8px">Email</th><th style="padding:6px 8px">Phone</th><th style="padding:6px 8px">Actions</th></tr></thead><tbody>';
+  rows.forEach(function(r){
+    html+='<tr style="border-top:1px solid #efe7da">'
+      +'<td style="padding:7px 8px;white-space:nowrap;color:#8a8276">'+esc((r.at||"").slice(0,16).replace("T"," "))+'</td>'
+      +'<td style="padding:7px 8px;font-weight:800">'+esc(r.code)+'</td>'
+      +'<td style="padding:7px 8px;color:#b5382f">'+esc(r.reason)+'</td>'
+      +'<td style="padding:7px 8px">'+(esc(r.name)||"—")+'</td>'
+      +'<td style="padding:7px 8px">'+(r.email?'<a href="mailto:'+esc(r.email)+'">'+esc(r.email)+'</a>':"—")+'</td>'
+      +'<td style="padding:7px 8px;white-space:nowrap">'+(r.phone?'<a href="sms:'+esc(r.phone)+'">'+esc(r.phone)+'</a>':"—")+'</td>'
+      +'<td style="padding:7px 8px;white-space:nowrap"><button type="button" onclick="frClear(\''+esc(r.id)+'\')" style="border:none;background:#e7f0df;color:#4d6b3e;border-radius:6px;cursor:pointer;font-weight:800;font-size:.72rem;padding:4px 9px">✓ Followed up</button></td>'
+      +'</tr>';
+  });
+  wrap.innerHTML=html+'</tbody></table>';
+}
+window.frClear=async function(id){
+  if(!PIN){ alert("Enter your staff PIN first."); return; }
+  try{ await fetch("/api/failed-redemptions",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key:PIN,action:"clear",id})}); frLoad(); }catch(e){ alert("Network error."); }
+};
+if($("#frLoad")) $("#frLoad").onclick=frLoad;
 window.ledAct=async function(code,type,action){
   var msg=action==="delete"
     ? "Permanently DELETE code "+code+"? This removes it entirely and cannot be undone."
