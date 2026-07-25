@@ -1,10 +1,12 @@
 // POST /api/codes-list  (admin key or staff PIN)
 // One combined ledger of every code the studio has issued:
-//   - store credits   (blob store "credits", prefix "credit:")
-//   - discount codes  (blob store "discounts", prefix "disc:")
-//   - punch cards     (blob store "passes", prefix "pass:")
+//   - store credits    (blob store "credits", prefix "credit:")
+//   - discount codes   (blob store "discounts", prefix "disc:")
+//   - punch cards      (blob store "passes", prefix "pass:")
+//   - free-visit codes (blob store "rewards", prefix "reward:") — loyalty 8th-visit
+//     rewards, birthday gift codes, and classroom codes all live here.
 // Returns a normalized list so the admin/staff pages can render one table.
-// Body: { key, filter? }   filter = "all" | "credit" | "discount" | "pass" (optional)
+// Body: { key, filter? }   filter = "all" | "credit" | "discount" | "pass" | "reward" (optional)
 import { getStore } from "@netlify/blobs";
 
 export default async (req) => {
@@ -94,6 +96,34 @@ export default async (req) => {
         name: r.buyerName || r.childName || "",
         email: r.buyerEmail || "",
         note: r.label || r.admission || "",
+      });
+    }
+  }
+
+  // ---- Free-visit codes: loyalty 8th-visit rewards, birthday gifts, classroom codes ----
+  if (want === "all" || want === "reward") {
+    const store = getStore("rewards");
+    let keys = [];
+    try { const r = await store.list({ prefix: "reward:" }); keys = (r.blobs || []).map(x => x.key); } catch {}
+    for (const k of keys) {
+      let r = null; try { r = await store.get(k, { type: "json" }); } catch {}
+      if (!r || !r.code) continue;
+      const expired = r.expiry && r.expiry < today;
+      const status = r.used ? "used" : expired ? "expired" : "active";
+      const kindLabel = r.source === "classroom" ? `Classroom code (${r.classroom || "—"})`
+        : r.kind === "birthday" ? "Birthday gift" : "Loyalty free visit";
+      rows.push({
+        type: "reward",
+        typeLabel: kindLabel,
+        code: r.code,
+        value: "1 free admission", valueRaw: 1,
+        original: "1 free admission",
+        status,
+        issued: dateOnly(r.issuedAt),
+        expiry: r.expiry || "",
+        name: r.childName || "",
+        email: r.usedBy || "",
+        note: r.loyaltyCode ? ("linked to " + r.loyaltyCode) : "",
       });
     }
   }

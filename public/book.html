@@ -155,6 +155,10 @@
           <span style="font-weight:700"><span id="discPctTxt"></span>% off discount</span>
           <span style="font-weight:700" id="discAmt">−$0</span>
         </div>
+        <div id="rewardRow" style="display:none;justify-content:space-between;align-items:center;margin-bottom:6px;color:#7ba676">
+          <span style="font-weight:700">🎁 Free-visit code</span>
+          <span style="font-weight:700" id="rewardAmtTxt">−$0</span>
+        </div>
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
           <span style="font-weight:700;color:var(--slate)">Sales tax (<span id="taxPct">8.75</span>%)</span>
           <span style="font-weight:700" id="tax">$0</span>
@@ -282,9 +286,10 @@
 
     <div class="card">
       <p class="step"><span class="n">🎈</span> Free-visit reward code</p>
-      <div class="note" style="margin-bottom:8px">Earned your 8th visit? Enter the reward code from your loyalty email — it makes one child's admission free.</div>
+      <div class="note" style="margin-bottom:8px">Earned your 8th visit, got a classroom code, or received another free-admission code? Enter it here — it makes one child's admission free.</div>
       <input type="text" id="rewardCode" placeholder="Free-visit code (e.g. FREE1234)" style="text-transform:uppercase;width:100%">
-      <div class="note" style="margin-top:6px">Applied automatically at checkout. One-time use · can't be combined with a % off discount code.</div>
+      <div id="rewardMsg" style="margin-top:6px;font-size:.85rem;display:none"></div>
+      <div class="note" style="margin-top:6px">Applied automatically at checkout — you'll see it subtracted from your total below. One-time use · can't be combined with a % off discount code.</div>
     </div>
 
     <div class="card">
@@ -315,7 +320,8 @@ const state={date:"",slot:"",reg:0,sib:0,inf:0,ad:1,avail:{},closed:false,
   useGift:false, gc:[{gan:"",balance:0,ok:false},{gan:"",balance:0,ok:false}],
   useVP:false, vp:[{code:"",admission:"",visits:0,ok:false},{code:"",admission:"",visits:0,ok:false}],
   usePromo:false, promo:{code:"",balance:0,ok:false},
-  useDisc:false, disc:{code:"",percent:0,ok:false}};
+  useDisc:false, disc:{code:"",percent:0,ok:false},
+  reward:{code:"",amount:0,ok:false}};
 const $=s=>document.querySelector(s);
 
 function money(c){ return "$"+(c/100).toFixed(c%100?2:0); }
@@ -330,7 +336,7 @@ async function init(){
     studioName:"Little Haven Play Studio",
     closedDates:[],closedMessage:"Temporarily closed for improvements",
     policyTitle:"Open Play Booking Cancellation & Refund Policy",
-    policyLines:["Open Play bookings are prepaid. If you're unable to attend, email hello@littlehavenplay.com and we'll do our best to issue a store credit toward a future visit (typically valid for 30 days)."],
+    policyLines:["Open Play bookings are prepaid. If you're unable to attend, email hello@littlehavenplay.com and we'll do our best to issue a store credit toward a future visit (typically valid for 30 days).","If you do not show up within one hour of your reserved time, we will automatically issue a courtesy store credit for the full amount paid, valid for 15 days from issuance."],
     slots:[{id:"arr09",label:"9:00 AM"},{id:"arr10",label:"10:00 AM"},{id:"arr11",label:"11:00 AM"},{id:"arr12",label:"12:00 PM"},{id:"arr13",label:"1:00 PM"}]}; }
 
   $("#date").min=todayStr();   // no booking in the past
@@ -670,13 +676,24 @@ function updateTotals(){
   // Percent-off discount (exclusive — used on its own, before tax)
   const discOn = state.useDisc && state.disc.ok && state.disc.percent>0;
   const discAmt = discOn ? Math.round(subtotal*state.disc.percent/100) : 0;
-  const taxable = Math.max(0, subtotal - discAmt);
+  // Free-visit reward code (loyalty 8th-visit / birthday / classroom) — mutually exclusive
+  // with the discount code, same as the server enforces. Zeroes one admission, recomputed
+  // live in case admission counts changed since the code was checked.
+  const rewardOn = !discOn && state.reward.ok;
+  let rewardAmt = 0;
+  if(rewardOn){
+    const present=[]; if(paidReg>0)present.push(CFG.prices.regular); if(paidSib>0)present.push(CFG.prices.sibling); if(paidInf>0)present.push(CFG.prices.infant);
+    if(present.length) rewardAmt=Math.min(Math.max(...present), subtotal);
+  }
+  const taxable = Math.max(0, subtotal - discAmt - rewardAmt);
   const tax=Math.round(taxable*rate);
   const amt=taxable+tax;
   $("#kidCount").textContent=kids;
   $("#subtotal").textContent=money(subtotal);
   if(discAmt>0){ $("#discRow").style.display="flex"; $("#discPctTxt").textContent=state.disc.percent; $("#discAmt").textContent="−"+money(discAmt); }
   else { $("#discRow").style.display="none"; }
+  if(rewardAmt>0){ $("#rewardRow").style.display="flex"; $("#rewardAmtTxt").textContent="−"+money(rewardAmt); }
+  else { $("#rewardRow").style.display="none"; }
   $("#tax").textContent=money(tax);
   $("#taxPct").textContent=(rate*100).toFixed(2).replace(/\.?0+$/,"");
   $("#amount").textContent=money(amt);
@@ -820,6 +837,36 @@ async function pay(){
     }
   }catch(e){ showMsg("Network error — please try again.","err"); $("#pay").disabled=false; }
 }
+
+async function checkReward(){
+  const code=$("#rewardCode").value.trim().toUpperCase().replace(/[^A-Z0-9]/g,"");
+  const msg=$("#rewardMsg"); msg.style.display="block";
+  if(!code){ msg.style.display="none"; state.reward={code:"",amount:0,ok:false}; updateTotals(); return; }
+  msg.textContent="Checking…"; msg.style.color="var(--ink-soft)";
+  try{
+    const r=await (await fetch("/api/loyalty",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({action:"reward-check",rewardCode:code})})).json();
+    if(r.valid){
+      // Value = one admission of the most expensive type currently in the cart —
+      // matches the server's own calculation exactly.
+      const present=[]; if(state.reg>0)present.push(CFG.prices.regular); if(state.sib>0)present.push(CFG.prices.sibling); if(state.inf>0)present.push(CFG.prices.infant);
+      if(!present.length){ msg.style.color="var(--red)"; msg.textContent="Add a child admission above to use this code."; state.reward={code:"",amount:0,ok:false}; }
+      else{
+        const amount=Math.max(...present);
+        state.reward={code:r.code,amount,ok:true};
+        msg.style.color="#3f7d54"; msg.textContent="✓ Valid"+(r.childName?" for "+r.childName:"")+" — one admission will be free.";
+      }
+    } else {
+      state.reward={code:"",amount:0,ok:false};
+      msg.style.color="var(--red)";
+      msg.textContent = r.reason==="used" ? "This code has already been used."
+        : r.reason==="not_yet" ? ("This code isn't valid until "+r.validFrom+".")
+        : r.reason==="expired" ? "This code has expired."
+        : "Code not found — double-check it.";
+    }
+  }catch(e){ state.reward={code:"",amount:0,ok:false}; msg.style.color="var(--red)"; msg.textContent="Couldn't check that code — it'll still be tried at checkout."; }
+  updateTotals();
+}
+if($("#rewardCode")) $("#rewardCode").addEventListener("blur",checkReward);
 
 async function checkDiscount(){
   const code=$("#dc1").value.trim().toUpperCase().replace(/\s+/g,"");

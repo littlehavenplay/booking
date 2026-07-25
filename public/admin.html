@@ -355,6 +355,7 @@
         <option value="credit">Store credits</option>
         <option value="discount">Discount codes</option>
         <option value="pass">Punch cards</option>
+        <option value="reward">Free-visit codes</option>
       </select>
       <input type="text" id="ledSearch" placeholder="Search code, name, email…" style="flex:1;min-width:160px">
     </div>
@@ -1486,7 +1487,7 @@ function ledBadge(s){
   return '<span style="display:inline-block;padding:2px 9px;border-radius:20px;font-size:.72rem;font-weight:800;color:'+x[1]+';background:'+x[2]+'">'+x[0]+'</span>';
 }
 function ledTypeChip(t){
-  var m={credit:["Store credit","#c26c63"],discount:["Discount","#8a6db0"],pass:["Punch card","#5a8fb0"]};
+  var m={credit:["Store credit","#c26c63"],discount:["Discount","#8a6db0"],pass:["Punch card","#5a8fb0"],reward:["Free visit","#4d8060"]};
   var x=m[t]||[t,"#5b4636"];
   return '<span style="display:inline-block;padding:2px 8px;border-radius:6px;font-size:.66rem;font-weight:800;letter-spacing:.02em;color:#fff;background:'+x[1]+'">'+x[0]+'</span>';
 }

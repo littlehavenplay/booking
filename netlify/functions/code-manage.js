@@ -1,5 +1,6 @@
 // POST /api/code-manage  (admin key or staff PIN)
-// Deactivate or permanently delete any site-issued code — store credit, discount, or punch card.
+// Deactivate or permanently delete any site-issued code — store credit, discount,
+// punch card, or free-visit code (loyalty/birthday/classroom).
 // Body: { key, action:"deactivate"|"delete", code }
 // (Gift cards are managed in Square, not here.)
 import { getStore } from "@netlify/blobs";
@@ -8,6 +9,7 @@ const TYPES = [
   { store: "credits",   prefix: "credit:", label: "store credit" },
   { store: "discounts", prefix: "disc:",   label: "discount code" },
   { store: "passes",    prefix: "pass:",   label: "punch card" },
+  { store: "rewards",   prefix: "reward:", label: "free-visit code" },
 ];
 
 export default async (req) => {
@@ -36,7 +38,16 @@ export default async (req) => {
       return json({ ok: true, action: "delete", kind: t.label, code, message: `Deleted ${t.label} ${code}.` });
     }
 
-    // deactivate
+    // deactivate — free-visit codes don't have an "active" flag, they use "used";
+    // marking one used has the same practical effect (it can no longer be redeemed).
+    if (t.store === "rewards") {
+      if (rec.used) return json({ ok: true, action: "deactivate", kind: t.label, code, already: true, message: `${cap(t.label)} ${code} was already unusable.` });
+      rec.used = true; rec.usedAt = new Date().toISOString(); rec.usedBy = "manually deactivated";
+      try { await store.setJSON(t.prefix + code, rec); }
+      catch { return json({ error: "Couldn't deactivate that code. Try again." }, 502); }
+      return json({ ok: true, action: "deactivate", kind: t.label, code, message: `Deactivated ${t.label} ${code}. It can no longer be redeemed.` });
+    }
+
     if (rec.active === false) return json({ ok: true, action: "deactivate", kind: t.label, code, already: true, message: `${cap(t.label)} ${code} was already deactivated.` });
     rec.active = false;
     rec.deactivatedAt = new Date().toISOString();
@@ -45,7 +56,7 @@ export default async (req) => {
     return json({ ok: true, action: "deactivate", kind: t.label, code, message: `Deactivated ${t.label} ${code}. It can no longer be redeemed.` });
   }
 
-  return json({ ok: false, error: "No store credit, discount code, or punch card found for that code. (Gift cards are managed in Square.)" }, 404);
+  return json({ ok: false, error: "That code wasn't found among store credits, discount codes, punch cards, or free-visit codes. (Gift cards are managed in Square.)" }, 404);
 };
 
 function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
