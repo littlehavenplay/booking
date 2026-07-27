@@ -48,8 +48,8 @@
 <link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#7a6253"><link rel="apple-touch-icon" href="/assets/icons/apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="Little Haven"><link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32.png"></head>
 <body>
 <div class="wrap">
-<div id="secBar"><button id="secToggle" type="button">Sections ▾</button><div id="secMenu"><a href="#sec-bookings">Bookings by date</a><a href="#sec-walkin">Walk-in check-in</a><a href="#sec-punch">Punch-card check-in</a><a href="#sec-reschedule">Reschedule &amp; cancel</a><a href="#sec-cancel">Cancel a booking</a><a href="#sec-redeem">Redeem a credit</a><a href="#sec-party">Session capacity &amp; blocking</a><a href="#sec-issue">Issue a credit</a><a href="#sec-punchissue">Legacy card tools</a><a href="#sec-code">Manage a code</a><a href="#sec-closures">Closures &amp; hours</a><a href="#sec-passes">Legacy prepaid holders</a><a href="#sec-parties">Party bookings</a><a href="/headcount.html">Head count</a><a href="#sec-weekly">Weekly hours</a><a href="#sec-seasonal">Seasonal hours</a><a href="#sec-discount">Discount codes</a><a href="#sec-news">News update</a><a href="#sec-events">Upcoming events</a><a href="#sec-partners">Partners page</a><a href="#sec-birthdays">Birthday club</a></div></div>
-<nav id="sideNav" aria-label="Sections"><div class="snav-title">Sections</div><a href="#sec-bookings">Bookings by date</a><a href="#sec-walkin">Walk-in check-in</a><a href="#sec-punch">Punch-card check-in</a><a href="#sec-reschedule">Reschedule &amp; cancel</a><a href="#sec-cancel">Cancel a booking</a><a href="#sec-redeem">Redeem a credit</a><a href="#sec-party">Session capacity &amp; blocking</a><a href="#sec-issue">Issue a credit</a><a href="#sec-punchissue">Legacy card tools</a><a href="#sec-code">Manage a code</a><a href="#sec-closures">Closures &amp; hours</a><a href="#sec-passes">Legacy prepaid holders</a><a href="#sec-parties">Party bookings</a><a href="/headcount.html">Head count</a><a href="#sec-weekly">Weekly hours</a><a href="#sec-seasonal">Seasonal hours</a><a href="#sec-discount">Discount codes</a><a href="#sec-news">News update</a><a href="#sec-rating">Reviews rating</a><a href="#sec-photos">Site photos</a><a href="#sec-events">Upcoming events</a><a href="#sec-partners">Partners page</a><a href="#sec-birthdays">Birthday club</a></nav>
+<div id="secBar"><button id="secToggle" type="button">Sections ▾</button><div id="secMenu"><a href="#sec-bookings">Bookings by date</a><a href="#sec-walkin">Walk-in check-in</a><a href="#sec-punch">Punch-card check-in</a><a href="#sec-reschedule">Reschedule &amp; cancel</a><a href="#sec-redeem">Redeem a credit</a><a href="#sec-party">Session capacity &amp; blocking</a><a href="#sec-issue">Issue a credit</a><a href="#sec-punchissue">Legacy card tools</a><a href="#sec-code">Manage a code</a><a href="#sec-closures">Closures &amp; hours</a><a href="#sec-passes">Legacy prepaid holders</a><a href="#sec-parties">Party bookings</a><a href="/headcount.html">Head count</a><a href="#sec-weekly">Weekly hours</a><a href="#sec-seasonal">Seasonal hours</a><a href="#sec-discount">Discount codes</a><a href="#sec-news">News update</a><a href="#sec-events">Upcoming events</a><a href="#sec-partners">Partners page</a><a href="#sec-birthdays">Birthday club</a></div></div>
+<nav id="sideNav" aria-label="Sections"><div class="snav-title">Sections</div><a href="#sec-bookings">Bookings by date</a><a href="#sec-walkin">Walk-in check-in</a><a href="#sec-punch">Punch-card check-in</a><a href="#sec-reschedule">Reschedule &amp; cancel</a><a href="#sec-redeem">Redeem a credit</a><a href="#sec-party">Session capacity &amp; blocking</a><a href="#sec-issue">Issue a credit</a><a href="#sec-punchissue">Legacy card tools</a><a href="#sec-code">Manage a code</a><a href="#sec-closures">Closures &amp; hours</a><a href="#sec-passes">Legacy prepaid holders</a><a href="#sec-parties">Party bookings</a><a href="/headcount.html">Head count</a><a href="#sec-weekly">Weekly hours</a><a href="#sec-seasonal">Seasonal hours</a><a href="#sec-discount">Discount codes</a><a href="#sec-news">News update</a><a href="#sec-rating">Reviews rating</a><a href="#sec-photos">Site photos</a><a href="#sec-events">Upcoming events</a><a href="#sec-partners">Partners page</a><a href="#sec-birthdays">Birthday club</a></nav>
   <h1>Store Credit</h1>
   <div class="sub">Issue and look up Little Haven store credit codes</div>
 
@@ -180,58 +180,62 @@
   </div>
 
   <div class="card" id="sec-reschedule">
-    <h2>Reschedule a booking</h2>
-    <label>Original date</label>
-    <div class="row"><div><input type="date" id="rsFromDate"></div><div style="flex:0 0 auto"><button id="rsLoad" style="margin-top:0">Load bookings</button></div></div>
-    <label>Which booking?</label>
-    <select id="rsSel"><option value="">— load a date first —</option></select>
-    <label>New date</label>
-    <input type="date" id="rsToDate">
-    <label>New time slot</label>
-    <select id="rsToSlot">
-      <optgroup label="Open play arrival times">
-        <option value="arr09">9:00 AM</option>
-        <option value="arr10">10:00 AM</option>
-        <option value="arr11">11:00 AM</option>
-        <option value="arr12">12:00 PM</option>
-        <option value="arr13">1:00 PM</option>
-        <option value="arr14">2:00 PM</option><option value="arr15">3:00 PM (Fri/Sat)</option>
-      </optgroup>
-      <optgroup label="Private party times (Fri–Sun)">
-        <option value="p0930">9:30 - 11:30 AM (party)</option>
-        <option value="p1200">12:00 - 2:00 PM (party)</option>
-        <option value="p1430">2:30 - 4:30 PM (party)</option>
-        <option value="p1700">5:00 - 7:00 PM (party)</option>
-      </optgroup>
-    </select>
-    <label style="display:flex;align-items:center;gap:8px;text-transform:none;letter-spacing:0;color:var(--charcoal);font-weight:700"><input type="checkbox" id="rsNotify" style="width:auto" checked> Email the customer their updated confirmation</label>
-    <button id="rsGo">Reschedule</button>
-    <div class="out" id="rsOut"></div>
+      <h2>Reschedule or cancel a booking</h2>
+      <label>Original date</label>
+      <div class="row"><div><input type="date" id="rsFromDate"></div><div style="flex:0 0 auto"><button id="rsLoad" style="margin-top:0">Load</button></div></div>
+      <label>Which booking?</label>
+      <select id="rsSel"><option value="">— load a date first —</option></select>
+      <label>New date</label>
+      <input type="date" id="rsToDate">
+      <label>New time slot</label>
+      <select id="rsToSlot">
+        <optgroup label="Open play arrival times">
+          <option value="arr09">9:00 AM</option>
+          <option value="arr10">10:00 AM</option>
+          <option value="arr11">11:00 AM</option>
+          <option value="arr12">12:00 PM</option>
+          <option value="arr13">1:00 PM</option>
+          <option value="arr14">2:00 PM</option><option value="arr15">3:00 PM (Fri/Sat)</option>
+        </optgroup>
+        <optgroup label="Private party times (Fri–Sun)">
+          <option value="p0930">9:30 - 11:30 AM (party)</option>
+          <option value="p1200">12:00 - 2:00 PM (party)</option>
+          <option value="p1430">2:30 - 4:30 PM (party)</option>
+          <option value="p1700">5:00 - 7:00 PM (party)</option>
+        </optgroup>
+      </select>
+      <label style="display:flex;align-items:center;gap:8px;text-transform:none;letter-spacing:0;color:var(--charcoal);font-weight:700"><input type="checkbox" id="rsNotify" style="width:auto" checked> Email the customer their updated confirmation</label>
+      <button id="rsGo">Reschedule</button>
+      <div class="out" id="rsOut"></div>
 
-    <div id="cxWrap" style="display:none;margin-top:16px;border-top:2px dashed #e9c9c4;padding-top:14px">
-      <div style="font-weight:800;color:#b4524b;text-transform:uppercase;letter-spacing:.08em;font-size:.72rem;margin-bottom:8px">⚠ Or cancel &amp; refund</div>
-      <div id="cxInfo" class="note" style="margin-bottom:10px">Pick a reservation above.</div>
-      <div id="cxBooking" style="display:none">
-        <label>Courtesy credit — card portion (online open-play only)</label>
-        <input type="number" id="cxCourtesy" step="0.01" min="0" placeholder="0.00">
-        <label>Standard credit — gift-card portion (usable anywhere)</label>
-        <input type="number" id="cxStandard" step="0.01" min="0" placeholder="0.00">
-        <label id="cxPunchWrap" style="display:none;align-items:center;gap:8px;text-transform:none;letter-spacing:0;color:var(--charcoal);font-weight:700"><input type="checkbox" id="cxPunch" style="width:auto" checked> <span id="cxPunchTxt"></span></label>
-      </div>
-      <div id="cxParty" style="display:none">
-        <label>Refund method</label>
-        <select id="cxPartyMode"></select>
-        <div id="cxCreditAmtWrap" style="display:none">
-          <label>Store-credit amount ($)</label>
-          <input type="number" id="cxCreditAmt" step="0.01" min="0" placeholder="0.00">
+      <div id="cxWrap" style="display:none;margin-top:16px;border-top:2px dashed #e9c9c4;padding-top:14px">
+        <div style="font-weight:800;color:#b4524b;text-transform:uppercase;letter-spacing:.08em;font-size:.72rem;margin-bottom:8px">⚠ Or cancel &amp; refund</div>
+        <div id="cxInfo" class="note" style="margin-bottom:10px">Pick a reservation above.</div>
+        <div id="cxBooking" style="display:none">
+          <label>Courtesy credit — card portion (online open-play only)</label>
+          <input type="number" id="cxCourtesy" step="0.01" min="0" placeholder="0.00">
+          <label>Standard credit — gift-card portion (usable anywhere)</label>
+          <input type="number" id="cxStandard" step="0.01" min="0" placeholder="0.00">
+          <label id="cxPunchWrap" style="display:none;align-items:center;gap:8px;text-transform:none;letter-spacing:0;color:var(--charcoal);font-weight:700"><input type="checkbox" id="cxPunch" style="width:auto" checked> <span id="cxPunchTxt"></span></label>
         </div>
+        <div id="cxParty" style="display:none">
+          <label>Refund method</label>
+          <select id="cxPartyMode"></select>
+          <div id="cxCreditAmtWrap" style="display:none">
+            <label>Store-credit amount ($)</label>
+            <input type="number" id="cxCreditAmt" step="0.01" min="0" placeholder="0.00">
+          </div>
+        </div>
+        <label style="display:flex;align-items:center;gap:8px;text-transform:none;letter-spacing:0;color:var(--charcoal);font-weight:700"><input type="checkbox" id="cxNotify" style="width:auto" checked> Email the customer their credit / cancellation</label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button id="cxGo" style="background:#c4524b;margin:0">Cancel &amp; refund</button>
+          <button id="cxGoNoCredit" class="alt" style="margin:0">Just delete — no credit</button>
+        </div>
+        <p class="note" style="margin-top:6px">"Just delete" releases the spot with no credit issued and no punch returned — for test bookings, duplicates, or anything that shouldn't get a refund.</p>
+        <div class="out" id="cxOut"></div>
       </div>
-      <label style="display:flex;align-items:center;gap:8px;text-transform:none;letter-spacing:0;color:var(--charcoal);font-weight:700"><input type="checkbox" id="cxNotify" style="width:auto" checked> Email the customer their credit / cancellation</label>
-      <button id="cxGo" style="background:#c4524b">Cancel &amp; refund</button>
-      <div class="out" id="cxOut"></div>
+      <p class="note">Releases the original spot and books the new one. If the new session is full, you'll be asked to confirm.</p>
     </div>
-    <p class="note">Releases the original spot and books the new one (counts toward the new date/time). Open-play bookings move to open-play sessions; parties move to party times. If the new session is full, you'll be asked to confirm.</p>
-  </div>
 
   <div class="card" id="sec-redeem">
     <h2>Redeem a credit in store</h2>
@@ -323,15 +327,6 @@
       <p class="note">SETS the visits to the exact number (not added) and refreshes the expiry to a valid future date.</p>
       <div class="out" id="piFixOut"></div>
     </div>
-  </div>
-
-  <div class="card" id="sec-cancel">
-    <h2>Cancel / delete a booking</h2>
-    <label>Date</label>
-    <input type="date" id="cbDate">
-    <button id="cbLoad">Load bookings</button>
-    <div class="out" id="cbOut"></div>
-    <p class="note">Removes an open-play booking and frees the spot online — no credit, no reschedule. (For a refund, issue a credit separately.)</p>
   </div>
 
   <div class="card" id="sec-code">
@@ -1463,7 +1458,7 @@ $("#acUse").onclick=async()=>{
   try{
     const wv=$("#acWaiver").checked;
     const r=await (await fetch("/api/checkin",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key,action:"pass",code,count,waiverConfirmed:wv})})).json();
-    if(r.ok){ out.className="out ok"; var cele=r.freeVisit?'<div style="background:#eaf4e4;border:1px solid #cfe6c2;border-radius:10px;padding:9px 11px;margin:8px 0;font-weight:800;color:#4d6b3e">🎉 FREE visit — this one\'s on us! Ask if they\'d like to reload their card (same code).'+(r.reminderEmailed?' A reload reminder was emailed.':'')+'</div>':''; var wvNote=wv?'':'<div style="background:#fdeee6;border:1px solid #f0d3bf;border-radius:9px;padding:8px 10px;margin:8px 0 0;font-weight:800;color:#b5622f">📋 Reminder: check every adult & child is signed on WaiverMaster before they enter.</div>'; out.innerHTML=esc(r.message)+cele+'<br><b>'+r.children+'/'+r.cap+'</b> in '+esc(r.slotLabel)+(r.over?' ⚠️ over capacity':' · '+r.remaining+' left')+' · <b>'+r.visitsRemaining+' visit(s) left on pass</b>'+'<br>☕ <b>Free coffee</b> — hand them their cup!'+wvNote; $("#acCode").value="";$("#acCount").value="1";$("#acWaiver").checked=false; coffeePopup(r.freeVisit?"🎉 Free visit — offer a reload!":"Free coffee — hand them their cup!"); reloadRoster(); }
+    if(r.ok){ out.className="out ok"; var cele=r.freeVisit?'<div style="background:#eaf4e4;border:1px solid #cfe6c2;border-radius:10px;padding:9px 11px;margin:8px 0;font-weight:800;color:#4d6b3e">📋 That was their last prepaid visit — this card is now complete. They\'re on our free loyalty program going forward (no reload available).'+(r.reminderEmailed?' A reload reminder was emailed.':'')+'</div>':''; var wvNote=wv?'':'<div style="background:#fdeee6;border:1px solid #f0d3bf;border-radius:9px;padding:8px 10px;margin:8px 0 0;font-weight:800;color:#b5622f">📋 Reminder: check every adult & child is signed on WaiverMaster before they enter.</div>'; out.innerHTML=esc(r.message)+cele+'<br><b>'+r.children+'/'+r.cap+'</b> in '+esc(r.slotLabel)+(r.over?' ⚠️ over capacity':' · '+r.remaining+' left')+' · <b>'+r.visitsRemaining+' visit(s) left on pass</b>'+'<br>☕ <b>Free coffee</b> — hand them their cup!'+wvNote; $("#acCode").value="";$("#acCount").value="1";$("#acWaiver").checked=false; coffeePopup(r.freeVisit?"📋 Card complete — they're on the loyalty program now!":"Free coffee — hand them their cup!"); reloadRoster(); }
     else { out.className="out err"; out.textContent=r.error||"Couldn't check in the pass."; }
   }catch(e){ out.className="out err"; out.textContent="Network error."; }
   $("#acUse").disabled=false;
@@ -1677,30 +1672,7 @@ window.ledAct=async function(code,type,action){
 };
 $("#ledFilter").onchange=ledLoad;
 $("#ledSearch").oninput=ledRender;
-$("#cbLoad").onclick=async()=>{
-  const out=$("#cbOut"); out.className="out"; out.style.display="block";
-  const key=$("#key").value.trim(), date=$("#cbDate").value;
-  if(!key){ out.className="out err"; out.textContent="Enter your admin key (top of page)."; return; }
-  if(!date){ out.className="out err"; out.textContent="Pick a date."; return; }
-  out.textContent="Loading…";
-  try{
-    const r=await (await fetch("/api/reschedule",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key,action:"list",date})})).json();
-    if(!r.ok){ out.className="out err"; out.textContent=r.error||"Couldn't load."; return; }
-    const bk=r.bookings||[];
-    if(!bk.length){ out.className="out"; out.innerHTML="No open-play bookings for that date."; return; }
-    out.className="out"; out.innerHTML=bk.map(function(e){
-      return '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid #eee4d6"><span><b>'+esc(e.name)+'</b> — '+esc(e.slotLabel)+' · '+e.children+' child'+(e.children===1?"":"ren")+(e.email?'<br><span style="font-size:.8rem;color:var(--slate)">'+esc(e.email)+'</span>':"")+'</span><button class="alt" style="margin:0;flex:0 0 auto" onclick="cbDelete(\''+date+'\',\''+e.slot+'\',\''+e.id+'\',\''+esc(e.name).replace(/[\x27\\]/g,"")+'\')">🗑️ Delete</button></div>';
-    }).join("");
-  }catch(e){ out.className="out err"; out.textContent="Network error."; }
-};
-window.cbDelete=async(date,slot,id,name)=>{
-  if(!confirm("Delete booking for "+name+"? This frees the spot and can't be undone. No credit is issued.")) return;
-  const key=$("#key").value.trim();
-  try{
-    const r=await (await fetch("/api/reschedule",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key,action:"cancel-booking",fromDate:date,fromSlot:slot,entryId:id})})).json();
-    if(r.ok){ $("#cbLoad").click(); } else { alert(r.error||"Couldn't delete."); }
-  }catch(e){ alert("Network error."); }
-};
+
 function clTimeToMin(v){ if(!v) return null; const [h,m]=v.split(":").map(n=>parseInt(n,10)); return h*60+m; }
 $("#clType").onchange=()=>{
   const t=$("#clType").value;
@@ -1828,7 +1800,7 @@ function cxRender(){
 }
 $("#rsSel").addEventListener("change",cxRender);
 $("#cxPartyMode").addEventListener("change",cxPartyModeSync);
-$("#cxGo").onclick=async()=>{
+async function doCancel(noCredit){
   const out=$("#cxOut"); out.className="out";
   const key=$("#key").value.trim();
   const sel=$("#rsSel").value; const it=(sel!==""&&_rsItems[sel])?_rsItems[sel]:null;
@@ -1837,17 +1809,30 @@ $("#cxGo").onclick=async()=>{
   const notify=$("#cxNotify").checked;
   let body;
   if(it.kind==="party"){
-    const mode=$("#cxPartyMode").value;
-    if(!confirm("Cancel this party and release the slot?"+(mode==="credit"?" A store credit will be issued.":(mode==="dollars"?" Remember to refund the deposit in Square.":"")))) return;
-    body={key,action:"cancel-party",fromDate:$("#rsFromDate").value,fromSlot:it.slot,mode,creditAmount:$("#cxCreditAmt").value,notify};
+    if(noCredit){
+      if(!confirm("Cancel this party and release the slot? No credit will be issued.")) return;
+      body={key,action:"cancel-party",fromDate:$("#rsFromDate").value,fromSlot:it.slot,mode:"none",notify};
+    } else {
+      const mode=$("#cxPartyMode").value;
+      if(!confirm("Cancel this party and release the slot?"+(mode==="credit"?" A store credit will be issued.":(mode==="dollars"?" Remember to refund the deposit in Square.":"")))) return;
+      body={key,action:"cancel-party",fromDate:$("#rsFromDate").value,fromSlot:it.slot,mode,creditAmount:$("#cxCreditAmt").value,notify};
+    }
   } else {
     const hasPunch=(it.passes||[]).length>0;
-    if(!confirm("Cancel this booking and release the spot? Credits / punch returns will be issued as shown.")) return;
-    body={key,action:"cancel-booking",fromDate:$("#rsFromDate").value,fromSlot:it.slot,entryId:it.id,
-      courtesyAmount:$("#cxCourtesy").value,standardAmount:$("#cxStandard").value,
-      restorePunches:hasPunch&&$("#cxPunch").checked,notify};
+    if(noCredit){
+      if(!confirm("Delete this booking and release the spot? No credit will be issued and no punch returned.")) return;
+      body={key,action:"cancel-booking",fromDate:$("#rsFromDate").value,fromSlot:it.slot,entryId:it.id,
+        courtesyAmount:0,standardAmount:0,restorePunches:false,notify};
+    } else {
+      if(!confirm("Cancel this booking and release the spot? Credits / punch returns will be issued as shown.")) return;
+      body={key,action:"cancel-booking",fromDate:$("#rsFromDate").value,fromSlot:it.slot,entryId:it.id,
+        courtesyAmount:$("#cxCourtesy").value,standardAmount:$("#cxStandard").value,
+        restorePunches:hasPunch&&$("#cxPunch").checked,notify};
+    }
   }
-  $("#cxGo").disabled=true; $("#cxGo").textContent="Working…";
+  const btn=noCredit?$("#cxGoNoCredit"):$("#cxGo");
+  const oldTxt=btn.textContent;
+  $("#cxGo").disabled=true; $("#cxGoNoCredit").disabled=true; btn.textContent="Working…";
   try{
     const r=await (await fetch("/api/reschedule",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)})).json();
     out.style.display="";
@@ -1857,8 +1842,10 @@ $("#cxGo").onclick=async()=>{
       $("#cxBooking").style.display="none"; $("#cxParty").style.display="none"; $("#cxInfo").textContent="Done. Pick another reservation if needed.";
     } else { out.className="out err"; out.textContent=r.error||"Couldn't cancel."; }
   }catch(e){ out.className="out err"; out.style.display=""; out.textContent="Network error."; }
-  $("#cxGo").disabled=false; $("#cxGo").textContent="Cancel & refund";
-};
+  $("#cxGo").disabled=false; $("#cxGoNoCredit").disabled=false; btn.textContent=oldTxt;
+}
+$("#cxGo").onclick=()=>doCancel(false);
+$("#cxGoNoCredit").onclick=()=>doCancel(true);
 
 function t2m(v){ if(!v) return NaN; var p=v.split(":"); return (+p[0])*60+(+(p[1]||0)); }
 function m2t(min){ if(min==null||isNaN(min)) return ""; var h=Math.floor(min/60),m=min%60; return String(h).padStart(2,"0")+":"+String(m).padStart(2,"0"); }
@@ -1989,7 +1976,7 @@ if($("#dcLook")) $("#dcLook").onclick=dcLookup;
 <script>
 (function(){
   var GROUPS=[
-    {t:"\u2600\uFE0F Today \u2014 Check-in & Walk-ins", open:true, c:"#7ba676", bg:"#eef4e8", ids:["sec-bookings","sec-schedule","sec-walkin","sec-punch","sec-cancel","sec-loyalty"]},
+    {t:"\u2600\uFE0F Today \u2014 Check-in & Walk-ins", open:true, c:"#7ba676", bg:"#eef4e8", ids:["sec-bookings","sec-schedule","sec-walkin","sec-punch","sec-loyalty"]},
     {t:"\uD83C\uDF88 Loyalty & Punch Cards", c:"#c97d76", bg:"#fdf1ec", ids:["sec-loyalty-list","sec-birthdays","sec-punchissue","sec-passes"]},
     {t:"\uD83D\uDCB3 Credits, Codes & Bookings", c:"#8a94c9", bg:"#eef0f9", ids:["sec-issue","sec-redeem","sec-code","sec-discount","sec-reschedule","sec-deposit"]},
     {t:"\uD83C\uDF89 Parties & Events", c:"#d9a441", bg:"#fbf3e1", ids:["sec-party","sec-parties","sec-events","sec-partners"]},

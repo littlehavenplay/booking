@@ -11,9 +11,9 @@
 // nearest the current Pacific time (e.g. 10:50 AM -> 11:00-1:00). Each is tagged
 // with a timestamp so you can see exactly when each group arrived.
 import { getStore } from "@netlify/blobs";
-import { SIGNATURE_HTML } from "./lib-email.js";
 import { ARRIVAL, openPlayForDate, slotCap, slotKey, PARTY_SLOT_IDS, hoursFor } from "./lib-settings.js";
 import { loadSeasonal, loadWeekly } from "./lib-hours.js";
+import { graduateLegacyCard } from "./lib-loyalty.js";
 
 export default async (req) => {
   if (req.method !== "POST") return json({ error: "Use POST." }, 405);
@@ -96,12 +96,12 @@ export default async (req) => {
     p.usage.push({ at: atISO, count, where: "in-store", slot });
 
     // "Buy 7, 8th free": the visit that empties the card is the FREE one. When this
-    // check-in brings the card to 0, celebrate + prompt staff to offer a reload,
-    // and fire the empty-card reminder email (unless one was already sent this cycle).
+    // check-in brings the card to 0, that prepaid product is discontinued — instead
+    // of prompting a reload, graduate the family into the free loyalty program.
     const freeVisit = p.visitsRemaining === 0;
     let reminderEmailed = false;
     if (freeVisit && !p.reminderSentAt) {
-      try { await sendEmptyCardReminder(p); p.reminderSentAt = atISO; reminderEmailed = true; } catch {}
+      try { const loyalty = getStore("loyalty"); await graduateLegacyCard(loyalty, p); p.reminderSentAt = atISO; reminderEmailed = true; } catch {}
     }
     try { await passes.setJSON("pass:" + code, p); } catch { return json({ error: "Couldn't update the pass. Try again." }, 502); }
 
@@ -112,11 +112,11 @@ export default async (req) => {
     return json({
       ok: true, slot, slotLabel: chosen.label, atLabel,
       visitsRemaining: p.visitsRemaining, code, label: p.label || "",
-      freeVisit, reloadPrompt: freeVisit, reminderEmailed,
-      celebration: freeVisit ? "🎉 This one's on us — free visit! Ask if they'd like to reload their card." : "",
+      freeVisit, graduated: freeVisit, reminderEmailed,
+      celebration: freeVisit ? "📋 That was their last prepaid visit. This card is now complete — they're on our free loyalty program going forward, no reload available." : "",
       children: rec.children, cap, remaining: Math.max(0, cap - rec.children), over: rec.children > cap,
       message: freeVisit
-        ? `🎉 Free visit! Pass ${code} is now used up — this last visit was on us. Offer a reload to keep the same code.`
+        ? `Pass ${code} is now used up — that was their last prepaid visit (already paid for, not free). This card is retired; they're automatically on the free loyalty program going forward.`
         : `Checked in ${count} on pass ${code} to ${chosen.label}. ${p.visitsRemaining} visit(s) left.`,
     });
   }
@@ -167,34 +167,6 @@ function pacificMinutes() {
 }
 function pacificClock() {
   return new Date().toLocaleTimeString("en-US", { timeZone: "America/Los_Angeles", hour: "numeric", minute: "2-digit" });
-}
-// Email the card holder that their card is used up, with a one-tap reload link.
-async function sendEmptyCardReminder(p) {
-  const key = process.env.RESEND_API_KEY;
-  const to = p && p.buyerEmail;
-  if (!key || !to) return;
-  const from = process.env.EMAIL_FROM || "onboarding@resend.dev";
-  const bcc = process.env.STUDIO_EMAIL || undefined;
-  const studio = "Little Haven Play Studio";
-  const code = p.code || "";
-  const child = p.childName ? ` for ${p.childName}` : "";
-  const reloadUrl = `https://littlehavenplay.com/pass.html?code=${encodeURIComponent(code)}`;
-  const html = `<div style="font-family:Arial,Helvetica,sans-serif;color:#2a2622;max-width:560px;margin:0 auto;line-height:1.6">
-    <h2 style="color:#a85f59;font-weight:normal;margin:0 0 4px">That last visit was on us 🎉</h2>
-    <p style="margin:0 0 12px;color:#5c6470">Your punch card${child} is all used up — we hope you enjoyed your free 8th visit! Reload the <b>same code</b> anytime to keep playing; any visits left over always roll over.</p>
-    <div style="background:#fcfaf6;border:1px solid #efe7da;border-radius:12px;padding:14px 16px;margin:10px 0">
-      <div style="font-size:13px;color:#5c6470">Your card code</div>
-      <div style="font-size:22px;font-weight:bold;color:#a85f59;letter-spacing:1px;margin:4px 0">${code}</div>
-      <div style="margin-top:10px"><a href="${reloadUrl}" style="display:inline-block;background:#7ba06c;color:#fff;text-decoration:none;font-weight:bold;font-size:13px;padding:9px 16px;border-radius:10px">Reload my card →</a></div>
-    </div>
-    <p style="margin:12px 0 0;font-size:13px;color:#5f7d52">☕ Punch card holders get free coffee every visit, plus 2 adults included.</p>
-    <p style="margin:14px 0 0;font-size:13px;color:#5c6470">See you soon! — ${studio}</p></div>`;
-  await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ from: `${studio} <${from}>`, to: [to], bcc: bcc ? [bcc] : undefined,
-      subject: `Your punch card is used up — reload the same code`, html: html + SIGNATURE_HTML }),
-  });
 }
 
 function json(obj, status = 200) {

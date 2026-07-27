@@ -92,7 +92,7 @@
        +'    <div class="meta"><div>Code<br><span class="code">'+esc(d.code||code)+'</span></div><div style="text-align:right">Expires<br><b>'+(d.expiry?fmtDate(d.expiry):"—")+'</b></div></div>'
        +'    <div style="margin-top:10px">'+statePill+'</div>'
        +(left<1 || d.expired
-          ? '    <a class="cta alt" href="/passes.html">Reload my punch card →</a>'
+          ? '    <p style="margin:10px 0;font-size:.85rem;color:var(--slate)">This prepaid card is all used up. That product isn\'t sold anymore — you\'re on our free Loyalty Punch Card program now, so just book your next visit like normal.</p><a class="cta" href="/book.html">Book your next visit →</a>'
           : '    <a class="cta" href="/book.html">Book a visit →</a>')
        +'  </div>'
        +'</div>';

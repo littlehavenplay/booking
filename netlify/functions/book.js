@@ -17,7 +17,7 @@ import {
   STUDIO_NAME, POLICY_TITLE, POLICY_LINES, TAX_RATE, CLOSED_DATES, CLOSED_MESSAGE, ADDITIONAL_ADULT, isClosedWeekday,
   additionalAdultsFor, additionalAdultCentsFor,
 } from "./lib-settings.js";
-import { issueCode, sendWelcome, sendFamilyPunch, PUNCHES_FOR_REWARD, cleanName, last4 as loyaltyLast4 } from "./lib-loyalty.js";
+import { issueCode, sendWelcome, sendFamilyPunch, PUNCHES_FOR_REWARD, cleanName, last4 as loyaltyLast4, graduateLegacyCard } from "./lib-loyalty.js";
 import { loadSeasonal, loadWeekly } from "./lib-hours.js";
 import { getClosure, slotBlockedByClosure } from "./lib-closures.js";
 
@@ -384,7 +384,7 @@ export default async (req) => {
     if (after === 0) {
       freeVisitCard = { code: up.code, childName: fresh.childName || "" };
       if (!fresh.reminderSentAt) {
-        try { await sendEmptyCardReminder(fresh); fresh.reminderSentAt = new Date().toISOString(); emailedReminder = true; } catch {}
+        try { const loyalty = getStore("loyalty"); await graduateLegacyCard(loyalty, fresh); fresh.reminderSentAt = new Date().toISOString(); emailedReminder = true; } catch {}
       }
     }
     try { await passStore.setJSON("pass:" + up.code, fresh); } catch {}
@@ -542,7 +542,7 @@ export default async (req) => {
     passesUsed,
     freeVisit: !!freeVisitCard,
     freeVisitMessage: freeVisitCard
-      ? "🎉 This one's on us — you just used your free 8th visit! Reload the same code anytime to keep playing."
+      ? "📋 That was the last visit on your prepaid card — it's now complete. That card type has been retired, so you're on our free Loyalty Punch Card program going forward: just book online like normal, and every 8th visit is on us."
       : "",
     birthdayAmount,
     birthdayNames: birthdayApplied.map(b => b.childName),
@@ -556,35 +556,6 @@ export default async (req) => {
     paymentId: payment?.id || null,
   });
 };
-
-// Email the card holder that their card is used up, with a one-tap reload link.
-async function sendEmptyCardReminder(p) {
-  const key = process.env.RESEND_API_KEY;
-  const to = p && p.buyerEmail;
-  if (!key || !to) return;
-  const from = process.env.EMAIL_FROM || "onboarding@resend.dev";
-  const bcc = process.env.STUDIO_EMAIL || undefined;
-  const studio = "Little Haven Play Studio";
-  const code = p.code || "";
-  const child = p.childName ? ` for ${p.childName}` : "";
-  const reloadUrl = `https://littlehavenplay.com/pass.html?code=${encodeURIComponent(code)}`;
-  const html = `<div style="font-family:Arial,Helvetica,sans-serif;color:#2a2622;max-width:560px;margin:0 auto;line-height:1.6">
-    <h2 style="color:#a85f59;font-weight:normal;margin:0 0 4px">That last visit was on us 🎉</h2>
-    <p style="margin:0 0 12px;color:#5c6470">Your punch card${child} is all used up — we hope you enjoyed your free 8th visit! Reload the <b>same code</b> anytime to keep playing; any visits left over always roll over.</p>
-    <div style="background:#fcfaf6;border:1px solid #efe7da;border-radius:12px;padding:14px 16px;margin:10px 0">
-      <div style="font-size:13px;color:#5c6470">Your card code</div>
-      <div style="font-size:22px;font-weight:bold;color:#a85f59;letter-spacing:1px;margin:4px 0">${code}</div>
-      <div style="margin-top:10px"><a href="${reloadUrl}" style="display:inline-block;background:#7ba06c;color:#fff;text-decoration:none;font-weight:bold;font-size:13px;padding:9px 16px;border-radius:10px">Reload my card →</a></div>
-    </div>
-    <p style="margin:12px 0 0;font-size:13px;color:#5f7d52">☕ Punch card holders get free coffee every visit, plus 2 adults included.</p>
-    <p style="margin:14px 0 0;font-size:13px;color:#5c6470">See you soon! — ${studio}</p></div>`;
-  await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ from: `${studio} <${from}>`, to: [to], bcc: bcc ? [bcc] : undefined,
-      subject: `Your punch card is used up — reload the same code`, html: html + SIGNATURE_HTML }),
-  });
-}
 
 // Charges a single payment source (a card token or a gift card id) via Square.
 async function chargeSquare(env, { source_id, amount, note, email }) {

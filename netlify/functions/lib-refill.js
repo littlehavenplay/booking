@@ -3,7 +3,7 @@ import { getStore } from "@netlify/blobs";
 import { createHash } from "node:crypto";
 
 const STUDIO = "Little Haven Play Studio";
-const BUY_URL = "https://littlehavenplay.com/passes.html";
+const BOOK_URL = "https://littlehavenplay.com/book.html";
 
 export function unsubToken(email) {
   return createHash("sha256")
@@ -65,18 +65,17 @@ export async function runRefillCampaign({ dryRun = false } = {}) {
 async function sendRefill(email, e, key, from, studioEmail) {
   const unsub = `https://littlehavenplay.com/api/refill-unsubscribe?e=${encodeURIComponent(email)}&t=${unsubToken(email)}`;
   const html = `<div style="font-family:Arial,sans-serif;color:#2a2622;line-height:1.6;max-width:560px">
-    <h2 style="color:#a85f59;font-weight:normal">Time for a refill? 🎟️</h2>
+    <h2 style="color:#a85f59;font-weight:normal">We miss you already! 🎈</h2>
     <p>Hi ${esc(e.name) || "there"},</p>
-    <p>Looks like you've used all the visits on your <b>${esc(e.label)}</b> — we hope the little ones had a blast! 💛</p>
-    <p>Whenever you're ready for more playtime, you can grab another punch card here:</p>
-    <p><a href="${BUY_URL}" style="display:inline-block;background:#c97d76;color:#fff;text-decoration:none;font-weight:bold;padding:12px 22px;border-radius:11px">Get another punch card →</a></p>
-    ${e.saveCard ? `<p style="color:#5c6470;font-size:14px">💾 Your card is saved on file, so checkout is nice and quick.</p>` : ``}
-    <p style="color:#8a8276;font-size:13px;margin-top:22px">You're receiving this because you have a punch card with us. <a href="${unsub}" style="color:#8a8276">Unsubscribe from refill reminders</a>.</p>
+    <p>Looks like your prepaid <b>${esc(e.label)}</b> is all used up — we hope the little ones had a blast! That prepaid card has since been retired, so there's nothing to buy or reload.</p>
+    <p>Good news: you're already on our <b>free Loyalty Punch Card</b> program — just book your next visit online like normal, and after 7 visits your 8th is on us automatically.</p>
+    <p><a href="${BOOK_URL}" style="display:inline-block;background:#c97d76;color:#fff;text-decoration:none;font-weight:bold;padding:12px 22px;border-radius:11px">Book your next visit →</a></p>
+    <p style="color:#8a8276;font-size:13px;margin-top:22px">You're receiving this because you have a punch card with us. <a href="${unsub}" style="color:#8a8276">Unsubscribe from these reminders</a>.</p>
     <p style="color:#5c6470;font-size:13px">See you soon! — ${STUDIO}</p></div>`;
   try {
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST", headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ from: `${STUDIO} <${from}>`, to: [email], bcc: studioEmail ? [studioEmail] : undefined, subject: `Your punch card is all used up — time for a refill? 🎟️`, html }),
+      body: JSON.stringify({ from: `${STUDIO} <${from}>`, to: [email], bcc: studioEmail ? [studioEmail] : undefined, subject: `We miss you! Come play again — your free loyalty punch card is waiting 🎈`, html }),
     });
     return res.ok;
   } catch { return false; }

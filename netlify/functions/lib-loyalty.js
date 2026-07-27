@@ -202,6 +202,58 @@ export async function sendWelcome(rec) {
       subject: `Your ${studio} punch card code`, html: html + SIGNATURE_HTML }) });
 }
 
+// The legacy prepaid punch card product was discontinued — it can no longer be
+// "reloaded." When one of those cards runs out, this replaces the old (wrong)
+// "reload the same code" email: it links the family into the free Loyalty Punch
+// Card program (creating their loyalty card if they don't already have one from
+// booking online) and tells them plainly there's nothing left to buy or reload —
+// they just keep booking normally and every 8th visit is free automatically.
+// Shared by book.js, checkin.js, and lib-refill.js so this logic lives in one place.
+export async function graduateLegacyCard(loyalty, pass) {
+  const first = (pass.childName || "").trim().split(/\s+/)[0] || "";
+  const last = (pass.childName || "").trim().split(/\s+/).slice(1).join(" ") || "";
+  const phone4 = last4(pass.buyerPhone || "");
+  const email = (pass.buyerEmail || "").trim();
+  let card = null;
+  if (first && last && phone4) {
+    try { const r = await issueCode(loyalty, { first, last, phone4, email, suppressEmail: true }); card = r && r.code ? r : null; } catch {}
+  }
+  try { await sendLegacyGraduationEmail(pass, card); } catch {}
+  return card;
+}
+
+async function sendLegacyGraduationEmail(pass, card) {
+  const key = process.env.RESEND_API_KEY;
+  const to = pass && pass.buyerEmail;
+  if (!key || !to) return false;
+  const from = process.env.EMAIL_FROM || "onboarding@resend.dev";
+  const bcc = process.env.STUDIO_EMAIL || undefined;
+  const studio = studioName();
+  const child = pass.childName ? ` for ${esc(pass.childName)}` : "";
+  const codeBlock = card && card.code
+    ? `<div style="background:#fcfaf6;border:1px solid #efe7da;border-radius:12px;padding:14px 16px;margin:10px 0;text-align:center">
+         <div style="font-size:13px;color:#5c6470">Your new loyalty punch card code</div>
+         <div style="font-size:26px;font-weight:900;letter-spacing:2px;color:#a85f59;margin:4px 0">${esc(card.code)}</div>
+       </div>`
+    : `<p style="margin:10px 0;color:#5c6470">Just book your next visit online with the same name and phone number, and we'll automatically start your new free punch card — no code to remember.</p>`;
+  const html = `<div style="font-family:Arial,Helvetica,sans-serif;color:#2a2622;max-width:560px;margin:0 auto;line-height:1.6">
+    <h2 style="color:#a85f59;font-weight:normal;margin:0 0 4px">Your punch card is complete 🎈</h2>
+    <p style="margin:0 0 12px;color:#5c6470">Your prepaid punch card${child} is all used up — thank you for being one of our earliest families! That prepaid card has been retired, so there's nothing left to buy or reload.</p>
+    <p style="margin:0 0 12px;color:#5c6470">Going forward, you're on our new <b>free Loyalty Punch Card</b> program instead: pay your normal admission each visit, and once you've paid for <b>7 visits, your 8th is on us</b> — automatically, no purchase needed.</p>
+    ${codeBlock}
+    <p style="margin:12px 0 0;font-size:13px;color:#5f7d52">☕ Punch card holders get free coffee every visit, plus 2 adults included.</p>
+    <p style="margin:14px 0 0;font-size:13px;color:#5c6470">See you soon! — ${esc(studio)}</p></div>`;
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ from: `${studio} <${from}>`, to: [to], bcc: bcc ? [bcc] : undefined,
+        subject: `Your punch card is complete — you're on our free loyalty program now`, html: html + SIGNATURE_HTML }),
+    });
+    return res.ok;
+  } catch { return false; }
+}
+
 export async function sendReward(rec, rewardCode, expiry) {
   const key = process.env.RESEND_API_KEY; if (!key || !rec.buyerEmail) return;
   const from = process.env.EMAIL_FROM || "onboarding@resend.dev";

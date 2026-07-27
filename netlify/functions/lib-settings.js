@@ -147,9 +147,9 @@ export const PASS_POLICY_LINES = [
   "Sibling Add-On punch cards are valid for Open Play Sessions only.",
   "Free coffee from our self-serve station is included for punch card holders on each visit.",
   "Visits are tracked digitally. Use your punch card code at checkout to redeem a visit.",
-  "When your card is used up, you can reload the same code and keep any remaining visits — reloaded visits are added on top of what's left.",
+  "When your card is used up, that prepaid product is no longer available — you're automatically moved to our free Loyalty Punch Card program, where every 8th visit is free with no purchase needed.",
   "Punch cards are valid for Open Play Sessions only.",
-  "Punch cards may be purchased online and redeemed when booking open play sessions through our online reservation system.",
+  "Legacy prepaid punch cards are no longer sold — this policy applies only to existing prepaid cards still being used down. New families join our free Loyalty Punch Card program automatically.",
   "A valid punch card code must be entered at checkout when reserving a play session.",
   "Reservations are subject to availability and capacity limits.",
   "Punch cards are non-refundable, non-transferable, and have no cash value.",
@@ -172,8 +172,10 @@ export const POLICY_LINES = [
   "Open Play bookings are prepaid. We understand things come up, especially with little ones!",
   "If you're unable to attend your booked session, please email us at hello@littlehavenplay.com and we'll do our best to accommodate you and issue a store credit toward a future visit (typically valid for 30 days).",
   "Open play admission is valid only for the selected date and time booked.",
+  "If you do not show up within one hour of your reserved time, we will automatically issue a courtesy store credit for the full amount paid to the email on file, valid for 15 days from issuance, so you can reschedule whenever works for you.",
   `If ${STUDIO_NAME} needs to cancel or close unexpectedly, guests will be offered the option to reschedule or receive store credit.`,
   "Military discounts and other in-person discounts cannot be applied to online bookings after purchase.",
+  "For any questions or concerns, please contact us at hello@littlehavenplay.com and we will respond within 24 hours.",
 ];
 
 // ---- LEGACY 2-hour sessions ----
