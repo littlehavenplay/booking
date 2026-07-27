@@ -142,7 +142,7 @@
         <div class="stepper" data-k="inf"><button data-d>–</button><span class="num">0</span><button data-i>+</button></div>
       </div>
       <div class="qty">
-        <div><div class="lab">Adults coming <span style="color:var(--ink-soft);font-weight:700">(18+, supervising — 2 included, $5 each extra)</span></div><div class="pr" id="adPr">$5 each extra over 2 adults</div></div>
+        <div><div class="lab">Adults coming <span style="color:var(--ink-soft);font-weight:700">(18+, supervising — 2 included per Regular/Baby admission, $5 each extra)</span></div><div class="pr" id="adPr">$5 each extra adult beyond 2 per Regular/Baby admission</div></div>
         <div class="stepper" data-k="ad"><button data-d>–</button><span class="num">1</span><button data-i>+</button></div>
       </div>
       <div style="font-size:.78rem;color:var(--ink-soft);margin:-4px 0 4px;line-height:1.5">Adult admission is for supervising grown-ups 18+ only. Children 6 &amp; under (or 48" tall) require a child admission. Older children &amp; teens are welcome to wait in the lobby but may not play in the play area or supervise.</div>
@@ -349,7 +349,7 @@ async function init(){
   $("#regPr").textContent=money(CFG.prices.regular)+" each";
   $("#sibPr").textContent=money(CFG.prices.sibling)+" each";
   $("#infPr").textContent=money(CFG.prices.infant)+" each";
-  try{ var _inc=(CFG.adultsIncludedTotal!=null?CFG.adultsIncludedTotal:2); var _ad=$("#adPr"); if(_ad) _ad.textContent=money(CFG.additionalAdult||500)+" each extra over "+_inc+" adults"; }catch(e){}
+  try{ var _ad=$("#adPr"); if(_ad) _ad.textContent=money(CFG.additionalAdult||500)+" each extra adult beyond "+(CFG.adultsIncludedPerChild||2)+" per Regular/Baby admission"; }catch(e){}
   renderPolicy();
   if(!CFG.configured) $("#setupBanner").classList.remove("hidden");
 
@@ -667,10 +667,12 @@ function updateTotals(){
   const coveredSib=Math.min(sibPass,state.sib);
   const paidReg=state.reg-coveredReg, paidInf=state.inf-coveredInf, paidSib=state.sib-coveredSib;
 
-  // Adults: 2 included per booking (from config), $5 each beyond that. Config
-  // provides the rule so client & server always agree, even on the change date.
-  const incPer=CFG.adultsIncludedPerChild||0, incTot=(CFG.adultsIncludedTotal!=null?CFG.adultsIncludedTotal:2);
-  const included=incPer?incPer*kids:incTot;
+  // Adults: 2 included PER Regular or Baby/Infant admission (from config), not the
+  // Sibling add-on — so 2 Regular admissions include 4 adults. $5 each beyond that.
+  // Config provides the rule so client & server always agree, even on the change date.
+  const incPer=CFG.adultsIncludedPerChild||0, sibExempt=CFG.adultsSiblingExempt!==false;
+  const adultEligibleKids=sibExempt?(state.reg+state.inf):kids;
+  const included=incPer*adultEligibleKids;
   const extraAdults=kids>0?Math.max(0,state.ad-included):0;
   const subtotal=paidReg*CFG.prices.regular+paidInf*CFG.prices.infant+paidSib*CFG.prices.sibling+extraAdults*adPrice;
   // Percent-off discount (exclusive — used on its own, before tax)

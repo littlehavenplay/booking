@@ -71,7 +71,7 @@
 
   <div id="app" class="hidden">
 <div id="secBar"><button id="secToggle" type="button">Sections ▾</button><div id="secMenu"><a href="#sec-schedule">Daily schedule</a><a href="#sec-walkin">Walk-in check-in</a><a href="#sec-punch">Punch-card check-in</a><a href="#sec-reschedule">Reschedule &amp; cancel</a><a href="#sec-party">Session capacity &amp; blocking</a><a href="#sec-deposit">Record a party deposit</a><a href="#sec-redeem">Redeem a credit</a><a href="#sec-issue">Issue a credit</a><a href="#sec-code">Manage a code</a><a href="#sec-punchissue">Legacy card tools</a><a href="#sec-closures">Closures &amp; hours</a><a href="#sec-passes">Legacy prepaid holders</a><a href="#sec-parties">Party bookings</a><a href="/headcount.html">Head count</a><a href="#sec-weekly">Weekly hours</a><a href="#sec-seasonal">Seasonal hours</a><a href="#sec-discount">Discount codes</a><a href="#sec-news">News banner</a></div></div>
-<nav id="sideNav" aria-label="Sections"><div class="snav-title">Sections</div><a href="#sec-schedule">Daily schedule</a><a href="#sec-walkin">Walk-in check-in</a><a href="#sec-punch">Punch-card check-in</a><a href="#sec-reschedule">Reschedule &amp; cancel</a><a href="#sec-party">Session capacity &amp; blocking</a><a href="#sec-deposit">Record a party deposit</a><a href="#sec-redeem">Redeem a credit</a><a href="#sec-issue">Issue a credit</a><a href="#sec-code">Manage a code</a><a href="#sec-punchissue">Legacy card tools</a><a href="#sec-closures">Closures &amp; hours</a><a href="#sec-passes">Legacy prepaid holders</a><a href="#sec-parties">Party bookings</a><a href="/headcount.html">Head count</a><a href="#sec-weekly">Weekly hours</a><a href="#sec-seasonal">Seasonal hours</a><a href="#sec-discount">Discount codes</a><a href="#sec-news">News banner</a><a href="#sec-rating">Reviews rating</a><a href="#sec-photos">Site photos</a><a href="#sec-birthdays">Birthday club</a></nav>
+<nav id="sideNav" aria-label="Sections"><div class="snav-title">Sections</div><a href="#sec-schedule">Daily schedule</a><a href="#sec-walkin">Walk-in check-in</a><a href="#sec-punch">Punch-card check-in</a><a href="#sec-reschedule">Reschedule &amp; cancel</a><a href="#sec-party">Session capacity &amp; blocking</a><a href="#sec-deposit">Record a party deposit</a><a href="#sec-redeem">Redeem a credit</a><a href="#sec-issue">Issue a credit</a><a href="#sec-code">Manage a code</a><a href="#sec-punchissue">Legacy card tools</a><a href="#sec-closures">Closures &amp; hours</a><a href="#sec-passes">Legacy prepaid holders</a><a href="#sec-parties">Party bookings</a><a href="/headcount.html">Head count</a><a href="#sec-weekly">Weekly hours</a><a href="#sec-seasonal">Seasonal hours</a><a href="#sec-discount">Discount codes</a><a href="#sec-news">News banner</a><a href="#sec-rating">Reviews rating</a><a href="#sec-photos">Site photos</a><a href="#sec-events">Upcoming events</a><a href="#sec-partners">Partners page</a><a href="#sec-birthdays">Birthday club</a></nav>
     <h1>Daily schedule</h1>
     <div class="card" id="sec-schedule">
       <label>Date</label>
@@ -192,7 +192,50 @@
     <div class="out" id="llOut"></div>
   </div>
 
-  <div class="card" id="sec-birthdays">
+    <div class="card" id="sec-events">
+    <h2>Upcoming events</h2>
+    <input type="hidden" id="evId">
+    <label>Title</label>
+    <input type="text" id="evTitle" placeholder="e.g. Toddler Music Class">
+    <label>Description</label>
+    <textarea id="evDesc" rows="3" style="width:100%;border:1.5px solid #e7ddd0;border-radius:11px;padding:10px 12px;font-family:'Nunito';font-weight:600;background:#fcfaf6" placeholder="What the event is about, what to bring, age range…"></textarea>
+    <label style="margin-top:10px">Requirements / terms <span style="font-weight:400;color:var(--slate);text-transform:none">(parents must check "I've read & understood" before paying)</span></label>
+    <textarea id="evReq" rows="4" style="width:100%;border:1.5px solid #e7ddd0;border-radius:11px;padding:10px 12px;font-family:'Nunito';font-weight:600;background:#fcfaf6" placeholder="e.g. Ages 3–6, fully potty-trained (self-toilets & washes hands). Same adult with photo ID must pick up. Doors lock at start — no late drop-ins. Non-refundable (store credit only). Parents must complete the event agreement before drop-off."></textarea>
+    <div class="row">
+      <div><label>Event waiver link (WaiverMaster URL)</label><input type="text" id="evWaiver" placeholder="https://…"></div>
+      <div><label>Regular waiver link (WaiverMaster URL)</label><input type="text" id="evWaiver2" placeholder="https://…"></div>
+    </div>
+    <p class="note" style="margin-top:-2px">Both links go in the confirmation email — parents are told both must be signed unless already completed. Leave blank to omit.</p>
+    <div class="row">
+      <div><label>Date &amp; time</label><input type="datetime-local" id="evWhen"></div>
+    </div>
+    <div class="row">
+      <div><label>Registration closes — date <span style="font-weight:400;color:var(--slate);text-transform:none">(optional)</span></label><input type="date" id="evRegDate"></div>
+      <div><label>Registration closes — time</label><select id="evRegTime"><option value="">— no cutoff (open until event) —</option><option value="08:00">8:00 AM</option><option value="08:30">8:30 AM</option><option value="09:00">9:00 AM</option><option value="09:30">9:30 AM</option><option value="10:00">10:00 AM</option><option value="10:30">10:30 AM</option><option value="11:00">11:00 AM</option><option value="11:30">11:30 AM</option><option value="12:00">12:00 PM</option><option value="12:30">12:30 PM</option><option value="13:00">1:00 PM</option><option value="13:30">1:30 PM</option><option value="14:00">2:00 PM</option><option value="14:30">2:30 PM</option><option value="15:00">3:00 PM</option><option value="15:30">3:30 PM</option><option value="16:00">4:00 PM</option><option value="16:30">4:30 PM</option><option value="17:00">5:00 PM</option><option value="17:30">5:30 PM</option><option value="18:00">6:00 PM</option><option value="18:30">6:30 PM</option><option value="19:00">7:00 PM</option><option value="19:30">7:30 PM</option><option value="20:00">8:00 PM</option><option value="20:30">8:30 PM</option><option value="21:00">9:00 PM</option><option value="21:30">9:30 PM</option></select></div>
+      <div><label>Price per ticket ($)</label><input type="text" id="evPrice" inputmode="decimal" placeholder="40"></div>
+      <div><label>Sibling price ($, optional)</label><input type="text" id="evSibPrice" inputmode="decimal" placeholder="35 — each additional child"></div>
+    </div>
+    <div class="row">
+      <div><label>Capacity (total tickets)</label><input type="number" id="evCap" min="1" placeholder="12"></div>
+      <div><label>Poster image (optional)</label><input type="file" id="evPoster" accept="image/*"></div>
+    </div>
+    <button id="evSave">Save event</button>
+    <button class="ghost" id="evReset" style="margin-left:6px;background:#eee;color:var(--charcoal)">New / clear form</button>
+    <div class="out" id="evOut"></div>
+    <div id="evList" style="margin-top:14px"></div>
+    <p class="note">Events automatically move to "Past events" on the site after their date (no ticket sales). Capacity can't drop below tickets already sold.</p>
+  </div>
+
+  <div class="card" id="sec-partners">
+    <h2>🤝 Partners page</h2>
+    <p class="note" style="margin-top:-2px">Edit the party perks shown on your public <b>Partners</b> tab. Turn a partner off to hide them without deleting. Changes go live after you save (hard-refresh to see them).</p>
+    <div id="pnList"></div>
+    <button id="pnAdd" class="ghost" style="background:#eee;color:var(--charcoal);margin-top:6px">➕ Add a partner</button>
+    <div style="margin-top:10px"><button id="pnSave">Save partners page</button></div>
+    <div class="out" id="pnOut"></div>
+  </div>
+
+<div class="card" id="sec-birthdays">
     <h2>🎂 Birthday club</h2>
     <p class="note" style="margin-top:-2px">Children whose families shared a birthday when booking online. A festive email with a free-admission code goes out <b>automatically one week before</b> each birthday, plus a short reminder <b>on the birthday itself</b> — the code works on the birthday only, one use. Use this list to text families who have no email on file, or to resend.</p>
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">
@@ -596,7 +639,7 @@ function esc(s){return (s||"").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
   const t=new Date(); t.setMinutes(t.getMinutes()-t.getTimezoneOffset());
   $("#date").value=t.toISOString().slice(0,10);
   { const od=$("#ovDate"); if(od) od.value=t.toISOString().slice(0,10); }
-  if(PIN){ $("#gate").classList.add("hidden"); $("#app").classList.remove("hidden"); loadDay(); clLoad(); }
+  if(PIN){ $("#gate").classList.add("hidden"); $("#app").classList.remove("hidden"); loadDay(); clLoad(); loadEvents(); pnLoad(); }
 })();
 
 $("#enter").onclick=async()=>{
@@ -605,7 +648,7 @@ $("#enter").onclick=async()=>{
   if(!PIN){ out.className="out err"; out.textContent="Enter the staff PIN."; return; }
   // validate by attempting a load
   const ok=await loadDay(true);
-  if(ok){ sessionStorage.setItem("lh_staff_pin",PIN); $("#gate").classList.add("hidden"); $("#app").classList.remove("hidden"); clLoad(); }
+  if(ok){ sessionStorage.setItem("lh_staff_pin",PIN); $("#gate").classList.add("hidden"); $("#app").classList.remove("hidden"); clLoad(); loadEvents(); pnLoad(); }
   else { out.className="out err"; out.textContent="Wrong staff PIN."; }
 };
 $("#load").onclick=()=>loadDay();
@@ -1315,6 +1358,180 @@ async function ledLoad(){
   $("#ledLoad").disabled=false;
 }
 $("#ledLoad").onclick=ledLoad;
+// ---- Events manager ----
+function evMoney(c){return "$"+(c/100).toFixed(2);}
+async function shrinkImage(file){
+  return new Promise((resolve)=>{
+    const fr=new FileReader();
+    fr.onload=()=>{ const img=new Image(); img.onload=()=>{
+      const max=1100; let{width:w,height:h}=img;
+      if(w>max||h>max){ if(w>h){h=Math.round(h*max/w);w=max;}else{w=Math.round(w*max/h);h=max;} }
+      const c=document.createElement("canvas"); c.width=w;c.height=h;
+      c.getContext("2d").drawImage(img,0,0,w,h);
+      resolve(c.toDataURL("image/jpeg",0.82));
+    }; img.onerror=()=>resolve(null); img.src=fr.result; };
+    fr.onerror=()=>resolve(null); fr.readAsDataURL(file);
+  });
+}
+async function loadEvents(){
+  const key=PIN; if(!key) return;
+  try{
+    const r=await (await fetch("/api/event-admin",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key,action:"list"})})).json();
+    if(!r.ok){ $("#evList").innerHTML='<div class="out err" style="display:block">'+(r.error||"Couldn't load events")+'</div>'; return; }
+    if(!r.events.length){ $("#evList").innerHTML='<div class="note">No events yet.</div>'; return; }
+    window._events={}; let html="";
+    r.events.forEach(e=>{ window._events[e.id]=e;
+      const when=new Date(e.dateTime).toLocaleString();
+      html+='<div style="border:1px solid #e7ddd0;border-radius:11px;padding:10px;margin-top:8px">'
+        +'<div style="font-weight:800">'+esc(e.title)+(e.past?' <span class="note" style="color:#b8524a">(past)</span>':'')+'</div>'
+        +'<div style="font-size:.83rem;color:var(--slate)">'+esc(when)+' · '+evMoney(e.price)+' · '+e.sold+'/'+e.capacity+' sold</div>'
+        +'<div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap">'
+        +'<button onclick="editEvent(\''+e.id+'\')" style="margin:0">Edit</button>'
+        +'<button class="alt" onclick="rosterEvent(\''+e.id+'\')" style="margin:0">Roster</button>'
+        +'<button class="ghost" style="margin:0;background:#eee;color:#2a2622" onclick="releaseEvent(\''+e.id+'\')">Release tickets</button>'
+        +'<button class="ghost" style="margin:0;background:#f7e3df;color:#b8524a" onclick="deleteEvent(\''+e.id+'\')">Delete</button>'
+        +'</div><div class="out" id="evrow-'+e.id+'"></div></div>';
+    });
+    $("#evList").innerHTML=html;
+  }catch(e){ $("#evList").innerHTML='<div class="out err" style="display:block">Network error.</div>'; }
+}
+window.editEvent=(id)=>{
+  const e=window._events[id]; if(!e) return;
+  $("#evId").value=e.id; $("#evTitle").value=e.title; $("#evDesc").value=e.description||""; $("#evReq").value=e.requirements||""; $("#evWaiver").value=e.waiverLink||""; $("#evWaiver2").value=e.regularWaiverLink||""; { var rc=(e.regClose||"").split("T"); $("#evRegDate").value=rc[0]||""; $("#evRegTime").value=rc[1]||""; }
+  $("#evWhen").value=(e.dateTime||"").slice(0,16); $("#evPrice").value=(e.price/100).toFixed(2); $("#evSibPrice").value=e.siblingPrice?(e.siblingPrice/100).toFixed(2):""; $("#evCap").value=e.capacity;
+  $("#evPoster").value=""; window.scrollTo({top:0,behavior:"smooth"});
+  $("#evOut").className="out ok"; $("#evOut").textContent="Editing \u201c"+e.title+"\u201d — make changes and Save. Leave poster empty to keep the current one.";
+};
+window.deleteEvent=async(id)=>{
+  if(!confirm("Delete this event permanently?")) return;
+  const key=PIN;
+  const r=await (await fetch("/api/event-admin",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key,action:"delete",id})})).json();
+  if(r.ok) loadEvents(); else alert(r.error||"Couldn't delete.");
+};
+window.releaseEvent=async(id)=>{
+  const count=prompt("How many tickets to release back? (e.g. after a refund)","1");
+  if(!count) return;
+  const key=PIN;
+  const out=$("#evrow-"+id);
+  const r=await (await fetch("/api/event-admin",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key,action:"release",id,count})})).json();
+  if(out){ out.className="out "+(r.ok?"ok":"err"); out.textContent=r.message||r.error; }
+  if(r.ok) loadEvents();
+};
+window.printNametags=(id)=>{
+  var d=(window.__ros||{})[id]; if(!d) return;
+  var esc=function(s){return (s||"").toString().replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");};
+  var names=[];
+  (d.buyers||[]).forEach(function(x){
+    var kids=(x.attendees&&x.attendees.length)?x.attendees:[{name:x.name}];
+    kids.forEach(function(a){ var fn=(a.name||"").trim().split(/\s+/)[0]; if(fn) names.push(fn); });
+  });
+  var tags=names.map(function(n){ return '<div class="tag"><div class="hi">Hi! I\'m</div><div class="nm">'+esc(n)+'</div><div class="lh">Little Haven</div></div>'; }).join("");
+  var w=window.open("","_blank");
+  w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>Name tags — '+esc(d.title)+'</title>'+
+    '<style>@page{margin:0.4in}body{font-family:Arial,sans-serif;margin:0;padding:14px}'+
+    '.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}'+
+    '.tag{border:2px dashed #c9a68f;border-radius:14px;height:2.1in;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:10px;page-break-inside:avoid}'+
+    '.hi{font-size:15px;color:#a85f59;font-weight:700;letter-spacing:1px;text-transform:uppercase}'+
+    '.nm{font-size:44px;font-weight:800;color:#3d2e23;margin:6px 0;line-height:1.05;word-break:break-word}'+
+    '.lh{font-size:12px;color:#7ba676;font-weight:700;letter-spacing:1px;text-transform:uppercase}'+
+    '@media print{button{display:none}}</style></head><body>'+
+    '<button onclick="window.print()" style="margin-bottom:12px;padding:8px 16px">Print name tags</button>'+
+    '<div class="grid">'+(tags||'<p>No attendees yet.</p>')+'</div></body></html>');
+  w.document.close();
+};
+window.printCheckin=(id)=>{
+  var d=(window.__ros||{})[id]; if(!d) return;
+  var esc=function(s){return (s||"").toString().replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");};
+  var when=d.dateTime?new Date(d.dateTime).toLocaleString("en-US",{weekday:"long",month:"long",day:"numeric",hour:"numeric",minute:"2-digit"}):"";
+  var rows="";
+  (d.buyers||[]).forEach(function(x){
+    var kids=(x.attendees&&x.attendees.length)?x.attendees:[{name:x.name,age:""}];
+    kids.forEach(function(a){
+      rows+='<tr><td>'+esc(a.name)+'</td><td style="text-align:center">'+esc(a.age||"")+'</td><td>'+esc(x.name)+'</td><td>'+esc(x.phone||"")+'</td><td class="chk"></td><td class="chk"></td><td></td></tr>';
+    });
+  });
+  var w=window.open("","_blank");
+  w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>Check-in — '+esc(d.title)+'</title>'+
+    '<style>body{font-family:Arial,sans-serif;color:#222;padding:24px;font-size:13px}h1{font-size:19px;margin:0 0 2px}.sub{color:#666;margin:0 0 14px}'+
+    'table{width:100%;border-collapse:collapse}th,td{border:1px solid #bbb;padding:7px 8px;text-align:left;vertical-align:middle}'+
+    'th{background:#f3ede3;font-size:11px;text-transform:uppercase;letter-spacing:.4px}.chk{width:70px;height:30px}'+
+    '.note{margin-top:12px;font-size:11px;color:#666}@media print{button{display:none}}</style></head><body>'+
+    '<h1>'+esc(d.title)+' — Check-in Sheet</h1><p class="sub">'+esc(when)+'</p>'+
+    '<table><thead><tr><th>Child</th><th>Age</th><th>Drop-off adult (ID match)</th><th>Phone</th><th>Arrived &#10003;</th><th>ID verified at pickup &#10003;</th><th>Notes</th></tr></thead><tbody>'+
+    (rows||'<tr><td colspan="7">No attendees yet.</td></tr>')+'</tbody></table>'+
+    '<p class="note">Pickup: verify the drop-off adult\'s photo ID matches before releasing each child. No child released without a matching ID.</p>'+
+    '<button onclick="window.print()" style="margin-top:14px;padding:8px 16px">Print</button></body></html>');
+  w.document.close();
+};
+window.rosterEvent=async(id)=>{
+  const key=PIN; const out=$("#evrow-"+id);
+  const r=await (await fetch("/api/event-admin",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key,action:"roster",id})})).json();
+  if(!r.ok){ if(out){out.className="out err";out.textContent=r.error;} return; }
+  if(out){ out.className="out ok"; out.innerHTML=(r.buyers.length?r.buyers.map(function(x){
+    var kids=(x.attendees&&x.attendees.length)?x.attendees.map(function(a){return esc(a.name)+(a.age?" (age "+esc(a.age)+")":"");}).join(", "):"—";
+    return '<div style="padding:7px 0;border-bottom:1px solid #eee4d6"><b>'+esc(x.name)+'</b> — '+x.quantity+' ticket'+(x.quantity===1?"":"s")+'<br><span style="color:var(--slate);font-size:.85rem">'+esc(x.email)+(x.phone?" · "+esc(x.phone):"")+'</span><br><span style="font-size:.9rem">🧒 '+kids+'</span></div>';
+  }).join(""):"No tickets sold yet.")+'<br><b>'+r.sold+'/'+r.capacity+' sold</b>'+(r.buyers.length?' &nbsp; <button class="alt" style="margin-top:8px" onclick="printCheckin(\''+id+'\')">🖨️ Print check-in sheet</button> <button class="alt" style="margin-top:8px" onclick="printNametags(\''+id+'\')">🏷️ Print name tags</button>':''); }
+  window.__ros=window.__ros||{}; window.__ros[id]={title:r.title,dateTime:r.dateTime,buyers:r.buyers};
+};
+$("#evReset").onclick=()=>{ ["evId","evTitle","evDesc","evReq","evWaiver","evWaiver2","evWhen","evRegDate","evRegTime","evPrice","evSibPrice","evCap"].forEach(i=>$("#"+i).value=""); $("#evPoster").value=""; $("#evOut").className="out"; };
+$("#evSave").onclick=async()=>{
+  const out=$("#evOut"); out.className="out";
+  const key=PIN;
+  if(!key){ out.className="out err"; out.textContent="Enter your admin key (top of page)."; return; }
+  const body={ key, action:"save", id:$("#evId").value||undefined,
+    title:$("#evTitle").value.trim(), description:$("#evDesc").value.trim(), requirements:$("#evReq").value.trim(), waiverLink:$("#evWaiver").value.trim(), regularWaiverLink:$("#evWaiver2").value.trim(), regClose:($("#evRegDate").value&&$("#evRegTime").value)?($("#evRegDate").value+"T"+$("#evRegTime").value):"",
+    dateTime:$("#evWhen").value, price:$("#evPrice").value, siblingPrice:$("#evSibPrice").value, capacity:$("#evCap").value };
+  const f=$("#evPoster").files[0];
+  if(f){ out.className="out"; out.style.display="block"; out.textContent="Processing image…"; const d=await shrinkImage(f); if(d) body.poster=d; }
+  $("#evSave").disabled=true;
+  try{
+    const r=await (await fetch("/api/event-admin",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)})).json();
+    if(r.ok){ out.className="out ok"; out.textContent=r.message||"Saved."; $("#evReset").click(); loadEvents(); }
+    else { out.className="out err"; out.textContent=r.error||"Couldn't save."; }
+  }catch(e){ out.className="out err"; out.textContent="Network error."; }
+  $("#evSave").disabled=false;
+};
+// events load once a PIN is entered (see the PIN-gate init below)
+var pnData=[];
+function pnRender(){
+  var box=$("#pnList"); if(!box) return;
+  box.innerHTML=pnData.map(function(p,i){
+    return '<div style="border:1.5px solid #e7ddd0;border-radius:12px;padding:12px;margin-bottom:10px;background:#fcfaf6">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px">'
+        +'<label style="display:flex;align-items:center;gap:6px;margin:0;text-transform:none;letter-spacing:0;font-weight:700"><input type="checkbox" class="pnActive" data-i="'+i+'" '+(p.active!==false?"checked":"")+' style="width:auto;margin:0"> Show on site</label>'
+        +'<button type="button" class="pnDel" data-i="'+i+'" style="margin:0;padding:4px 10px;font-size:.72rem;border-radius:7px;background:#f7e2e0;color:#b5382f;width:auto">Remove</button>'
+      +'</div>'
+      +'<label>Business name</label><input type="text" class="pnName" data-i="'+i+'" value="'+esc(p.name||"")+'">'
+      +'<label>Logo URL <span style="font-weight:400;color:var(--slate);text-transform:none">(e.g. /assets/tost-pizza-logo.avif)</span></label><input type="text" class="pnLogo" data-i="'+i+'" value="'+esc(p.logo||"")+'">'
+      +'<label>Website / Yelp URL</label><input type="text" class="pnUrl" data-i="'+i+'" value="'+esc(p.url||"")+'">'
+      +'<label>Short blurb <span style="font-weight:400;color:var(--slate);text-transform:none">(who they are)</span></label><input type="text" class="pnBlurb" data-i="'+i+'" value="'+esc(p.blurb||"")+'">'
+      +'<label>Party perk <span style="font-weight:400;color:var(--slate);text-transform:none">(the deal for party bookings)</span></label><textarea class="pnPerk" data-i="'+i+'" rows="2" style="width:100%;border:1.5px solid #e7ddd0;border-radius:11px;padding:8px 11px;font-family:\'Nunito\';font-weight:600;background:#fff">'+esc(p.perk||"")+'</textarea>'
+    +'</div>';
+  }).join("");
+  box.querySelectorAll(".pnDel").forEach(function(b){ b.onclick=function(){ pnCollect(); pnData.splice(+b.getAttribute("data-i"),1); pnRender(); }; });
+}
+function pnCollect(){
+  function val(cls,i){ var el=$("#pnList").querySelector(cls+'[data-i="'+i+'"]'); return el?el.value:""; }
+  function chk(cls,i){ var el=$("#pnList").querySelector(cls+'[data-i="'+i+'"]'); return el?el.checked:true; }
+  pnData=pnData.map(function(_,i){ return { name:val(".pnName",i), logo:val(".pnLogo",i), url:val(".pnUrl",i), blurb:val(".pnBlurb",i), perk:val(".pnPerk",i), active:chk(".pnActive",i) }; });
+}
+async function pnLoad(){ try{ var r=await (await fetch("/api/partners")).json(); pnData=(r&&r.partners)||[]; pnRender(); }catch(e){ if($("#pnList"))$("#pnList").innerHTML='<div class="note">Couldn\'t load partners.</div>'; } }
+if($("#pnAdd")) $("#pnAdd").onclick=function(){ pnCollect(); pnData.push({name:"",logo:"",url:"",blurb:"",perk:"",active:true}); pnRender(); };
+if($("#pnSave")) $("#pnSave").onclick=async function(){
+  pnCollect();
+  var out=$("#pnOut"); out.style.display="block";
+  var key=PIN;
+  if(!key){ out.className="out err"; out.textContent="Enter your admin key (top of page)."; return; }
+  var list=pnData.filter(function(p){return (p.name||"").trim();});
+  out.className="out"; out.textContent="Saving…"; $("#pnSave").disabled=true;
+  try{
+    var r=await (await fetch("/api/partners",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key,action:"save",partners:list})})).json();
+    if(r&&r.ok){ out.className="out ok"; out.textContent="Saved! Your Partners page is updated (hard-refresh to see it)."; pnData=r.partners||list; pnRender(); }
+    else { out.className="out err"; out.textContent=(r&&r.error)||"Couldn't save."; }
+  }catch(e){ out.className="out err"; out.textContent="Network error."; }
+  $("#pnSave").disabled=false;
+};
+pnLoad();
 var bdRows=[];
 var BD_MONTH_NAMES=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 function bdDayLabel(r){ var mi=parseInt(r.month,10)-1; var mn=BD_MONTH_NAMES[mi]||""; return (mn?mn+" ":"")+esc(r.day||""); }
@@ -1879,11 +2096,26 @@ if($("#dcLook")) $("#dcLook").onclick=dcLookup;
     groupNav(document.getElementById('sideNav'));
     groupNav(document.getElementById('secMenu'));
   }
-  // Open the containing group when a section link is clicked
-  document.addEventListener('click',function(e){
-    var a=e.target.closest?e.target.closest('a[href^="#sec-"]'):null; if(!a) return;
-    var el=document.getElementById(a.getAttribute('href').slice(1));
-    if(el){ var g=el.closest('details.secgroup'); if(g){ g.open=true; setTimeout(function(){el.scrollIntoView({behavior:'smooth',block:'start'});},60); } }
+  // Clicking a nav link should actually land on the section — but sections live
+  // inside collapsed <details class="secgroup"> accordions (only the first one
+  // starts open), so a plain anchor click scrolls to an invisible spot. Open the
+  // right group(s) first, then scroll — and prevent the browser's own native jump
+  // from racing ahead of that (it was, before this fix).
+  function goToSection(id){
+    var el=document.getElementById(id); if(!el) return false;
+    var d=el.closest('details'); while(d){ d.open=true; d=d.parentElement?d.parentElement.closest('details'):null; }
+    el.scrollIntoView({behavior:'smooth', block:'start'});
+    return true;
+  }
+  [document.getElementById('sideNav'), document.getElementById('secMenu')].forEach(function(cont){
+    if(!cont) return;
+    cont.addEventListener('click', function(e){
+      var a=e.target.closest('a'); if(!a) return;
+      var href=a.getAttribute('href')||'';
+      if(href.charAt(0)!=='#') return;   // external links navigate normally
+      var id=href.slice(1);
+      if(goToSection(id)) e.preventDefault();
+    });
   });
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',run); else run();
 })();

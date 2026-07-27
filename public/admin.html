@@ -48,8 +48,8 @@
 <link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#7a6253"><link rel="apple-touch-icon" href="/assets/icons/apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="Little Haven"><link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32.png"></head>
 <body>
 <div class="wrap">
-<div id="secBar"><button id="secToggle" type="button">Sections ▾</button><div id="secMenu"><a href="#sec-bookings">Bookings by date</a><a href="#sec-walkin">Walk-in check-in</a><a href="#sec-punch">Punch-card check-in</a><a href="#sec-reschedule">Reschedule &amp; cancel</a><a href="#sec-redeem">Redeem a credit</a><a href="#sec-party">Session capacity &amp; blocking</a><a href="#sec-issue">Issue a credit</a><a href="#sec-punchissue">Legacy card tools</a><a href="#sec-code">Manage a code</a><a href="#sec-closures">Closures &amp; hours</a><a href="#sec-passes">Legacy prepaid holders</a><a href="#sec-parties">Party bookings</a><a href="/headcount.html">Head count</a><a href="#sec-weekly">Weekly hours</a><a href="#sec-seasonal">Seasonal hours</a><a href="#sec-discount">Discount codes</a><a href="#sec-news">News update</a><a href="#sec-events">Upcoming events</a><a href="#sec-partners">Partners page</a><a href="#sec-birthdays">Birthday club</a></div></div>
-<nav id="sideNav" aria-label="Sections"><div class="snav-title">Sections</div><a href="#sec-bookings">Bookings by date</a><a href="#sec-walkin">Walk-in check-in</a><a href="#sec-punch">Punch-card check-in</a><a href="#sec-reschedule">Reschedule &amp; cancel</a><a href="#sec-redeem">Redeem a credit</a><a href="#sec-party">Session capacity &amp; blocking</a><a href="#sec-issue">Issue a credit</a><a href="#sec-punchissue">Legacy card tools</a><a href="#sec-code">Manage a code</a><a href="#sec-closures">Closures &amp; hours</a><a href="#sec-passes">Legacy prepaid holders</a><a href="#sec-parties">Party bookings</a><a href="/headcount.html">Head count</a><a href="#sec-weekly">Weekly hours</a><a href="#sec-seasonal">Seasonal hours</a><a href="#sec-discount">Discount codes</a><a href="#sec-news">News update</a><a href="#sec-rating">Reviews rating</a><a href="#sec-photos">Site photos</a><a href="#sec-events">Upcoming events</a><a href="#sec-partners">Partners page</a><a href="#sec-birthdays">Birthday club</a></nav>
+<div id="secBar"><button id="secToggle" type="button">Sections ▾</button><div id="secMenu"><a href="#sec-bookings">Bookings by date</a><a href="#sec-walkin">Walk-in check-in</a><a href="#sec-punch">Punch-card check-in</a><a href="#sec-reschedule">Reschedule &amp; cancel</a><a href="#sec-redeem">Redeem a credit</a><a href="#sec-party">Session capacity &amp; blocking</a><a href="#sec-issue">Issue a credit</a><a href="#sec-punchissue">Legacy card tools</a><a href="#sec-code">Manage a code</a><a href="#sec-closures">Closures &amp; hours</a><a href="#sec-passes">Legacy prepaid holders</a><a href="#sec-parties">Party bookings</a><a href="#sec-deposit">Record a party deposit</a><a href="/headcount.html">Head count</a><a href="#sec-weekly">Weekly hours</a><a href="#sec-seasonal">Seasonal hours</a><a href="#sec-discount">Discount codes</a><a href="#sec-news">News update</a><a href="#sec-events">Upcoming events</a><a href="#sec-partners">Partners page</a><a href="#sec-birthdays">Birthday club</a></div></div>
+<nav id="sideNav" aria-label="Sections"><div class="snav-title">Sections</div><a href="#sec-bookings">Bookings by date</a><a href="#sec-walkin">Walk-in check-in</a><a href="#sec-punch">Punch-card check-in</a><a href="#sec-reschedule">Reschedule &amp; cancel</a><a href="#sec-redeem">Redeem a credit</a><a href="#sec-party">Session capacity &amp; blocking</a><a href="#sec-issue">Issue a credit</a><a href="#sec-punchissue">Legacy card tools</a><a href="#sec-code">Manage a code</a><a href="#sec-closures">Closures &amp; hours</a><a href="#sec-passes">Legacy prepaid holders</a><a href="#sec-parties">Party bookings</a><a href="#sec-deposit">Record a party deposit</a><a href="/headcount.html">Head count</a><a href="#sec-weekly">Weekly hours</a><a href="#sec-seasonal">Seasonal hours</a><a href="#sec-discount">Discount codes</a><a href="#sec-news">News update</a><a href="#sec-rating">Reviews rating</a><a href="#sec-photos">Site photos</a><a href="#sec-events">Upcoming events</a><a href="#sec-partners">Partners page</a><a href="#sec-birthdays">Birthday club</a></nav>
   <h1>Store Credit</h1>
   <div class="sub">Issue and look up Little Haven store credit codes</div>
 
@@ -427,6 +427,29 @@
     <button id="ptLoad" style="margin-top:10px">Load party bookings</button>
     <div class="out" id="ptOut"></div>
   </div>
+  <div class="card" id="sec-deposit">
+    <h2>Record an in-store party deposit</h2>
+    <div class="note" style="margin:0 0 6px">For walk-ins paying the deposit on your Square terminal. This holds the slot and emails the owner.</div>
+    <label>Party date</label>
+    <input type="date" id="isDate">
+    <label>Party time</label>
+    <select id="isSlot"></select>
+    <label>Package</label>
+    <select id="isPkg"></select>
+    <div class="row">
+      <div><label>Birthday child *</label><input type="text" id="isChild"></div>
+      <div><label>Customer name *</label><input type="text" id="isName"></div>
+    </div>
+    <div class="row">
+      <div><label>Phone *</label><input type="tel" id="isPhone"></div>
+      <div><label>Email *</label><input type="email" id="isEmail"></div>
+    </div>
+    <label>Comment</label>
+    <input type="text" id="isComment" placeholder="Optional notes">
+    <label style="display:flex;align-items:center;gap:8px;font-weight:600;margin:10px 0"><input type="checkbox" id="isWholeDay" style="width:auto;margin:0"> Close the whole day to other bookings (private party)</label>
+    <button id="isSave">Record party + hold slot</button>
+    <div class="out" id="isOut"></div>
+  </div>
   <div class="card" id="sec-weekly">
     <h2>Weekly hours</h2>
     <div class="note" style="margin-bottom:10px">Your standing hours, set day by day. Each day's last admission is automatically 1 hour before that day's close. These control bookings and show on your website.</div>
@@ -595,6 +618,32 @@
 <script>
 const $=s=>document.querySelector(s);
 const money=c=>"$"+(c/100).toFixed(2);
+
+(async function(){
+  let CFG={};
+  try{ CFG=await (await fetch("/api/config")).json(); }catch(e){ CFG={}; }
+  const slots=CFG.partySlots||[{id:"p0930",label:"9:30 - 11:30 AM"},{id:"p1200",label:"12:00 - 2:00 PM"},{id:"p1430",label:"2:30 - 4:30 PM"},{id:"p1700",label:"5:00 - 7:00 PM"}];
+  if($("#isSlot")) $("#isSlot").innerHTML=slots.map(function(s){return '<option value="'+s.id+'">'+s.label+'</option>';}).join("");
+  if($("#isDate")&&!$("#isDate").value) $("#isDate").value=new Date().toLocaleDateString("en-CA");
+  const pk=CFG.partyPackages||[{id:"sweet",label:"Sweet Party",deposit:10000},{id:"haven",label:"Haven Party",deposit:15000},{id:"dream",label:"Dream Party",deposit:20000}];
+  if($("#isPkg")) $("#isPkg").innerHTML=pk.map(function(p){return '<option value="'+p.id+'">'+p.label+' — '+money(p.deposit)+' deposit</option>';}).join("");
+})();
+if($("#isSave")) $("#isSave").onclick=async()=>{
+  const out=$("#isOut"); out.className="out"; out.style.display="";
+  const key=_pkey(); if(!key){ out.className="out err"; out.textContent="Enter your admin key (top of page)."; return; }
+  const body={ staffPin:key, date:$("#isDate").value, partySlot:$("#isSlot").value, package:$("#isPkg").value, wholeDay:$("#isWholeDay").checked,
+    childName:$("#isChild").value.trim(), name:$("#isName").value.trim(), phone:$("#isPhone").value.trim(),
+    email:$("#isEmail").value.trim(), comment:$("#isComment").value.trim(), agree:true };
+  if(!body.date){ out.className="out err"; out.textContent="Pick the party date."; return; }
+  if(!body.childName||!body.name||!body.phone||!body.email){ out.className="out err"; out.textContent="Fill child, name, phone, and email."; return; }
+  $("#isSave").disabled=true;
+  try{
+    const r=await (await fetch("/api/party-book",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)})).json();
+    if(r.ok){ out.className="out ok"; out.textContent=r.message||"Recorded."; ["isChild","isName","isPhone","isEmail","isComment"].forEach(function(id){$("#"+id).value="";}); $("#isWholeDay").checked=false; if(typeof loadParties==="function") loadParties(); }
+    else { out.className="out err"; out.textContent=r.message||r.error||"Couldn't record."; }
+  }catch(e){ out.className="out err"; out.textContent="Network error."; }
+  $("#isSave").disabled=false;
+};
 
 $("#issue").onclick=async()=>{
   const out=$("#issueOut"); out.className="out"; out.style.display="";
@@ -1405,11 +1454,20 @@ function renderParties(){
       +'<div style="margin-top:4px;font-weight:700;color:#a85f59">'+esc(p.package)+(p.deposit?' · deposit $'+(p.deposit/100).toFixed(2):"")+'</div>'
       +'<div style="margin-top:4px;font-size:.86rem">'+esc(p.name||"—")+(p.childName?' — for '+esc(p.childName):"")+(p.kids?' · '+p.kids+' kids':"")+'</div>'
       +'<div style="color:var(--taupe);font-size:.8rem">'+esc(p.phone||"")+(p.email?' · '+esc(p.email):"")+'</div>'
-      +'<div style="margin-top:8px">'+(p.depositPaid
+      +'<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">'+(p.depositPaid
           ?'<button onclick="markPaid(\''+p.date+'\',\''+p.partySlot+'\',false)" style="margin:0;background:#9aa0a6;font-size:.8rem;padding:6px 12px">Undo deposit paid</button>'
-          :'<button onclick="markPaid(\''+p.date+'\',\''+p.partySlot+'\',true)" style="margin:0;font-size:.8rem;padding:6px 12px">Mark deposit paid</button>')+'</div>'
+          :'<button onclick="markPaid(\''+p.date+'\',\''+p.partySlot+'\',true)" style="margin:0;font-size:.8rem;padding:6px 12px">Mark deposit paid</button>')
+        +'<button onclick="releaseParty(\''+p.date+'\',\''+p.partySlot+'\')" class="alt" style="margin:0;background:#fbe6e2;color:#b5382f;font-size:.8rem;padding:6px 12px">Release slot</button></div>'
       +'</div>';});
   $("#ptList").innerHTML=h;
+}
+async function releaseParty(date,slot){
+  if(!confirm("Release this party slot? This frees the slot and reopens overlapping open play.")) return;
+  var key=_pkey();if(!key)return;
+  try{
+    var r=await (await fetch("/api/party-status",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({pin:key,date:date,partySlot:slot,action:"release"})})).json();
+    if(r.ok) loadParties(); else alert(r.error||"Couldn't release the slot.");
+  }catch(e){ alert("Network error."); }
 }
 async function markPaid(date,slot,paid){
   var key=_pkey();if(!key)return;
@@ -1979,7 +2037,7 @@ if($("#dcLook")) $("#dcLook").onclick=dcLookup;
     {t:"\u2600\uFE0F Today \u2014 Check-in & Walk-ins", open:true, c:"#7ba676", bg:"#eef4e8", ids:["sec-bookings","sec-schedule","sec-walkin","sec-punch","sec-loyalty"]},
     {t:"\uD83C\uDF88 Loyalty & Punch Cards", c:"#c97d76", bg:"#fdf1ec", ids:["sec-loyalty-list","sec-birthdays","sec-punchissue","sec-passes"]},
     {t:"\uD83D\uDCB3 Credits, Codes & Bookings", c:"#8a94c9", bg:"#eef0f9", ids:["sec-issue","sec-redeem","sec-code","sec-discount","sec-reschedule","sec-deposit"]},
-    {t:"\uD83C\uDF89 Parties & Events", c:"#d9a441", bg:"#fbf3e1", ids:["sec-party","sec-parties","sec-events","sec-partners"]},
+    {t:"\uD83C\uDF89 Parties & Events", c:"#d9a441", bg:"#fbf3e1", ids:["sec-party","sec-parties","sec-deposit","sec-events","sec-partners"]},
     {t:"\u2699\uFE0F Hours & Settings", c:"#a89a89", bg:"#f2ede7", ids:["sec-rating","sec-photos","sec-closures","sec-weekly","sec-seasonal","sec-news"]}
   ];
   var TABSETS=[
@@ -2051,6 +2109,27 @@ if($("#dcLook")) $("#dcLook").onclick=dcLookup;
     }
     groupNav(document.getElementById('sideNav'));
     groupNav(document.getElementById('secMenu'));
+
+    // Clicking a nav link should actually land on the section — but sections live
+    // inside collapsed <details class="secgroup"> accordions (only the first one
+    // starts open), so a plain anchor click scrolls to an invisible spot. Open the
+    // right group(s) first, then scroll.
+    function goToSection(id){
+      var el=document.getElementById(id); if(!el) return false;
+      var d=el.closest('details'); while(d){ d.open=true; d=d.parentElement?d.parentElement.closest('details'):null; }
+      el.scrollIntoView({behavior:'smooth', block:'start'});
+      return true;
+    }
+    [document.getElementById('sideNav'), document.getElementById('secMenu')].forEach(function(cont){
+      if(!cont) return;
+      cont.addEventListener('click', function(e){
+        var a=e.target.closest('a'); if(!a) return;
+        var href=a.getAttribute('href')||'';
+        if(href.charAt(0)!=='#') return;   // external links (e.g. /headcount.html) navigate normally
+        var id=href.slice(1);
+        if(goToSection(id)) e.preventDefault();
+      });
+    });
   }
   // Open the containing group when a section link is clicked
   document.addEventListener('click',function(e){

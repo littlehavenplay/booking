@@ -37,21 +37,27 @@ export function pricesFor(dateStr) {
 }
 
 // ---- Adults included / additional-adult rule (date-gated with the price change) ----
-// BEFORE 7/2: 1 adult included per child admission, $7 per additional adult.
-// ON/AFTER 7/2: 2 adults included per booking (they come from the Toddler/Baby
-// admission — the Sibling add-on carries no adults of its own), $5 per adult beyond 2.
+// BEFORE 7/2: 1 adult included per child admission (any type), $7 per additional adult.
+// ON/AFTER 7/2: 2 adults included per Regular or Baby/Infant admission — every one of
+// those admissions carries its own 2 adults, so 2 Regular admissions include 4 adults.
+// The Sibling add-on carries no adults of its own and does not count toward this.
+// $5 per adult beyond the included total.
 export function adultRuleFor(dateStr) {
   const useNew = (dateStr || pacificToday()) >= PRICE_CHANGE_DATE;
   return useNew
-    ? { includedTotal: 2, includedPerChild: 0, extraCents: 500 }
-    : { includedTotal: 0, includedPerChild: 1, extraCents: 700 };
+    ? { includedPerChild: 2, sibExempt: true, extraCents: 500 }
+    : { includedPerChild: 1, sibExempt: false, extraCents: 700 };
 }
 // Number of PAID (extra) adults for a booking on a given checkout date.
-export function additionalAdultsFor(dateStr, totalAdults, children) {
+//   eligibleChildren = admissions that carry included adults (Regular + Baby/Infant)
+//   allChildren      = every admission, including Sibling add-on (used pre-7/2 only)
+export function additionalAdultsFor(dateStr, totalAdults, eligibleChildren, allChildren) {
   const r = adultRuleFor(dateStr);
   const ta = Math.max(0, parseInt(totalAdults, 10) || 0);
-  const kids = Math.max(0, parseInt(children, 10) || 0);
-  const included = r.includedPerChild ? (r.includedPerChild * kids) : r.includedTotal;
+  const kids = r.sibExempt
+    ? Math.max(0, parseInt(eligibleChildren, 10) || 0)
+    : Math.max(0, parseInt(allChildren ?? eligibleChildren, 10) || 0);
+  const included = r.includedPerChild * kids;
   return Math.max(0, ta - included);
 }
 export function additionalAdultCentsFor(dateStr) {

@@ -55,13 +55,14 @@ export default async (req) => {
 
   // Adults: the form sends the TRUE total adult headcount (totalAdults) so staff
   // can track physical occupancy. The number of PAID (extra) adults is decided by
-  // the date-gated rule in settings — on/after 7/2 that's "2 adults included per
-  // booking (from the Toddler/Baby admission), $5 each beyond 2." Older clients may
-  // send additionalAdults directly as the already-extra count.
+  // the date-gated rule in settings — on/after 7/2 that's "2 adults included PER
+  // Regular or Baby/Infant admission (not the Sibling add-on), $5 each beyond that."
+  // Older clients may send additionalAdults directly as the already-extra count.
+  const adultEligibleChildren = regular + infant;   // Sibling add-on carries no adults
   let totalAdults, additionalAdults;
   if (body.totalAdults !== undefined && body.totalAdults !== null && body.totalAdults !== "") {
     totalAdults = Math.max(1, parseInt(body.totalAdults, 10) || 1);
-    additionalAdults = additionalAdultsFor(undefined, totalAdults, children);
+    additionalAdults = additionalAdultsFor(undefined, totalAdults, adultEligibleChildren, children);
   } else {
     additionalAdults = Math.max(0, parseInt(body.additionalAdults, 10) || 0);
     totalAdults = Math.max(1, children + additionalAdults);
