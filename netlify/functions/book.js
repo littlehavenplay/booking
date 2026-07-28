@@ -14,12 +14,13 @@ import { SIGNATURE_HTML, sendOwnerAlert } from "./lib-email.js";
 import {
   CAPACITY, PRICES, pricesFor, SLOTS, SLOT_IDS, openPlayForDate, effectivePartyBlocks, hoursFor, slotCap, slotKey, arrivalStartMin, squareApiBase, SQUARE_VERSION, BOOKING_WINDOW_DAYS,
   PARTY_SLOT_IDS, ARRIVAL_TO_LEGACY,
-  STUDIO_NAME, POLICY_TITLE, POLICY_LINES, TAX_RATE, CLOSED_DATES, CLOSED_MESSAGE, ADDITIONAL_ADULT, isClosedWeekday,
+  STUDIO_NAME, POLICY_TITLE, POLICY_LINES, TAX_RATE, CLOSED_DATES, CLOSED_MESSAGE, ADDITIONAL_ADULT, isClosedWeekday, weekdayOf,
   additionalAdultsFor, additionalAdultCentsFor,
 } from "./lib-settings.js";
 import { issueCode, sendWelcome, sendFamilyPunch, PUNCHES_FOR_REWARD, cleanName, last4 as loyaltyLast4, graduateLegacyCard } from "./lib-loyalty.js";
 import { loadSeasonal, loadWeekly } from "./lib-hours.js";
 import { getClosure, slotBlockedByClosure } from "./lib-closures.js";
+import { getWeekdaySpecial } from "./lib-weekday.js";
 
 export default async (req) => {
   if (req.method !== "POST") return json({ error: "Use POST." }, 405);
@@ -159,9 +160,32 @@ export default async (req) => {
   const subtotal = paidRegular * PRICES.regular + paidInfant * PRICES.infant
     + paidSibling * PRICES.sibling + additionalAdults * additionalAdultCentsFor();
 
+  // Automatic weekday special (e.g. "25% off Regular & Baby/Infant every Mon/Tue") —
+  // triggers itself off the booking date, no code needed. Exclusive with a manual
+  // discount code (both are blanket admission discounts); stacks fine with everything
+  // else (gift cards, store credit, loyalty/birthday/classroom reward codes).
+  const weekdaySpecial = await getWeekdaySpecial();
+  let weekdaySpecialAmount = 0, weekdaySpecialLabel = "";
+  const wdToday = weekdayOf(date);
+  const weekdaySpecialActive = weekdaySpecial.enabled && weekdaySpecial.days.includes(wdToday);
+  if (weekdaySpecialActive) {
+    const at = weekdaySpecial.appliesTo || {};
+    let eligibleSubtotal = 0, eligibleCount = 0;
+    if (at.regular) { eligibleSubtotal += paidRegular * PRICES.regular; eligibleCount += paidRegular; }
+    if (at.sibling) { eligibleSubtotal += paidSibling * PRICES.sibling; eligibleCount += paidSibling; }
+    if (at.infant)  { eligibleSubtotal += paidInfant * PRICES.infant; eligibleCount += paidInfant; }
+    weekdaySpecialAmount = weekdaySpecial.mode === "percent"
+      ? Math.round(eligibleSubtotal * weekdaySpecial.amount / 100)
+      : Math.min(eligibleSubtotal, eligibleCount * weekdaySpecial.amount);
+    const types = [at.regular && "Regular", at.sibling && "Sibling", at.infant && "Baby/Infant"].filter(Boolean).join(" & ");
+    const amountTxt = weekdaySpecial.mode === "percent" ? `${weekdaySpecial.amount}% off` : `$${(weekdaySpecial.amount / 100).toFixed(2)} off`;
+    weekdaySpecialLabel = weekdaySpecial.label || `${amountTxt} ${types} admission`;
+  }
+
   // Percent-off discount code: validate and apply to the subtotal (before tax).
   let discountPct = 0, discountAmount = 0, discRec = null;
   if (discountCode) {
+    if (weekdaySpecialActive) return json({ error: "discount", message: `Today's ${weekdaySpecialLabel} is already applied automatically — a discount code can't be combined with it.` }, 409);
     const today = new Date().toISOString().slice(0, 10);
     const discStore = getStore("discounts");
     try { discRec = await discStore.get("disc:" + discountCode, { type: "json" }); } catch { discRec = null; }
@@ -210,7 +234,7 @@ export default async (req) => {
     if (sibling > 0) present.push(PRICES.sibling);
     if (infant  > 0) present.push(PRICES.infant);
     if (!present.length) return json({ error: "reward", message: "Add a child admission to use your free-visit reward." }, 409);
-    rewardAmount = Math.min(Math.max(...present), subtotal - discountAmount);
+    rewardAmount = Math.min(Math.max(...present), subtotal - discountAmount - weekdaySpecialAmount);
   }
 
   // Birthday rewards: one per child, attached to that SPECIFIC child's row (not just
@@ -249,7 +273,7 @@ export default async (req) => {
       }
       const admissionType = ch.admission || "regular";
       const price = admissionType === "sibling" ? PRICES.sibling : admissionType === "infant" ? PRICES.infant : PRICES.regular;
-      birthdayAmount += Math.min(price, subtotal - discountAmount - rewardAmount - birthdayAmount);
+      birthdayAmount += Math.min(price, subtotal - discountAmount - weekdaySpecialAmount - rewardAmount - birthdayAmount);
       birthdayApplied.push({ code: bc, rec: r, childName: cleanName(ch.first, ch.last) });
       // Soft, non-blocking heads-up if the name on the booking doesn't match who the code was issued to.
       const onFile = (r.childName || "").toLowerCase().replace(/\s+/g, " ").trim();
@@ -260,7 +284,7 @@ export default async (req) => {
     }
   }
 
-  const taxable = Math.max(0, subtotal - discountAmount - rewardAmount - birthdayAmount);
+  const taxable = Math.max(0, subtotal - discountAmount - weekdaySpecialAmount - rewardAmount - birthdayAmount);
   const tax = Math.round(taxable * TAX_RATE);   // 8.75%, nearest cent
   const amount = taxable + tax;                  // total due (may be $0 if fully covered)
 
@@ -526,7 +550,7 @@ export default async (req) => {
   try {
     await sendConfirmation({ email, name, date, slotLabel, regular, sibling, infant, adults: totalAdults, additionalAdults,
       coveredRegular, coveredInfant, coveredSibling, paidRegular, paidInfant, paidSibling, subtotal, tax, amount,
-      giftApplied, giftTotal, creditApplied, cardAmount, passesUsed, discountPct, discountAmount });
+      giftApplied, giftTotal, creditApplied, cardAmount, passesUsed, discountPct, discountAmount, weekdaySpecialAmount, weekdaySpecialLabel });
   } catch (e) { /* ignore email errors */ }
 
   return json({
@@ -539,6 +563,7 @@ export default async (req) => {
     giftTotal,
     creditApplied,
     discountPct, discountAmount, discountCode: discountAmount > 0 ? discountCode : null,
+    weekdaySpecialAmount, weekdaySpecialLabel: weekdaySpecialAmount > 0 ? weekdaySpecialLabel : "",
     cardPaid: cardAmount,
     passesUsed,
     freeVisit: !!freeVisitCard,
@@ -630,7 +655,7 @@ function validDob(s) {
 
 // Sends the customer a confirmation + policy email via Resend.
 // If RESEND_API_KEY isn't set, this quietly does nothing.
-async function sendConfirmation({ email, name, date, slotLabel, regular, sibling, infant, adults = 0, additionalAdults = 0, coveredRegular = 0, coveredInfant = 0, paidRegular = regular, paidInfant = infant, subtotal, tax, amount, giftApplied = [], giftTotal = 0, creditApplied = 0, cardAmount = 0, passesUsed = [], discountPct = 0, discountAmount = 0 }) {
+async function sendConfirmation({ email, name, date, slotLabel, regular, sibling, infant, adults = 0, additionalAdults = 0, coveredRegular = 0, coveredInfant = 0, paidRegular = regular, paidInfant = infant, subtotal, tax, amount, giftApplied = [], giftTotal = 0, creditApplied = 0, cardAmount = 0, passesUsed = [], discountPct = 0, discountAmount = 0, weekdaySpecialAmount = 0, weekdaySpecialLabel = "" }) {
   const key = process.env.RESEND_API_KEY;
   if (!key || !email) return;
 
@@ -678,6 +703,7 @@ async function sendConfirmation({ email, name, date, slotLabel, regular, sibling
       ${passLines}
       <tr><td style="padding:10px 0 2px;color:#5c6470">Subtotal</td><td style="padding:10px 0 2px;text-align:right;font-weight:bold">${dollars(subtotal)}</td></tr>
       ${discountAmount > 0 ? `<tr><td style="padding:2px 0;color:#7ba676">Discount (${discountPct}% off)</td><td style="padding:2px 0;text-align:right;font-weight:bold;color:#7ba676">−${dollars(discountAmount)}</td></tr>` : ""}
+      ${weekdaySpecialAmount > 0 ? `<tr><td style="padding:2px 0;color:#7ba676">🗓️ ${weekdaySpecialLabel}</td><td style="padding:2px 0;text-align:right;font-weight:bold;color:#7ba676">−${dollars(weekdaySpecialAmount)}</td></tr>` : ""}
       <tr><td style="padding:2px 0;color:#5c6470">Sales tax (8.75%)</td><td style="padding:2px 0;text-align:right;font-weight:bold">${dollars(tax)}</td></tr>
       ${payRows}
     </table>

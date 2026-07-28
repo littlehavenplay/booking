@@ -48,8 +48,8 @@
 <link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#7a6253"><link rel="apple-touch-icon" href="/assets/icons/apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="Little Haven"><link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32.png"></head>
 <body>
 <div class="wrap">
-<div id="secBar"><button id="secToggle" type="button">Sections ▾</button><div id="secMenu"><a href="#sec-bookings">Bookings by date</a><a href="#sec-walkin">Walk-in check-in</a><a href="#sec-punch">Punch-card check-in</a><a href="#sec-reschedule">Reschedule &amp; cancel</a><a href="#sec-redeem">Redeem a credit</a><a href="#sec-party">Session capacity &amp; blocking</a><a href="#sec-issue">Issue a credit</a><a href="#sec-punchissue">Legacy card tools</a><a href="#sec-code">Manage a code</a><a href="#sec-closures">Closures &amp; hours</a><a href="#sec-passes">Legacy prepaid holders</a><a href="#sec-parties">Party bookings</a><a href="#sec-deposit">Record a party deposit</a><a href="/headcount.html">Head count</a><a href="#sec-weekly">Weekly hours</a><a href="#sec-seasonal">Seasonal hours</a><a href="#sec-discount">Discount codes</a><a href="#sec-news">News update</a><a href="#sec-events">Upcoming events</a><a href="#sec-partners">Partners page</a><a href="#sec-birthdays">Birthday club</a></div></div>
-<nav id="sideNav" aria-label="Sections"><div class="snav-title">Sections</div><a href="#sec-bookings">Bookings by date</a><a href="#sec-walkin">Walk-in check-in</a><a href="#sec-punch">Punch-card check-in</a><a href="#sec-reschedule">Reschedule &amp; cancel</a><a href="#sec-redeem">Redeem a credit</a><a href="#sec-party">Session capacity &amp; blocking</a><a href="#sec-issue">Issue a credit</a><a href="#sec-punchissue">Legacy card tools</a><a href="#sec-code">Manage a code</a><a href="#sec-closures">Closures &amp; hours</a><a href="#sec-passes">Legacy prepaid holders</a><a href="#sec-parties">Party bookings</a><a href="#sec-deposit">Record a party deposit</a><a href="/headcount.html">Head count</a><a href="#sec-weekly">Weekly hours</a><a href="#sec-seasonal">Seasonal hours</a><a href="#sec-discount">Discount codes</a><a href="#sec-news">News update</a><a href="#sec-rating">Reviews rating</a><a href="#sec-photos">Site photos</a><a href="#sec-events">Upcoming events</a><a href="#sec-partners">Partners page</a><a href="#sec-birthdays">Birthday club</a></nav>
+<div id="secBar"><button id="secToggle" type="button">Sections ▾</button><div id="secMenu"><a href="#sec-bookings">Bookings by date</a><a href="#sec-walkin">Walk-in check-in</a><a href="#sec-punch">Punch-card check-in</a><a href="#sec-reschedule">Reschedule &amp; cancel</a><a href="#sec-redeem">Redeem a credit</a><a href="#sec-party">Session capacity &amp; blocking</a><a href="#sec-issue">Issue a credit</a><a href="#sec-punchissue">Legacy card tools</a><a href="#sec-code">Manage a code</a><a href="#sec-closures">Closures &amp; hours</a><a href="#sec-passes">Legacy prepaid holders</a><a href="#sec-parties">Party bookings</a><a href="#sec-deposit">Record a party deposit</a><a href="/headcount.html">Head count</a><a href="#sec-weekly">Weekly hours</a><a href="#sec-seasonal">Seasonal hours</a><a href="#sec-weekday-special">Weekday special</a><a href="#sec-discount">Discount codes</a><a href="#sec-news">News update</a><a href="#sec-events">Upcoming events</a><a href="#sec-partners">Partners page</a><a href="#sec-birthdays">Birthday club</a></div></div>
+<nav id="sideNav" aria-label="Sections"><div class="snav-title">Sections</div><a href="#sec-bookings">Bookings by date</a><a href="#sec-walkin">Walk-in check-in</a><a href="#sec-punch">Punch-card check-in</a><a href="#sec-reschedule">Reschedule &amp; cancel</a><a href="#sec-redeem">Redeem a credit</a><a href="#sec-party">Session capacity &amp; blocking</a><a href="#sec-issue">Issue a credit</a><a href="#sec-punchissue">Legacy card tools</a><a href="#sec-code">Manage a code</a><a href="#sec-closures">Closures &amp; hours</a><a href="#sec-passes">Legacy prepaid holders</a><a href="#sec-parties">Party bookings</a><a href="#sec-deposit">Record a party deposit</a><a href="/headcount.html">Head count</a><a href="#sec-weekly">Weekly hours</a><a href="#sec-seasonal">Seasonal hours</a><a href="#sec-weekday-special">Weekday special</a><a href="#sec-discount">Discount codes</a><a href="#sec-news">News update</a><a href="#sec-rating">Reviews rating</a><a href="#sec-photos">Site photos</a><a href="#sec-events">Upcoming events</a><a href="#sec-partners">Partners page</a><a href="#sec-birthdays">Birthday club</a></nav>
   <h1>Store Credit</h1>
   <div class="sub">Issue and look up Little Haven store credit codes</div>
 
@@ -390,6 +390,38 @@
     <div class="out" id="frOut"></div>
     <div id="frTableWrap" style="overflow-x:auto;margin-top:10px"></div>
   </div>
+
+    <div class="card" id="sec-weekday-special">
+    <h2>🗓️ Weekday special (automatic)</h2>
+    <p class="note" style="margin-bottom:10px">An always-on discount for slow days — no code needed, applies itself the moment someone picks that date. Pick which days, which admission types it covers, and a percent or dollar amount. Turn off anytime.</p>
+    <label style="display:flex;align-items:center;gap:8px;text-transform:none;letter-spacing:0;color:var(--charcoal);font-weight:700;cursor:pointer"><input type="checkbox" id="wsEnabled" style="width:auto"> Turn this special ON</label>
+    <label style="margin-top:10px">Days it applies</label>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:4px">
+      <label style="display:flex;align-items:center;gap:5px;background:#f7f2ec;border-radius:8px;padding:6px 10px;font-weight:700;font-size:.82rem;text-transform:none;cursor:pointer"><input type="checkbox" class="wsDay" value="0" style="width:auto">Sun</label>
+      <label style="display:flex;align-items:center;gap:5px;background:#f7f2ec;border-radius:8px;padding:6px 10px;font-weight:700;font-size:.82rem;text-transform:none;cursor:pointer"><input type="checkbox" class="wsDay" value="1" style="width:auto">Mon</label>
+      <label style="display:flex;align-items:center;gap:5px;background:#f7f2ec;border-radius:8px;padding:6px 10px;font-weight:700;font-size:.82rem;text-transform:none;cursor:pointer"><input type="checkbox" class="wsDay" value="2" style="width:auto">Tue</label>
+      <label style="display:flex;align-items:center;gap:5px;background:#f7f2ec;border-radius:8px;padding:6px 10px;font-weight:700;font-size:.82rem;text-transform:none;cursor:pointer"><input type="checkbox" class="wsDay" value="3" style="width:auto">Wed</label>
+      <label style="display:flex;align-items:center;gap:5px;background:#f7f2ec;border-radius:8px;padding:6px 10px;font-weight:700;font-size:.82rem;text-transform:none;cursor:pointer"><input type="checkbox" class="wsDay" value="4" style="width:auto">Thu</label>
+      <label style="display:flex;align-items:center;gap:5px;background:#f7f2ec;border-radius:8px;padding:6px 10px;font-weight:700;font-size:.82rem;text-transform:none;cursor:pointer"><input type="checkbox" class="wsDay" value="5" style="width:auto">Fri</label>
+      <label style="display:flex;align-items:center;gap:5px;background:#f7f2ec;border-radius:8px;padding:6px 10px;font-weight:700;font-size:.82rem;text-transform:none;cursor:pointer"><input type="checkbox" class="wsDay" value="6" style="width:auto">Sat</label>
+    </div>
+    <label>Admission types it applies to</label>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:4px">
+      <label style="display:flex;align-items:center;gap:5px;background:#f7f2ec;border-radius:8px;padding:6px 10px;font-weight:700;font-size:.82rem;text-transform:none;cursor:pointer"><input type="checkbox" id="wsRegular" style="width:auto" checked>Regular</label>
+      <label style="display:flex;align-items:center;gap:5px;background:#f7f2ec;border-radius:8px;padding:6px 10px;font-weight:700;font-size:.82rem;text-transform:none;cursor:pointer"><input type="checkbox" id="wsSibling" style="width:auto" checked>Sibling add-on</label>
+      <label style="display:flex;align-items:center;gap:5px;background:#f7f2ec;border-radius:8px;padding:6px 10px;font-weight:700;font-size:.82rem;text-transform:none;cursor:pointer"><input type="checkbox" id="wsInfant" style="width:auto" checked>Baby/Infant</label>
+    </div>
+    <div class="row">
+      <div><label>Discount type</label>
+        <select id="wsMode"><option value="percent">Percent off</option><option value="dollar">Dollar amount off (per admission)</option></select>
+      </div>
+      <div><label id="wsAmountLabel">% off</label><input type="number" id="wsAmount" min="0" step="1" placeholder="e.g. 25"></div>
+    </div>
+    <label>Custom label <span style="font-weight:400;color:var(--slate);text-transform:none">(optional — shown at checkout instead of the auto-generated text)</span></label>
+    <input type="text" id="wsLabel" placeholder="e.g. Weekday Special">
+    <button id="wsSave">Save weekday special</button>
+    <div class="out" id="wsOut"></div>
+    </div>
 
     <div class="card" id="sec-discount">
     <h2>Discount codes (% off)</h2>
@@ -1979,6 +2011,39 @@ async function dcLookup(){
 }
 if($("#dcGen")) $("#dcGen").onclick=dcGenerate;
 if($("#dcLook")) $("#dcLook").onclick=dcLookup;
+
+// ---- Weekday special (automatic day-of-week discount) ----
+if($("#wsMode")) $("#wsMode").onchange=function(){ $("#wsAmountLabel").textContent = $("#wsMode").value==="dollar" ? "$ off (per admission)" : "% off"; };
+async function wsLoad(){
+  try{
+    var r=await (await fetch("/api/weekday-special")).json();
+    if(!r||!r.ok) return;
+    $("#wsEnabled").checked=!!r.enabled;
+    [].slice.call(document.querySelectorAll(".wsDay")).forEach(function(cb){ cb.checked=(r.days||[]).indexOf(parseInt(cb.value,10))>-1; });
+    var at=r.appliesTo||{};
+    $("#wsRegular").checked=at.regular!==false; $("#wsSibling").checked=at.sibling!==false; $("#wsInfant").checked=at.infant!==false;
+    $("#wsMode").value=r.mode||"percent"; $("#wsMode").onchange();
+    $("#wsAmount").value = r.mode==="dollar" ? ((r.amount||0)/100) : (r.amount||0);
+    $("#wsLabel").value=r.label||"";
+  }catch(e){}
+}
+wsLoad();
+if($("#wsSave")) $("#wsSave").onclick=async function(){
+  var out=$("#wsOut"); out.style.display="block";
+  var key=$("#key").value.trim(); if(!key){ out.className="out err"; out.textContent="Enter your admin key (top of page)."; return; }
+  var days=[].slice.call(document.querySelectorAll(".wsDay")).filter(function(cb){return cb.checked;}).map(function(cb){return parseInt(cb.value,10);});
+  var enabled=$("#wsEnabled").checked;
+  if(enabled && !days.length){ out.className="out err"; out.textContent="Pick at least one day."; return; }
+  var body={ key:key, action:"save", enabled:enabled, days:days, mode:$("#wsMode").value, amount:parseFloat($("#wsAmount").value)||0,
+    appliesTo:{ regular:$("#wsRegular").checked, sibling:$("#wsSibling").checked, infant:$("#wsInfant").checked }, label:$("#wsLabel").value.trim() };
+  $("#wsSave").disabled=true;
+  try{
+    var r=await (await fetch("/api/weekday-special",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)})).json();
+    if(r.ok){ out.className="out ok"; out.textContent=enabled?"\u2705 Saved \u2014 the special is live and will apply automatically on the days you picked.":"\u2705 Saved \u2014 the special is turned off."; }
+    else { out.className="out err"; out.textContent=r.error||"Couldn't save."; }
+  }catch(e){ out.className="out err"; out.textContent="Network error."; }
+  $("#wsSave").disabled=false;
+};
 </script>
 <script>
 (function(){
@@ -2036,7 +2101,7 @@ if($("#dcLook")) $("#dcLook").onclick=dcLookup;
   var GROUPS=[
     {t:"\u2600\uFE0F Today \u2014 Check-in & Walk-ins", open:true, c:"#7ba676", bg:"#eef4e8", ids:["sec-bookings","sec-schedule","sec-walkin","sec-punch","sec-loyalty"]},
     {t:"\uD83C\uDF88 Loyalty & Punch Cards", c:"#c97d76", bg:"#fdf1ec", ids:["sec-loyalty-list","sec-birthdays","sec-punchissue","sec-passes"]},
-    {t:"\uD83D\uDCB3 Credits, Codes & Bookings", c:"#8a94c9", bg:"#eef0f9", ids:["sec-issue","sec-redeem","sec-code","sec-discount","sec-reschedule","sec-deposit"]},
+    {t:"\uD83D\uDCB3 Credits, Codes & Bookings", c:"#8a94c9", bg:"#eef0f9", ids:["sec-issue","sec-redeem","sec-code","sec-weekday-special","sec-discount","sec-reschedule","sec-deposit"]},
     {t:"\uD83C\uDF89 Parties & Events", c:"#d9a441", bg:"#fbf3e1", ids:["sec-party","sec-parties","sec-deposit","sec-events","sec-partners"]},
     {t:"\u2699\uFE0F Hours & Settings", c:"#a89a89", bg:"#f2ede7", ids:["sec-rating","sec-photos","sec-closures","sec-weekly","sec-seasonal","sec-news"]}
   ];
