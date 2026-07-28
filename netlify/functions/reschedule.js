@@ -179,13 +179,13 @@ export default async (req) => {
     // Courtesy credit (card + any store credit they had applied) — open-play only
     const courtesyCents = Math.round((parseFloat(b.courtesyAmount) || 0) * 100);
     if (courtesyCents > 0) {
-      const c = await makeCredit("courtesy", courtesyCents, reason);
+      const c = await makeCredit("courtesy", courtesyCents, reason, { custName: entry.name, email: entry.email });
       if (c) { codes.push(c); if (b.notify && okEmail) await sendCreditEmail(entry.email, c, false); await ownerCopy(c); }
     }
     // Standard credit (gift-card portion) — usable anywhere
     const standardCents = Math.round((parseFloat(b.standardAmount) || 0) * 100);
     if (standardCents > 0) {
-      const c = await makeCredit("standard", standardCents, reason);
+      const c = await makeCredit("standard", standardCents, reason, { custName: entry.name, email: entry.email });
       if (c) { codes.push(c); if (b.notify && okEmail) await sendCreditEmail(entry.email, c, false); await ownerCopy(c); }
     }
 
@@ -215,7 +215,7 @@ export default async (req) => {
       const provided = parseFloat(b.creditAmount);
       const cents = provided > 0 ? Math.round(provided * 100) : dep;
       if (!(cents > 0)) return json({ error: "Enter a credit amount." }, 400);
-      const c = await makeCredit("standard", cents, reason);
+      const c = await makeCredit("standard", cents, reason, { custName: rec.name, email: rec.email });
       if (!c) return json({ error: "Released the slot, but couldn't issue the credit. Try the Issue Credit tool." }, 502);
       if (b.notify && rec.email && /^\S+@\S+\.\S+$/.test(rec.email)) await sendCreditEmail(rec.email, c, false);
       await ownerCopy(c);

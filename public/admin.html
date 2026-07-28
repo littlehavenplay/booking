@@ -48,8 +48,8 @@
 <link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#7a6253"><link rel="apple-touch-icon" href="/assets/icons/apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="Little Haven"><link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32.png"></head>
 <body>
 <div class="wrap">
-<div id="secBar"><button id="secToggle" type="button">Sections ▾</button><div id="secMenu"><a href="#sec-bookings">Bookings by date</a><a href="#sec-walkin">Walk-in check-in</a><a href="#sec-punch">Punch-card check-in</a><a href="#sec-reschedule">Reschedule &amp; cancel</a><a href="#sec-redeem">Redeem a credit</a><a href="#sec-party">Session capacity &amp; blocking</a><a href="#sec-issue">Issue a credit</a><a href="#sec-punchissue">Legacy card tools</a><a href="#sec-code">Manage a code</a><a href="#sec-closures">Closures &amp; hours</a><a href="#sec-passes">Legacy prepaid holders</a><a href="#sec-parties">Party bookings</a><a href="#sec-deposit">Record a party deposit</a><a href="/headcount.html">Head count</a><a href="#sec-weekly">Weekly hours</a><a href="#sec-seasonal">Seasonal hours</a><a href="#sec-weekday-special">Weekday special</a><a href="#sec-discount">Discount codes</a><a href="#sec-news">News update</a><a href="#sec-events">Upcoming events</a><a href="#sec-partners">Partners page</a><a href="#sec-birthdays">Birthday club</a></div></div>
-<nav id="sideNav" aria-label="Sections"><div class="snav-title">Sections</div><a href="#sec-bookings">Bookings by date</a><a href="#sec-walkin">Walk-in check-in</a><a href="#sec-punch">Punch-card check-in</a><a href="#sec-reschedule">Reschedule &amp; cancel</a><a href="#sec-redeem">Redeem a credit</a><a href="#sec-party">Session capacity &amp; blocking</a><a href="#sec-issue">Issue a credit</a><a href="#sec-punchissue">Legacy card tools</a><a href="#sec-code">Manage a code</a><a href="#sec-closures">Closures &amp; hours</a><a href="#sec-passes">Legacy prepaid holders</a><a href="#sec-parties">Party bookings</a><a href="#sec-deposit">Record a party deposit</a><a href="/headcount.html">Head count</a><a href="#sec-weekly">Weekly hours</a><a href="#sec-seasonal">Seasonal hours</a><a href="#sec-weekday-special">Weekday special</a><a href="#sec-discount">Discount codes</a><a href="#sec-news">News update</a><a href="#sec-rating">Reviews rating</a><a href="#sec-photos">Site photos</a><a href="#sec-events">Upcoming events</a><a href="#sec-partners">Partners page</a><a href="#sec-birthdays">Birthday club</a></nav>
+<div id="secBar"><button id="secToggle" type="button">Sections ▾</button><div id="secMenu"><a href="#sec-bookings">Bookings by date</a><a href="#sec-walkin">Walk-in check-in</a><a href="#sec-punch">Punch-card check-in</a><a href="#sec-reschedule">Reschedule &amp; cancel</a><a href="#sec-redeem">Redeem a credit</a><a href="#sec-credit-backfill">Backfill credit emails</a><a href="#sec-party">Session capacity &amp; blocking</a><a href="#sec-issue">Issue a credit</a><a href="#sec-punchissue">Legacy card tools</a><a href="#sec-code">Manage a code</a><a href="#sec-closures">Closures &amp; hours</a><a href="#sec-passes">Legacy prepaid holders</a><a href="#sec-parties">Party bookings</a><a href="#sec-deposit">Record a party deposit</a><a href="/headcount.html">Head count</a><a href="#sec-weekly">Weekly hours</a><a href="#sec-seasonal">Seasonal hours</a><a href="#sec-weekday-special">Weekday special</a><a href="#sec-discount">Discount codes</a><a href="#sec-news">News update</a><a href="#sec-events">Upcoming events</a><a href="#sec-partners">Partners page</a><a href="#sec-birthdays">Birthday club</a></div></div>
+<nav id="sideNav" aria-label="Sections"><div class="snav-title">Sections</div><a href="#sec-bookings">Bookings by date</a><a href="#sec-walkin">Walk-in check-in</a><a href="#sec-punch">Punch-card check-in</a><a href="#sec-reschedule">Reschedule &amp; cancel</a><a href="#sec-redeem">Redeem a credit</a><a href="#sec-credit-backfill">Backfill credit emails</a><a href="#sec-party">Session capacity &amp; blocking</a><a href="#sec-issue">Issue a credit</a><a href="#sec-punchissue">Legacy card tools</a><a href="#sec-code">Manage a code</a><a href="#sec-closures">Closures &amp; hours</a><a href="#sec-passes">Legacy prepaid holders</a><a href="#sec-parties">Party bookings</a><a href="#sec-deposit">Record a party deposit</a><a href="/headcount.html">Head count</a><a href="#sec-weekly">Weekly hours</a><a href="#sec-seasonal">Seasonal hours</a><a href="#sec-weekday-special">Weekday special</a><a href="#sec-discount">Discount codes</a><a href="#sec-news">News update</a><a href="#sec-rating">Reviews rating</a><a href="#sec-photos">Site photos</a><a href="#sec-events">Upcoming events</a><a href="#sec-partners">Partners page</a><a href="#sec-birthdays">Birthday club</a></nav>
   <h1>Store Credit</h1>
   <div class="sub">Issue and look up Little Haven store credit codes</div>
 
@@ -246,6 +246,14 @@
     <button id="crGo">Deduct from balance</button>
     <div class="out" id="crOut"></div>
     <p class="note">For standard credits used in store (snacks, retail, etc.). Deducts from the balance and logs it so the online balance stays accurate. Courtesy credits can't be redeemed in store.</p>
+  </div>
+
+  <div class="card" id="sec-credit-backfill">
+    <h2>📧 Backfill missing emails on old credits</h2>
+    <p class="note" style="margin-top:-2px">Credits issued before we started tracking who they belong to have no email on file, so the automatic "your credit is expiring" reminders can't reach them. Find and attach an email to any of these, one at a time — check Square, your email history, or search the customer's name in Loyalty customers to find it.</p>
+    <button id="cbfLoad">🔄 Load credits missing an email</button>
+    <div class="out" id="cbfOut"></div>
+    <div id="cbfList" style="margin-top:10px"></div>
   </div>
 
   <div class="card" id="sec-party">
@@ -707,6 +715,53 @@ $("#crGo").onclick=async()=>{
   }catch(e){ out.className="out err"; out.textContent="Network error."; }
   $("#crGo").disabled=false;
 };
+
+// ---- Backfill missing emails on old credits ----
+async function cbfLoad(){
+  var out=$("#cbfOut"); out.style.display="block";
+  var key=$("#key").value.trim(); if(!key){ out.className="out err"; out.textContent="Enter your admin key (top of page)."; return; }
+  out.className="out"; out.textContent="Loading…"; $("#cbfLoad").disabled=true;
+  try{
+    var r=await (await fetch("/api/credit-backfill",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key,action:"list"})})).json();
+    if(!r||!r.ok){ out.className="out err"; out.textContent=(r&&r.error)||"Couldn't load."; $("#cbfLoad").disabled=false; return; }
+    out.style.display="none"; cbfRender(r.rows||[]);
+  }catch(e){ out.className="out err"; out.textContent="Network error."; }
+  $("#cbfLoad").disabled=false;
+}
+function cbfRender(rows){
+  var wrap=$("#cbfList");
+  if(!rows.length){ wrap.innerHTML='<div class="note">🎉 Every active credit already has an email on file.</div>'; return; }
+  var html='<div class="note" style="margin-bottom:8px">'+rows.length+' credit'+(rows.length===1?"":"s")+' missing an email:</div>';
+  rows.forEach(function(r){
+    html+='<div style="border:1px solid #e7ddd0;border-radius:10px;padding:10px 12px;margin-bottom:8px;background:#fdfaf5">'
+      +'<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:6px">'
+        +'<b style="color:var(--rose-deep)">'+esc(r.code)+'</b>'
+        +'<span style="font-size:.8rem;color:var(--slate)">$'+(r.amount/100).toFixed(2)+' · '+esc(r.type)+' · expires '+esc(r.expiry)+'</span>'
+      +'</div>'
+      +(r.custName?'<div style="font-size:.82rem;margin-bottom:4px"><b>Name on file:</b> '+esc(r.custName)+'</div>':'')
+      +(r.reason?'<div style="font-size:.78rem;color:var(--slate);margin-bottom:6px">'+esc(r.reason)+'</div>':'')
+      +'<div style="display:flex;gap:6px;flex-wrap:wrap">'
+        +'<input type="email" placeholder="their email address" id="cbfEmail-'+esc(r.code)+'" style="flex:1;min-width:180px;margin:0">'
+        +'<button type="button" onclick="cbfSave(\''+esc(r.code)+'\')" style="margin:0;padding:9px 16px">💾 Save</button>'
+      +'</div>'
+      +'<div class="out" id="cbfMsg-'+esc(r.code)+'" style="display:none;margin-top:6px"></div>'
+    +'</div>';
+  });
+  wrap.innerHTML=html;
+}
+window.cbfSave=async function(code){
+  var key=$("#key").value.trim(); if(!key){ alert("Enter your admin key (top of page)."); return; }
+  var email=$("#cbfEmail-"+code).value.trim();
+  var msg=$("#cbfMsg-"+code); msg.style.display="block";
+  if(!email){ msg.className="out err"; msg.textContent="Enter an email."; return; }
+  msg.className="out"; msg.textContent="Saving…";
+  try{
+    var r=await (await fetch("/api/credit-backfill",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key,action:"set",code,email})})).json();
+    if(r.ok){ msg.className="out ok"; msg.textContent="✓ "+r.message; setTimeout(cbfLoad,900); }
+    else { msg.className="out err"; msg.textContent=r.error||"Couldn't save."; }
+  }catch(e){ msg.className="out err"; msg.textContent="Network error."; }
+};
+if($("#cbfLoad")) $("#cbfLoad").onclick=cbfLoad;
 
 
 
@@ -2101,7 +2156,7 @@ if($("#wsSave")) $("#wsSave").onclick=async function(){
   var GROUPS=[
     {t:"\u2600\uFE0F Today \u2014 Check-in & Walk-ins", open:true, c:"#7ba676", bg:"#eef4e8", ids:["sec-bookings","sec-schedule","sec-walkin","sec-punch","sec-loyalty"]},
     {t:"\uD83C\uDF88 Loyalty & Punch Cards", c:"#c97d76", bg:"#fdf1ec", ids:["sec-loyalty-list","sec-birthdays","sec-punchissue","sec-passes"]},
-    {t:"\uD83D\uDCB3 Credits, Codes & Bookings", c:"#8a94c9", bg:"#eef0f9", ids:["sec-issue","sec-redeem","sec-code","sec-weekday-special","sec-discount","sec-reschedule","sec-deposit"]},
+    {t:"\uD83D\uDCB3 Credits, Codes & Bookings", c:"#8a94c9", bg:"#eef0f9", ids:["sec-issue","sec-redeem","sec-credit-backfill","sec-code","sec-weekday-special","sec-discount","sec-reschedule","sec-deposit"]},
     {t:"\uD83C\uDF89 Parties & Events", c:"#d9a441", bg:"#fbf3e1", ids:["sec-party","sec-parties","sec-deposit","sec-events","sec-partners"]},
     {t:"\u2699\uFE0F Hours & Settings", c:"#a89a89", bg:"#f2ede7", ids:["sec-rating","sec-photos","sec-closures","sec-weekly","sec-seasonal","sec-news"]}
   ];

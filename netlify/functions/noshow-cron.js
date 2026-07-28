@@ -87,7 +87,7 @@ export default async () => {
       const reason = `No-show auto-cancel — ${entry.name || "guest"}, ${today} ${slotLabel(slotId)}`;
       let code = null;
       if (paidCents > 0) {
-        const c = await makeCredit("courtesy", paidCents, reason, { custName: entry.name, expiryDays: CREDIT_EXPIRY_DAYS, customIntro: NOSHOW_INTRO });
+        const c = await makeCredit("courtesy", paidCents, reason, { custName: entry.name, email: entry.email, expiryDays: CREDIT_EXPIRY_DAYS, customIntro: NOSHOW_INTRO });
         if (c) {
           code = c.code;
           if (okEmail) { try { await sendCreditEmail(entry.email, c, false); } catch {} }

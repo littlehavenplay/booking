@@ -32,11 +32,11 @@ export default async (req) => {
     expiryDays = parseInt(process.env.CREDIT_EXPIRY_DAYS || "30", 10);
   }
   expiryDays = Math.min(Math.max(expiryDays, 1), 366);
+  const custEmail = (body.email || "").toString().slice(0, 160).trim();
 
-  const record = await makeCredit(type, amount, reason, { custName, expiryDays });
+  const record = await makeCredit(type, amount, reason, { custName, email: custEmail, expiryDays });
   if (!record) return json({ error: "Couldn't save the credit. Try again." }, 502);
 
-  const custEmail = (body.email || "").toString().slice(0, 160).trim();
   let emailedCustomer = false;
   if (custEmail && /^\S+@\S+\.\S+$/.test(custEmail)) {
     emailedCustomer = await sendCreditEmail(custEmail, record, false);

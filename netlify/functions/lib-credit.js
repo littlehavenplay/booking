@@ -4,31 +4,49 @@
 // notifies the studio. Previously this lived duplicated/private inside
 // reschedule.js only.
 import { getStore } from "@netlify/blobs";
-import { STUDIO_NAME } from "./lib-settings.js";
+import { STUDIO_NAME, pacificToday } from "./lib-settings.js";
 import { SIGNATURE_HTML } from "./lib-email.js";
+
+function addDaysToDateStr(dateStr, days) {
+  const d = new Date(dateStr + "T00:00:00Z"); d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+function addMonthsToDateStr(dateStr, months) {
+  const d = new Date(dateStr + "T00:00:00Z"); d.setUTCMonth(d.getUTCMonth() + months);
+  return d.toISOString().slice(0, 10);
+}
+function daysBetweenDateStr(a, b) {
+  return Math.round((new Date(b + "T00:00:00Z") - new Date(a + "T00:00:00Z")) / 86400000);
+}
 
 // expiryDays: optional override (e.g. 15 for a no-show credit, or a staff-chosen
 // value from the Issue Credit tool). Defaults to CREDIT_EXPIRY_MONTHS (3 months) when omitted.
+// Expiry is computed off the Pacific CALENDAR day the credit is issued on, not raw
+// UTC clock math — a credit issued late in the evening Pacific time can already be
+// "tomorrow" in UTC, which used to shift the expiry date by a day.
 export async function makeCredit(type, amountCents, reason, opts = {}) {
   const store = getStore("credits");
   const code = await uniqueCreditCode(store);
   const now = new Date();
-  let exp, expiryDays = opts.expiryDays || null;
+  const issuedDate = pacificToday();   // "YYYY-MM-DD", the correct Pacific calendar day
+  let expiryDays = opts.expiryDays || null;
+  let expDateStr;
   if (expiryDays) {
-    exp = new Date(now.getTime() + expiryDays * 86400000);
+    expDateStr = addDaysToDateStr(issuedDate, expiryDays);
   } else {
     const months = parseInt(process.env.CREDIT_EXPIRY_MONTHS || "3", 10);
-    exp = new Date(now); exp.setMonth(exp.getMonth() + months);
-    expiryDays = Math.round((exp - now) / 86400000);
+    expDateStr = addMonthsToDateStr(issuedDate, months);
+    expiryDays = daysBetweenDateStr(issuedDate, expDateStr);
   }
   const expiryLabel = expiryDays >= 365 ? "1 year" : expiryDays >= 180 ? "6 months" : (expiryDays + " days");
   const rec = {
     code, amount: amountCents, original: amountCents, reason, type,
     custName: (opts.custName || "").toString().slice(0, 80).trim(),
+    email: (opts.email || "").toString().slice(0, 160).trim(),
     singleUse: type === "courtesy",
     channel: type === "courtesy" ? "online" : "any",
     scope: type === "courtesy" ? "openplay" : "any",
-    createdAt: now.toISOString(), expiry: exp.toISOString().slice(0, 10), expiryDays, expiryLabel, active: true,
+    createdAt: now.toISOString(), issuedDate, expiry: expDateStr, expiryDays, expiryLabel, active: true,
     customIntro: opts.customIntro || null,   // optional friendly intro line for the customer email
     history: [{ at: now.toISOString(), action: "issued", amount: amountCents }],
   };
@@ -114,6 +132,43 @@ export async function sendCreditEmail(to, rec, isOwner) {
       method: "POST",
       headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
       body: JSON.stringify({ from: `${studio} <${from}>`, to: [to], bcc: process.env.STUDIO_EMAIL ? [process.env.STUDIO_EMAIL] : undefined, subject, html: html + SIGNATURE_HTML }),
+    });
+    return res.ok;
+  } catch { return false; }
+}
+
+// A friendly nudge for a credit that's still sitting unused, sent by credit-reminder-cron.js
+// — once with about a week left, once the day before it expires. Never blocks anything it's
+// called from; failures are swallowed by the caller.
+export async function sendCreditReminderEmail(to, rec, daysLeft) {
+  const key = process.env.RESEND_API_KEY;
+  const from = process.env.EMAIL_FROM || "onboarding@resend.dev";
+  const studio = STUDIO_NAME || "Little Haven Play Studio";
+  if (!key || !to) return false;
+  const money = "$" + (rec.amount / 100).toFixed(2);
+  const esc = s => (s || "").toString().replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const hello = rec.custName ? `Hello ${esc(rec.custName)},` : "Hello there,";
+  const urgent = daysLeft <= 1;
+  const whenTxt = urgent ? "tomorrow" : `in about a week (${esc(rec.expiry)})`;
+  const subject = urgent ? `⏰ Your ${studio} credit expires tomorrow!` : `A friendly reminder: your ${studio} credit is still waiting`;
+  const html = `
+    <div style="font-family:Arial,Helvetica,sans-serif;color:#2a2622;max-width:520px;margin:0 auto;line-height:1.6">
+      <h2 style="color:#a85f59;font-weight:normal;margin:0 0 4px">${urgent ? "Don't lose this! ⏰" : "Still got a credit waiting for you 💛"}</h2>
+      <p style="font-size:15px">${hello}</p>
+      <p style="font-size:15px">You still have <b>${money}</b> in store credit that hasn't been used yet — it expires <b>${whenTxt}</b>.</p>
+      <div style="text-align:center;margin:18px 0;background:#fcfaf6;border:1px solid #efe7da;border-radius:12px;padding:14px 16px">
+        <div style="font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#8a8276;font-weight:bold">Your credit code</div>
+        <div style="font-size:28px;font-weight:900;letter-spacing:2px;color:#e0584f;margin-top:4px">${esc(rec.code)}</div>
+      </div>
+      <p style="font-size:14px">Book your next visit online and enter this code at checkout — takes two seconds and it's already paid for!</p>
+      <p style="font-size:13px;color:#8a8276;margin-top:14px">Once it expires it can't be reactivated, so don't let it go to waste.</p>
+      <p style="margin-top:14px;background:#fcfaf6;border:1px solid #efe7da;border-radius:10px;padding:11px 13px;font-size:13px;color:#5c6470"><b>Don't see this?</b> Please check your junk/spam folder.</p>
+    </div>`;
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ from: `${studio} <${from}>`, to: [to], subject, html: html + SIGNATURE_HTML }),
     });
     return res.ok;
   } catch { return false; }
