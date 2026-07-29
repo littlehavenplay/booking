@@ -13,6 +13,12 @@
 //          label — recreating any that are missing outright. Use this if a batch that
 //          was already printed/handed out turns out not to redeem — no need to reprint.
 import { getStore } from "@netlify/blobs";
+import { pacificToday } from "./lib-settings.js";
+
+function addDaysToDateStr(dateStr, days) {
+  const d = new Date(dateStr + "T00:00:00Z"); d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
 
 const ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no I,O,0,1 — easy to read/write
 const DEFAULT_EXPIRY_DAYS = 30;
@@ -57,7 +63,7 @@ export default async (req) => {
     if (!Number.isFinite(expiryDays) || expiryDays < 1) expiryDays = 180;  // generous default so this doesn't recur
     expiryDays = Math.min(expiryDays, 365);
     const now = new Date();
-    const expiry = new Date(now.getTime() + expiryDays * 86400000).toISOString().slice(0, 10);
+    const expiry = addDaysToDateStr(pacificToday(), expiryDays);   // Pacific calendar day, not raw UTC clock math
 
     // Which codes to fix: an explicit list if given (handles codes that may have
     // never actually saved), otherwise every code already on file under this label.
@@ -107,7 +113,7 @@ export default async (req) => {
   expiryDays = Math.min(expiryDays, 365);
 
   const now = new Date();
-  const expiry = new Date(now.getTime() + expiryDays * 86400000).toISOString().slice(0, 10);
+  const expiry = addDaysToDateStr(pacificToday(), expiryDays);   // Pacific calendar day, not raw UTC clock math
   const codes = [];
 
   for (let n = 0; n < count; n++) {
