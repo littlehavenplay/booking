@@ -155,7 +155,7 @@ footer{background:var(--charcoal);padding:2rem 3rem;display:flex;align-items:cen
 .exc:hover{transform:translateY(-4px);box-shadow:var(--shadow-lg)}
 .eximg{overflow:hidden;aspect-ratio:16/9;background:var(--cream)}
 .ghome{display:inline-flex;align-items:center;gap:7px;background:#fff;border-radius:40px;padding:9px 18px;box-shadow:0 4px 20px rgba(0,0,0,.07);text-decoration:none;color:#2a2622;font-weight:800;margin-top:10px;font-size:.95rem}
-.ghome .ghstars{color:#f5b301;letter-spacing:1px}.ghome .ghg{color:#4285F4}.ghome .ghsep{color:#c9bfb2}.ghome .yhg{color:#d32323}
+.ghome .ghstars{color:#f5b301;letter-spacing:1px}.ghome .ghg{color:#4285F4}.ghome .ghsep{color:#c9bfb2}.ghome .yhg{color:#d32323}.ghome .fhg{color:#1877F2}
 .rev-viewport{overflow:hidden;margin-top:1.4rem;-webkit-mask-image:linear-gradient(90deg,transparent,#000 5%,#000 95%,transparent);mask-image:linear-gradient(90deg,transparent,#000 5%,#000 95%,transparent)}
 .rev-track{display:flex;gap:16px;width:max-content;padding:22px 20px 10px;animation:revScroll 50s linear infinite}
 .rev-viewport:hover .rev-track{animation-play-state:paused}
@@ -498,7 +498,8 @@ nav, .wbar, .ticker, footer{text-align:left}
 <p class="tag">Reviews</p>
 <h2 class="sh">What families are saying 💛</h2>
 <a class="ghome" href="/reviews.html" target="_blank" rel="noopener"><span class="ghstars" id="ghStars">★★★★★</span> <b id="ghAvg">5.0</b> <span class="ghsep">·</span> <span class="ghg">Google</span> <span class="ghsep">·</span> <span id="ghCount">10 reviews</span></a><br>
-<a class="ghome" href="https://www.yelp.com/biz/little-haven-play-studio-yucca-valley" target="_blank" rel="noopener" style="margin-top:8px"><span class="ghstars" id="yhStars">★★★★★</span> <b id="yhAvg">5.0</b> <span class="ghsep">·</span> <span class="yhg">Yelp</span> <span class="ghsep">·</span> <span id="yhCount">3 reviews</span></a>
+<a class="ghome" href="https://www.yelp.com/biz/little-haven-play-studio-yucca-valley" target="_blank" rel="noopener" style="margin-top:8px"><span class="ghstars" id="yhStars">★★★★★</span> <b id="yhAvg">5.0</b> <span class="ghsep">·</span> <span class="yhg">Yelp</span> <span class="ghsep">·</span> <span id="yhCount">3 reviews</span></a><br>
+<a class="ghome" href="https://www.facebook.com/littlehavenplay" target="_blank" rel="noopener" style="margin-top:8px"><span class="ghstars" id="fhStars">★★★★★</span> <b id="fhAvg">5.0</b> <span class="ghsep">·</span> <span class="fhg">Facebook</span> <span class="ghsep">·</span> <span id="fhCount">2 reviews</span></a>
 </div>
 <div class="rev-viewport" id="revVP"><div class="rev-track" id="revStrip" aria-label="Google reviews"></div></div>
 <p class="cp-label" id="cpLabel" style="display:none">📸 Photos from our families</p>
@@ -637,7 +638,8 @@ if(s)s.style.display="block";var nv=document.getElementById("navNews");if(nv)nv.
   try{
     var rr=await (await fetch("/api/site-photos?set=reviews")).json();
     var ry=await (await fetch("/api/site-photos?set=yelp")).json();
-    imgs=(rr.photos||[]).map(function(p){return p.src;}).concat((ry.photos||[]).map(function(p){return p.src;}));
+    var rf=await (await fetch("/api/site-photos?set=facebook")).json();
+    imgs=(rr.photos||[]).map(function(p){return p.src;}).concat((ry.photos||[]).map(function(p){return p.src;})).concat((rf.photos||[]).map(function(p){return p.src;}));
   }catch(e){}
   if(!imgs.length){ var sec=document.getElementById("revhome"); if(sec) sec.style.display="none"; return; }
   for(var c=0;c<2;c++){ imgs.forEach(function(src){ var im=document.createElement("img"); im.src=src; im.alt="Little Haven review"; im.loading="lazy"; im.addEventListener("click",function(){ if(window.openImgLightbox) window.openImgLightbox(im.currentSrc||im.src, im.alt); }); strip.appendChild(im); }); }
@@ -671,6 +673,7 @@ if(s)s.style.display="block";var nv=document.getElementById("navNews");if(nv)nv.
   }
   loadBadge("google",document.getElementById("ghStars"),document.getElementById("ghAvg"),document.getElementById("ghCount"));
   loadBadge("yelp",document.getElementById("yhStars"),document.getElementById("yhAvg"),document.getElementById("yhCount"));
+  loadBadge("facebook",document.getElementById("fhStars"),document.getElementById("fhAvg"),document.getElementById("fhCount"));
 })();
 </script>
 <script>if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("/sw.js").catch(function(){});});}</script><script>

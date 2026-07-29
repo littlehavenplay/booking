@@ -48,6 +48,7 @@
   .gbadge .cnt{color:var(--slate);font-weight:700;font-size:.9rem;}
   .gbadge .glogo{font-weight:800;color:#4285F4;}
   .gbadge.yelpbadge .glogo{font-weight:800;color:#d32323;}
+  .gbadge.fbbadge .glogo{font-weight:800;color:#1877F2;}
   .gallery-wrap{max-width:1040px;margin:26px auto 0;padding:0 16px;}
   .gallery{columns:2;column-gap:16px;}
   .gallery img{width:100%;display:block;border-radius:14px;box-shadow:var(--shadow);margin:0 0 16px;break-inside:avoid;border:1px solid rgba(0,0,0,.04);cursor:pointer;}
@@ -84,6 +85,15 @@
 <div class="gallery-wrap" id="yelpGalleryWrap" style="display:none">
   <div class="gallery" id="yelpGallery"></div>
 </div>
+<div class="wrap" style="padding-top:0;padding-bottom:0" id="fbSection">
+  <h2 class="sechead">On Facebook too 🔷</h2>
+  <a class="gbadge fbbadge" href="https://www.facebook.com/littlehavenplay" target="_blank" rel="noopener">
+    <span class="gstars" id="rvFbStars" style="color:#1877F2">★★★★★</span><span class="num" id="rvFbAvg">5.0</span><span class="cnt">· <span class="glogo">Facebook</span> · <span id="rvFbCount">2 reviews</span></span>
+  </a>
+</div>
+<div class="gallery-wrap" id="fbGalleryWrap" style="display:none">
+  <div class="gallery" id="fbGallery"></div>
+</div>
 <div id="rvLightbox" role="dialog" aria-modal="true" aria-label="Enlarged photo"><img id="rvLightboxImg" src="" alt=""><button id="rvLightboxClose" aria-label="Close">×</button></div>
 <div class="wrap" style="padding-top:0">
   <h2 class="sechead">Loved your visit?</h2>
@@ -116,7 +126,7 @@
 </div>
 <script>
 (function(){
-  var g=document.getElementById("gallery"), yg=document.getElementById("yelpGallery");
+  var g=document.getElementById("gallery"), yg=document.getElementById("yelpGallery"), fg=document.getElementById("fbGallery");
   var lb=document.getElementById("rvLightbox"), lbImg=document.getElementById("rvLightboxImg"), lbClose=document.getElementById("rvLightboxClose");
   function openLb(src,alt){ lbImg.src=src; lbImg.alt=alt||""; lb.classList.add("open"); document.body.style.overflow="hidden"; }
   function closeLb(){ lb.classList.remove("open"); lbImg.src=""; document.body.style.overflow=""; }
@@ -140,6 +150,12 @@
     if(count>0){ if(wrap) wrap.style.display=""; }
     else { if(sec) sec.style.display="none"; }   // hide the whole Yelp section until photos are uploaded
   })();
+  (async function(){
+    var count=await loadSet("facebook",fg,"Little Haven Facebook review");
+    var wrap=document.getElementById("fbGalleryWrap"), sec=document.getElementById("fbSection");
+    if(count>0){ if(wrap) wrap.style.display=""; }
+    else { if(sec) sec.style.display="none"; }   // hide the whole Facebook section until photos are uploaded
+  })();
 })();
 </script>
 <script>
@@ -158,6 +174,7 @@
   }
   loadBadge("google",document.getElementById("rvStars"),document.getElementById("rvAvg"),document.getElementById("rvCount"));
   loadBadge("yelp",document.getElementById("rvYelpStars"),document.getElementById("rvYelpAvg"),document.getElementById("rvYelpCount"));
+  loadBadge("facebook",document.getElementById("rvFbStars"),document.getElementById("rvFbAvg"),document.getElementById("rvFbCount"));
 })();
 </script>
 <script>if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("/sw.js").catch(function(){});});}</script>

@@ -1,4 +1,4 @@
-// /api/site-photos — manage website photo sets ("reviews", "yelp", "interior", "customer").
+// /api/site-photos — manage website photo sets ("reviews", "yelp", "facebook", "interior", "customer").
 //
 //   GET  ?set=X                 → public: ordered, merged list of built-in + uploaded photos
 //                                  { ok, set, photos:[{id,kind:"static"|"upload",src,thumb}] }
@@ -13,7 +13,7 @@
 // on one of those just hides it from the site (recorded in blob storage); it can be restored.
 import { getStore } from "@netlify/blobs";
 
-const SETS = ["reviews", "yelp", "interior", "customer"];
+const SETS = ["reviews", "yelp", "facebook", "interior", "customer"];
 
 // Built-in (repo) photos per set.
 const STATIC = {

@@ -361,7 +361,23 @@ export default async (req) => {
   const payments = [];
   try {
     if (cardAmount > 0) {
-      const p = await chargeSquare(env, { source_id: sourceId, amount: cardAmount, note, email });
+      // When the card is paying the WHOLE order (no gift cards / store credit splitting
+      // it), attach an itemized Square Order so Square's own reports correctly show the
+      // tax portion separately instead of lumping it into gross sales. Any failure here
+      // just falls back to the exact same plain charge as before — checkout never breaks
+      // because of this.
+      let orderId = null;
+      if (cardAmount === amount && giftApplied.length === 0 && creditApplied === 0 && tax > 0) {
+        const ord = await createTaxedOrder(env, { taxableCents: taxable, taxCents: tax, note });
+        if (ord) orderId = ord.orderId;
+      }
+      let p = await chargeSquare(env, { source_id: sourceId, amount: cardAmount, note, email, order_id: orderId });
+      if (!p.ok && orderId) {
+        // The itemized order attempt was rejected (e.g. a sub-cent rounding mismatch
+        // Square didn't accept) — retry once the plain way rather than losing the
+        // whole booking over a reporting nicety.
+        p = await chargeSquare(env, { source_id: sourceId, amount: cardAmount, note, email });
+      }
       if (!p.ok) return json({ error: "payment_failed", message: p.detail }, 402);
       payments.push(p.payment);
     }
@@ -584,7 +600,51 @@ export default async (req) => {
 };
 
 // Charges a single payment source (a card token or a gift card id) via Square.
-async function chargeSquare(env, { source_id, amount, note, email }) {
+// Creates a Square Order with the pre-tax amount as one line item and an
+// order-level percentage tax, so Square's own reports correctly split "Gross
+// Sales" from "Tax" for this charge (previously every website charge was one
+// lump amount with no tax breakdown, so Square's reports understated tax
+// collected — see sales-tax-report.js for the full explanation).
+// Only used for the simple, common case: paying the FULL order by card, no
+// gift cards or store credit splitting the payment (see call site). Returns
+// null on any failure — callers must fall back to the plain charge.
+async function createTaxedOrder(env, { taxableCents, taxCents, note }) {
+  if (!(taxableCents > 0)) return null;   // nothing taxable — a plain charge is simpler and correct
+  try {
+    const pct = taxCents > 0 ? (taxCents / taxableCents * 100).toFixed(2) : "0";
+    const res = await fetch(`${squareApiBase()}/v2/orders`, {
+      method: "POST",
+      headers: {
+        "Square-Version": SQUARE_VERSION,
+        "Authorization": `Bearer ${env.SQUARE_ACCESS_TOKEN}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        idempotency_key: crypto.randomUUID(),
+        order: {
+          location_id: env.SQUARE_LOCATION_ID,
+          line_items: [{ name: (note || "Open Play Admission").slice(0, 80), quantity: "1", base_price_money: { amount: taxableCents, currency: "USD" } }],
+          taxes: [{ uid: "sales-tax", name: "Sales Tax", percentage: pct, scope: "ORDER" }],
+        },
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok || !data?.order?.id) return null;
+    return { orderId: data.order.id, totalAmount: data.order.total_money?.amount ?? (taxableCents + taxCents) };
+  } catch { return null; }
+}
+
+async function chargeSquare(env, { source_id, amount, note, email, order_id }) {
+  const body = {
+    idempotency_key: crypto.randomUUID(),
+    source_id,
+    amount_money: { amount, currency: "USD" },
+    location_id: env.SQUARE_LOCATION_ID,
+    autocomplete: true,
+    note,
+    buyer_email_address: email || undefined,
+  };
+  if (order_id) body.order_id = order_id;
   const res = await fetch(`${squareApiBase()}/v2/payments`, {
     method: "POST",
     headers: {
@@ -592,15 +652,7 @@ async function chargeSquare(env, { source_id, amount, note, email }) {
       "Authorization": `Bearer ${env.SQUARE_ACCESS_TOKEN}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({
-      idempotency_key: crypto.randomUUID(),
-      source_id,
-      amount_money: { amount, currency: "USD" },
-      location_id: env.SQUARE_LOCATION_ID,
-      autocomplete: true,
-      note,
-      buyer_email_address: email || undefined,
-    }),
+    body: JSON.stringify(body),
   });
   const data = await res.json();
   if (!res.ok) {
