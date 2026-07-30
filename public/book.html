@@ -229,7 +229,7 @@
     </div>
 
     <div class="card">
-      <p class="step"><span class="n">💳</span> Gift card &amp; store credit <span style="font-weight:400;color:var(--ink-soft);text-transform:none">(payment — not a discount)</span></p>
+      <p class="step"><span class="n">💳</span> Gift card &amp; store credit</p>
       <div class="note" style="margin-bottom:8px">These are money already on your account — they're applied to your total no matter what else is going on with your booking, including any discount below. Any amount left over always stays on your card or credit for next time.</div>
       <div class="gc-toggle">
         <span style="font-weight:700">Using a gift card?</span>
@@ -270,7 +270,7 @@
     </div>
 
     <div class="card">
-      <p class="step"><span class="n">%</span> Discount code <span style="font-weight:400;color:var(--ink-soft);text-transform:none">(a promotion — not a payment method)</span></p>
+      <p class="step"><span class="n">%</span> Discount code</p>
       <div class="gc-toggle">
         <span style="font-weight:700">Have a % off code?</span>
         <div class="seg">
@@ -342,7 +342,7 @@ async function init(){
     studioName:"Little Haven Play Studio",
     closedDates:[],closedMessage:"Temporarily closed for improvements",
     policyTitle:"Open Play Booking Cancellation & Refund Policy",
-    policyLines:["Open Play bookings are prepaid. If you're unable to attend, email hello@littlehavenplay.com and we'll do our best to issue a store credit toward a future visit (typically valid for 30 days).","If you do not show up within one hour of your reserved time, we will automatically issue a courtesy store credit for the full amount paid, valid for 15 days from issuance."],
+    policyLines:["Open Play bookings are prepaid. If you're unable to attend, email hello@littlehavenplay.com and we'll do our best to issue a store credit toward a future visit (typically valid for 30 days).","If you do not show up within one hour of your reserved time, we will automatically issue a courtesy store credit for the full amount paid, valid for 14 days from issuance."],
     slots:[{id:"arr09",label:"9:00 AM"},{id:"arr10",label:"10:00 AM"},{id:"arr11",label:"11:00 AM"},{id:"arr12",label:"12:00 PM"},{id:"arr13",label:"1:00 PM"}]}; }
 
   $("#date").min=todayStr();   // no booking in the past
@@ -568,7 +568,7 @@ function renderChildNames(){
     const p=prev[i]||{}, f=(p.f||"").replace(/"/g,"&quot;"), l=(p.l||"").replace(/"/g,"&quot;"), d=(p.d||"").replace(/"/g,"&quot;"), code=(p.code||"").replace(/"/g,"&quot;"), bdcode=(p.bdcode||"").replace(/"/g,"&quot;");
     html+='<div class="cn-row" data-type="'+specs[i].type+'" style="border:1.5px solid #e7ddd0;border-radius:12px;padding:12px;margin-bottom:10px;background:#fcfaf6">'
       +'<div style="font-weight:800;font-size:.76rem;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-soft);margin-bottom:7px">'+specs[i].label+' — Child '+specs[i].n+'</div>'
-      +'<input class="cn-code" type="text" autocomplete="off" placeholder="Have a loyalty code? (optional) — auto-fills their info" style="text-transform:uppercase;margin-bottom:5px" value="'+code+'">'
+      +'<input class="cn-code" type="text" autocomplete="off" placeholder="Loyalty card number (optional) — auto-fills child\'s info" style="text-transform:uppercase;margin-bottom:5px" value="'+code+'">'
       +'<div class="cn-codemsg" style="font-size:.76rem;margin:-1px 0 6px;display:none"></div>'
       +'<div class="row" style="margin-bottom:6px"><input class="cn-f" type="text" placeholder="First name" value="'+f+'"><input class="cn-l" type="text" placeholder="Last name (required)" value="'+l+'"></div>'
       +'<input class="cn-d" type="text" inputmode="numeric" autocomplete="off" maxlength="10" placeholder="Birthday mm/dd/yyyy (optional)" value="'+d+'">'

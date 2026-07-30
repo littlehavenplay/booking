@@ -178,9 +178,9 @@ export const POLICY_LINES = [
   "Open Play bookings are prepaid. We understand things come up, especially with little ones!",
   "If you're unable to attend your booked session, please email us at hello@littlehavenplay.com and we'll do our best to accommodate you and issue a store credit toward a future visit (typically valid for 30 days).",
   "Open play admission is valid only for the selected date and time booked.",
-  "If you do not show up within one hour of your reserved time, we will automatically issue a courtesy store credit for the full amount paid to the email on file, valid for 15 days from issuance, so you can reschedule whenever works for you.",
+  "If you do not show up within one hour of your reserved time, we will automatically issue a courtesy store credit for the full amount paid to the email on file, valid for 14 days from issuance, so you can reschedule whenever works for you.",
   `If ${STUDIO_NAME} needs to cancel or close unexpectedly, guests will be offered the option to reschedule or receive store credit.`,
-  "Military discount: once we've verified a family's military ID in person and marked their child's loyalty card, 10% off that child's admission (not the adult add-on) applies automatically on future online bookings whenever that loyalty code is entered — no separate code needed. It can't be combined with a discount code or the Weekday Special; whichever discount is larger is the one that applies. It cannot be granted for a booking made before the ID was verified in person.",
+  "Military discount: show your military ID in person and we'll verify it and mark your child's loyalty card. 10% off automatically applies on future online bookings whenever that loyalty code is entered — no separate code needed. Can't be combined with a discount code or the Weekday Special; whichever is larger applies.",
   "For any questions or concerns, please contact us at hello@littlehavenplay.com and we will respond within 24 hours.",
 ];
 

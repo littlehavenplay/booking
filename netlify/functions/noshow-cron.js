@@ -2,7 +2,7 @@
 // arrival time was more than 60 minutes ago and who were never checked in,
 // auto-cancels the reservation (frees the spot), restores any punch-card
 // visit used, and issues ONE courtesy store credit for the full amount paid
-// — valid 15 days — so the family can rebook whenever they're ready.
+// — valid 14 days — so the family can rebook whenever they're ready.
 //
 // Shares its credit-issuing logic with reschedule.js's manual "Cancel & refund"
 // flow (see lib-credit.js), so a no-show credit looks and behaves exactly like
@@ -15,7 +15,7 @@ import { ARRIVAL_IDS, arrivalStartMin, slotLabel, slotKey, pacificToday } from "
 import { makeCredit, sendCreditEmail, ownerCopy } from "./lib-credit.js";
 
 const GRACE_MINUTES = 60;          // how late = a no-show
-const CREDIT_EXPIRY_DAYS = 15;
+const CREDIT_EXPIRY_DAYS = 14;
 const NOSHOW_INTRO = "We held your spot but it looks like you weren't able to make it in today — no worries, these things happen! We've gone ahead and released the reservation and set you up with a courtesy credit so you can rebook whenever works for you.";
 
 export default async () => {
