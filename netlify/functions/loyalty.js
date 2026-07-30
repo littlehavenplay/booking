@@ -105,7 +105,7 @@ export default async (req) => {
       }
     }
     if (!rec) return json({ ok: true, found: false, code: code || "" });
-    return json({ ok: true, found: true, code, childName: rec.childName || "", dob: rec.dob || "",
+    return json({ ok: true, found: true, code, childName: rec.childName || "", dob: rec.dob || "", phone4: rec.phone4 || "",
       punches: rec.punches || 0, needed: PUNCHES_FOR_REWARD, rewardsEarned: rec.rewardsEarned || 0,
       lastRewardCode: rec.lastRewardCode || null, createdAt: rec.createdAt, militaryVerified: !!rec.militaryVerified });
   }
@@ -163,9 +163,22 @@ export default async (req) => {
       rec.militaryVerified = mv;
       if (mv && !wasVerified) { try { await sendMilitaryVerifiedEmail(loyalty, rec); } catch {} }
     }
+    // Re-linking a card to a different family, e.g. a child was mistakenly grouped
+    // with someone else's kids because a booking shared one phone number (a parent
+    // brought a friend's child along, or a data-entry mixup). The CODE never changes
+    // — that's the permanent identity — only which phone4 groups it into a family.
+    // Everything else on the card (punches, waiver, birthday, military status,
+    // history) is untouched.
+    if (b.editPhone4 !== undefined) {
+      const newP4 = (b.editPhone4 || "").toString().replace(/\D/g, "").slice(-4);
+      if (newP4 && newP4.length === 4 && newP4 !== rec.phone4) {
+        rec.history.push({ at: new Date().toISOString(), action: "family-relinked", from: rec.phone4 || null, to: newP4 });
+        rec.phone4 = newP4;
+      }
+    }
 
     try { await loyalty.setJSON("card:" + code, rec); } catch { return json({ error: "Couldn't update the card." }, 502); }
-    return json({ ok: true, adjusted: true, code, childName: rec.childName, dob: rec.dob || "", punches: rec.punches, needed: PUNCHES_FOR_REWARD, militaryVerified: !!rec.militaryVerified });
+    return json({ ok: true, adjusted: true, code, childName: rec.childName, dob: rec.dob || "", punches: rec.punches, needed: PUNCHES_FOR_REWARD, militaryVerified: !!rec.militaryVerified, phone4: rec.phone4 || "" });
   }
 
   if (action === "punch") {

@@ -148,6 +148,8 @@
             <div><label>Birthday</label><input type="date" id="loEditDob"></div>
             <div><label>Punches (0–7)</label><input type="number" id="loEditPunches" min="0" max="7"></div>
           </div>
+          <div><label>Family phone (last 4) <span style="font-weight:400;color:var(--taupe);text-transform:none">— which family this card is grouped under</span></label><input type="text" id="loEditPhone4" maxlength="4" placeholder="e.g. 5911"></div>
+          <p class="note" style="margin-top:2px">Change this if a card ended up grouped with the wrong family (e.g. a booking shared one phone for two different families' kids). The card's code, punches, waiver, and history all stay exactly as they are — only which family it's linked to changes.</p>
           <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
             <button id="loEditSave" style="margin:0">💾 Save changes</button>
             <button id="loEditDelete" class="alt" style="margin:0;background:#fbe6e2;color:#b5382f">🗑️ Delete card</button>
@@ -945,6 +947,7 @@ $("#loLook").onclick=async()=>{
       const parts=(r.childName||"").trim().split(/\s+/);
       $("#loEditFirst").value=parts[0]||""; $("#loEditLast").value=parts.slice(1).join(" ")||"";
       $("#loEditDob").value=r.dob||""; $("#loEditPunches").value=r.punches!=null?r.punches:"";
+      $("#loEditPhone4").value=r.phone4||"";
       $("#loEditWrap").style.display="block";
     }
     else if(r.ok){ out.className="out"; out.textContent='No card yet for '+(r.code||'that')+' — first punch will create it.'; $("#loEditWrap").style.display="none"; }
@@ -958,17 +961,20 @@ $("#loEditSave").onclick=async()=>{
   if(!code){ out.className="out err"; out.textContent="Look up a card first."; return; }
   const editFirst=$("#loEditFirst").value.trim(), editLast=$("#loEditLast").value.trim();
   const dob=$("#loEditDob").value, punchesRaw=$("#loEditPunches").value;
+  const phone4Raw=$("#loEditPhone4").value.trim();
+  if(phone4Raw && !/^\d{4}$/.test(phone4Raw)){ out.className="out err"; out.textContent="Family phone must be exactly 4 digits."; return; }
   const body={key:PIN,action:"adjust",code};
   if(editFirst) body.editFirst=editFirst;
   if(editLast) body.editLast=editLast;
   if(dob) body.dob=dob;
   if(punchesRaw!=="") body.setPunches=parseInt(punchesRaw,10);
+  if(phone4Raw) body.editPhone4=phone4Raw;
   try{
     const r=await (await fetch("/api/loyalty",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)})).json();
     if(r.ok){
-      out.className="out ok"; out.innerHTML='✅ Saved — <b>'+esc(r.childName||code)+'</b>, <b>'+r.punches+'/'+r.needed+'</b> punches'+(r.dob?', birthday '+esc(r.dob):'')+'.';
+      out.className="out ok"; out.innerHTML='✅ Saved — <b>'+esc(r.childName||code)+'</b>, <b>'+r.punches+'/'+r.needed+'</b> punches'+(r.dob?', birthday '+esc(r.dob):'')+(phone4Raw?', family phone \u2022\u2022\u2022'+esc(r.phone4):'')+'.';
       var c=LOYALTY.find(function(x){return x.code===code;});
-      if(c){ c.childName=r.childName; c.punches=r.punches; c.dob=r.dob; renderLoyaltyList(); }
+      if(c){ c.childName=r.childName; c.punches=r.punches; c.dob=r.dob; c.phone4=r.phone4; renderLoyaltyList(); }
     }
     else { out.className="out err"; out.textContent=r.error||"Couldn't save."; }
   }catch(e){ out.className="out err"; out.textContent="Network error."; }
