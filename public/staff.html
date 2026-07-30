@@ -837,8 +837,11 @@ window.markArrived=async(el)=>{
       if(arrived && r.coffee) coffeePopup("Offer a free coffee!");
       if(arrived && Array.isArray(r.loyaltyPunches) && r.loyaltyPunches.length){
         const reward=r.loyaltyPunches.find(function(p){return p.rewardIssued;});
+        const punched=r.loyaltyPunches.filter(function(p){return !p.freeAdmission;});
+        const free=r.loyaltyPunches.filter(function(p){return p.freeAdmission;});
         if(reward){ coffeePopup("🎉 "+esc(reward.childName)+" earned a FREE visit! Code "+esc(reward.rewardCode)+" emailed.","Loyalty reward — their 8th visit is free!","🎉"); }
-        else { const p=r.loyaltyPunches[0]; coffeePopup("🎈 Punched "+esc(p.childName)+" ("+p.punches+"/"+p.needed+")"+(r.loyaltyPunches.length>1?" +"+(r.loyaltyPunches.length-1)+" more":""),"Loyalty punch card updated.","🎈"); }
+        else if(punched.length){ const p=punched[0]; coffeePopup("🎈 Punched "+esc(p.childName)+" ("+p.punches+"/"+p.needed+")"+(punched.length>1?" +"+(punched.length-1)+" more":""),"Loyalty punch card updated."+(free.length?" ("+free.length+" free admission — no punch given, as expected.)":""),"🎈"); }
+        else if(free.length){ coffeePopup("📋 "+esc(free[0].childName)+(free.length>1?" +"+(free.length-1)+" more":"")+" — free admission today, no punch given.","That's correct — free visits don't count toward the loyalty card.","📋"); }
       }
       loadDay(true);
     }
@@ -991,6 +994,15 @@ window.toggleBdayRow=function(code){
   var row=document.getElementById("bdayRow-"+code); if(!row) return;
   row.style.display = (row.style.display==="none"||!row.style.display) ? "flex" : "none";
 };
+window.toggleMilitary=async function(code,setTo){
+  if(!PIN){ alert("Enter your staff PIN first."); return; }
+  if(setTo && !confirm("Confirm: you've verified this child's family is military (checked ID in person)?\n\nThey'll automatically get 10% off their admission on future online bookings, whenever this code is entered — unless a bigger discount (like the Weekday Special) is already active that day."))return;
+  try{
+    var r=await (await fetch("/api/loyalty",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key:PIN,action:"adjust",code,militaryVerified:setTo})})).json();
+    if(r.ok){ var c=LOYALTY.find(function(x){return x.code===code;}); if(c){ c.militaryVerified=r.militaryVerified; } renderLoyaltyList(); }
+    else alert(r.error||"Couldn't save.");
+  }catch(e){ alert("Network error."); }
+};
 window.saveBdayFromList=async function(code){
   if(!PIN){ alert("Enter your staff PIN first."); return; }
   var dob=$("#bdayInput-"+code).value;
@@ -1106,6 +1118,7 @@ function llChildRow(c){
       +'<button onclick="loEditFromList(\''+esc(c.code)+'\')" title="Edit name, birthday, or punches" style="border:none;background:#eee6f5;color:#5c4a80;border-radius:6px;cursor:pointer;font-weight:800;font-size:.75rem;padding:4px 9px">\u270F\uFE0F Edit</button>'
       +'<button onclick="punchFromList(\''+esc(c.code)+'\',\''+esc((c.childName||"").replace(/[\x27\\]/g,""))+'\')" title="Add a punch" style="border:none;background:#e7f0df;color:#4d6b3e;border-radius:6px;cursor:pointer;font-weight:800;font-size:.75rem;padding:4px 9px">\u2795 Punch</button>'
       +'<button onclick="toggleBdayRow(\''+esc(c.code)+'\')" title="Set this child\'s birthday" style="border:none;background:#fdeedd;color:#a5651a;border-radius:6px;cursor:pointer;font-weight:800;font-size:.75rem;padding:4px 9px">\uD83C\uDF82 Birthday</button>'
+      +'<button onclick="toggleMilitary(\''+esc(c.code)+'\','+(c.militaryVerified?'false':'true')+')" title="'+(c.militaryVerified?'Remove military verification':'Mark as military-verified')+'" style="border:none;background:'+(c.militaryVerified?'#dff0d3':'#f0ede5')+';color:'+(c.militaryVerified?'#33521f':'#6b6255')+';border-radius:6px;cursor:pointer;font-weight:800;font-size:.75rem;padding:4px 9px">\uD83C\uDF96\uFE0F '+(c.militaryVerified?'Military \u2713':'Military')+'</button>'
       +'<button onclick="deleteLoyalty(\''+esc(c.code)+'\',\''+esc((c.childName||"").replace(/[\x27\\]/g,""))+'\')" title="Delete card" style="border:none;background:#fbe6e2;color:#b5382f;border-radius:6px;cursor:pointer;font-size:.8rem;padding:3px 7px">\uD83D\uDDD1\uFE0F</button>'
     +'</span>'
     +'<div id="bdayRow-'+esc(c.code)+'" style="display:none;width:100%;align-items:center;gap:8px;background:#fdf9f4;border:1px solid #efe4d5;border-radius:9px;padding:8px 10px;margin-top:2px">'

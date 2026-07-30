@@ -6,7 +6,7 @@ import { squareApiBase, SQUARE_VERSION } from "./lib-settings.js";
 
 export default async (req) => {
   const url = new URL(req.url);
-  const gan = (url.searchParams.get("gan") || "").trim();
+  const gan = (url.searchParams.get("gan") || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
   if (!gan) return json({ ok: false, error: "Enter a gift card code." }, 400);
 
   const token = process.env.SQUARE_ACCESS_TOKEN;

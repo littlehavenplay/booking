@@ -5,6 +5,7 @@
 //   { key, action:"list" }                      → active credits missing an email
 //   { key, action:"set", code, email, custName? } → attach an email (+ optional name)
 import { getStore } from "@netlify/blobs";
+import { listAllKeys } from "./lib-blobs.js";
 
 export default async (req) => {
   if (req.method !== "POST") return json({ error: "Use POST." }, 405);
@@ -31,8 +32,7 @@ export default async (req) => {
   }
 
   // list: every active, unused credit that's missing an email
-  let keys = [];
-  try { const r = await store.list({ prefix: "credit:" }); keys = (r.blobs || []).map(x => x.key); } catch {}
+  const keys = await listAllKeys(store, { prefix: "credit:" });
   const rows = [];
   for (const k of keys) {
     let rec = null; try { rec = await store.get(k, { type: "json" }); } catch {}

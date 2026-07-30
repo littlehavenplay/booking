@@ -5,6 +5,7 @@
 // Body: { key, action:"list" }
 //       { key, action:"clear", id }   — dismiss one entry once you've followed up
 import { getStore } from "@netlify/blobs";
+import { listAllKeys } from "./lib-blobs.js";
 
 export default async (req) => {
   if (req.method !== "POST") return json({ error: "Use POST." }, 405);
@@ -24,8 +25,7 @@ export default async (req) => {
     return json({ ok: true });
   }
 
-  let keys = [];
-  try { const r = await store.list({ prefix: "fail:" }); keys = (r.blobs || []).map(x => x.key); } catch {}
+  const keys = await listAllKeys(store, { prefix: "fail:" });
   const rows = [];
   for (const k of keys) {
     let rec = null; try { rec = await store.get(k, { type: "json" }); } catch {}

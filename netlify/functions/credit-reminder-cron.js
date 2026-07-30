@@ -6,6 +6,7 @@
 // Runs once a day. Each credit gets each reminder at most once (tracked on the
 // record itself), so re-runs are safe.
 import { getStore } from "@netlify/blobs";
+import { listAllKeys } from "./lib-blobs.js";
 import { pacificToday } from "./lib-settings.js";
 import { sendCreditReminderEmail } from "./lib-credit.js";
 
@@ -16,8 +17,7 @@ function daysBetween(a, b) {
 export default async () => {
   const today = pacificToday();
   const store = getStore("credits");
-  let keys = [];
-  try { const r = await store.list({ prefix: "credit:" }); keys = (r.blobs || []).map(x => x.key); } catch {}
+  const keys = await listAllKeys(store, { prefix: "credit:" });
 
   let checked = 0, weekSent = 0, daySent = 0, failed = 0, skippedNoEmail = 0;
 

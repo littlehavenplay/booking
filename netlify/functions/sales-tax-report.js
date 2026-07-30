@@ -18,6 +18,7 @@
 //
 // Body: { key, action:"report", startDate, endDate }   (YYYY-MM-DD, inclusive)
 import { getStore } from "@netlify/blobs";
+import { listAllKeys } from "./lib-blobs.js";
 
 export default async (req) => {
   if (req.method !== "POST") return json({ error: "Use POST." }, 405);
@@ -33,8 +34,7 @@ export default async (req) => {
   }
 
   const store = getStore("bookings");
-  let keys = [];
-  try { const r = await store.list(); keys = (r.blobs || []).map(x => x.key); } catch {}
+  const keys = await listAllKeys(store);
 
   const byMonth = {};   // "YYYY-MM" -> { amount, tax, taxable, count }
   let totalAmount = 0, totalTax = 0, count = 0;

@@ -14,6 +14,7 @@
 //          was already printed/handed out turns out not to redeem — no need to reprint.
 import { getStore } from "@netlify/blobs";
 import { pacificToday } from "./lib-settings.js";
+import { listAllKeys } from "./lib-blobs.js";
 
 function addDaysToDateStr(dateStr, days) {
   const d = new Date(dateStr + "T00:00:00Z"); d.setUTCDate(d.getUTCDate() + days);
@@ -37,8 +38,7 @@ export default async (req) => {
 
   if (action === "list") {
     const want = (b.label || "").toString().trim();
-    let keys = [];
-    try { const r = await store.list({ prefix: "reward:" }); keys = (r.blobs || []).map(x => x.key); } catch {}
+    const keys = await listAllKeys(store, { prefix: "reward:" });
     const today = new Date().toISOString().slice(0, 10);
     const rows = [];
     for (const k of keys) {
@@ -72,13 +72,11 @@ export default async (req) => {
       : null;
     if (!codes) {
       codes = [];
-      try {
-        const r = await store.list({ prefix: "reward:" });
-        for (const bl of (r.blobs || [])) {
-          let rec = null; try { rec = await store.get(bl.key, { type: "json" }); } catch {}
-          if (rec && rec.source === "classroom" && rec.classroom === label) codes.push(rec.code);
-        }
-      } catch {}
+      const bulkKeys = await listAllKeys(store, { prefix: "reward:" });
+      for (const k of bulkKeys) {
+        let rec = null; try { rec = await store.get(k, { type: "json" }); } catch {}
+        if (rec && rec.source === "classroom" && rec.classroom === label) codes.push(rec.code);
+      }
     }
     if (!codes.length) return json({ error: `No codes found for "${label}" — paste the code list to recreate them.` }, 404);
 

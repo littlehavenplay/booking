@@ -70,7 +70,7 @@ export default async (req) => {
   }
   const sourceId = (body.sourceId || "").toString();
   const giftCardCodes = Array.isArray(body.giftCards)
-    ? [...new Set(body.giftCards.map(g => (g || "").toString().trim()).filter(Boolean))].slice(0, 2)
+    ? [...new Set(body.giftCards.map(g => (g || "").toString().toUpperCase().replace(/[^A-Z0-9]/g, "")).filter(Boolean))].slice(0, 2)
     : [];
   const passCodes = Array.isArray(body.visitPasses)
     ? [...new Set(body.visitPasses.map(g => (g || "").toString().trim().toUpperCase()).filter(Boolean))].slice(0, 2)
@@ -196,6 +196,37 @@ export default async (req) => {
     discountAmount = Math.round(subtotal * discountPct / 100);
   }
 
+  // Military discount: 10% off, per CHILD whose loyalty card has been staff-verified
+  // as military (checked ID in person, toggled on their card) — never the adult
+  // add-on. Mutually exclusive with the Weekday Special / a discount code: only ONE
+  // blanket discount ever applies to a booking, whichever is worth more in dollars.
+  let militaryAmount = 0;
+  const militaryChildren = [];
+  if (childNames.some(c => c.code)) {
+    const loyaltyStore = getStore("loyalty");
+    for (const ch of childNames) {
+      if (!ch.code || !ch.admission) continue;
+      let card = null; try { card = await loyaltyStore.get("card:" + ch.code, { type: "json" }); } catch {}
+      if (card && card.militaryVerified) {
+        const price = ch.admission === "sibling" ? PRICES.sibling : ch.admission === "infant" ? PRICES.infant : PRICES.regular;
+        militaryAmount += price;
+        militaryChildren.push(cleanName(ch.first, ch.last));
+      }
+    }
+    militaryAmount = Math.round(militaryAmount * 0.10);
+  }
+  // Reconcile: general (discount code or weekday special — already exclusive with
+  // each other) vs. military — only the bigger one survives.
+  if (militaryAmount > 0) {
+    const generalAmount = Math.max(discountAmount, weekdaySpecialAmount);
+    if (militaryAmount > generalAmount) {
+      discountAmount = 0; discountPct = 0;
+      weekdaySpecialAmount = 0; weekdaySpecialLabel = "";
+    } else {
+      militaryAmount = 0;
+    }
+  }
+
   // Loyalty free-visit reward: one earned visit = one free child admission of ANY
   // type at the current price. It zeroes the single most-expensive child admission
   // in the booking. Single-use. Gift cards may still be used alongside it (they're a
@@ -234,7 +265,12 @@ export default async (req) => {
     if (sibling > 0) present.push(PRICES.sibling);
     if (infant  > 0) present.push(PRICES.infant);
     if (!present.length) return json({ error: "reward", message: "Add a child admission to use your free-visit reward." }, 409);
-    rewardAmount = Math.min(Math.max(...present), subtotal - discountAmount - weekdaySpecialAmount);
+    rewardAmount = Math.min(Math.max(...present), subtotal - discountAmount - weekdaySpecialAmount - militaryAmount);
+    // Tag the specific child whose admission type this covered — so check-in knows
+    // NOT to issue a loyalty punch for that child's visit (it wasn't paid for).
+    const rewardType = Math.max(...present) === PRICES.regular ? "regular" : Math.max(...present) === PRICES.infant ? "infant" : "sibling";
+    const rewardChild = childNames.find(c => c.admission === rewardType && !c._freeAdmission);
+    if (rewardChild) rewardChild._freeAdmission = true;
   }
 
   // Birthday rewards: one per child, attached to that SPECIFIC child's row (not just
@@ -273,8 +309,9 @@ export default async (req) => {
       }
       const admissionType = ch.admission || "regular";
       const price = admissionType === "sibling" ? PRICES.sibling : admissionType === "infant" ? PRICES.infant : PRICES.regular;
-      birthdayAmount += Math.min(price, subtotal - discountAmount - weekdaySpecialAmount - rewardAmount - birthdayAmount);
+      birthdayAmount += Math.min(price, subtotal - discountAmount - weekdaySpecialAmount - militaryAmount - rewardAmount - birthdayAmount);
       birthdayApplied.push({ code: bc, rec: r, childName: cleanName(ch.first, ch.last) });
+      ch._freeAdmission = true;
       // Soft, non-blocking heads-up if the name on the booking doesn't match who the code was issued to.
       const onFile = (r.childName || "").toLowerCase().replace(/\s+/g, " ").trim();
       const entered = cleanName(ch.first, ch.last).toLowerCase().replace(/\s+/g, " ").trim();
@@ -284,7 +321,7 @@ export default async (req) => {
     }
   }
 
-  const taxable = Math.max(0, subtotal - discountAmount - weekdaySpecialAmount - rewardAmount - birthdayAmount);
+  const taxable = Math.max(0, subtotal - discountAmount - weekdaySpecialAmount - militaryAmount - rewardAmount - birthdayAmount);
   const tax = Math.round(taxable * TAX_RATE);   // 8.75%, nearest cent
   const amount = taxable + tax;                  // total due (may be $0 if fully covered)
 
@@ -338,7 +375,7 @@ export default async (req) => {
   }
 
   // Store credit (promo code) applies after gift cards, before the card.
-  let creditApplied = 0; let creditRec = null;
+  let creditApplied = 0; let creditRec = null; let creditRemaining = null;
   const promoCode = (body.promoCode || "").toString().trim().toUpperCase();
   if (promoCode && due > 0) {
     const creditStore = getStore("credits");
@@ -368,7 +405,9 @@ export default async (req) => {
       // because of this.
       let orderId = null;
       if (cardAmount === amount && giftApplied.length === 0 && creditApplied === 0 && tax > 0) {
-        const ord = await createTaxedOrder(env, { taxableCents: taxable, taxCents: tax, note });
+        const blanketDiscount = discountAmount || weekdaySpecialAmount || militaryAmount || 0;
+        const blanketLabel = discountAmount ? `Discount code (${discountPct}% off)` : weekdaySpecialAmount ? weekdaySpecialLabel : militaryAmount ? "Military discount (10% off)" : "";
+        const ord = await createTaxedOrder(env, { subtotalCents: subtotal, taxableCents: taxable, taxCents: tax, discountCents: blanketDiscount, discountLabel: blanketLabel, note });
         if (ord) orderId = ord.orderId;
       }
       let p = await chargeSquare(env, { source_id: sourceId, amount: cardAmount, note, email, order_id: orderId });
@@ -407,6 +446,7 @@ export default async (req) => {
     fresh.history = Array.isArray(fresh.history) ? fresh.history : [];
     fresh.history.push({ at: new Date().toISOString(), action: "redeemed-online", amount: creditApplied, where: "online open play" });
     try { await creditStore.setJSON("credit:" + promoCode, fresh); } catch {}
+    creditRemaining = fresh.amount || 0;
   }
 
   // Payment succeeded (or nothing was owed) — now spend one visit from each used pass.
@@ -566,7 +606,7 @@ export default async (req) => {
   try {
     await sendConfirmation({ email, name, date, slotLabel, regular, sibling, infant, adults: totalAdults, additionalAdults,
       coveredRegular, coveredInfant, coveredSibling, paidRegular, paidInfant, paidSibling, subtotal, tax, amount,
-      giftApplied, giftTotal, creditApplied, cardAmount, passesUsed, discountPct, discountAmount, weekdaySpecialAmount, weekdaySpecialLabel });
+      giftApplied, giftTotal, creditApplied, creditRemaining, cardAmount, passesUsed, discountPct, discountAmount, weekdaySpecialAmount, weekdaySpecialLabel, militaryAmount, militaryChildren });
   } catch (e) { /* ignore email errors */ }
 
   return json({
@@ -580,6 +620,7 @@ export default async (req) => {
     creditApplied,
     discountPct, discountAmount, discountCode: discountAmount > 0 ? discountCode : null,
     weekdaySpecialAmount, weekdaySpecialLabel: weekdaySpecialAmount > 0 ? weekdaySpecialLabel : "",
+    militaryAmount, militaryChildren: militaryAmount > 0 ? militaryChildren : [],
     cardPaid: cardAmount,
     passesUsed,
     freeVisit: !!freeVisitCard,
@@ -608,10 +649,22 @@ export default async (req) => {
 // Only used for the simple, common case: paying the FULL order by card, no
 // gift cards or store credit splitting the payment (see call site). Returns
 // null on any failure — callers must fall back to the plain charge.
-async function createTaxedOrder(env, { taxableCents, taxCents, note }) {
+async function createTaxedOrder(env, { subtotalCents, taxableCents, taxCents, discountCents, discountLabel, note }) {
   if (!(taxableCents > 0)) return null;   // nothing taxable — a plain charge is simpler and correct
   try {
+    const lineItemBase = subtotalCents != null ? subtotalCents : taxableCents + (discountCents || 0);
     const pct = taxCents > 0 ? (taxCents / taxableCents * 100).toFixed(2) : "0";
+    const order = {
+      location_id: env.SQUARE_LOCATION_ID,
+      line_items: [{ name: (note || "Open Play Admission").slice(0, 80), quantity: "1", base_price_money: { amount: lineItemBase, currency: "USD" } }],
+      taxes: [{ uid: "sales-tax", name: "Sales Tax", percentage: pct, scope: "ORDER" }],
+    };
+    // Report the blanket % discount (Weekday Special / discount code / military —
+    // only one ever applies) as its own Square discount line, not just baked
+    // invisibly into a lower price — same idea as the tax itemization above.
+    if (discountCents > 0) {
+      order.discounts = [{ uid: "discount", name: (discountLabel || "Discount").slice(0, 80), amount_money: { amount: discountCents, currency: "USD" }, scope: "ORDER" }];
+    }
     const res = await fetch(`${squareApiBase()}/v2/orders`, {
       method: "POST",
       headers: {
@@ -619,14 +672,7 @@ async function createTaxedOrder(env, { taxableCents, taxCents, note }) {
         "Authorization": `Bearer ${env.SQUARE_ACCESS_TOKEN}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        idempotency_key: crypto.randomUUID(),
-        order: {
-          location_id: env.SQUARE_LOCATION_ID,
-          line_items: [{ name: (note || "Open Play Admission").slice(0, 80), quantity: "1", base_price_money: { amount: taxableCents, currency: "USD" } }],
-          taxes: [{ uid: "sales-tax", name: "Sales Tax", percentage: pct, scope: "ORDER" }],
-        },
-      }),
+      body: JSON.stringify({ idempotency_key: crypto.randomUUID(), order }),
     });
     const data = await res.json();
     if (!res.ok || !data?.order?.id) return null;
@@ -707,7 +753,7 @@ function validDob(s) {
 
 // Sends the customer a confirmation + policy email via Resend.
 // If RESEND_API_KEY isn't set, this quietly does nothing.
-async function sendConfirmation({ email, name, date, slotLabel, regular, sibling, infant, adults = 0, additionalAdults = 0, coveredRegular = 0, coveredInfant = 0, paidRegular = regular, paidInfant = infant, subtotal, tax, amount, giftApplied = [], giftTotal = 0, creditApplied = 0, cardAmount = 0, passesUsed = [], discountPct = 0, discountAmount = 0, weekdaySpecialAmount = 0, weekdaySpecialLabel = "" }) {
+async function sendConfirmation({ email, name, date, slotLabel, regular, sibling, infant, adults = 0, additionalAdults = 0, coveredRegular = 0, coveredInfant = 0, paidRegular = regular, paidInfant = infant, subtotal, tax, amount, giftApplied = [], giftTotal = 0, creditApplied = 0, creditRemaining = null, cardAmount = 0, passesUsed = [], discountPct = 0, discountAmount = 0, weekdaySpecialAmount = 0, weekdaySpecialLabel = "", militaryAmount = 0, militaryChildren = [] }) {
   const key = process.env.RESEND_API_KEY;
   if (!key || !email) return;
 
@@ -733,7 +779,7 @@ async function sendConfirmation({ email, name, date, slotLabel, regular, sibling
       `<tr><td style="padding:2px 0;color:#5c6470">Gift card ${g.gan}${g.balanceAfter != null ? ` (balance left: ${dollars(g.balanceAfter)})` : ""}</td><td style="padding:2px 0;text-align:right;font-weight:bold">−${dollars(g.applied)}</td></tr>`
     ).join("");
     const creditLine = creditApplied > 0
-      ? `<tr><td style="padding:2px 0;color:#5c6470">Store credit</td><td style="padding:2px 0;text-align:right;font-weight:bold">−${dollars(creditApplied)}</td></tr>` : "";
+      ? `<tr><td style="padding:2px 0;color:#5c6470">Store credit${creditRemaining != null ? ` (balance left: ${dollars(creditRemaining)})` : ""}</td><td style="padding:2px 0;text-align:right;font-weight:bold">−${dollars(creditApplied)}</td></tr>` : "";
     payRows = `<tr><td style="padding:6px 0 2px;color:#5c6470">Total</td><td style="padding:6px 0 2px;text-align:right;font-weight:bold">${dollars(amount)}</td></tr>`
       + gcLines + creditLine
       + `<tr><td style="padding:6px 0 0;color:#5c6470">Paid by card</td><td style="padding:6px 0 0;text-align:right;font-weight:bold;font-size:18px;color:#7ba676">${dollars(cardAmount)}</td></tr>`;
@@ -756,6 +802,7 @@ async function sendConfirmation({ email, name, date, slotLabel, regular, sibling
       <tr><td style="padding:10px 0 2px;color:#5c6470">Subtotal</td><td style="padding:10px 0 2px;text-align:right;font-weight:bold">${dollars(subtotal)}</td></tr>
       ${discountAmount > 0 ? `<tr><td style="padding:2px 0;color:#7ba676">Discount (${discountPct}% off)</td><td style="padding:2px 0;text-align:right;font-weight:bold;color:#7ba676">−${dollars(discountAmount)}</td></tr>` : ""}
       ${weekdaySpecialAmount > 0 ? `<tr><td style="padding:2px 0;color:#7ba676">🗓️ ${weekdaySpecialLabel}</td><td style="padding:2px 0;text-align:right;font-weight:bold;color:#7ba676">−${dollars(weekdaySpecialAmount)}</td></tr>` : ""}
+      ${militaryAmount > 0 ? `<tr><td style="padding:2px 0;color:#7ba676">🎖️ Military discount (10% off)</td><td style="padding:2px 0;text-align:right;font-weight:bold;color:#7ba676">−${dollars(militaryAmount)}</td></tr>` : ""}
       <tr><td style="padding:2px 0;color:#5c6470">Sales tax (8.75%)</td><td style="padding:2px 0;text-align:right;font-weight:bold">${dollars(tax)}</td></tr>
       ${payRows}
     </table>

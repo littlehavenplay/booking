@@ -3,7 +3,7 @@
 //   { key, date, action:"get" }                    -> { ok, arrivals:{ id:true } }
 //   { key, date, id, arrived:true|false, action:"set" } -> { ok, arrivals }
 import { getStore } from "@netlify/blobs";
-import { addPunch, sendFamilyPunch } from "./lib-loyalty.js";
+import { addPunch, issueCode, sendFamilyPunch } from "./lib-loyalty.js";
 
 export default async (req) => {
   if (req.method !== "POST") return json({ error: "Use POST." }, 405);
@@ -75,14 +75,23 @@ export default async (req) => {
         }
 
         // addPunch CREATES the card if the child doesn't have one yet, then punches it.
+        // A child whose admission was FREE that visit (a birthday/loyalty/classroom
+        // reward code zeroed it out) never gets a punch for it — nothing was paid, so
+        // it shouldn't count toward earning another free visit. Their card still gets
+        // created if they don't have one, just with no punch added.
         if (children && phone4) {
           const isFamily = children.filter(c => c && c.first && c.last).length > 1;
           for (const ch of children) {
             if (ch && ch.first && ch.last) {
               try {
-                const r = await addPunch(loyalty, { first: ch.first, last: ch.last, phone4, email, suppressEmail: isFamily });
-                if (!r.error) loyaltyPunches.push({ childName: r.childName, code: r.code, punches: r.punches,
-                  needed: r.needed, rewardIssued: r.rewardIssued, rewardCode: r.rewardCode });
+                if (ch._freeAdmission) {
+                  const r = await issueCode(loyalty, { first: ch.first, last: ch.last, phone4, email, suppressEmail: true });
+                  loyaltyPunches.push({ childName: r.childName, code: r.code, freeAdmission: true });
+                } else {
+                  const r = await addPunch(loyalty, { first: ch.first, last: ch.last, phone4, email, suppressEmail: isFamily });
+                  if (!r.error) loyaltyPunches.push({ childName: r.childName, code: r.code, punches: r.punches,
+                    needed: r.needed, rewardIssued: r.rewardIssued, rewardCode: r.rewardCode });
+                }
               } catch {}
             }
           }

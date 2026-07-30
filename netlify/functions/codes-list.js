@@ -8,6 +8,7 @@
 // Returns a normalized list so the admin/staff pages can render one table.
 // Body: { key, filter? }   filter = "all" | "credit" | "discount" | "pass" | "reward" (optional)
 import { getStore } from "@netlify/blobs";
+import { listAllKeys } from "./lib-blobs.js";
 
 export default async (req) => {
   if (req.method !== "POST") return json({ error: "Use POST." }, 405);
@@ -25,7 +26,7 @@ export default async (req) => {
   if (want === "all" || want === "credit") {
     const store = getStore("credits");
     let keys = [];
-    try { const r = await store.list({ prefix: "credit:" }); keys = (r.blobs || []).map(x => x.key); } catch {}
+    keys = await listAllKeys(store, { prefix: "credit:" });
     for (const k of keys) {
       let r = null; try { r = await store.get(k, { type: "json" }); } catch {}
       if (!r || !r.code) continue;
@@ -51,7 +52,7 @@ export default async (req) => {
   if (want === "all" || want === "discount") {
     const store = getStore("discounts");
     let keys = [];
-    try { const r = await store.list({ prefix: "disc:" }); keys = (r.blobs || []).map(x => x.key); } catch {}
+    keys = await listAllKeys(store, { prefix: "disc:" });
     for (const k of keys) {
       let r = null; try { r = await store.get(k, { type: "json" }); } catch {}
       if (!r || !r.code) continue;
@@ -77,7 +78,7 @@ export default async (req) => {
   if (want === "all" || want === "pass") {
     const store = getStore("passes");
     let keys = [];
-    try { const r = await store.list({ prefix: "pass:" }); keys = (r.blobs || []).map(x => x.key); } catch {}
+    keys = await listAllKeys(store, { prefix: "pass:" });
     for (const k of keys) {
       let r = null; try { r = await store.get(k, { type: "json" }); } catch {}
       if (!r || !r.code) continue;
@@ -104,7 +105,7 @@ export default async (req) => {
   if (want === "all" || want === "reward") {
     const store = getStore("rewards");
     let keys = [];
-    try { const r = await store.list({ prefix: "reward:" }); keys = (r.blobs || []).map(x => x.key); } catch {}
+    keys = await listAllKeys(store, { prefix: "reward:" });
     for (const k of keys) {
       let r = null; try { r = await store.get(k, { type: "json" }); } catch {}
       if (!r || !r.code) continue;

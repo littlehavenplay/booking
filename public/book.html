@@ -163,6 +163,10 @@
           <span style="font-weight:700" id="wdLabel">🗓️ Weekday special</span>
           <span style="font-weight:700" id="wdAmtTxt">−$0</span>
         </div>
+        <div id="milRow" style="display:none;justify-content:space-between;align-items:center;margin-bottom:6px;color:#7ba676">
+          <span style="font-weight:700">🎖️ Military discount (10% off)</span>
+          <span style="font-weight:700" id="milAmtTxt">−$0</span>
+        </div>
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
           <span style="font-weight:700;color:var(--slate)">Sales tax (<span id="taxPct">8.75</span>%)</span>
           <span style="font-weight:700" id="tax">$0</span>
@@ -225,7 +229,8 @@
     </div>
 
     <div class="card">
-      <p class="step"><span class="n">7</span> Gift card</p>
+      <p class="step"><span class="n">💳</span> Gift card &amp; store credit <span style="font-weight:400;color:var(--ink-soft);text-transform:none">(payment — not a discount)</span></p>
+      <div class="note" style="margin-bottom:8px">These are money already on your account — they're applied to your total no matter what else is going on with your booking, including any discount below. Any amount left over always stays on your card or credit for next time.</div>
       <div class="gc-toggle">
         <span style="font-weight:700">Using a gift card?</span>
         <div class="seg">
@@ -235,21 +240,18 @@
       </div>
       <div id="gcArea" class="hidden" style="margin-top:14px">
         <div class="gc-row">
-          <input type="text" id="gc1" placeholder="Gift card code">
+          <input type="text" id="gc1" placeholder="Gift card code" inputmode="text" autocomplete="off" oninput="gcFormat(this)">
           <button type="button" class="gc-check" data-gc="1">Check</button>
         </div>
         <div class="gc-bal" id="gc1bal"></div>
         <div class="gc-row" style="margin-top:8px">
-          <input type="text" id="gc2" placeholder="Second gift card code (optional)">
+          <input type="text" id="gc2" placeholder="Second gift card code (optional)" inputmode="text" autocomplete="off" oninput="gcFormat(this)">
           <button type="button" class="gc-check" data-gc="2">Check</button>
         </div>
         <div class="gc-bal" id="gc2bal"></div>
-        <div class="note">Gift cards apply to your full total. Any remainder is charged to your card.</div>
+        <p class="note" style="margin-top:4px">Paste or type it any way you like — spaces, dashes, all run together — we'll match it to your card either way.</p>
       </div>
-    </div>
-
-    <div class="card">
-      <p class="step"><span class="n">8</span> Promo code / store credit</p>
+      <div style="border-top:1px dashed #e2d9cc;margin:16px 0 12px"></div>
       <div class="gc-toggle">
         <span style="font-weight:700">Have store credit?</span>
         <div class="seg">
@@ -263,12 +265,12 @@
           <button type="button" class="pc-check">Check</button>
         </div>
         <div class="gc-bal" id="pc1bal"></div>
-        <div class="note">Store credit applies after any gift card. Any remainder is charged to your card.</div>
+        <div class="note">A gift card applies first, then store credit covers what's left. Any remainder after both goes to your card.</div>
       </div>
     </div>
 
     <div class="card">
-      <p class="step"><span class="n">%</span> Discount code</p>
+      <p class="step"><span class="n">%</span> Discount code <span style="font-weight:400;color:var(--ink-soft);text-transform:none">(a promotion — not a payment method)</span></p>
       <div class="gc-toggle">
         <span style="font-weight:700">Have a % off code?</span>
         <div class="seg">
@@ -282,8 +284,8 @@
           <button type="button" class="gc-check dc-check">Apply</button>
         </div>
         <div class="gc-bal" id="dc1bal"></div>
-        <div class="note">A % off code is used on its own — it can’t be combined with gift cards, store credit, or punch cards.</div>
-        <div id="dcLockNote" class="note" style="display:none;color:var(--sage-dark);font-weight:700">✓ Discount applied — other offers are paused since codes can’t be combined.</div>
+        <div class="note">A % off code is used on its own — it can’t be combined with the Weekday Special or a military discount (whichever is bigger automatically applies). Gift cards and store credit still apply on top, since those are payment, not a promotion.</div>
+        <div id="dcLockNote" class="note" style="display:none;color:var(--sage-dark);font-weight:700">✓ Discount applied.</div>
       </div>
     </div>
     </details>
@@ -422,9 +424,19 @@ async function checkPass(n){
   updateTotals();
 }
 
+function gcClean(v){ return (v||"").toUpperCase().replace(/[^A-Z0-9]/g,""); }
+function gcFormat(el){
+  var pos=el.selectionStart, before=el.value.length;
+  var clean=gcClean(el.value).slice(0,20);
+  var spaced=clean.replace(/(.{4})(?=.)/g,"$1 ");   // "XXXX XXXX XXXX XXXX", matching how Square itself displays it
+  el.value=spaced;
+  var after=spaced.length;
+  var newPos=Math.max(0,pos+(after-before));
+  try{ el.setSelectionRange(newPos,newPos); }catch(e){}
+}
 async function checkGiftCard(n){
   const idx=n==="1"?0:1;
-  const gan=$("#gc"+n).value.trim();
+  const gan=gcClean($("#gc"+n).value);   // strip spaces/dashes — however they typed or pasted it, this matches Square's actual code
   const balEl=$("#gc"+n+"bal");
   state.gc[idx]={gan:"",balance:0,ok:false};
   if(!gan){ balEl.textContent=""; updateTotals(); return; }
@@ -586,7 +598,7 @@ function cnSetReadonly(row,on,lockDob){
 async function cnLookupCode(row, code){
   code=(code||"").trim().toUpperCase();
   const msg=row.querySelector(".cn-codemsg");
-  if(!code){ cnSetReadonly(row,false,false); msg.style.display="none"; return; }
+  if(!code){ cnSetReadonly(row,false,false); msg.style.display="none"; row.dataset.military="0"; updateTotals(); return; }
   msg.style.display="block"; msg.style.color="var(--ink-soft)"; msg.textContent="Looking up…";
   try{
     const r=await (await fetch("/api/loyalty",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({action:"code-check",code})})).json();
@@ -594,14 +606,16 @@ async function cnLookupCode(row, code){
       const parts=(r.childName||"").trim().split(/\s+/);
       row.querySelector(".cn-f").value=parts[0]||""; row.querySelector(".cn-l").value=parts.slice(1).join(" ")||"";
       cnSetReadonly(row,true,r.hasDob);
+      row.dataset.military=r.militaryVerified?"1":"0";
       const dInp=row.querySelector(".cn-d");
       if(r.hasDob){
         dInp.value=""; dInp.style.borderColor=""; dInp.placeholder="🔒 Birthday on file";
-        msg.style.color="#3f7d54"; msg.textContent="✓ Found: "+(r.childName||"")+" — birthday on file";
+        msg.style.color="#3f7d54"; msg.textContent="✓ Found: "+(r.childName||"")+" — birthday on file"+(r.militaryVerified?" · 🎖️ Military discount eligible":"");
       } else {
         dInp.value=""; dInp.style.borderColor=""; dInp.placeholder="Add their birthday mm/dd/yyyy (optional)";
-        msg.style.color="#3f7d54"; msg.textContent="✓ Found: "+(r.childName||"")+" — no birthday on file yet, add one below if you'd like 🎂";
+        msg.style.color="#3f7d54"; msg.textContent="✓ Found: "+(r.childName||"")+" — no birthday on file yet, add one below if you'd like 🎂"+(r.militaryVerified?" · 🎖️ Military discount eligible":"");
       }
+      updateTotals();
       const bdBox=row.querySelector(".cn-bd"), bdWrap=row.querySelector(".cn-bdwrap"), bdCodeInp=row.querySelector(".cn-bdcode");
       if(r.birthday && r.birthday.code){
         bdBox.checked=true; bdBox.disabled=true; bdWrap.style.display="block";
@@ -610,6 +624,7 @@ async function cnLookupCode(row, code){
       }
     } else {
       cnSetReadonly(row,false,false);
+      row.dataset.military="0";
       msg.style.color="#b5382f"; msg.textContent="Code not found — check it, or just enter their name below.";
     }
   }catch(e){ msg.style.color="#b5382f"; msg.textContent="Couldn't check that code — enter their name below if needed."; cnSetReadonly(row,false,false); }
@@ -699,6 +714,20 @@ function updateTotals(){
   // Percent-off discount (exclusive — used on its own, before tax)
   const discOn = state.useDisc && state.disc.ok && state.disc.percent>0 && !wdOn;
   const discAmt = discOn ? Math.round(subtotal*state.disc.percent/100) : 0;
+  // Military discount: 10% off, per CHILD whose loyalty card is verified — never the
+  // adult add-on. Mutually exclusive with the discount code / weekday special:
+  // whichever is worth more in dollars is the one that actually applies.
+  let milAmt=0;
+  document.querySelectorAll(".cn-row").forEach(function(row){
+    if(row.dataset.military==="1"){
+      var t=row.getAttribute("data-type");
+      var price = t==="sibling"?CFG.prices.sibling : t==="infant"?CFG.prices.infant : CFG.prices.regular;
+      milAmt += Math.round(price*0.10);
+    }
+  });
+  var generalAmt=Math.max(discAmt,wdAmt);
+  if(milAmt>0){ if(milAmt<=generalAmt) milAmt=0; }
+  if($("#milRow")){ if(milAmt>0){ $("#milRow").style.display="flex"; $("#milAmtTxt").textContent="\u2212"+money(milAmt); } else { $("#milRow").style.display="none"; } }
   // Free-visit reward code (loyalty 8th-visit / birthday / classroom) — mutually exclusive
   // with the discount code, same as the server enforces. Zeroes one admission, recomputed
   // live in case admission counts changed since the code was checked. Stacks with the
@@ -707,10 +736,10 @@ function updateTotals(){
   let rewardAmt = 0;
   if(rewardOn){
     const present=[]; if(paidReg>0)present.push(CFG.prices.regular); if(paidSib>0)present.push(CFG.prices.sibling); if(paidInf>0)present.push(CFG.prices.infant);
-    if(present.length) rewardAmt=Math.min(Math.max(...present), subtotal-discAmt-wdAmt);
+    if(present.length) rewardAmt=Math.min(Math.max(...present), subtotal-discAmt-wdAmt-milAmt);
   }
   if($("#wdRow")){ if(wdAmt>0){ $("#wdRow").style.display="flex"; $("#wdLabel").textContent="\uD83D\uDDD3\uFE0F "+wdLabel; $("#wdAmtTxt").textContent="\u2212"+money(wdAmt); } else { $("#wdRow").style.display="none"; } }
-  const taxable = Math.max(0, subtotal - discAmt - wdAmt - rewardAmt);
+  const taxable = Math.max(0, subtotal - discAmt - wdAmt - milAmt - rewardAmt);
   const tax=Math.round(taxable*rate);
   const amt=taxable+tax;
   $("#kidCount").textContent=kids;
@@ -913,7 +942,11 @@ async function checkDiscount(){
   }catch(e){ bal.textContent="Couldn't check that code — try again."; bal.style.color="var(--red)"; }
 }
 function lockOtherOffers(lock){
-  ["gc","vp","pc"].forEach(p=>{ const y=document.querySelector("#"+p+"Yes"); if(y){ y.disabled=lock; y.style.opacity=lock?".45":"1"; y.style.cursor=lock?"not-allowed":"pointer"; }});
+  // Gift cards & store credit are PAYMENT, not a promotion — they always combine
+  // with a discount code server-side, so they should never be locked here. Legacy
+  // punch-card passes stay locked (that product is being phased out; not worth the
+  // added complexity of confirming that combination still behaves correctly).
+  const y=document.querySelector("#vpYes"); if(y){ y.disabled=lock; y.style.opacity=lock?".45":"1"; y.style.cursor=lock?"not-allowed":"pointer"; }
   const n=document.querySelector("#dcLockNote"); if(n) n.style.display=lock?"block":"none";
 }
 

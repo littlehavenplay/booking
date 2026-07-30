@@ -1232,6 +1232,15 @@ window.saveBdayFromList=async function(code){
     } else { msg.style.color="#b5382f"; msg.textContent=r.error||"Couldn't save."; }
   }catch(e){ msg.style.color="#b5382f"; msg.textContent="Network error."; }
 };
+window.toggleMilitary=async function(code,setTo){
+  var key=$("#key").value.trim(); if(!key){ alert("Enter your admin key (top of page)."); return; }
+  if(setTo && !confirm("Confirm: you've verified this child's family is military (checked ID in person)?\n\nThey'll automatically get 10% off their admission on future online bookings, whenever this code is entered — unless a bigger discount (like the Weekday Special) is already active that day."))return;
+  try{
+    var r=await (await fetch("/api/loyalty",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key,action:"adjust",code,militaryVerified:setTo})})).json();
+    if(r.ok){ var c=LOYALTY.find(function(x){return x.code===code;}); if(c){ c.militaryVerified=r.militaryVerified; } renderLoyaltyList(); }
+    else alert(r.error||"Couldn't save.");
+  }catch(e){ alert("Network error."); }
+};
 // ---- Loyalty customers list ----
 var LOYALTY=[];
 $("#llLoad").onclick=async()=>{
@@ -1413,6 +1422,7 @@ function llChildRow(c){
       +'<button onclick="loEditFromList(\''+esc(c.code)+'\')" title="Edit name, birthday, or punches" style="border:none;background:#eee6f5;color:#5c4a80;border-radius:6px;cursor:pointer;font-weight:800;font-size:.75rem;padding:4px 9px">\u270F\uFE0F Edit</button>'
       +'<button onclick="punchFromList(\''+esc(c.code)+'\',\''+esc((c.childName||"").replace(/[\x27\\]/g,""))+'\')" title="Add a punch" style="border:none;background:#e7f0df;color:#4d6b3e;border-radius:6px;cursor:pointer;font-weight:800;font-size:.75rem;padding:4px 9px">\u2795 Punch</button>'
       +'<button onclick="toggleBdayRow(\''+esc(c.code)+'\')" title="Set this child\'s birthday" style="border:none;background:#fdeedd;color:#a5651a;border-radius:6px;cursor:pointer;font-weight:800;font-size:.75rem;padding:4px 9px">\uD83C\uDF82 Birthday</button>'
+      +'<button onclick="toggleMilitary(\''+esc(c.code)+'\','+(c.militaryVerified?'false':'true')+')" title="'+(c.militaryVerified?'Remove military verification':'Mark as military-verified')+'" style="border:none;background:'+(c.militaryVerified?'#dff0d3':'#f0ede5')+';color:'+(c.militaryVerified?'#33521f':'#6b6255')+';border-radius:6px;cursor:pointer;font-weight:800;font-size:.75rem;padding:4px 9px">\uD83C\uDF96\uFE0F '+(c.militaryVerified?'Military \u2713':'Military')+'</button>'
       +'<button onclick="deleteLoyalty(\''+esc(c.code)+'\',\''+esc((c.childName||"").replace(/[\x27\\]/g,""))+'\')" title="Delete card" style="border:none;background:#fbe6e2;color:#b5382f;border-radius:6px;cursor:pointer;font-size:.8rem;padding:3px 7px">\uD83D\uDDD1\uFE0F</button>'
     +'</span>'
     +'<div id="bdayRow-'+esc(c.code)+'" style="display:none;width:100%;align-items:center;gap:8px;background:#fdf9f4;border:1px solid #efe4d5;border-radius:9px;padding:8px 10px;margin-top:2px">'

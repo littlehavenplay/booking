@@ -16,7 +16,7 @@ export default async (req) => {
   if (!adminKey && !staffPin) return json({ error: "Admin key isn't configured." }, 500);
   if (provided !== adminKey && provided !== staffPin) return json({ error: "Wrong key." }, 401);
 
-  const code = (b.code || "").toString().trim().toUpperCase();
+  const code = (b.code || "").toString().trim().toUpperCase().replace(/\s+/g, "");   // spaces only — pass codes legitimately contain a dash, e.g. "AR4655-1"
   if (!code) return json({ error: "Enter a code." }, 400);
   const today = new Date().toISOString().slice(0, 10);
 
@@ -72,7 +72,7 @@ export default async (req) => {
       const res = await fetch(`${squareApiBase()}/v2/gift-cards/from-gan`, {
         method: "POST",
         headers: { "Square-Version": SQUARE_VERSION, "Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ gan: (b.code || "").toString().trim() }),
+        body: JSON.stringify({ gan: code.replace(/[^A-Z0-9]/g, "") }),
       });
       const data = await res.json();
       if (res.ok && data.gift_card) {

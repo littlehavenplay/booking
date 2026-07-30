@@ -1,5 +1,6 @@
 // POST /api/passes-list  (admin key or staff PIN) — all punch cards, newest purchase first.
 import { getStore } from "@netlify/blobs";
+import { listAllKeys } from "./lib-blobs.js";
 
 export default async (req) => {
   if (req.method !== "POST") return json({ error: "Use POST." }, 405);
@@ -9,8 +10,7 @@ export default async (req) => {
   if (provided !== adminKey && provided !== staffPin) return json({ error: "Wrong key." }, 401);
 
   const store = getStore("passes");
-  let keys = [];
-  try { const r = await store.list({ prefix: "pass:" }); keys = (r.blobs || []).map(x => x.key); } catch {}
+  const keys = await listAllKeys(store, { prefix: "pass:" });
   const today = new Date().toISOString().slice(0, 10);
   const passes = [];
   for (const k of keys) {

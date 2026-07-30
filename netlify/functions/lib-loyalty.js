@@ -254,6 +254,58 @@ async function sendLegacyGraduationEmail(pass, card) {
   } catch { return false; }
 }
 
+// Sent once, the moment a card is first marked militaryVerified. If a sibling
+// sharing the same phone4 was already verified and emailed in the last 10 minutes,
+// this skips sending a second email and just folds the new child's name into the
+// same "thank you" instead — so verifying two siblings in quick succession at the
+// front desk doesn't produce two separate emails to the same family.
+export async function sendMilitaryVerifiedEmail(loyalty, rec) {
+  const to = (rec.buyerEmail || "").trim();
+  if (!to) return false;
+  const key = process.env.RESEND_API_KEY;
+  if (!key) return false;
+
+  // Find any sibling cards (same phone4) already verified+emailed recently — fold in.
+  const names = [rec.childName].filter(Boolean);
+  const now = Date.now();
+  try {
+    const { blobs } = await loyalty.list({ prefix: "card:" });
+    for (const bl of (blobs || [])) {
+      if (bl.key === "card:" + rec.code) continue;
+      let sib = null; try { sib = await loyalty.get(bl.key, { type: "json" }); } catch {}
+      if (!sib || sib.phone4 !== rec.phone4 || !sib.militaryVerified) continue;
+      if (sib.militaryEmailSentAt && (now - new Date(sib.militaryEmailSentAt).getTime()) < 10 * 60 * 1000) {
+        return false;   // a sibling's email JUST went out — this one rides along, no second email
+      }
+      if (sib.militaryVerified) names.push(sib.childName);
+    }
+  } catch {}
+
+  const studio = studioName();
+  const uniqueNames = [...new Set(names.filter(Boolean))];
+  const nameList = uniqueNames.length > 1
+    ? uniqueNames.slice(0, -1).join(", ") + " and " + uniqueNames.slice(-1)
+    : (uniqueNames[0] || "your child");
+  const html = `<div style="font-family:Arial,Helvetica,sans-serif;color:#2a2622;max-width:520px;margin:0 auto;line-height:1.6">
+    <h2 style="color:#a85f59;font-weight:normal;margin:0 0 4px">Thank you for your service 🎖️</h2>
+    <p>Hi there,</p>
+    <p>We've verified your military ID in person, and <b>${esc(nameList)}</b>'s loyalty card${uniqueNames.length > 1 ? "s are" : " is"} now marked as a military family.</p>
+    <p>Going forward, <b>10% off admission</b> will apply automatically every time you book Open Play online — just enter ${uniqueNames.length > 1 ? "the loyalty code" : "the loyalty code"} at checkout, same as always. No separate discount code needed.</p>
+    <p style="font-size:14px;color:#8a8276">A couple of things to know: this discount applies to the admission itself only (not the adult add-on), and it can't be combined with a discount code or the Weekday Special — whichever is bigger automatically applies.</p>
+    <p style="margin-top:14px">Thank you again for your service — we're glad to have your family with us!</p>
+    <p style="font-size:14px;color:#5c6470">— ${esc(studio)}</p></div>`;
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ from: `${studio} <${process.env.EMAIL_FROM || "onboarding@resend.dev"}>`, to: [to],
+        subject: `Thank you for your service — your military discount is set up 🎖️`, html: html + SIGNATURE_HTML }),
+    });
+    if (res.ok) { rec.militaryEmailSentAt = new Date().toISOString(); try { await loyalty.setJSON("card:" + rec.code, rec); } catch {} }
+    return res.ok;
+  } catch { return false; }
+}
+
 export async function sendReward(rec, rewardCode, expiry) {
   const key = process.env.RESEND_API_KEY; if (!key || !rec.buyerEmail) return;
   const from = process.env.EMAIL_FROM || "onboarding@resend.dev";

@@ -9,7 +9,7 @@
 import { getStore } from "@netlify/blobs";
 import {
   PUNCHES_FOR_REWARD, resolveCard, addPunch, cleanName, last4, normalizeCode,
-  isLegacyPassCode, sendFamilyPunch,
+  isLegacyPassCode, sendFamilyPunch, sendMilitaryVerifiedEmail,
 } from "./lib-loyalty.js";
 
 export default async (req) => {
@@ -50,7 +50,7 @@ export default async (req) => {
         if (r && !r.used) birthday = { code: rec.activeBirthdayCode, expiry: rec.activeBirthdayExpiry };
       }
     }
-    return json({ found: true, code, childName: rec.childName || "", hasDob: !!rec.dob, birthday });
+    return json({ found: true, code, childName: rec.childName || "", hasDob: !!rec.dob, birthday, militaryVerified: !!rec.militaryVerified });
   }
 
   const adminKey = process.env.ADMIN_KEY || "";
@@ -75,6 +75,7 @@ export default async (req) => {
           totalVisits: rec.totalVisits || 0, rewardsEarned: rec.rewardsEarned || 0,
           waiverSigned: rec.waiverSigned || "", waiverExpiry: rec.waiverExpiry || "",
           waiverAdults: Array.isArray(rec.waiverAdults) ? rec.waiverAdults : [],
+          militaryVerified: !!rec.militaryVerified,
           lastVisit: rec.lastVisit ? rec.lastVisit.slice(0, 10) : "",
           createdAt: rec.createdAt ? rec.createdAt.slice(0, 10) : "" });
       }
@@ -106,7 +107,7 @@ export default async (req) => {
     if (!rec) return json({ ok: true, found: false, code: code || "" });
     return json({ ok: true, found: true, code, childName: rec.childName || "", dob: rec.dob || "",
       punches: rec.punches || 0, needed: PUNCHES_FOR_REWARD, rewardsEarned: rec.rewardsEarned || 0,
-      lastRewardCode: rec.lastRewardCode || null, createdAt: rec.createdAt });
+      lastRewardCode: rec.lastRewardCode || null, createdAt: rec.createdAt, militaryVerified: !!rec.militaryVerified });
   }
 
   // "adjust" is the one unified edit endpoint: given a code (or name+phone fallback),
@@ -155,9 +156,16 @@ export default async (req) => {
     }
     if (dob) { rec.dob = dob; rec.history.push({ at: new Date().toISOString(), action: "dob-set", to: dob }); }
     if (hasSetPunches) { rec.punches = setP; rec.history.push({ at: new Date().toISOString(), action: "adjusted", to: setP }); }
+    if (b.militaryVerified !== undefined) {
+      const mv = !!b.militaryVerified;
+      const wasVerified = !!rec.militaryVerified;
+      if (mv !== wasVerified) rec.history.push({ at: new Date().toISOString(), action: mv ? "military-verified" : "military-unverified" });
+      rec.militaryVerified = mv;
+      if (mv && !wasVerified) { try { await sendMilitaryVerifiedEmail(loyalty, rec); } catch {} }
+    }
 
     try { await loyalty.setJSON("card:" + code, rec); } catch { return json({ error: "Couldn't update the card." }, 502); }
-    return json({ ok: true, adjusted: true, code, childName: rec.childName, dob: rec.dob || "", punches: rec.punches, needed: PUNCHES_FOR_REWARD });
+    return json({ ok: true, adjusted: true, code, childName: rec.childName, dob: rec.dob || "", punches: rec.punches, needed: PUNCHES_FOR_REWARD, militaryVerified: !!rec.militaryVerified });
   }
 
   if (action === "punch") {
