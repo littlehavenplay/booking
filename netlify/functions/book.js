@@ -14,7 +14,7 @@ import { SIGNATURE_HTML, sendOwnerAlert } from "./lib-email.js";
 import {
   CAPACITY, PRICES, pricesFor, SLOTS, SLOT_IDS, openPlayForDate, effectivePartyBlocks, hoursFor, slotCap, slotKey, arrivalStartMin, squareApiBase, SQUARE_VERSION, BOOKING_WINDOW_DAYS,
   PARTY_SLOT_IDS, ARRIVAL_TO_LEGACY,
-  STUDIO_NAME, POLICY_TITLE, POLICY_LINES, TAX_RATE, CLOSED_DATES, CLOSED_MESSAGE, ADDITIONAL_ADULT, isClosedWeekday, weekdayOf,
+  STUDIO_NAME, POLICY_TITLE, POLICY_LINES, CLOSED_DATES, CLOSED_MESSAGE, ADDITIONAL_ADULT, isClosedWeekday, weekdayOf,
   additionalAdultsFor, additionalAdultCentsFor,
 } from "./lib-settings.js";
 import { issueCode, sendWelcome, sendFamilyPunch, PUNCHES_FOR_REWARD, cleanName, last4 as loyaltyLast4, graduateLegacyCard } from "./lib-loyalty.js";
@@ -322,8 +322,10 @@ export default async (req) => {
   }
 
   const taxable = Math.max(0, subtotal - discountAmount - weekdaySpecialAmount - militaryAmount - rewardAmount - birthdayAmount);
-  const tax = Math.round(taxable * TAX_RATE);   // 8.75%, nearest cent
-  const amount = taxable + tax;                  // total due (may be $0 if fully covered)
+  // No sales tax: recreational/amusement admission is CDTFA-exempt (intangible admission),
+  // so this business does not collect sales tax on any admission, party, or gift card sale.
+  const tax = 0;
+  const amount = taxable;                        // total due (may be $0 if fully covered)
 
   const store = getStore("bookings");
   const key = slotKey(date, slot);
@@ -398,25 +400,7 @@ export default async (req) => {
   const payments = [];
   try {
     if (cardAmount > 0) {
-      // When the card is paying the WHOLE order (no gift cards / store credit splitting
-      // it), attach an itemized Square Order so Square's own reports correctly show the
-      // tax portion separately instead of lumping it into gross sales. Any failure here
-      // just falls back to the exact same plain charge as before — checkout never breaks
-      // because of this.
-      let orderId = null;
-      if (cardAmount === amount && giftApplied.length === 0 && creditApplied === 0 && tax > 0) {
-        const blanketDiscount = discountAmount || weekdaySpecialAmount || militaryAmount || 0;
-        const blanketLabel = discountAmount ? `Discount code (${discountPct}% off)` : weekdaySpecialAmount ? weekdaySpecialLabel : militaryAmount ? "Military discount (10% off)" : "";
-        const ord = await createTaxedOrder(env, { subtotalCents: subtotal, taxableCents: taxable, taxCents: tax, discountCents: blanketDiscount, discountLabel: blanketLabel, note });
-        if (ord) orderId = ord.orderId;
-      }
-      let p = await chargeSquare(env, { source_id: sourceId, amount: cardAmount, note, email, order_id: orderId });
-      if (!p.ok && orderId) {
-        // The itemized order attempt was rejected (e.g. a sub-cent rounding mismatch
-        // Square didn't accept) — retry once the plain way rather than losing the
-        // whole booking over a reporting nicety.
-        p = await chargeSquare(env, { source_id: sourceId, amount: cardAmount, note, email });
-      }
+      const p = await chargeSquare(env, { source_id: sourceId, amount: cardAmount, note, email });
       if (!p.ok) return json({ error: "payment_failed", message: p.detail }, 402);
       payments.push(p.payment);
     }
@@ -534,6 +518,8 @@ export default async (req) => {
     giftCards: giftApplied.map(g => ({ gan: g.gan, applied: g.applied, balanceAfter: g.balanceAfter ?? null })),
     creditApplied, promoCode: creditApplied > 0 ? promoCode : null,
     discountCode: discountAmount > 0 ? discountCode : null, discountPct, discountAmount,
+    weekdaySpecialAmount, weekdaySpecialLabel: weekdaySpecialAmount > 0 ? weekdaySpecialLabel : "",
+    militaryAmount, militaryChildren: militaryAmount > 0 ? militaryChildren : [],
     passesUsed,
     paymentId: payment?.id || null,
     at: new Date().toISOString(),
@@ -592,7 +578,11 @@ export default async (req) => {
     }
     // Queue a punch job for this booking; check-in (arrivals) will punch each child once.
     try { await getStore("loyaltyjobs").setJSON("job:" + bookingId,
-      { children: childNames, phone4, email, punched: false, date, at: new Date().toISOString() }); } catch {}
+      { children: childNames, phone4, email, punched: false, date, at: new Date().toISOString(),
+        slotLabel: (SLOTS.find(s => s.id === slot) || {}).label || slot,
+        discountCode: discountAmount > 0 ? discountCode : null, discountPct,
+        weekdaySpecialLabel: weekdaySpecialAmount > 0 ? weekdaySpecialLabel : "",
+        militaryAmount, militaryChildren: militaryAmount > 0 ? militaryChildren : [] }); } catch {}
   }
 
   // Save any birthdays the family chose to share, so we can send a birthday gift.
@@ -641,46 +631,7 @@ export default async (req) => {
 };
 
 // Charges a single payment source (a card token or a gift card id) via Square.
-// Creates a Square Order with the pre-tax amount as one line item and an
-// order-level percentage tax, so Square's own reports correctly split "Gross
-// Sales" from "Tax" for this charge (previously every website charge was one
-// lump amount with no tax breakdown, so Square's reports understated tax
-// collected — see sales-tax-report.js for the full explanation).
-// Only used for the simple, common case: paying the FULL order by card, no
-// gift cards or store credit splitting the payment (see call site). Returns
-// null on any failure — callers must fall back to the plain charge.
-async function createTaxedOrder(env, { subtotalCents, taxableCents, taxCents, discountCents, discountLabel, note }) {
-  if (!(taxableCents > 0)) return null;   // nothing taxable — a plain charge is simpler and correct
-  try {
-    const lineItemBase = subtotalCents != null ? subtotalCents : taxableCents + (discountCents || 0);
-    const pct = taxCents > 0 ? (taxCents / taxableCents * 100).toFixed(2) : "0";
-    const order = {
-      location_id: env.SQUARE_LOCATION_ID,
-      line_items: [{ name: (note || "Open Play Admission").slice(0, 80), quantity: "1", base_price_money: { amount: lineItemBase, currency: "USD" } }],
-      taxes: [{ uid: "sales-tax", name: "Sales Tax", percentage: pct, scope: "ORDER" }],
-    };
-    // Report the blanket % discount (Weekday Special / discount code / military —
-    // only one ever applies) as its own Square discount line, not just baked
-    // invisibly into a lower price — same idea as the tax itemization above.
-    if (discountCents > 0) {
-      order.discounts = [{ uid: "discount", name: (discountLabel || "Discount").slice(0, 80), amount_money: { amount: discountCents, currency: "USD" }, scope: "ORDER" }];
-    }
-    const res = await fetch(`${squareApiBase()}/v2/orders`, {
-      method: "POST",
-      headers: {
-        "Square-Version": SQUARE_VERSION,
-        "Authorization": `Bearer ${env.SQUARE_ACCESS_TOKEN}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ idempotency_key: crypto.randomUUID(), order }),
-    });
-    const data = await res.json();
-    if (!res.ok || !data?.order?.id) return null;
-    return { orderId: data.order.id, totalAmount: data.order.total_money?.amount ?? (taxableCents + taxCents) };
-  } catch { return null; }
-}
-
-async function chargeSquare(env, { source_id, amount, note, email, order_id }) {
+async function chargeSquare(env, { source_id, amount, note, email }) {
   const body = {
     idempotency_key: crypto.randomUUID(),
     source_id,
@@ -690,7 +641,6 @@ async function chargeSquare(env, { source_id, amount, note, email, order_id }) {
     note,
     buyer_email_address: email || undefined,
   };
-  if (order_id) body.order_id = order_id;
   const res = await fetch(`${squareApiBase()}/v2/payments`, {
     method: "POST",
     headers: {
@@ -803,7 +753,6 @@ async function sendConfirmation({ email, name, date, slotLabel, regular, sibling
       ${discountAmount > 0 ? `<tr><td style="padding:2px 0;color:#7ba676">Discount (${discountPct}% off)</td><td style="padding:2px 0;text-align:right;font-weight:bold;color:#7ba676">−${dollars(discountAmount)}</td></tr>` : ""}
       ${weekdaySpecialAmount > 0 ? `<tr><td style="padding:2px 0;color:#7ba676">🗓️ ${weekdaySpecialLabel}</td><td style="padding:2px 0;text-align:right;font-weight:bold;color:#7ba676">−${dollars(weekdaySpecialAmount)}</td></tr>` : ""}
       ${militaryAmount > 0 ? `<tr><td style="padding:2px 0;color:#7ba676">🎖️ Military discount (10% off)</td><td style="padding:2px 0;text-align:right;font-weight:bold;color:#7ba676">−${dollars(militaryAmount)}</td></tr>` : ""}
-      <tr><td style="padding:2px 0;color:#5c6470">Sales tax (8.75%)</td><td style="padding:2px 0;text-align:right;font-weight:bold">${dollars(tax)}</td></tr>
       ${payRows}
     </table>
 
@@ -826,7 +775,7 @@ async function sendConfirmation({ email, name, date, slotLabel, regular, sibling
 
   const text = `Your ${STUDIO_NAME} booking is confirmed!\n\n`
     + `Date: ${date}\nSession: ${slotLabel}\nChildren: ${total}\n`
-    + `Admissions: ${lines.join(", ")}\nSubtotal: ${dollars(subtotal)}\nSales tax (8.75%): ${dollars(tax)}\nTotal paid: ${dollars(amount)}\n\n`
+    + `Admissions: ${lines.join(", ")}\nSubtotal: ${dollars(subtotal)}\nTotal paid: ${dollars(amount)}\n\n`
     + `YOUR WAIVER\nA signed waiver is required for every visit and stays valid for 365 days from the date it was first signed.\n`
     + `- If you're the parent/guardian who signed within the last year, you're all set.\n`
     + `- If you've never signed, or a different parent/guardian is bringing the child(ren) this time, please sign a fresh waiver.\n`

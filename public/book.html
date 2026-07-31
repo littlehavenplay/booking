@@ -130,15 +130,15 @@
       <p class="step"><span class="n">3</span> Who's coming?</p>
       <div style="background:#fdf5ee;border:1px solid #f0e2d2;border-radius:12px;padding:11px 14px;margin:0 0 14px;font-size:.85rem;color:#5c6470;line-height:1.6">✨ <b>Our play area is designed for children 6 years old or 48" tall</b> (whichever comes first). Only children within that range may play in the play area. Older children &amp; teens are welcome to hang out in the lobby with family, but can't play in the play area or act as the supervising adult. A parent/guardian 18+ must supervise at all times.</div>
       <div class="qty">
-        <div><div class="lab">Regular admission <span style="color:var(--ink-soft);font-weight:700">(18 months+ · 2 adults included)</span></div><div class="pr" id="regPr">$23 each</div></div>
+        <div><div class="lab">Regular admission <span style="color:var(--ink-soft);font-weight:700">(18 months+ · 2 adults included)</span></div><div class="pr" id="regPr">$25 each</div></div>
         <div class="stepper" data-k="reg"><button data-d>–</button><span class="num">0</span><button data-i>+</button></div>
       </div>
       <div class="qty">
-        <div><div class="lab">Sibling add-on <span style="color:var(--ink-soft);font-weight:700">(18 months+ · with a regular admission)</span></div><div class="pr" id="sibPr">$19 each</div></div>
+        <div><div class="lab">Sibling add-on <span style="color:var(--ink-soft);font-weight:700">(18 months+ · with a regular admission)</span></div><div class="pr" id="sibPr">$21 each</div></div>
         <div class="stepper" data-k="sib"><button data-d>–</button><span class="num">0</span><button data-i>+</button></div>
       </div>
       <div class="qty">
-        <div><div class="lab">Baby / infant <span style="color:var(--ink-soft);font-weight:700">(6-17 months · 2 adults included)</span></div><div class="pr" id="infPr">$17 each</div></div>
+        <div><div class="lab">Baby / infant <span style="color:var(--ink-soft);font-weight:700">(6-17 months · 2 adults included)</span></div><div class="pr" id="infPr">$19 each</div></div>
         <div class="stepper" data-k="inf"><button data-d>–</button><span class="num">0</span><button data-i>+</button></div>
       </div>
       <div class="qty">
@@ -166,10 +166,6 @@
         <div id="milRow" style="display:none;justify-content:space-between;align-items:center;margin-bottom:6px;color:#7ba676">
           <span style="font-weight:700">🎖️ Military discount (10% off)</span>
           <span style="font-weight:700" id="milAmtTxt">−$0</span>
-        </div>
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-          <span style="font-weight:700;color:var(--slate)">Sales tax (<span id="taxPct">8.75</span>%)</span>
-          <span style="font-weight:700" id="tax">$0</span>
         </div>
         <div class="totals" style="margin-top:0;padding-top:12px;border-top:1px solid #efe7da">
           <span class="kids">Total</span>
@@ -338,7 +334,7 @@ async function init(){
   $("#date").value=todayStr(); state.date=$("#date").value;
   try{
     CFG=await (await fetch("/api/config")).json();
-  }catch(e){ CFG={configured:false,capacity:6,prices:{regular:2300,sibling:1900,infant:1700},taxRate:0.0875,
+  }catch(e){ CFG={configured:false,capacity:6,prices:{regular:2500,sibling:2100,infant:1900},
     studioName:"Little Haven Play Studio",
     closedDates:[],closedMessage:"Temporarily closed for improvements",
     policyTitle:"Open Play Booking Cancellation & Refund Policy",
@@ -673,7 +669,7 @@ function flashSiblingNote(){
 
 function updateTotals(){
   const kids=state.reg+state.sib+state.inf;
-  const rate=CFG.taxRate||0;
+  // No sales tax collected (CDTFA-exempt recreational admission)
   const adPrice=CFG.additionalAdult||500;
 
   // Pass coverage (display estimate; server recomputes authoritatively)
@@ -711,7 +707,7 @@ function updateTotals(){
     const amtTxt = wd.mode==="percent" ? wd.amount+"% off" : money(wd.amount)+" off";
     wdLabel = wd.label || (amtTxt+" "+types+" admission");
   }
-  // Percent-off discount (exclusive — used on its own, before tax)
+  // Percent-off discount (exclusive — used on its own)
   const discOn = state.useDisc && state.disc.ok && state.disc.percent>0 && !wdOn;
   const discAmt = discOn ? Math.round(subtotal*state.disc.percent/100) : 0;
   // Military discount: 10% off, per CHILD whose loyalty card is verified — never the
@@ -740,16 +736,13 @@ function updateTotals(){
   }
   if($("#wdRow")){ if(wdAmt>0){ $("#wdRow").style.display="flex"; $("#wdLabel").textContent="\uD83D\uDDD3\uFE0F "+wdLabel; $("#wdAmtTxt").textContent="\u2212"+money(wdAmt); } else { $("#wdRow").style.display="none"; } }
   const taxable = Math.max(0, subtotal - discAmt - wdAmt - milAmt - rewardAmt);
-  const tax=Math.round(taxable*rate);
-  const amt=taxable+tax;
+  const amt=taxable;
   $("#kidCount").textContent=kids;
   $("#subtotal").textContent=money(subtotal);
   if(discAmt>0){ $("#discRow").style.display="flex"; $("#discPctTxt").textContent=state.disc.percent; $("#discAmt").textContent="−"+money(discAmt); }
   else { $("#discRow").style.display="none"; }
   if(rewardAmt>0){ $("#rewardRow").style.display="flex"; $("#rewardAmtTxt").textContent="−"+money(rewardAmt); }
   else { $("#rewardRow").style.display="none"; }
-  $("#tax").textContent=money(tax);
-  $("#taxPct").textContent=(rate*100).toFixed(2).replace(/\.?0+$/,"");
   $("#amount").textContent=money(amt);
 
   lockOtherOffers(discOn);

@@ -25,11 +25,11 @@ const PRICES_OLD = {
   sibling: parseInt(process.env.PRICE_SIBLING_CENTS || "1500", 10), // $15.00 (prior)
   infant:  parseInt(process.env.PRICE_INFANT_CENTS  || "1300", 10), // $13.00 (prior)
 };
-// PRICES_NEW = the new pricing effective 7/2. Toddler & Baby each INCLUDE 2 adults.
+// PRICES_NEW = the new pricing effective 7/2, updated again 7/31 per the new play menu.
 const PRICES_NEW = {
-  regular: parseInt(process.env.PRICE_REGULAR_NEW_CENTS || "2300", 10), // $23.00
-  sibling: parseInt(process.env.PRICE_SIBLING_NEW_CENTS || "1900", 10), // $19.00
-  infant:  parseInt(process.env.PRICE_INFANT_NEW_CENTS  || "1700", 10), // $17.00
+  regular: parseInt(process.env.PRICE_REGULAR_NEW_CENTS || "2500", 10), // $25.00
+  sibling: parseInt(process.env.PRICE_SIBLING_NEW_CENTS || "2100", 10), // $21.00
+  infant:  parseInt(process.env.PRICE_INFANT_NEW_CENTS  || "1900", 10), // $19.00
 };
 // Prices for a given checkout date (defaults to today, Pacific).
 export function pricesFor(dateStr) {
@@ -68,8 +68,9 @@ export const PRICES = pricesFor();
 
 export const STUDIO_NAME = process.env.STUDIO_NAME || "Little Haven Play Studio";
 
-// Sales tax rate applied on top of the subtotal (e.g. 0.0875 = 8.75%)
-export const TAX_RATE = parseFloat(process.env.TAX_RATE || "0.0875");
+// Sales tax was removed 7/31 — recreational/amusement admission is CDTFA-exempt
+// (intangible admission), so this business does not collect sales tax on any
+// admission, party package/deposit, or gift card sale.
 
 // Dates the studio is closed (no bookings). Comma-separated YYYY-MM-DD in the
 // CLOSED_DATES env var, e.g. "2026-06-01,2026-06-02". Edit in Netlify anytime.
