@@ -2,6 +2,7 @@
 // (auto-issue codes at booking), and checkin.js (punch at check-in).
 import { getStore } from "@netlify/blobs";
 import { SIGNATURE_HTML } from "./lib-email.js";
+import { listAllKeys } from "./lib-blobs.js";
 
 export const PUNCHES_FOR_REWARD = 7;      // 7 paid visits → 8th is free
 export const REWARD_EXPIRY_DAYS = 30;
@@ -269,10 +270,10 @@ export async function sendMilitaryVerifiedEmail(loyalty, rec) {
   const names = [rec.childName].filter(Boolean);
   const now = Date.now();
   try {
-    const { blobs } = await loyalty.list({ prefix: "card:" });
-    for (const bl of (blobs || [])) {
-      if (bl.key === "card:" + rec.code) continue;
-      let sib = null; try { sib = await loyalty.get(bl.key, { type: "json" }); } catch {}
+    const keys = await listAllKeys(loyalty, { prefix: "card:" });
+    for (const k of keys) {
+      if (k === "card:" + rec.code) continue;
+      let sib = null; try { sib = await loyalty.get(k, { type: "json" }); } catch {}
       if (!sib || sib.phone4 !== rec.phone4 || !sib.militaryVerified) continue;
       if (sib.militaryEmailSentAt && (now - new Date(sib.militaryEmailSentAt).getTime()) < 10 * 60 * 1000) {
         return false;   // a sibling's email JUST went out — this one rides along, no second email

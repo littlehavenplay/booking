@@ -7,6 +7,7 @@
 //   { action:"reward-check", rewardCode }          (public — booking page)
 //   { action:"code-check", code }                  (public — booking page, auto-fill by loyalty code)
 import { getStore } from "@netlify/blobs";
+import { listAllKeys } from "./lib-blobs.js";
 import {
   PUNCHES_FOR_REWARD, resolveCard, addPunch, cleanName, last4, normalizeCode,
   isLegacyPassCode, sendFamilyPunch, sendMilitaryVerifiedEmail,
@@ -64,10 +65,10 @@ export default async (req) => {
   if (action === "list") {
     const out = [];
     try {
-      const { blobs } = await loyalty.list({ prefix: "card:" });
-      for (const bl of (blobs || [])) {
+      const keys = await listAllKeys(loyalty, { prefix: "card:" });
+      for (const k of keys) {
         let rec = null;
-        try { rec = await loyalty.get(bl.key, { type: "json" }); } catch { rec = null; }
+        try { rec = await loyalty.get(k, { type: "json" }); } catch { rec = null; }
         if (!rec) continue;
         out.push({ code: rec.code, childName: rec.childName || "", email: rec.buyerEmail || "",
           parentName: rec.parentName || "", phone4: rec.phone4 || "", phone: rec.phone || "", dob: rec.dob || "",
@@ -288,8 +289,8 @@ export default async (req) => {
     let targets = [];
     if (applyFamily && b.phone4) {
       try {
-        const { blobs } = await loyalty.list({ prefix: "card:" });
-        for (const bl of (blobs || [])) { let r = null; try { r = await loyalty.get(bl.key, { type: "json" }); } catch {} if (r && r.phone4 === (b.phone4 || "").toString()) targets.push(r); }
+        const keys = await listAllKeys(loyalty, { prefix: "card:" });
+        for (const k of keys) { let r = null; try { r = await loyalty.get(k, { type: "json" }); } catch {} if (r && r.phone4 === (b.phone4 || "").toString()) targets.push(r); }
       } catch {}
     } else if (code) {
       let r = null; try { r = await loyalty.get("card:" + code, { type: "json" }); } catch {}
