@@ -71,7 +71,7 @@
 
   <div id="app" class="hidden">
 <div id="secBar"><button id="secToggle" type="button">Sections ▾</button><div id="secMenu"><a href="#sec-schedule">Daily schedule</a><a href="#sec-walkin">Walk-in check-in</a><a href="#sec-punch">Punch-card check-in</a><a href="/loyalty.html">Loyalty &amp; Punch Cards</a><a href="#sec-reschedule">Reschedule &amp; cancel</a><a href="#sec-party">Session capacity &amp; blocking</a><a href="#sec-deposit">Record a party deposit</a><a href="#sec-redeem">Redeem a credit</a><a href="#sec-credit-backfill">Backfill credit emails</a><a href="#sec-issue">Issue a credit</a><a href="#sec-code">Manage a code</a><a href="#sec-punchissue">Legacy card tools</a><a href="#sec-closures">Closures &amp; hours</a><a href="#sec-passes">Legacy prepaid holders</a><a href="#sec-parties">Party bookings</a><a href="/headcount.html">Head count</a><a href="#sec-prices">Manage prices</a><a href="#sec-weekly">Weekly hours</a><a href="#sec-seasonal">Seasonal hours</a><a href="#sec-weekday-special">Weekday special</a><a href="#sec-discount">Discount codes</a><a href="#sec-news">News banner</a></div></div>
-<nav id="sideNav" aria-label="Sections"><div class="snav-title">Sections</div><a href="#sec-schedule">Daily schedule</a><a href="#sec-walkin">Walk-in check-in</a><a href="#sec-punch">Punch-card check-in</a><a href="/loyalty.html">Loyalty &amp; Punch Cards</a><a href="#sec-reschedule">Reschedule &amp; cancel</a><a href="#sec-party">Session capacity &amp; blocking</a><a href="#sec-deposit">Record a party deposit</a><a href="#sec-redeem">Redeem a credit</a><a href="#sec-credit-backfill">Backfill credit emails</a><a href="#sec-issue">Issue a credit</a><a href="#sec-code">Manage a code</a><a href="#sec-punchissue">Legacy card tools</a><a href="#sec-closures">Closures &amp; hours</a><a href="#sec-passes">Legacy prepaid holders</a><a href="#sec-parties">Party bookings</a><a href="/headcount.html">Head count</a><a href="#sec-prices">Manage prices</a><a href="#sec-weekly">Weekly hours</a><a href="#sec-seasonal">Seasonal hours</a><a href="#sec-weekday-special">Weekday special</a><a href="#sec-discount">Discount codes</a><a href="#sec-news">News banner</a><a href="#sec-rating">Reviews rating</a><a href="#sec-photos">Site photos</a><a href="#sec-events">Upcoming events</a><a href="#sec-partners">Partners page</a><a href="#sec-birthdays">Birthday club</a></nav>
+<nav id="sideNav" aria-label="Sections"><div class="snav-title">Sections</div><a href="#sec-schedule">Daily schedule</a><a href="#sec-walkin">Walk-in check-in</a><a href="#sec-punch">Punch-card check-in</a><a href="/loyalty.html">Loyalty &amp; Punch Cards</a><a href="#sec-reschedule">Reschedule &amp; cancel</a><a href="#sec-party">Session capacity &amp; blocking</a><a href="#sec-deposit">Record a party deposit</a><a href="#sec-redeem">Redeem a credit</a><a href="#sec-credit-backfill">Backfill credit emails</a><a href="#sec-issue">Issue a credit</a><a href="#sec-code">Manage a code</a><a href="#sec-punchissue">Legacy card tools</a><a href="#sec-closures">Closures &amp; hours</a><a href="#sec-passes">Legacy prepaid holders</a><a href="#sec-parties">Party bookings</a><a href="/headcount.html">Head count</a><a href="#sec-prices">Manage prices</a><a href="#sec-weekly">Weekly hours</a><a href="#sec-seasonal">Seasonal hours</a><a href="#sec-weekday-special">Weekday special</a><a href="#sec-discount">Discount codes</a><a href="#sec-news">News banner</a><a href="#sec-rating">Reviews rating</a><a href="#sec-photos">Site photos</a><a href="#sec-promos">Promotions &amp; Flyers</a><a href="#sec-events">Upcoming events</a><a href="#sec-partners">Partners page</a><a href="#sec-birthdays">Birthday club</a></nav>
     <h1>Daily schedule</h1>
     <div class="card" id="sec-schedule">
       <label>Date</label>
@@ -127,6 +127,18 @@
       <p class="note" style="margin-top:-2px">Create cards, add punches, search customers, manage waivers, and set military discounts — now its own full page with room to work.</p>
       <a href="/loyalty.html" style="display:inline-block;text-decoration:none;background:var(--rose);color:#fff;font-weight:800;border-radius:30px;padding:13px 24px;font-size:.85rem">Open Loyalty &amp; Punch Cards →</a>
     </div>
+
+  <div class="card" id="sec-promos">
+    <h2>📌 Promotions &amp; Flyers</h2>
+    <p class="note" style="margin-top:-2px">A simple ongoing post — just an image and an optional caption, like a Facebook/Instagram post. No date, no requirements, nothing to expire — it stays up on the Events page until you remove it. Use this for a weekday discount flyer, an extended-hours graphic, anything that should just stay posted. For anything needing registration or a specific date, use "Upcoming events" below instead.</p>
+    <label>Image</label>
+    <input type="file" id="prmImage" accept="image/*">
+    <label>Caption (optional)</label>
+    <textarea id="prmCaption" rows="2" style="width:100%;border:1.5px solid #e7ddd0;border-radius:11px;padding:10px 12px;font-family:'Nunito';font-weight:600;background:#fcfaf6" placeholder="e.g. 25% off any admission every Monday &amp; Tuesday!"></textarea>
+    <button id="prmPost">Post it</button>
+    <div class="out" id="prmOut"></div>
+    <div id="prmList" style="margin-top:14px;display:flex;flex-direction:column;gap:10px"></div>
+  </div>
 
   <div class="card" id="sec-events">
     <h2>Upcoming events</h2>
@@ -1059,6 +1071,48 @@ async function ledLoad(){
   $("#ledLoad").disabled=false;
 }
 $("#ledLoad").onclick=ledLoad;
+// ---- Promotions & Flyers ----
+async function prmLoad(){
+  var key=PIN; if(!key) return;
+  try{
+    var r=await (await fetch("/api/promo-admin",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key,action:"list"})})).json();
+    if(!r.ok){ $("#prmList").innerHTML=""; return; }
+    if(!r.promos.length){ $("#prmList").innerHTML='<div class="note">No promo posts yet.</div>'; return; }
+    $("#prmList").innerHTML=r.promos.map(function(p){
+      return '<div style="display:flex;gap:10px;align-items:flex-start;background:#faf7f2;border:1px solid #efe4d5;border-radius:12px;padding:8px 10px">'
+        +'<img src="/api/promo-image?id='+encodeURIComponent(p.id)+'" style="width:64px;height:64px;object-fit:cover;border-radius:8px;flex:0 0 auto">'
+        +'<div style="flex:1;font-size:.82rem">'+(p.caption?esc(p.caption):'<span class="note" style="margin:0">(no caption)</span>')+'</div>'
+        +'<button type="button" onclick="prmDelete(\''+esc(p.id)+'\')" style="border:none;background:#fbe6e2;color:#b5382f;border-radius:6px;cursor:pointer;font-size:.78rem;padding:5px 9px;flex:0 0 auto">\uD83D\uDDD1\uFE0F Remove</button>'
+      +'</div>';
+    }).join("");
+  }catch(e){}
+}
+if($("#prmPost")) $("#prmPost").onclick=async function(){
+  var key=PIN; var out=$("#prmOut"); out.style.display="block";
+  if(!key){ out.className="out err"; out.textContent="Enter your staff PIN first."; return; }
+  var file=$("#prmImage").files[0];
+  if(!file){ out.className="out err"; out.textContent="Choose an image first."; return; }
+  out.className="out"; out.textContent="Posting\u2026"; $("#prmPost").disabled=true;
+  try{
+    var dataUrl=await shrinkImage(file);
+    if(!dataUrl){ out.className="out err"; out.textContent="Couldn't read that image."; $("#prmPost").disabled=false; return; }
+    var caption=$("#prmCaption").value.trim();
+    var r=await (await fetch("/api/promo-admin",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key,action:"save",caption,image:dataUrl})})).json();
+    if(r.ok){ out.className="out ok"; out.textContent="\u2705 Posted!"; $("#prmImage").value=""; $("#prmCaption").value=""; prmLoad(); }
+    else { out.className="out err"; out.textContent=r.error||"Couldn't post."; }
+  }catch(e){ out.className="out err"; out.textContent="Network error."; }
+  $("#prmPost").disabled=false;
+};
+window.prmDelete=async function(id){
+  var key=PIN; if(!key) return;
+  if(!confirm("Remove this promo post? It'll disappear from the website immediately.")) return;
+  try{
+    var r=await (await fetch("/api/promo-admin",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key,action:"delete",id})})).json();
+    if(r.ok) prmLoad(); else alert(r.error||"Couldn't remove.");
+  }catch(e){ alert("Network error."); }
+};
+try{ if(typeof PIN!=="undefined"&&PIN) prmLoad(); }catch(e){}
+
 // ---- Events manager ----
 function evMoney(c){return "$"+(c/100).toFixed(2);}
 async function shrinkImage(file){
@@ -1835,7 +1889,7 @@ if($("#wsSave")) $("#wsSave").onclick=async function(){
     {t:"\u2600\uFE0F Today \u2014 Check-in & Walk-ins", open:true, c:"#7ba676", bg:"#eef4e8", ids:["sec-bookings","sec-schedule","sec-walkin","sec-punch"]},
     {t:"\uD83C\uDF88 Loyalty & Punch Cards", c:"#c97d76", bg:"#fdf1ec", ids:["sec-loyalty-list","sec-birthdays","sec-punchissue","sec-passes"]},
     {t:"\uD83D\uDCB3 Credits, Codes & Bookings", c:"#8a94c9", bg:"#eef0f9", ids:["sec-issue","sec-redeem","sec-credit-backfill","sec-code","sec-weekday-special","sec-discount","sec-reschedule","sec-deposit"]},
-    {t:"\uD83C\uDF89 Parties & Events", c:"#d9a441", bg:"#fbf3e1", ids:["sec-party","sec-parties","sec-events"]},
+    {t:"\uD83C\uDF89 Parties & Events", c:"#d9a441", bg:"#fbf3e1", ids:["sec-party","sec-parties","sec-promos","sec-events"]},
     {t:"\u2699\uFE0F Hours & Settings", c:"#a89a89", bg:"#f2ede7", ids:["sec-prices","sec-closures","sec-weekly","sec-seasonal","sec-news","sec-rating","sec-photos"]}
   ];
   var TABSETS=[

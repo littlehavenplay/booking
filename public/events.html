@@ -50,6 +50,11 @@
 <body>
 <div class="topbar"><a class="name" href="/index.html" style="text-decoration:none;color:inherit">Little <em>Haven</em> Play Studio</a><a href="/index.html#peek" style="text-decoration:none">Photos</a><a class="back" href="/index.html">← Back to site</a></div>
 <div class="wrap">
+  <div id="promoWrap" style="display:none">
+    <h1 style="margin-bottom:2px">📌 Promotions &amp; Flyers</h1>
+    <div class="sub">Ongoing specials and announcements</div>
+    <div id="promoList" style="display:flex;flex-direction:column;gap:16px;margin-bottom:34px"></div>
+  </div>
   <h1>Upcoming Events</h1>
   <div class="sub">Classes & special events at Little Haven 🌟</div>
   <div id="upcoming"><div class="note" style="text-align:center">Loading…</div></div>
@@ -98,7 +103,23 @@ function whenStr(iso){return new Date(iso).toLocaleString("en-US",{weekday:"long
   try{ CFG=await (await fetch("/api/config")).json(); }catch(e){ CFG={}; }
   await initSquare();
   load();
+  loadPromos();
 })();
+
+async function loadPromos(){
+  try{
+    var d=await (await fetch("/api/promos")).json();
+    var promos=d.promos||[];
+    if(!promos.length) return;
+    $("#promoWrap").style.display="block";
+    $("#promoList").innerHTML=promos.map(function(p){
+      return '<div style="background:#fff;border-radius:20px;box-shadow:0 4px 24px rgba(0,0,0,.07);overflow:hidden">'
+        +'<img src="/api/promo-image?id='+encodeURIComponent(p.id)+'" alt="" style="width:100%;display:block">'
+        +(p.caption?'<div style="padding:16px 20px;font-size:.95rem;line-height:1.6;white-space:pre-wrap">'+esc(p.caption)+'</div>':'')
+      +'</div>';
+    }).join("");
+  }catch(e){}
+}
 
 async function load(){
   let d;

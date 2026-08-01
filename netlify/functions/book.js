@@ -12,7 +12,7 @@
 import { getStore } from "@netlify/blobs";
 import { SIGNATURE_HTML, sendOwnerAlert } from "./lib-email.js";
 import {
-  CAPACITY, PRICES, pricesFor, SLOTS, SLOT_IDS, openPlayForDate, effectivePartyBlocks, hoursFor, slotCap, slotKey, arrivalStartMin, squareApiBase, SQUARE_VERSION, BOOKING_WINDOW_DAYS,
+  CAPACITY, pricesFor, SLOTS, SLOT_IDS, openPlayForDate, effectivePartyBlocks, hoursFor, slotCap, slotKey, arrivalStartMin, squareApiBase, SQUARE_VERSION, BOOKING_WINDOW_DAYS,
   PARTY_SLOT_IDS, ARRIVAL_TO_LEGACY,
   STUDIO_NAME, POLICY_TITLE, POLICY_LINES, CLOSED_DATES, CLOSED_MESSAGE, ADDITIONAL_ADULT, isClosedWeekday, weekdayOf,
   additionalAdultsFor, additionalAdultCentsFor,
