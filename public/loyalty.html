@@ -474,22 +474,12 @@ window.saveBdayFromList=async function(code){
 };
 window.toggleMilitary=async function(code,setTo){
   var key=KEY; if(!key){ alert("Enter your admin key (top of page)."); return; }
-  if(setTo && !confirm("Confirm: you've verified this child's family is military (checked ID in person)?\n\nThey'll automatically get 10% off their admission on future online bookings, whenever this code is entered — unless a bigger discount (like the Weekday Special) is already active that day.\n\nThis does NOT send an email by itself — once you've verified everyone in the family, use the \"Email military verification\" button on their family row to send one email covering all of them."))return;
+  if(setTo && !confirm("Confirm: you've verified this child's family is military (checked ID in person)?\n\nThey'll automatically get 10% off their admission on future online bookings, whenever this code is entered — unless a bigger discount (like the Weekday Special) is already active that day."))return;
   try{
     var r=await (await fetch("/api/loyalty",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key,action:"adjust",code,militaryVerified:setTo})})).json();
     if(r.ok){ var c=LOYALTY.find(function(x){return x.code===code;}); if(c){ c.militaryVerified=r.militaryVerified; } renderLoyaltyList(); }
     else alert(r.error||"Couldn't save.");
   }catch(e){ alert("Network error."); }
-};
-window.sendMilitaryEmail=async function(phone4,anchorCode){
-  var key=KEY; if(!key){ alert("Enter your admin key (top of page)."); return; }
-  var btn=document.getElementById("milEmailBtn-"+phone4); if(btn){ btn.disabled=true; btn.textContent="Sending\u2026"; }
-  try{
-    var r=await (await fetch("/api/loyalty",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key,action:"send-military-email",phone4,code:anchorCode})})).json();
-    if(r.ok){ alert("\u2705 Sent to "+r.sentTo+" \u2014 covers "+r.count+" child"+(r.count===1?"":"ren")+": "+r.children.join(", ")+"."); }
-    else { alert(r.error||"Couldn't send."); }
-  }catch(e){ alert("Network error."); }
-  if(btn){ btn.disabled=false; renderLoyaltyList(); }
 };
 // ---- Loyalty customers list ----
 var LOYALTY=[];
@@ -624,10 +614,6 @@ function renderLoyaltyList(){
       +'<button type="button" onclick="setWaiver('+(isFam?"\'"+esc(fam.phone4)+"\',null":"null,\'"+esc(fam.code)+"\'")+',this.previousElementSibling.value)" style="border:none;background:#e7f0df;color:#4d6b3e;border-radius:6px;cursor:pointer;font-weight:800;font-size:.7rem;padding:4px 8px">\uD83D\uDCBE Save</button></span>';
     var famRef=isFam?("\'"+esc(fam.phone4)+"\',null"):("null,\'"+esc(fam.code)+"\'");
     var famKey=(isFam?fam.phone4:fam.code)||"x";
-    var verifiedKids=kids.filter(function(c){return c.militaryVerified;});
-    var militaryEmailBtn=verifiedKids.length
-      ? ' <button type="button" onclick="sendMilitaryEmail(\''+esc(famKey)+'\',\''+esc(verifiedKids[0].code)+'\')" id="milEmailBtn-'+esc(famKey)+'" style="border:none;background:#dff0d3;color:#33521f;border-radius:6px;cursor:pointer;font-weight:800;font-size:.72rem;padding:4px 9px;margin-left:6px" title="Send one email covering all '+verifiedKids.length+' verified child'+(verifiedKids.length===1?"":"ren")+' in this family, with each of their codes">\uD83D\uDCE7 Email military verification ('+verifiedKids.length+')</button>'
-      : '';
     var adults=Array.isArray(fam.waiverAdults)?fam.waiverAdults:[];
     var today=new Date().toISOString().slice(0,10);
     var adultsBlock='<div style="padding:8px 12px;border-top:1px dashed #eee1d2;background:#fffdf9">'
@@ -647,7 +633,6 @@ function renderLoyaltyList(){
       +'<div style="background:#faf5ef;padding:8px 12px;display:flex;flex-wrap:wrap;align-items:center;gap:8px">'
         +'<b>'+esc(famName)+(kids.length>1?" family":"")+'</b>'
         +(fam.phone4?'<span style="color:var(--taupe);font-size:.78rem">\uD83D\uDCDE \u2022\u2022\u2022'+esc(fam.phone4)+'</span>':'')
-        +militaryEmailBtn
         +'<span style="margin-left:auto;display:flex;align-items:center;gap:6px"><span class="note" style="margin:0;font-size:.72rem">Waiver signed:</span>'+waiverInput+'</span>'
       +'</div>'
       +adultsBlock
