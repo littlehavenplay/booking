@@ -16,10 +16,14 @@
   .two-col{display:grid;grid-template-columns:1fr 1fr;gap:28px;align-items:start}
   @media (max-width:760px){.two-col{grid-template-columns:1fr}}
   .col h1{font-size:clamp(1.5rem,5vw,2rem);margin-bottom:2px}
-  .promo-card{background:#fff;border:1px solid rgba(0,0,0,.05);border-radius:16px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.06);margin-bottom:14px;max-width:320px}
-  .promo-card img{width:100%;max-height:200px;object-fit:contain;display:block;background:#f7f3ec}
+  .promo-card{background:#fff;border:1px solid rgba(0,0,0,.05);border-radius:16px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.06);margin:0 auto 14px;max-width:320px}
+  .promo-card img{width:100%;display:block;background:#f7f3ec;cursor:pointer}
   .promo-card .cap{padding:11px 14px;font-size:.85rem;line-height:1.55;white-space:pre-wrap}
   .promo-fine{font-size:.7rem;color:var(--taupe);line-height:1.6;margin-top:6px;padding:0 2px}
+  #promoLightbox{position:fixed;inset:0;background:rgba(20,15,10,.92);display:none;align-items:center;justify-content:center;z-index:999;padding:24px}
+  #promoLightbox.open{display:flex}
+  #promoLightbox img{max-width:94vw;max-height:90vh;border-radius:10px;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+  #promoLightbox button{position:absolute;top:18px;right:22px;background:rgba(255,255,255,.15);color:#fff;border:none;border-radius:50%;width:40px;height:40px;font-size:1.3rem;cursor:pointer}
   h1{font-family:'Cormorant Garamond',serif;font-weight:300;font-size:clamp(2rem,6vw,2.7rem);text-align:center}
   .sub{text-align:center;color:var(--slate);font-weight:600;font-size:.9rem;margin:4px 0 22px}
   h2.sec{font-family:'Cormorant Garamond',serif;font-weight:500;font-size:1.5rem;margin:26px 0 10px}
@@ -72,6 +76,7 @@
   </div>
   <div id="pastWrap" style="display:none"><h2 class="sec">Past events</h2><div class="past" id="past"></div></div>
 </div>
+<div id="promoLightbox" role="dialog" aria-modal="true" aria-label="Enlarged promo image"><img id="promoLightboxImg" src="" alt=""><button id="promoLightboxClose" aria-label="Close">×</button></div>
 
 <div class="modal" id="modal">
   <div class="sheet">
@@ -125,13 +130,25 @@ async function loadPromos(){
     if(!promos.length) return;
     $("#promoWrap").style.display="block";
     $("#promoList").innerHTML=promos.map(function(p){
+      var src="/api/promo-image?id="+encodeURIComponent(p.id);
       return '<div class="promo-card">'
-        +'<img src="/api/promo-image?id='+encodeURIComponent(p.id)+'" alt="">'
+        +'<img src="'+src+'" alt="" onclick="openPromoLightbox(\''+src.replace(/'/g,"\\'")+'\')">'
         +(p.caption?'<div class="cap">'+esc(p.caption)+'</div>':'')
       +'</div>';
     }).join("");
   }catch(e){}
 }
+function openPromoLightbox(src){
+  var lb=document.getElementById("promoLightbox"), img=document.getElementById("promoLightboxImg");
+  img.src=src; lb.classList.add("open");
+}
+(function(){
+  var lb=document.getElementById("promoLightbox"), closeBtn=document.getElementById("promoLightboxClose");
+  function closeLb(){ lb.classList.remove("open"); document.getElementById("promoLightboxImg").src=""; }
+  if(closeBtn) closeBtn.onclick=closeLb;
+  if(lb) lb.addEventListener("click",function(e){ if(e.target===lb) closeLb(); });
+  document.addEventListener("keydown",function(e){ if(e.key==="Escape") closeLb(); });
+})();
 
 async function load(){
   let d;

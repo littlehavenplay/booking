@@ -246,7 +246,8 @@ export default async (req) => {
     if (!first || !last) return json({ error: "Enter the child's first and last name." }, 400);
     if (!phone4)        return json({ error: "Enter the parent's phone (at least the last 4 digits)." }, 400);
     const email = (b.email || "").toString().slice(0, 160).trim();
-    const r = await addPunch(loyalty, { first, last, phone4, email, waiverSigned, adultNames });
+    const militaryVerified = !!b.militaryVerified;
+    const r = await addPunch(loyalty, { first, last, phone4, email, waiverSigned, adultNames, militaryVerified });
     if (r.error) return json({ error: "Couldn't save the punch. Try again." }, 502);
     return json({ ok: true, ...r,
       message: r.rewardIssued
@@ -284,9 +285,10 @@ export default async (req) => {
       .filter(c => c.first && c.last)
       .slice(0, 4);
     if (!kids.length) return json({ error: "Enter at least one child's first and last name." }, 400);
+    const militaryVerified = !!b.militaryVerified;
     const results = [];
     for (const c of kids) {
-      const r = await addPunch(loyalty, { first: c.first, last: c.last, phone4, email, suppressEmail: true, waiverSigned, adultNames });
+      const r = await addPunch(loyalty, { first: c.first, last: c.last, phone4, email, suppressEmail: true, waiverSigned, adultNames, militaryVerified });
       if (!r.error) results.push(r);
     }
     if (!results.length) return json({ error: "Couldn't save the punches. Try again." }, 502);

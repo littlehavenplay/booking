@@ -91,7 +91,7 @@ export async function issueCode(loyalty, { first, last, phone4, email, dob, supp
 
 // Add ONE punch to a child's card. Creates the card if new (welcome email), and
 // on the 7th punch issues a free-visit reward code (reward email). Returns details.
-export async function addPunch(loyalty, { first, last, phone4, email, code: directCode, suppressEmail, waiverSigned, adultNames }) {
+export async function addPunch(loyalty, { first, last, phone4, email, code: directCode, suppressEmail, waiverSigned, adultNames, militaryVerified }) {
   let code, existing;
   if (directCode) {
     code = normalizeCode(directCode);
@@ -123,6 +123,11 @@ export async function addPunch(loyalty, { first, last, phone4, email, code: dire
       .map(n => ({ name: n, signedDate, expiry }));
     rec.waiverAdults = existingAdults.concat(newAdults).slice(0, 20);
   }
+  if (militaryVerified === true && !rec.militaryVerified) {
+    rec.militaryVerified = true;
+    rec.history = Array.isArray(rec.history) ? rec.history : [];
+    rec.history.push({ at: new Date().toISOString(), action: "military-verified" });
+  }
 
   rec.punches = (rec.punches || 0) + 1;
   rec.totalVisits = (rec.totalVisits || 0) + 1;
@@ -152,7 +157,8 @@ export async function addPunch(loyalty, { first, last, phone4, email, code: dire
   return { code, childName: rec.childName, isNew, punches: rec.punches, needed: PUNCHES_FOR_REWARD,
     rewardIssued: !!rewardIssued, rewardCode: rewardIssued ? rewardIssued.rewardCode : null,
     rewardExpiry: rewardIssued ? rewardIssued.expiry : null,
-    waiverSigned: rec.waiverSigned || null, waiverExpiry: rec.waiverExpiry || null };
+    waiverSigned: rec.waiverSigned || null, waiverExpiry: rec.waiverExpiry || null,
+    militaryVerified: !!rec.militaryVerified };
 }
 
 async function uniqueReward(store) {
@@ -185,6 +191,11 @@ export async function sendWelcome(rec) {
   const from = process.env.EMAIL_FROM || "onboarding@resend.dev";
   const bcc = process.env.STUDIO_EMAIL || undefined;
   const studio = studioName();
+  const militaryBlock = rec.militaryVerified ? `
+    <div style="background:#f3f7ee;border:1px solid #dce8cf;border-radius:12px;padding:14px 16px;margin:14px 0">
+      <div style="font-weight:800;color:#4d7848;margin-bottom:4px">🎖️ Thank you for your service!</div>
+      <p style="margin:0;font-size:14px;color:#4d6b3e">We've verified your military ID, and this card is marked as a military family. <b>10% off admission</b> will apply automatically every time you book Open Play online — just keep the code above handy and enter it at checkout, same as always. No separate discount code needed.</p>
+    </div>` : "";
   const html = `<div style="font-family:Arial,Helvetica,sans-serif;color:#2a2622;max-width:560px;margin:0 auto;line-height:1.6">
     <img src="${HERO_IMG}" alt="Little Haven Punch Card" style="width:100%;border-radius:16px;display:block;margin:0 0 16px">
     <h2 style="color:#a85f59;font-weight:normal;margin:0 0 4px">Welcome to our Punch Card! 🌿</h2>
@@ -193,13 +204,15 @@ export async function sendWelcome(rec) {
       <div style="font-size:13px;color:#5c6470">Punch card code</div>
       <div style="font-size:26px;font-weight:900;letter-spacing:2px;color:#a85f59;margin:4px 0">${esc(rec.code)}</div>
     </div>
+    ${militaryBlock}
     <p style="margin:12px 0 0;font-size:14px;color:#5c6470">After <b>7 visits</b>, your <b>8th visit is on us — free!</b> 🎈 We'll email your free-visit code the moment you earn it.</p>
     <p style="margin:14px 0 0;font-size:13px;color:#5c6470">See you soon! — ${esc(studio)}</p>
     ${reviewFooter()}</div>`;
   await fetch("https://api.resend.com/emails", { method: "POST",
     headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
     body: JSON.stringify({ from: `${studio} <${from}>`, to: [rec.buyerEmail], bcc: bcc ? [bcc] : undefined,
-      subject: `Your ${studio} punch card code`, html: html + SIGNATURE_HTML }) });
+      subject: rec.militaryVerified ? `Your ${studio} punch card code — and thank you for your service 🎖️` : `Your ${studio} punch card code`,
+      html: html + SIGNATURE_HTML }) });
 }
 
 // The legacy prepaid punch card product was discontinued — it can no longer be
@@ -337,6 +350,11 @@ export async function sendFamilyPunch(email, results) {
       <b style="color:#4d6b3e">🎉 Free visit${rewards.length > 1 ? "s" : ""} earned!</b>
       ${rewards.map(r => `<div style="margin-top:6px;font-size:14px;color:#3f5a34">${esc(r.childName)} — code <b>${esc(r.rewardCode)}</b> (expires ${esc(r.rewardExpiry)}). Enter it at checkout on your next booking.</div>`).join("")}
     </div>` : "";
+  const militaryKids = results.filter(r => r.militaryVerified);
+  const militaryBlock = militaryKids.length ? `<div style="background:#f3f7ee;border:1px solid #dce8cf;border-radius:12px;padding:14px 16px;margin:12px 0">
+      <div style="font-weight:800;color:#4d7848;margin-bottom:4px">🎖️ Thank you for your service!</div>
+      <p style="margin:0;font-size:14px;color:#4d6b3e">We've verified your military ID, and ${militaryKids.length > 1 ? "these cards are" : "this card is"} marked as a military family. <b>10% off admission</b> will apply automatically every time you book Open Play online — just keep ${militaryKids.length > 1 ? "the codes above" : "the code above"} handy and enter ${militaryKids.length > 1 ? "them" : "it"} at checkout, same as always. No separate discount code needed.</p>
+    </div>` : "";
   const html = `<div style="font-family:Arial,Helvetica,sans-serif;color:#2a2622;max-width:560px;margin:0 auto;line-height:1.6">
     <img src="${HERO_IMG}" alt="Little Haven Punch Card" style="width:100%;border-radius:16px;display:block;margin:0 0 16px">
     <h2 style="color:#a85f59;font-weight:normal;margin:0 0 4px">Your family's punch cards 🌿</h2>
@@ -346,6 +364,7 @@ export async function sendFamilyPunch(email, results) {
       ${rows}
     </table>
     ${rewardBlock}
+    ${militaryBlock}
     <p style="margin:12px 0 0;font-size:14px;color:#5c6470">After <b>7 visits</b> each, the <b>8th visit is free!</b> 🎈 We'll email you the moment anyone earns one.</p>
     <p style="margin:14px 0 0;font-size:13px;color:#5c6470">See you soon! — ${esc(studio)}</p>
     ${reviewFooter()}</div>`;

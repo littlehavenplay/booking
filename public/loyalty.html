@@ -47,8 +47,8 @@
 
   <div id="main">
 <div class="card" id="sec-waiver-import">
-    <h2>\ud83d\udcc4 Import waiver info from WaiverMaster</h2>
-    <p class="note" style="margin-top:-2px">Upload a WaiverMaster CSV export to backfill waiver-signed dates and adult names onto <b>existing</b> loyalty cards, matched by phone number. Never creates a new card, never overwrites a date or adult list that's already filled in \u2014 only fills in the blanks. If the same family appears more than once in the file, the most recent signing date wins.</p>
+    <h2>📄 Import waiver info from WaiverMaster</h2>
+    <p class="note" style="margin-top:-2px">Upload a WaiverMaster CSV export to backfill waiver-signed dates and adult names onto <b>existing</b> loyalty cards, matched by phone number. Never creates a new card, never overwrites a date or adult list that's already filled in — only fills in the blanks. If the same family appears more than once in the file, the most recent signing date wins.</p>
     <input type="file" id="wiFile" accept=".csv">
     <button id="wiPreview">Preview import</button>
     <div class="out" id="wiOut"></div>
@@ -56,8 +56,8 @@
   </div>
 
   <div class="card" id="sec-backfill">
-    <h2>\ud83d\udcc5 Backfill visit history from past bookings</h2>
-    <p class="note" style="margin-top:-2px">One-time tool (safe to run more than once \u2014 it never adds the same visit twice). Scans every past booking that was actually checked in and adds it to that child's <b>existing</b> loyalty card. Never creates a new card, never touches waiver info \u2014 only adds visit history.</p>
+    <h2>📅 Backfill visit history from past bookings</h2>
+    <p class="note" style="margin-top:-2px">One-time tool (safe to run more than once — it never adds the same visit twice). Scans every past booking that was actually checked in and adds it to that child's <b>existing</b> loyalty card. Never creates a new card, never touches waiver info — only adds visit history.</p>
     <button id="bfPreview">Preview (no changes made)</button>
     <button id="bfRun" class="alt" style="display:none">Run backfill now</button>
     <div class="out" id="bfOut"></div>
@@ -86,6 +86,7 @@
       <label style="display:block;font-weight:700;font-size:.82rem;color:var(--charcoal);margin:10px 0 6px">👥 Adult(s)/supervisor(s) who signed <span style="font-weight:600;color:var(--taupe)">(optional — comma-separate if more than one)</span></label>
       <input type="text" id="loWaiverAdults" placeholder="e.g. Maria Gomez, John Gomez">
       <p class="note" style="margin-top:6px">Every adult entering must be signed on WaiverMaster too — track who's already covered for this family here, so a new adult showing up later is easy to spot.</p>
+      <label style="display:flex;align-items:center;gap:8px;font-weight:700;font-size:.82rem;color:var(--charcoal);margin:14px 0 0;cursor:pointer;text-transform:none;letter-spacing:0"><input type="checkbox" id="loMilitary" style="width:auto"> 🎖️ Verified military family (checked ID in person) — 10% off admission going forward</label>
     </div>
     <button id="loPunch">Add a punch</button>
     <div class="out" id="loOut"></div>
@@ -312,6 +313,7 @@ $("#loPunch").onclick=async()=>{
   const key=KEY, out=$("#loOut"); out.style.display="block";
   const phone=$("#loPhone").value.trim(), email=$("#loEmail").value.trim(), waiverSigned=$("#loWaiverDate").value;
   const adultNames=$("#loWaiverAdults").value.split(",").map(function(s){return s.trim();}).filter(Boolean);
+  const militaryVerified=$("#loMilitary").checked;
   if(!key){ out.className="out err"; out.textContent="Enter your admin key (top of page)."; return; }
   const kids=[...document.querySelectorAll("#loKids .lo-kid")].map(function(r){return {first:r.querySelector(".lokF").value.trim(), last:r.querySelector(".lokL").value.trim()};}).filter(function(c){return c.first&&c.last;});
   if(!kids.length){ out.className="out err"; out.textContent="Enter at least one child's first and last name."; return; }
@@ -321,13 +323,13 @@ $("#loPunch").onclick=async()=>{
     let r;
     const waiverLine=waiverSigned?'<br>📋 Waiver signed date saved (expires '+(function(){var d=new Date(waiverSigned+"T12:00:00");d.setDate(d.getDate()+365);return d.toISOString().slice(0,10);})()+').':'';
     if(kids.length===1){
-      r=await (await fetch("/api/loyalty",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key,action:"punch",childFirst:kids[0].first,childLast:kids[0].last,phone,email,waiverSigned,adultNames})})).json();
+      r=await (await fetch("/api/loyalty",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key,action:"punch",childFirst:kids[0].first,childLast:kids[0].last,phone,email,waiverSigned,adultNames,militaryVerified})})).json();
       if(r.ok){ if(r.rewardIssued){ out.className="out ok"; out.innerHTML='🎉 <b>'+esc(r.childName)+'</b> earned a FREE visit! Code <b>'+esc(r.rewardCode)+'</b> emailed. Card reset to 0/7.'+waiverLine; } else { out.className="out ok"; out.innerHTML='✅ Punched <b>'+esc(r.childName)+'</b> ('+esc(r.code)+') → <b>'+r.punches+'/'+r.needed+'</b>'+(r.isNew?' · new card created'+(email?', welcome email sent':''):'')+waiverLine; } }
     } else {
-      r=await (await fetch("/api/loyalty",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key,action:"family-punch",children:kids,phone,email,waiverSigned,adultNames})})).json();
+      r=await (await fetch("/api/loyalty",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key,action:"family-punch",children:kids,phone,email,waiverSigned,adultNames,militaryVerified})})).json();
       if(r.ok){ out.className="out ok"; out.innerHTML='✅ '+esc(r.message)+'<br>'+r.results.map(function(x){return '• <b>'+esc(x.childName)+'</b> ('+esc(x.code)+') '+(x.rewardIssued?'🎉 FREE visit! '+esc(x.rewardCode):x.punches+'/'+x.needed);}).join("<br>")+waiverLine; }
     }
-    if(r.ok){ document.querySelectorAll("#loKids .lo-kid").forEach(function(el,i){ if(i===0){ el.querySelector(".lokF").value="";el.querySelector(".lokL").value="";} else el.remove(); }); $("#loPhone").value="";$("#loEmail").value="";$("#loWaiverDate").value="";$("#loWaiverAdults").value=""; }
+    if(r.ok){ document.querySelectorAll("#loKids .lo-kid").forEach(function(el,i){ if(i===0){ el.querySelector(".lokF").value="";el.querySelector(".lokL").value="";} else el.remove(); }); $("#loPhone").value="";$("#loEmail").value="";$("#loWaiverDate").value="";$("#loWaiverAdults").value="";$("#loMilitary").checked=false; }
     else { out.className="out err"; out.textContent=r.error||"Couldn't add a punch."; }
   }catch(e){ out.className="out err"; out.textContent="Network error."; }
   $("#loPunch").disabled=false; $("#loPunch").textContent="Add a punch";
@@ -474,12 +476,22 @@ window.saveBdayFromList=async function(code){
 };
 window.toggleMilitary=async function(code,setTo){
   var key=KEY; if(!key){ alert("Enter your admin key (top of page)."); return; }
-  if(setTo && !confirm("Confirm: you've verified this child's family is military (checked ID in person)?\n\nThey'll automatically get 10% off their admission on future online bookings, whenever this code is entered — unless a bigger discount (like the Weekday Special) is already active that day."))return;
+  if(setTo && !confirm("Confirm: you've verified this child's family is military (checked ID in person)?\n\nThey'll automatically get 10% off their admission on future online bookings, whenever this code is entered — unless a bigger discount (like the Weekday Special) is already active that day.\n\nThis does NOT send an email by itself — once you've verified everyone in the family, use the \"Email military verification\" button on their family row to send one email covering all of them."))return;
   try{
     var r=await (await fetch("/api/loyalty",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key,action:"adjust",code,militaryVerified:setTo})})).json();
     if(r.ok){ var c=LOYALTY.find(function(x){return x.code===code;}); if(c){ c.militaryVerified=r.militaryVerified; } renderLoyaltyList(); }
     else alert(r.error||"Couldn't save.");
   }catch(e){ alert("Network error."); }
+};
+window.sendMilitaryEmail=async function(phone4,anchorCode){
+  var key=KEY; if(!key){ alert("Enter your admin key (top of page)."); return; }
+  var btn=document.getElementById("milEmailBtn-"+phone4); if(btn){ btn.disabled=true; btn.textContent="Sending\u2026"; }
+  try{
+    var r=await (await fetch("/api/loyalty",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key,action:"send-military-email",phone4,code:anchorCode})})).json();
+    if(r.ok){ alert("\u2705 Sent to "+r.sentTo+" \u2014 covers "+r.count+" child"+(r.count===1?"":"ren")+": "+r.children.join(", ")+"."); }
+    else { alert(r.error||"Couldn't send."); }
+  }catch(e){ alert("Network error."); }
+  if(btn){ btn.disabled=false; renderLoyaltyList(); }
 };
 // ---- Loyalty customers list ----
 var LOYALTY=[];
@@ -614,6 +626,10 @@ function renderLoyaltyList(){
       +'<button type="button" onclick="setWaiver('+(isFam?"\'"+esc(fam.phone4)+"\',null":"null,\'"+esc(fam.code)+"\'")+',this.previousElementSibling.value)" style="border:none;background:#e7f0df;color:#4d6b3e;border-radius:6px;cursor:pointer;font-weight:800;font-size:.7rem;padding:4px 8px">\uD83D\uDCBE Save</button></span>';
     var famRef=isFam?("\'"+esc(fam.phone4)+"\',null"):("null,\'"+esc(fam.code)+"\'");
     var famKey=(isFam?fam.phone4:fam.code)||"x";
+    var verifiedKids=kids.filter(function(c){return c.militaryVerified;});
+    var militaryEmailBtn=verifiedKids.length
+      ? ' <button type="button" onclick="sendMilitaryEmail(\''+esc(famKey)+'\',\''+esc(verifiedKids[0].code)+'\')" id="milEmailBtn-'+esc(famKey)+'" style="border:none;background:#dff0d3;color:#33521f;border-radius:6px;cursor:pointer;font-weight:800;font-size:.72rem;padding:4px 9px;margin-left:6px" title="Send one email covering all '+verifiedKids.length+' verified child'+(verifiedKids.length===1?"":"ren")+' in this family, with each of their codes">\uD83D\uDCE7 Email military verification ('+verifiedKids.length+')</button>'
+      : '';
     var adults=Array.isArray(fam.waiverAdults)?fam.waiverAdults:[];
     var today=new Date().toISOString().slice(0,10);
     var adultsBlock='<div style="padding:8px 12px;border-top:1px dashed #eee1d2;background:#fffdf9">'
@@ -633,6 +649,7 @@ function renderLoyaltyList(){
       +'<div style="background:#faf5ef;padding:8px 12px;display:flex;flex-wrap:wrap;align-items:center;gap:8px">'
         +'<b>'+esc(famName)+(kids.length>1?" family":"")+'</b>'
         +(fam.phone4?'<span style="color:var(--taupe);font-size:.78rem">\uD83D\uDCDE \u2022\u2022\u2022'+esc(fam.phone4)+'</span>':'')
+        +militaryEmailBtn
         +'<span style="margin-left:auto;display:flex;align-items:center;gap:6px"><span class="note" style="margin:0;font-size:.72rem">Waiver signed:</span>'+waiverInput+'</span>'
       +'</div>'
       +adultsBlock
