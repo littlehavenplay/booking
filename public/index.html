@@ -674,6 +674,20 @@ if(s)s.style.display="block";var nv=document.getElementById("navNews");if(nv)nv.
   loadBadge("google",document.getElementById("ghStars"),document.getElementById("ghAvg"),document.getElementById("ghCount"));
   loadBadge("yelp",document.getElementById("yhStars"),document.getElementById("yhAvg"),document.getElementById("yhCount"));
   loadBadge("facebook",document.getElementById("fhStars"),document.getElementById("fhAvg"),document.getElementById("fhCount"));
+  // Live prices — these elements have a static fallback price already in the HTML
+  // (in case this fetch fails), but always prefer the real current price so the
+  // homepage never drifts out of sync with what's actually charged at checkout.
+  (async function(){
+    try{
+      var cfg=await (await fetch("/api/config")).json();
+      if(cfg && cfg.prices){
+        document.querySelectorAll("[data-lhprice]").forEach(function(el){
+          var key=el.getAttribute("data-lhprice");
+          if(cfg.prices[key]!=null){ var c=cfg.prices[key]; el.textContent="$"+(c/100).toFixed(c%100?2:0); }
+        });
+      }
+    }catch(e){ /* static fallback price in the HTML stays as-is */ }
+  })();
 })();
 </script>
 <script>if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("/sw.js").catch(function(){});});}</script><script>

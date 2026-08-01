@@ -46,7 +46,24 @@
   </div>
 
   <div id="main">
-<div class="card" id="sec-loyalty">
+<div class="card" id="sec-waiver-import">
+    <h2>\ud83d\udcc4 Import waiver info from WaiverMaster</h2>
+    <p class="note" style="margin-top:-2px">Upload a WaiverMaster CSV export to backfill waiver-signed dates and adult names onto <b>existing</b> loyalty cards, matched by phone number. Never creates a new card, never overwrites a date or adult list that's already filled in \u2014 only fills in the blanks. If the same family appears more than once in the file, the most recent signing date wins.</p>
+    <input type="file" id="wiFile" accept=".csv">
+    <button id="wiPreview">Preview import</button>
+    <div class="out" id="wiOut"></div>
+    <div id="wiResult" style="margin-top:12px"></div>
+  </div>
+
+  <div class="card" id="sec-backfill">
+    <h2>\ud83d\udcc5 Backfill visit history from past bookings</h2>
+    <p class="note" style="margin-top:-2px">One-time tool (safe to run more than once \u2014 it never adds the same visit twice). Scans every past booking that was actually checked in and adds it to that child's <b>existing</b> loyalty card. Never creates a new card, never touches waiver info \u2014 only adds visit history.</p>
+    <button id="bfPreview">Preview (no changes made)</button>
+    <button id="bfRun" class="alt" style="display:none">Run backfill now</button>
+    <div class="out" id="bfOut"></div>
+  </div>
+
+  <div class="card" id="sec-loyalty">
     <h2>🎈 New loyalty card / punch</h2>
     <div class="note" style="margin:-2px 0 10px;color:var(--rose-deep)">Already have a card? Just search their name in <b>Loyalty customers</b> below and tap <b>➕ Punch</b> — no code lookup needed. Use this box only for a <b>new</b> regular (it creates their card).</div>
     <p class="note" style="margin-top:-2px">One punch per PAID visit, per child (confirm the name on WaiverMaster first). After 7 punches the 8th is free — a reward code emails automatically. Don't punch legacy prepaid redemptions.</p>
@@ -75,7 +92,7 @@
     <div style="border-top:1px dashed #e2d9cc;margin-top:12px;padding-top:12px">
       <label>✏️ Manage an existing card</label>
       <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
-        <input type="text" id="loLookCode" placeholder="Code, or use name+phone above" style="flex:1;min-width:150px">
+        <input type="text" id="loLookCode" placeholder="Code, or type a child's name" style="flex:1;min-width:150px">
         <button id="loLook" style="margin-top:0">Look up</button>
       </div>
       <div class="out" id="loLookOut"></div>
@@ -145,6 +162,145 @@ async function unlock(){
   $("#gateGo").disabled=false;
 }
 
+function bfSummary(r){
+  return r.arrived+' checked-in visits found \u00b7 '+r.matched+' matched to an existing card \u00b7 '
+    +r.alreadyHad+' already on file \u00b7 <b>'+r.added+' '+(r.dryRun?'would be added':'added')+'</b>'
+    +(r.noCard?' \u00b7 '+r.noCard+' skipped (no matching card on file)':'')
+    +(r.skippedLegacy?' \u00b7 '+r.skippedLegacy+' legacy-card visits skipped (not loyalty visits)':'');
+}
+// ---- Import waiver info from WaiverMaster CSV ----
+// Small RFC4180-ish CSV parser: handles quoted fields, commas inside quotes,
+// and "" as an escaped quote within a quoted field. Good enough for a real
+// WaiverMaster export (confirmed against an actual sample file).
+function parseCSV(text){
+  var rows=[], row=[], field="", inQuotes=false, i=0;
+  text = text.replace(/\r\n/g,"\n").replace(/\r/g,"\n");
+  while(i<text.length){
+    var c=text[i];
+    if(inQuotes){
+      if(c==='"'){
+        if(text[i+1]==='"'){ field+='"'; i+=2; continue; }
+        inQuotes=false; i++; continue;
+      }
+      field+=c; i++; continue;
+    } else {
+      if(c==='"'){ inQuotes=true; i++; continue; }
+      if(c===','){ row.push(field); field=""; i++; continue; }
+      if(c==='\n'){ row.push(field); rows.push(row); row=[]; field=""; i++; continue; }
+      field+=c; i++; continue;
+    }
+  }
+  if(field.length || row.length){ row.push(field); rows.push(row); }
+  return rows.filter(function(r){ return r.length>1 || (r.length===1 && r[0]!==""); });
+}
+function wiParseRows(text){
+  var table=parseCSV(text);
+  if(!table.length) return [];
+  var header=table[0].map(function(h){ return h.trim(); });
+  var idx={}; header.forEach(function(h,i){ idx[h]=i; });
+  function col(r,name){ return idx[name]!=null ? (r[idx[name]]||"").trim() : ""; }
+  var out=[];
+  for(var i=1;i<table.length;i++){
+    var r=table[i]; if(!r || !r.length) continue;
+    var phone=col(r,"primary_phone")||col(r,"phone_digits_only");
+    if(!phone) continue;
+    var created=col(r,"created_ISO");
+    var date=created?created.slice(0,10):"";
+    var adults=[];
+    var fullName=col(r,"full_name") || ((col(r,"first_name")+" "+col(r,"last_name")).trim());
+    if(fullName) adults.push(fullName);
+    var a2=col(r,"2_adult_first_name"); if(a2) adults.push(a2);
+    var a3=col(r,"3_adult_first_name"); if(a3) adults.push(a3);
+    // The export sometimes repeats the primary signer's first name as a separate
+    // "2nd adult" entry (a form quirk, not a real second person) — drop any name
+    // that's just a leading substring of one already in the list.
+    adults=adults.filter(function(n,i){
+      var nl=n.toLowerCase();
+      return !adults.some(function(other,j){ return j!==i && other.length>n.length && other.toLowerCase().indexOf(nl)===0; });
+    });
+    var participants=[];
+    [1,2,3,4].forEach(function(n){ var p=col(r,"participant_name_"+n); if(p) participants.push(p); });
+    out.push({phone:phone, date:date, adults:adults, participants:participants});
+  }
+  return out;
+}
+var wiRows=null;
+$("#wiPreview").onclick=async function(){
+  var out=$("#wiOut"); out.style.display="block";
+  var file=$("#wiFile").files[0];
+  if(!file){ out.className="out err"; out.textContent="Choose a CSV file first."; return; }
+  out.className="out"; out.textContent="Reading file\u2026"; $("#wiPreview").disabled=true;
+  try{
+    var text=await file.text();
+    wiRows=wiParseRows(text);
+    if(!wiRows.length){ out.className="out err"; out.textContent="Couldn't find any usable rows \u2014 check this is the right export."; $("#wiPreview").disabled=false; return; }
+    out.textContent="Matching "+wiRows.length+" submissions against your loyalty cards\u2026";
+    var r=await (await fetch("/api/waiver-import",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key:KEY,action:"preview",rows:wiRows})})).json();
+    if(!r.ok){ out.className="out err"; out.textContent=r.error||"Couldn't preview."; $("#wiPreview").disabled=false; return; }
+    out.style.display="none"; wiRender(r);
+  }catch(e){ out.className="out err"; out.textContent="Couldn't read that file \u2014 make sure it's a CSV export."; }
+  $("#wiPreview").disabled=false;
+};
+function wiRender(r){
+  var wrap=$("#wiResult");
+  var t=r.totals;
+  var html='<div style="background:#fdf1ec;border:1px solid #f0dcd2;border-radius:12px;padding:14px 16px;margin-bottom:12px">'
+    +'<div style="display:flex;gap:20px;flex-wrap:wrap;font-size:.85rem">'
+      +'<div><b>'+t.familiesInFile+'</b> families in file</div>'
+      +'<div><b style="color:#4d7848">'+t.familiesMatched+'</b> matched to an existing card</div>'
+      +'<div><b>'+t.familiesNoCard+'</b> no matching card on file (skipped)</div>'
+      +'<div><b style="color:#4d7848">'+t.cardsWithDateFilled+'</b> dates to fill</div>'
+      +'<div><b style="color:#4d7848">'+t.cardsWithAdultsFilled+'</b> adult lists to fill</div>'
+      +(t.flaggedForReview?'<div><b style="color:#b5622f">'+t.flaggedForReview+'</b> flagged \u2014 check these</div>':'')
+    +'</div></div>';
+  var toApply=r.results.filter(function(x){ return x.willFillDate>0 || x.willFillAdults>0; });
+  if(!toApply.length){ html+='<div class="note">Nothing to import \u2014 either no families matched, or everything matched already has waiver info on file.</div>'; wrap.innerHTML=html; return; }
+  html+='<div style="display:flex;flex-direction:column;gap:6px;max-height:340px;overflow-y:auto;margin-bottom:12px">';
+  toApply.forEach(function(x){
+    var flag=x.confidence==="check"?'<span style="color:#b5622f;font-weight:800">\u26a0\ufe0f verify \u2014 names don\u2019t obviously match</span>':'';
+    html+='<div style="background:#fff;border:1px solid #e7ddd0;border-radius:9px;padding:8px 10px;font-size:.78rem">'
+      +'<b>\u2022\u2022\u2022'+esc(x.phone4)+'</b> \u2014 signed '+esc(x.date)+' by '+esc((x.adults||[]).join(", "))+' '+flag
+      +'<div style="margin-top:3px;color:var(--taupe)">Cards: '+x.cards.map(function(c){ return esc(c.childName)+(c.willSetDate?' (date+adults)':''); }).join(", ")+'</div>'
+    +'</div>';
+  });
+  html+='</div><button type="button" id="wiRun">Apply '+toApply.length+' update'+(toApply.length===1?"":"s")+' now</button>';
+  wrap.innerHTML=html;
+  $("#wiRun").onclick=async function(){
+    if(!confirm("Apply these "+toApply.length+" waiver updates to existing loyalty cards now?\n\nThis only fills in blanks \u2014 nothing already on file gets overwritten."))return;
+    $("#wiRun").disabled=true; $("#wiRun").textContent="Applying\u2026";
+    try{
+      var r2=await (await fetch("/api/waiver-import",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key:KEY,action:"run",rows:wiRows})})).json();
+      if(r2.ok){ wrap.innerHTML='<div class="out ok" style="display:block">\u2705 Done \u2014 filled '+r2.totals.cardsWithDateFilled+' date(s) and '+r2.totals.cardsWithAdultsFilled+' adult list(s).</div>'; renderLoyaltyList(); }
+      else { alert(r2.error||"Couldn't apply."); $("#wiRun").disabled=false; $("#wiRun").textContent="Apply "+toApply.length+" updates now"; }
+    }catch(e){ alert("Network error."); $("#wiRun").disabled=false; }
+  };
+}
+
+$("#bfPreview").onclick=async function(){
+  var out=$("#bfOut"); out.style.display="block"; out.className="out";
+  out.textContent="Scanning past bookings\u2026 this can take a little while.";
+  $("#bfPreview").disabled=true;
+  try{
+    var r=await (await fetch("/api/visit-backfill",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key:KEY,action:"preview"})})).json();
+    if(r.ok){
+      out.className="out ok"; out.innerHTML=bfSummary(r);
+      if(r.added>0){ $("#bfRun").style.display="inline-block"; window._bfPreviewCount=r.added; }
+    } else { out.className="out err"; out.textContent=r.error||"Couldn't preview."; }
+  }catch(e){ out.className="out err"; out.textContent="Network error."; }
+  $("#bfPreview").disabled=false;
+};
+$("#bfRun").onclick=async function(){
+  if(!confirm("Add "+(window._bfPreviewCount||"the previewed")+" visit(s) to existing loyalty cards now? This can't be bulk-undone (though individual visits could be removed by hand later if needed).")) return;
+  var out=$("#bfOut"); out.style.display="block"; out.className="out";
+  out.textContent="Adding visit history\u2026";
+  $("#bfRun").disabled=true;
+  try{
+    var r=await (await fetch("/api/visit-backfill",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key:KEY,action:"run"})})).json();
+    if(r.ok){ out.className="out ok"; out.innerHTML="\u2705 Done. "+bfSummary(r); $("#bfRun").style.display="none"; }
+    else { out.className="out err"; out.textContent=r.error||"Couldn't run backfill."; }
+  }catch(e){ out.className="out err"; out.textContent="Network error."; }
+  $("#bfRun").disabled=false;
+};
 $("#loAddKid").onclick=()=>{
   const kids=document.querySelectorAll("#loKids .lo-kid");
   if(kids.length>=4){ return; }
@@ -183,17 +339,45 @@ $("#loLook").onclick=async()=>{
   try{
     const r=await (await fetch("/api/loyalty",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key,action:"lookup",code,childFirst,childLast,phone})})).json();
     if(r.ok&&r.found){
-      out.className="out ok"; out.innerHTML='<b>'+esc(r.childName)+'</b> ('+esc(r.code)+') → <b>'+r.punches+'/'+r.needed+'</b> punches · rewards earned: '+r.rewardsEarned+(r.dob?' · 🎂 birthday on file: '+esc(r.dob):' · <span style="color:#b5382f">no birthday on file</span>');
-      if(r.code) $("#loLookCode").value=r.code;
-      const parts=(r.childName||"").trim().split(/\s+/);
-      $("#loEditFirst").value=parts[0]||""; $("#loEditLast").value=parts.slice(1).join(" ")||"";
-      $("#loEditDob").value=r.dob||""; $("#loEditPunches").value=r.punches!=null?r.punches:"";
-      $("#loEditPhone4").value=r.phone4||"";
-      $("#loEditWrap").style.display="block";
+      loShowCard(r);
+      return;
     }
-    else if(r.ok){ out.className="out"; out.textContent='No card yet for '+(r.code||'that')+' — first punch will create it.'; $("#loEditWrap").style.display="none"; }
+    // Not found as an exact code — the box also accepts a name (typed by mistake or
+    // on purpose), so search the customer list already loaded on this page before
+    // giving up. Prevents "no card" from showing for a child who very much has one.
+    if(code && Array.isArray(LOYALTY) && LOYALTY.length){
+      const needle=code.toLowerCase();
+      const matches=LOYALTY.filter(function(c){ return (c.childName||"").toLowerCase().indexOf(needle)>-1 || (c.code||"").toLowerCase()===needle; });
+      if(matches.length===1){
+        out.className="out ok"; out.innerHTML='Found by name — showing <b>'+esc(matches[0].childName)+'</b> (\u2192 not an exact code match, but only one card matched "'+esc(code)+'").';
+        loShowCard({found:true, code:matches[0].code, childName:matches[0].childName, dob:matches[0].dob, punches:matches[0].punches, needed:7, rewardsEarned:matches[0].rewardsEarned||0, phone4:matches[0].phone4});
+        return;
+      }
+      if(matches.length>1){
+        out.className="out"; out.innerHTML='<b>'+matches.length+' cards match "'+esc(code)+'"</b> — click one:<br>'+matches.map(function(c){
+          return '<button type="button" onclick="loSelectMatch(\''+esc(c.code)+'\')" style="margin:4px 6px 0 0;padding:4px 10px;border:1px solid #e0d5c6;background:#fff;border-radius:16px;cursor:pointer;font-size:.82rem">'+esc(c.childName)+' ('+esc(c.code)+')</button>';
+        }).join("");
+        $("#loEditWrap").style.display="none";
+        return;
+      }
+    }
+    if(r.ok){ out.className="out"; out.textContent='No card found for "'+(code||childFirst||'that')+'" — check the spelling, or this may be their first visit (their first punch will create one).'; $("#loEditWrap").style.display="none"; }
     else { out.className="out err"; out.textContent=r.error||"Not found."; $("#loEditWrap").style.display="none"; }
   }catch(e){ out.className="out err"; out.textContent="Network error."; }
+};
+function loShowCard(r){
+  const out=$("#loLookOut");
+  out.className="out ok"; out.innerHTML='<b>'+esc(r.childName)+'</b> ('+esc(r.code)+') \u2192 <b>'+r.punches+'/'+r.needed+'</b> punches \u00b7 rewards earned: '+r.rewardsEarned+(r.dob?' \u00b7 \uD83C\uDF82 birthday on file: '+esc(r.dob):' \u00b7 <span style="color:#b5382f">no birthday on file</span>');
+  if(r.code) $("#loLookCode").value=r.code;
+  const parts=(r.childName||"").trim().split(/\s+/);
+  $("#loEditFirst").value=parts[0]||""; $("#loEditLast").value=parts.slice(1).join(" ")||"";
+  $("#loEditDob").value=r.dob||""; $("#loEditPunches").value=r.punches!=null?r.punches:"";
+  $("#loEditPhone4").value=r.phone4||"";
+  $("#loEditWrap").style.display="block";
+}
+window.loSelectMatch=async function(code){
+  $("#loLookCode").value=code;
+  $("#loLook").click();
 };
 $("#loEditSave").onclick=async()=>{
   const key=KEY, out=$("#loEditOut"); out.style.display="block";
@@ -241,6 +425,37 @@ window.toggleBdayRow=function(code){
   var row=document.getElementById("bdayRow-"+code); if(!row) return;
   row.style.display = (row.style.display==="none"||!row.style.display) ? "flex" : "none";
 };
+function visitDiscountLabel(v){
+  if(v.freeAdmission) return '<span style="color:#4d7848;font-weight:700">\uD83C\uDF89 Free admission (reward/birthday/classroom code)</span>';
+  if(v.military) return '<span style="color:#33521f;font-weight:700">\uD83C\uDF96\uFE0F Military discount (10%)</span>';
+  if(v.weekdaySpecialLabel) return '<span style="color:#4d7848;font-weight:700">\uD83D\uDDD3\uFE0F '+esc(v.weekdaySpecialLabel)+'</span>';
+  if(v.discountCode) return '<span style="color:#4d7848;font-weight:700">\uD83C\uDFAB '+esc(v.discountCode)+' ('+(v.discountPct||0)+'% off)</span>';
+  return '<span style="color:var(--taupe)">Full price \u2014 no discount</span>';
+}
+window.toggleVisitHistory=async function(code){
+  var row=document.getElementById("visitRow-"+code); if(!row) return;
+  var showing = row.style.display!=="none" && row.style.display!=="";
+  if(showing){ row.style.display="none"; return; }
+  row.style.display="block"; row.innerHTML='<span class="note" style="margin:0">Loading visit history\u2026</span>';
+  try{
+    var r=await (await fetch("/api/loyalty",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key:KEY,action:"visit-history",code:code})})).json();
+    if(!r.ok){ row.innerHTML='<span class="note" style="margin:0;color:#b5382f">'+esc(r.error||"Couldn't load visit history.")+'</span>'; return; }
+    var visits=r.visits||[];
+    if(!visits.length){ row.innerHTML='<span class="note" style="margin:0">No visits recorded yet \u2014 history starts building from check-ins going forward.</span>'; return; }
+    var h='<div style="font-weight:800;font-size:.78rem;color:var(--charcoal);margin-bottom:6px">\uD83D\uDCC5 Visit history for '+esc(r.childName)+' ('+visits.length+' recorded)</div>';
+    h+='<div style="display:flex;flex-direction:column;gap:4px;max-height:260px;overflow-y:auto">';
+    visits.forEach(function(v){
+      var dt=v.at?new Date(v.at):null;
+      var timeStr=dt?dt.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}):"";
+      h+='<div style="background:#fff;border:1px solid #dde7f0;border-radius:8px;padding:6px 9px;font-size:.76rem">'
+        +'<b>'+esc(v.date||"")+'</b>'+(timeStr?' at '+timeStr:"")+(v.slotLabel?' \u00b7 '+esc(v.slotLabel):"")+(v.admission?' \u00b7 '+esc(v.admission):"")
+        +'<br>'+visitDiscountLabel(v)
+        +'</div>';
+    });
+    h+='</div>';
+    row.innerHTML=h;
+  }catch(e){ row.innerHTML='<span class="note" style="margin:0;color:#b5382f">Network error.</span>'; }
+};
 window.saveBdayFromList=async function(code){
   var key=KEY; if(!key){ alert("Enter your admin key (top of page)."); return; }
   var dob=$("#bdayInput-"+code).value;
@@ -259,12 +474,22 @@ window.saveBdayFromList=async function(code){
 };
 window.toggleMilitary=async function(code,setTo){
   var key=KEY; if(!key){ alert("Enter your admin key (top of page)."); return; }
-  if(setTo && !confirm("Confirm: you've verified this child's family is military (checked ID in person)?\n\nThey'll automatically get 10% off their admission on future online bookings, whenever this code is entered — unless a bigger discount (like the Weekday Special) is already active that day."))return;
+  if(setTo && !confirm("Confirm: you've verified this child's family is military (checked ID in person)?\n\nThey'll automatically get 10% off their admission on future online bookings, whenever this code is entered — unless a bigger discount (like the Weekday Special) is already active that day.\n\nThis does NOT send an email by itself — once you've verified everyone in the family, use the \"Email military verification\" button on their family row to send one email covering all of them."))return;
   try{
     var r=await (await fetch("/api/loyalty",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key,action:"adjust",code,militaryVerified:setTo})})).json();
     if(r.ok){ var c=LOYALTY.find(function(x){return x.code===code;}); if(c){ c.militaryVerified=r.militaryVerified; } renderLoyaltyList(); }
     else alert(r.error||"Couldn't save.");
   }catch(e){ alert("Network error."); }
+};
+window.sendMilitaryEmail=async function(phone4,anchorCode){
+  var key=KEY; if(!key){ alert("Enter your admin key (top of page)."); return; }
+  var btn=document.getElementById("milEmailBtn-"+phone4); if(btn){ btn.disabled=true; btn.textContent="Sending\u2026"; }
+  try{
+    var r=await (await fetch("/api/loyalty",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key,action:"send-military-email",phone4,code:anchorCode})})).json();
+    if(r.ok){ alert("\u2705 Sent to "+r.sentTo+" \u2014 covers "+r.count+" child"+(r.count===1?"":"ren")+": "+r.children.join(", ")+"."); }
+    else { alert(r.error||"Couldn't send."); }
+  }catch(e){ alert("Network error."); }
+  if(btn){ btn.disabled=false; renderLoyaltyList(); }
 };
 // ---- Loyalty customers list ----
 var LOYALTY=[];
@@ -368,8 +593,10 @@ function llChildRow(c){
       +'<button onclick="punchFromList(\''+esc(c.code)+'\',\''+esc((c.childName||"").replace(/[\x27\\]/g,""))+'\')" title="Add a punch" style="border:none;background:#e7f0df;color:#4d6b3e;border-radius:6px;cursor:pointer;font-weight:800;font-size:.75rem;padding:4px 9px">\u2795 Punch</button>'
       +'<button onclick="toggleBdayRow(\''+esc(c.code)+'\')" title="Set this child\'s birthday" style="border:none;background:#fdeedd;color:#a5651a;border-radius:6px;cursor:pointer;font-weight:800;font-size:.75rem;padding:4px 9px">\uD83C\uDF82 Birthday</button>'
       +'<button onclick="toggleMilitary(\''+esc(c.code)+'\','+(c.militaryVerified?'false':'true')+')" title="'+(c.militaryVerified?'Remove military verification':'Mark as military-verified')+'" style="border:none;background:'+(c.militaryVerified?'#dff0d3':'#f0ede5')+';color:'+(c.militaryVerified?'#33521f':'#6b6255')+';border-radius:6px;cursor:pointer;font-weight:800;font-size:.75rem;padding:4px 9px">\uD83C\uDF96\uFE0F '+(c.militaryVerified?'Military \u2713':'Military')+'</button>'
+      +'<button onclick="toggleVisitHistory(\''+esc(c.code)+'\')" title="See this child\'s visit history" style="border:none;background:#e3ecf5;color:#2f5a80;border-radius:6px;cursor:pointer;font-weight:800;font-size:.75rem;padding:4px 9px">\uD83D\uDCC5 Visit History</button>'
       +'<button onclick="deleteLoyalty(\''+esc(c.code)+'\',\''+esc((c.childName||"").replace(/[\x27\\]/g,""))+'\')" title="Delete card" style="border:none;background:#fbe6e2;color:#b5382f;border-radius:6px;cursor:pointer;font-size:.8rem;padding:3px 7px">\uD83D\uDDD1\uFE0F</button>'
     +'</span>'
+    +'<div id="visitRow-'+esc(c.code)+'" style="display:none;width:100%;background:#f3f7fb;border:1px solid #dde7f0;border-radius:9px;padding:8px 10px;margin-top:2px"></div>'
     +'<div id="bdayRow-'+esc(c.code)+'" style="display:none;width:100%;align-items:center;gap:8px;background:#fdf9f4;border:1px solid #efe4d5;border-radius:9px;padding:8px 10px;margin-top:2px">'
       +'<span style="font-size:.78rem;font-weight:700;color:var(--charcoal)">\uD83C\uDF82 Birthday for '+esc(c.childName)+':</span>'
       +'<input type="date" id="bdayInput-'+esc(c.code)+'" value="'+(c.dob||"")+'" style="border:1px solid #e0d5c6;border-radius:7px;padding:4px 8px;font-size:.8rem">'
@@ -396,24 +623,31 @@ function renderLoyaltyList(){
     var waiverInput='<span style="display:inline-flex;gap:5px;align-items:center"><input type="date" value="'+(fam.waiverSigned||"")+'" title="Waiver signed date (expires 365 days later)" style="border:1px solid #e0d5c6;border-radius:7px;padding:3px 6px;font-size:.75rem">'
       +'<button type="button" onclick="setWaiver('+(isFam?"\'"+esc(fam.phone4)+"\',null":"null,\'"+esc(fam.code)+"\'")+',this.previousElementSibling.value)" style="border:none;background:#e7f0df;color:#4d6b3e;border-radius:6px;cursor:pointer;font-weight:800;font-size:.7rem;padding:4px 8px">\uD83D\uDCBE Save</button></span>';
     var famRef=isFam?("\'"+esc(fam.phone4)+"\',null"):("null,\'"+esc(fam.code)+"\'");
+    var famKey=(isFam?fam.phone4:fam.code)||"x";
+    var verifiedKids=kids.filter(function(c){return c.militaryVerified;});
+    var militaryEmailBtn=verifiedKids.length
+      ? ' <button type="button" onclick="sendMilitaryEmail(\''+esc(famKey)+'\',\''+esc(verifiedKids[0].code)+'\')" id="milEmailBtn-'+esc(famKey)+'" style="border:none;background:#dff0d3;color:#33521f;border-radius:6px;cursor:pointer;font-weight:800;font-size:.72rem;padding:4px 9px;margin-left:6px" title="Send one email covering all '+verifiedKids.length+' verified child'+(verifiedKids.length===1?"":"ren")+' in this family, with each of their codes">\uD83D\uDCE7 Email military verification ('+verifiedKids.length+')</button>'
+      : '';
     var adults=Array.isArray(fam.waiverAdults)?fam.waiverAdults:[];
     var today=new Date().toISOString().slice(0,10);
     var adultsBlock='<div style="padding:8px 12px;border-top:1px dashed #eee1d2;background:#fffdf9">'
-      +'<span class="note" style="margin:0;font-size:.72rem;font-weight:700">\uD83D\uDC65 Adults/supervisors on waiver:</span> '
-      +(adults.length?adults.map(function(a,i){
+      +'<div class="note" style="margin:0 0 4px;font-size:.72rem;font-weight:700">\uD83D\uDC65 Adults/supervisors who signed the waiver \u2014 tracked separately per person, even for the same child:</div>'
+      +(adults.length?'<div style="display:flex;flex-direction:column;gap:4px">'+adults.map(function(a,i){
           var exp=a.expiry?new Date(a.expiry+"T12:00:00"):null;
           var ok=exp && exp>=new Date();
-          var tag=a.expiry?(ok?('<span style="color:#4d7848">valid to '+esc(a.expiry)+'</span>'):('<span style="color:#b5382f">expired '+esc(a.expiry)+'</span>')):'<span style="color:var(--taupe)">no date</span>';
-          return '<span style="display:inline-flex;align-items:center;gap:4px;background:#f0ede5;border-radius:20px;padding:2px 8px 2px 10px;margin:3px 4px 0 0;font-size:.75rem"><b>'+esc(a.name)+'</b> \u00b7 '+tag+' <button type="button" onclick="removeWaiverAdult('+famRef+','+i+')" style="border:none;background:none;color:#b5382f;cursor:pointer;font-weight:900;padding:0 2px">\u2715</button></span>';
-        }).join(""):'<span class="note" style="margin:0;font-size:.75rem">none on file yet</span>')
-      +'<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">'
-        +'<input type="text" placeholder="Add adult name" style="flex:1;min-width:140px;border:1px solid #e0d5c6;border-radius:7px;padding:4px 8px;font-size:.78rem" onkeydown="if(event.key===\'Enter\'){addWaiverAdult('+famRef+',this.value,\'"+today+"\');this.value=\'\';}">'
-        +'<button type="button" onclick="var i=this.previousElementSibling;addWaiverAdult('+famRef+',i.value,\'"+today+"\');i.value=\'\';" style="border:none;background:#e7f0df;color:#4d6b3e;border-radius:6px;cursor:pointer;font-weight:800;font-size:.72rem;padding:4px 9px">+ Add (signed today)</button>'
-      +'</div></div>';
+          var tag=a.expiry?(ok?('<span style="color:#4d7848;font-weight:700">valid to '+esc(a.expiry)+'</span>'):('<span style="color:#b5382f;font-weight:700">expired '+esc(a.expiry)+'</span>')):'<span style="color:var(--taupe)">no date on file</span>';
+          return '<div style="display:flex;align-items:center;gap:8px;background:#f0ede5;border-radius:9px;padding:5px 10px;font-size:.78rem"><b style="min-width:120px">'+esc(a.name)+'</b><span>Signed: <b>'+(a.signedDate?esc(a.signedDate):'\u2014')+'</b></span><span>\u00b7 '+tag+'</span><button type="button" onclick="removeWaiverAdult('+famRef+','+i+')" style="margin-left:auto;border:none;background:none;color:#b5382f;cursor:pointer;font-weight:900;padding:0 2px">\u2715</button></div>';
+        }).join("")+'</div>':'<span class="note" style="margin:0;font-size:.75rem">none on file yet</span>')
+      +'<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;align-items:center">'
+        +'<input type="text" id="waName-'+esc(famKey)+'" placeholder="Adult\'s full name" style="flex:1;min-width:140px;border:1px solid #e0d5c6;border-radius:7px;padding:4px 8px;font-size:.78rem" onkeydown="if(event.key===\'Enter\'){var d=document.getElementById(\'waDate-'+esc(famKey)+'\');addWaiverAdult('+famRef+',this.value,d.value);this.value=\'\';}">'
+        +'<span style="display:flex;align-items:center;gap:4px"><label style="margin:0;font-size:.7rem;color:var(--taupe);text-transform:none;font-weight:600">Signed:</label><input type="date" id="waDate-'+esc(famKey)+'" value="'+today+'" style="border:1px solid #e0d5c6;border-radius:7px;padding:3px 6px;font-size:.76rem"></span>'
+        +'<button type="button" onclick="var n=document.getElementById(\'waName-'+esc(famKey)+'\'),d=document.getElementById(\'waDate-'+esc(famKey)+'\');addWaiverAdult('+famRef+',n.value,d.value);n.value=\'\';d.value=\''+today+'\';" style="border:none;background:#e7f0df;color:#4d6b3e;border-radius:6px;cursor:pointer;font-weight:800;font-size:.72rem;padding:4px 9px">+ Add</button>'
+      +'</div><div class="note" style="margin:2px 0 0;font-size:.7rem">Pick the actual date they signed \u2014 defaults to today, but change it if they signed in the past.</div></div>';
     html+='<div style="border:1px solid #e7ddd0;border-radius:12px;margin-bottom:10px;overflow:hidden">'
       +'<div style="background:#faf5ef;padding:8px 12px;display:flex;flex-wrap:wrap;align-items:center;gap:8px">'
         +'<b>'+esc(famName)+(kids.length>1?" family":"")+'</b>'
         +(fam.phone4?'<span style="color:var(--taupe);font-size:.78rem">\uD83D\uDCDE \u2022\u2022\u2022'+esc(fam.phone4)+'</span>':'')
+        +militaryEmailBtn
         +'<span style="margin-left:auto;display:flex;align-items:center;gap:6px"><span class="note" style="margin:0;font-size:.72rem">Waiver signed:</span>'+waiverInput+'</span>'
       +'</div>'
       +adultsBlock

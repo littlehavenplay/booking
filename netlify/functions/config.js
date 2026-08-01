@@ -2,11 +2,11 @@
 // Returns only PUBLIC-safe values for the browser to initialize the Square
 // card form and render prices/slots. The secret access token is never sent here.
 
-import { CAPACITY, ARRIVAL_CAP, PRICES, pricesFor, SLOTS, STUDIO_NAME, POLICY_TITLE, POLICY_LINES, CLOSED_DATES, CLOSED_MESSAGE, PASSES, passesFor, sellablePasses, ADDITIONAL_ADULT, additionalAdultCentsFor, adultRuleFor, PASS_POLICY_TITLE, PASS_POLICY_LINES, BOOKING_WINDOW_DAYS, PARTY_PACKAGES, PARTY_SLOTS, PARTY_DAYS, PARTY_BOOKING_MIN_DAYS } from "./lib-settings.js";
+import { CAPACITY, ARRIVAL_CAP, pricesFor, SLOTS, STUDIO_NAME, POLICY_TITLE, POLICY_LINES, CLOSED_DATES, CLOSED_MESSAGE, PASSES, passesFor, sellablePasses, ADDITIONAL_ADULT, additionalAdultCentsFor, adultRuleFor, PASS_POLICY_TITLE, PASS_POLICY_LINES, BOOKING_WINDOW_DAYS, PARTY_PACKAGES, PARTY_SLOTS, PARTY_DAYS, PARTY_BOOKING_MIN_DAYS } from "./lib-settings.js";
 import { getWeekdaySpecial } from "./lib-weekday.js";
 
 export default async () => {
-  const prices = pricesFor();              // today's effective session prices
+  const prices = await pricesFor();        // current session prices — manually set ones always win
   const passSrc = sellablePasses();        // only the cards a new customer can buy
   const aRule = adultRuleFor();            // today's effective included-adults rule
   const weekdaySpecial = await getWeekdaySpecial();

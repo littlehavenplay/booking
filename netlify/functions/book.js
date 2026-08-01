@@ -156,7 +156,7 @@ export default async (req) => {
   const paidSibling = sibling - coveredSibling;
 
   // Authoritative amounts (cents). Covered admissions are $0; only paid items are charged/taxed.
-  const PRICES = pricesFor();   // prices effective on today's (checkout) date, Pacific
+  const PRICES = await pricesFor();   // current prices — manually set ones always win
   const subtotal = paidRegular * PRICES.regular + paidInfant * PRICES.infant
     + paidSibling * PRICES.sibling + additionalAdults * additionalAdultCentsFor();
 

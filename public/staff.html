@@ -70,8 +70,8 @@
   </div>
 
   <div id="app" class="hidden">
-<div id="secBar"><button id="secToggle" type="button">Sections ▾</button><div id="secMenu"><a href="#sec-schedule">Daily schedule</a><a href="#sec-walkin">Walk-in check-in</a><a href="#sec-punch">Punch-card check-in</a><a href="/loyalty.html">Loyalty &amp; Punch Cards</a><a href="#sec-reschedule">Reschedule &amp; cancel</a><a href="#sec-party">Session capacity &amp; blocking</a><a href="#sec-deposit">Record a party deposit</a><a href="#sec-redeem">Redeem a credit</a><a href="#sec-credit-backfill">Backfill credit emails</a><a href="#sec-issue">Issue a credit</a><a href="#sec-code">Manage a code</a><a href="#sec-punchissue">Legacy card tools</a><a href="#sec-closures">Closures &amp; hours</a><a href="#sec-passes">Legacy prepaid holders</a><a href="#sec-parties">Party bookings</a><a href="/headcount.html">Head count</a><a href="#sec-weekly">Weekly hours</a><a href="#sec-seasonal">Seasonal hours</a><a href="#sec-weekday-special">Weekday special</a><a href="#sec-discount">Discount codes</a><a href="#sec-news">News banner</a></div></div>
-<nav id="sideNav" aria-label="Sections"><div class="snav-title">Sections</div><a href="#sec-schedule">Daily schedule</a><a href="#sec-walkin">Walk-in check-in</a><a href="#sec-punch">Punch-card check-in</a><a href="/loyalty.html">Loyalty &amp; Punch Cards</a><a href="#sec-reschedule">Reschedule &amp; cancel</a><a href="#sec-party">Session capacity &amp; blocking</a><a href="#sec-deposit">Record a party deposit</a><a href="#sec-redeem">Redeem a credit</a><a href="#sec-credit-backfill">Backfill credit emails</a><a href="#sec-issue">Issue a credit</a><a href="#sec-code">Manage a code</a><a href="#sec-punchissue">Legacy card tools</a><a href="#sec-closures">Closures &amp; hours</a><a href="#sec-passes">Legacy prepaid holders</a><a href="#sec-parties">Party bookings</a><a href="/headcount.html">Head count</a><a href="#sec-weekly">Weekly hours</a><a href="#sec-seasonal">Seasonal hours</a><a href="#sec-weekday-special">Weekday special</a><a href="#sec-discount">Discount codes</a><a href="#sec-news">News banner</a><a href="#sec-rating">Reviews rating</a><a href="#sec-photos">Site photos</a><a href="#sec-events">Upcoming events</a><a href="#sec-partners">Partners page</a><a href="#sec-birthdays">Birthday club</a></nav>
+<div id="secBar"><button id="secToggle" type="button">Sections ▾</button><div id="secMenu"><a href="#sec-schedule">Daily schedule</a><a href="#sec-walkin">Walk-in check-in</a><a href="#sec-punch">Punch-card check-in</a><a href="/loyalty.html">Loyalty &amp; Punch Cards</a><a href="#sec-reschedule">Reschedule &amp; cancel</a><a href="#sec-party">Session capacity &amp; blocking</a><a href="#sec-deposit">Record a party deposit</a><a href="#sec-redeem">Redeem a credit</a><a href="#sec-credit-backfill">Backfill credit emails</a><a href="#sec-issue">Issue a credit</a><a href="#sec-code">Manage a code</a><a href="#sec-punchissue">Legacy card tools</a><a href="#sec-closures">Closures &amp; hours</a><a href="#sec-passes">Legacy prepaid holders</a><a href="#sec-parties">Party bookings</a><a href="/headcount.html">Head count</a><a href="#sec-prices">Manage prices</a><a href="#sec-weekly">Weekly hours</a><a href="#sec-seasonal">Seasonal hours</a><a href="#sec-weekday-special">Weekday special</a><a href="#sec-discount">Discount codes</a><a href="#sec-news">News banner</a></div></div>
+<nav id="sideNav" aria-label="Sections"><div class="snav-title">Sections</div><a href="#sec-schedule">Daily schedule</a><a href="#sec-walkin">Walk-in check-in</a><a href="#sec-punch">Punch-card check-in</a><a href="/loyalty.html">Loyalty &amp; Punch Cards</a><a href="#sec-reschedule">Reschedule &amp; cancel</a><a href="#sec-party">Session capacity &amp; blocking</a><a href="#sec-deposit">Record a party deposit</a><a href="#sec-redeem">Redeem a credit</a><a href="#sec-credit-backfill">Backfill credit emails</a><a href="#sec-issue">Issue a credit</a><a href="#sec-code">Manage a code</a><a href="#sec-punchissue">Legacy card tools</a><a href="#sec-closures">Closures &amp; hours</a><a href="#sec-passes">Legacy prepaid holders</a><a href="#sec-parties">Party bookings</a><a href="/headcount.html">Head count</a><a href="#sec-prices">Manage prices</a><a href="#sec-weekly">Weekly hours</a><a href="#sec-seasonal">Seasonal hours</a><a href="#sec-weekday-special">Weekday special</a><a href="#sec-discount">Discount codes</a><a href="#sec-news">News banner</a><a href="#sec-rating">Reviews rating</a><a href="#sec-photos">Site photos</a><a href="#sec-events">Upcoming events</a><a href="#sec-partners">Partners page</a><a href="#sec-birthdays">Birthday club</a></nav>
     <h1>Daily schedule</h1>
     <div class="card" id="sec-schedule">
       <label>Date</label>
@@ -496,6 +496,17 @@
     <div id="ptList"><div class="note">Click Load to pull the list.</div></div>
     <button id="ptLoad" style="margin-top:10px">Load party bookings</button>
     <div class="out" id="ptOut"></div>
+  </div>
+  <div class="card" id="sec-prices">
+    <h2>💰 Manage prices</h2>
+    <div class="note" style="margin-bottom:10px">Set the current Regular, Sibling add-on, and Baby/Infant admission prices. Saved changes take effect <b>immediately</b> — the homepage, the booking page, the live checkout total, and the actual amount charged all read from this same setting, so everything always stays in sync.</div>
+    <div class="row">
+      <div><label>Regular admission</label><input type="text" id="prRegular" inputmode="decimal" placeholder="25.00"></div>
+      <div><label>Sibling add-on</label><input type="text" id="prSibling" inputmode="decimal" placeholder="21.00"></div>
+      <div><label>Baby / Infant</label><input type="text" id="prInfant" inputmode="decimal" placeholder="19.00"></div>
+    </div>
+    <button id="prSave">Save prices</button>
+    <div class="out" id="prOut"></div>
   </div>
   <div class="card" id="sec-weekly">
     <h2>Weekly hours</h2>
@@ -1667,6 +1678,35 @@ if($("#wkSave")) $("#wkSave").onclick=function(){wkCall("saveWeekly");};
 if($("#wkReset")) $("#wkReset").onclick=function(){if(confirm("Reset weekly hours to the studio defaults (9-3, 4 PM Fri/Sat, closed Wednesdays)?"))wkCall("clearWeekly");};
 if($("#shSave")) $("#shSave").onclick=function(){shCall("save");};
 if($("#shClear")) $("#shClear").onclick=function(){shCall("clear");};
+
+// ---- Manage prices ----
+async function prLoad(){
+  var key=HKEY();if(!key)return;
+  try{
+    var r=await (await fetch("/api/prices",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key,action:"get"})})).json();
+    if(r.ok && r.prices){
+      $("#prRegular").value=(r.prices.regular/100).toFixed(2);
+      $("#prSibling").value=(r.prices.sibling/100).toFixed(2);
+      $("#prInfant").value=(r.prices.infant/100).toFixed(2);
+    }
+  }catch(e){}
+}
+if($("#prSave")) $("#prSave").onclick=async function(){
+  var key=HKEY(); var out=$("#prOut"); out.style.display="block";
+  if(!key){ out.className="out err"; out.textContent="Enter your staff PIN first."; return; }
+  var regular=$("#prRegular").value.trim(), sibling=$("#prSibling").value.trim(), infant=$("#prInfant").value.trim();
+  if(!regular||!sibling||!infant){ out.className="out err"; out.textContent="Enter all three prices."; return; }
+  if(!confirm("Save new prices \u2014 Regular $"+regular+", Sibling $"+sibling+", Baby/Infant $"+infant+"?\n\nThis takes effect IMMEDIATELY for every new booking, everywhere on the site.")) return;
+  out.className="out"; out.textContent="Saving\u2026"; $("#prSave").disabled=true;
+  try{
+    var r=await (await fetch("/api/prices",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key,action:"save",regular,sibling,infant})})).json();
+    if(r.ok){ out.className="out ok"; out.textContent="\u2705 Saved \u2014 new prices are live now: Regular $"+(r.prices.regular/100).toFixed(2)+", Sibling $"+(r.prices.sibling/100).toFixed(2)+", Baby/Infant $"+(r.prices.infant/100).toFixed(2)+"."; }
+    else { out.className="out err"; out.textContent=r.error||"Couldn't save."; }
+  }catch(e){ out.className="out err"; out.textContent="Network error."; }
+  $("#prSave").disabled=false;
+};
+try{ if(typeof PIN!=="undefined"&&PIN) prLoad(); }catch(e){}
+
 try{ if(typeof PIN!=="undefined"&&PIN) shLoad(); }catch(e){}
 
 async function dcGenerate(){
@@ -1796,7 +1836,7 @@ if($("#wsSave")) $("#wsSave").onclick=async function(){
     {t:"\uD83C\uDF88 Loyalty & Punch Cards", c:"#c97d76", bg:"#fdf1ec", ids:["sec-loyalty-list","sec-birthdays","sec-punchissue","sec-passes"]},
     {t:"\uD83D\uDCB3 Credits, Codes & Bookings", c:"#8a94c9", bg:"#eef0f9", ids:["sec-issue","sec-redeem","sec-credit-backfill","sec-code","sec-weekday-special","sec-discount","sec-reschedule","sec-deposit"]},
     {t:"\uD83C\uDF89 Parties & Events", c:"#d9a441", bg:"#fbf3e1", ids:["sec-party","sec-parties","sec-events"]},
-    {t:"\u2699\uFE0F Hours & Settings", c:"#a89a89", bg:"#f2ede7", ids:["sec-closures","sec-weekly","sec-seasonal","sec-news","sec-rating","sec-photos"]}
+    {t:"\u2699\uFE0F Hours & Settings", c:"#a89a89", bg:"#f2ede7", ids:["sec-prices","sec-closures","sec-weekly","sec-seasonal","sec-news","sec-rating","sec-photos"]}
   ];
   var TABSETS=[
     {ids:["sec-issue","sec-redeem"], labels:["Issue a credit","Redeem a credit"]},

@@ -48,8 +48,8 @@
 <link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#7a6253"><link rel="apple-touch-icon" href="/assets/icons/apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="Little Haven"><link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32.png"></head>
 <body>
 <div class="wrap">
-<div id="secBar"><button id="secToggle" type="button">Sections ▾</button><div id="secMenu"><a href="#sec-bookings">Bookings by date</a><a href="#sec-walkin">Walk-in check-in</a><a href="#sec-punch">Punch-card check-in</a><a href="/loyalty.html">Loyalty &amp; Punch Cards</a><a href="#sec-reschedule">Reschedule &amp; cancel</a><a href="#sec-redeem">Redeem a credit</a><a href="#sec-credit-backfill">Backfill credit emails</a><a href="#sec-party">Session capacity &amp; blocking</a><a href="#sec-issue">Issue a credit</a><a href="#sec-punchissue">Legacy card tools</a><a href="#sec-code">Manage a code</a><a href="#sec-closures">Closures &amp; hours</a><a href="#sec-passes">Legacy prepaid holders</a><a href="#sec-parties">Party bookings</a><a href="#sec-deposit">Record a party deposit</a><a href="/headcount.html">Head count</a><a href="#sec-weekly">Weekly hours</a><a href="#sec-seasonal">Seasonal hours</a><a href="#sec-weekday-special">Weekday special</a><a href="#sec-discount">Discount codes</a><a href="#sec-news">News update</a><a href="#sec-events">Upcoming events</a><a href="#sec-partners">Partners page</a><a href="#sec-birthdays">Birthday club</a></div></div>
-<nav id="sideNav" aria-label="Sections"><div class="snav-title">Sections</div><a href="#sec-bookings">Bookings by date</a><a href="#sec-walkin">Walk-in check-in</a><a href="#sec-punch">Punch-card check-in</a><a href="/loyalty.html">Loyalty &amp; Punch Cards</a><a href="#sec-reschedule">Reschedule &amp; cancel</a><a href="#sec-redeem">Redeem a credit</a><a href="#sec-credit-backfill">Backfill credit emails</a><a href="#sec-party">Session capacity &amp; blocking</a><a href="#sec-issue">Issue a credit</a><a href="#sec-punchissue">Legacy card tools</a><a href="#sec-code">Manage a code</a><a href="#sec-closures">Closures &amp; hours</a><a href="#sec-passes">Legacy prepaid holders</a><a href="#sec-parties">Party bookings</a><a href="#sec-deposit">Record a party deposit</a><a href="/headcount.html">Head count</a><a href="#sec-weekly">Weekly hours</a><a href="#sec-seasonal">Seasonal hours</a><a href="#sec-weekday-special">Weekday special</a><a href="#sec-discount">Discount codes</a><a href="#sec-news">News update</a><a href="#sec-rating">Reviews rating</a><a href="#sec-photos">Site photos</a><a href="#sec-events">Upcoming events</a><a href="#sec-partners">Partners page</a><a href="#sec-birthdays">Birthday club</a></nav>
+<div id="secBar"><button id="secToggle" type="button">Sections ▾</button><div id="secMenu"><a href="#sec-bookings">Bookings by date</a><a href="#sec-walkin">Walk-in check-in</a><a href="#sec-punch">Punch-card check-in</a><a href="/loyalty.html">Loyalty &amp; Punch Cards</a><a href="#sec-reschedule">Reschedule &amp; cancel</a><a href="#sec-redeem">Redeem a credit</a><a href="#sec-credit-backfill">Backfill credit emails</a><a href="#sec-party">Session capacity &amp; blocking</a><a href="#sec-issue">Issue a credit</a><a href="#sec-punchissue">Legacy card tools</a><a href="#sec-code">Manage a code</a><a href="#sec-closures">Closures &amp; hours</a><a href="#sec-passes">Legacy prepaid holders</a><a href="#sec-parties">Party bookings</a><a href="#sec-deposit">Record a party deposit</a><a href="/headcount.html">Head count</a><a href="#sec-prices">Manage prices</a><a href="#sec-weekly">Weekly hours</a><a href="#sec-seasonal">Seasonal hours</a><a href="#sec-weekday-special">Weekday special</a><a href="#sec-discount">Discount codes</a><a href="#sec-news">News update</a><a href="#sec-events">Upcoming events</a><a href="#sec-partners">Partners page</a><a href="#sec-birthdays">Birthday club</a></div></div>
+<nav id="sideNav" aria-label="Sections"><div class="snav-title">Sections</div><a href="#sec-bookings">Bookings by date</a><a href="#sec-walkin">Walk-in check-in</a><a href="#sec-punch">Punch-card check-in</a><a href="/loyalty.html">Loyalty &amp; Punch Cards</a><a href="#sec-reschedule">Reschedule &amp; cancel</a><a href="#sec-redeem">Redeem a credit</a><a href="#sec-credit-backfill">Backfill credit emails</a><a href="#sec-party">Session capacity &amp; blocking</a><a href="#sec-issue">Issue a credit</a><a href="#sec-punchissue">Legacy card tools</a><a href="#sec-code">Manage a code</a><a href="#sec-closures">Closures &amp; hours</a><a href="#sec-passes">Legacy prepaid holders</a><a href="#sec-parties">Party bookings</a><a href="#sec-deposit">Record a party deposit</a><a href="/headcount.html">Head count</a><a href="#sec-prices">Manage prices</a><a href="#sec-weekly">Weekly hours</a><a href="#sec-seasonal">Seasonal hours</a><a href="#sec-weekday-special">Weekday special</a><a href="#sec-discount">Discount codes</a><a href="#sec-news">News update</a><a href="#sec-rating">Reviews rating</a><a href="#sec-photos">Site photos</a><a href="#sec-events">Upcoming events</a><a href="#sec-partners">Partners page</a><a href="#sec-birthdays">Birthday club</a></nav>
   <h1>Store Credit</h1>
   <div class="sub">Issue and look up Little Haven store credit codes</div>
 
@@ -429,6 +429,18 @@
     <button id="isSave">Record party + hold slot</button>
     <div class="out" id="isOut"></div>
   </div>
+  <div class="card" id="sec-prices">
+    <h2>💰 Manage prices</h2>
+    <div class="note" style="margin-bottom:10px">Set the current Regular, Sibling add-on, and Baby/Infant admission prices. Saved changes take effect <b>immediately</b> — the homepage, the booking page, the live checkout total, and the actual amount charged all read from this same setting, so everything always stays in sync.</div>
+    <div class="row">
+      <div><label>Regular admission</label><input type="text" id="prRegular" inputmode="decimal" placeholder="25.00"></div>
+      <div><label>Sibling add-on</label><input type="text" id="prSibling" inputmode="decimal" placeholder="21.00"></div>
+      <div><label>Baby / Infant</label><input type="text" id="prInfant" inputmode="decimal" placeholder="19.00"></div>
+    </div>
+    <button id="prSave">Save prices</button>
+    <div class="out" id="prOut"></div>
+  </div>
+
   <div class="card" id="sec-weekly">
     <h2>Weekly hours</h2>
     <div class="note" style="margin-bottom:10px">Your standing hours, set day by day. Each day's last admission is automatically 1 hour before that day's close. These control bookings and show on your website.</div>
@@ -1679,6 +1691,36 @@ if($("#wkSave")) $("#wkSave").onclick=function(){wkCall("saveWeekly");};
 if($("#wkReset")) $("#wkReset").onclick=function(){if(confirm("Reset weekly hours to the studio defaults (9-3, 4 PM Fri/Sat, closed Wednesdays)?"))wkCall("clearWeekly");};
 if($("#shSave")) $("#shSave").onclick=function(){shCall("save");};
 if($("#shClear")) $("#shClear").onclick=function(){shCall("clear");};
+
+// ---- Manage prices ----
+async function prLoad(){
+  var key=$("#key").value.trim(); if(!key) return;
+  try{
+    var r=await (await fetch("/api/prices",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key,action:"get"})})).json();
+    if(r.ok && r.prices){
+      $("#prRegular").value=(r.prices.regular/100).toFixed(2);
+      $("#prSibling").value=(r.prices.sibling/100).toFixed(2);
+      $("#prInfant").value=(r.prices.infant/100).toFixed(2);
+    }
+  }catch(e){}
+}
+if($("#prSave")) $("#prSave").onclick=async function(){
+  var key=$("#key").value.trim(); var out=$("#prOut"); out.style.display="block";
+  if(!key){ out.className="out err"; out.textContent="Enter your admin key (top of page)."; return; }
+  var regular=$("#prRegular").value.trim(), sibling=$("#prSibling").value.trim(), infant=$("#prInfant").value.trim();
+  if(!regular||!sibling||!infant){ out.className="out err"; out.textContent="Enter all three prices."; return; }
+  if(!confirm("Save new prices \u2014 Regular $"+regular+", Sibling $"+sibling+", Baby/Infant $"+infant+"?\n\nThis takes effect IMMEDIATELY for every new booking, everywhere on the site.")) return;
+  out.className="out"; out.textContent="Saving\u2026"; $("#prSave").disabled=true;
+  try{
+    var r=await (await fetch("/api/prices",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key,action:"save",regular,sibling,infant})})).json();
+    if(r.ok){ out.className="out ok"; out.textContent="\u2705 Saved \u2014 new prices are live now: Regular $"+(r.prices.regular/100).toFixed(2)+", Sibling $"+(r.prices.sibling/100).toFixed(2)+", Baby/Infant $"+(r.prices.infant/100).toFixed(2)+"."; }
+    else { out.className="out err"; out.textContent=r.error||"Couldn't save."; }
+  }catch(e){ out.className="out err"; out.textContent="Network error."; }
+  $("#prSave").disabled=false;
+};
+if($("#key")) $("#key").addEventListener("change",prLoad);
+prLoad();
+
 if($("#key")) $("#key").addEventListener("change",shLoad);
 
 async function dcGenerate(){
@@ -1807,7 +1849,7 @@ if($("#wsSave")) $("#wsSave").onclick=async function(){
     {t:"\uD83C\uDF88 Loyalty & Punch Cards", c:"#c97d76", bg:"#fdf1ec", ids:["sec-loyalty-list","sec-birthdays","sec-punchissue","sec-passes"]},
     {t:"\uD83D\uDCB3 Credits, Codes & Bookings", c:"#8a94c9", bg:"#eef0f9", ids:["sec-issue","sec-redeem","sec-credit-backfill","sec-code","sec-weekday-special","sec-discount","sec-reschedule","sec-deposit"]},
     {t:"\uD83C\uDF89 Parties & Events", c:"#d9a441", bg:"#fbf3e1", ids:["sec-party","sec-parties","sec-deposit","sec-events","sec-partners"]},
-    {t:"\u2699\uFE0F Hours & Settings", c:"#a89a89", bg:"#f2ede7", ids:["sec-rating","sec-photos","sec-closures","sec-weekly","sec-seasonal","sec-news"]}
+    {t:"\u2699\uFE0F Hours & Settings", c:"#a89a89", bg:"#f2ede7", ids:["sec-prices","sec-rating","sec-photos","sec-closures","sec-weekly","sec-seasonal","sec-news"]}
   ];
   var TABSETS=[
     {ids:["sec-issue","sec-redeem"], labels:["Issue a credit","Redeem a credit"]},

@@ -86,6 +86,44 @@ export default async (req) => {
     return json({ ok: true, count: out.length, customers: out });
   }
 
+  // Explicit, staff-triggered send — covers EVERY currently-verified sibling under
+  // one family in a single email, with each child's own loyalty code included.
+  // Call this once, after verifying all of a family's kids, not per child — see
+  // the note in action:"adjust" for why per-toggle auto-sending used to split one
+  // family across two separate emails.
+  if (action === "send-military-email") {
+    const code = normalizeCode(b.code);
+    let anchor = null;
+    if (code) { try { anchor = await loyalty.get("card:" + code, { type: "json" }); } catch {} }
+    const phone4 = (b.phone4 || (anchor && anchor.phone4) || "").toString();
+    if (!phone4) return json({ error: "Missing family phone." }, 400);
+
+    const keys = await listAllKeys(loyalty, { prefix: "card:" });
+    const verified = [];
+    let toEmail = "";
+    for (const k of keys) {
+      let c = null; try { c = await loyalty.get(k, { type: "json" }); } catch {}
+      if (!c || c.phone4 !== phone4) continue;
+      if (c.buyerEmail && !toEmail) toEmail = c.buyerEmail;
+      if (c.militaryVerified) verified.push({ code: c.code, childName: c.childName });
+    }
+    if (!verified.length) return json({ error: "No military-verified card found for this family." }, 404);
+    if (!toEmail) return json({ error: "No email on file for this family — can't send." }, 400);
+
+    const sent = await sendMilitaryVerifiedEmail(toEmail, verified);
+    if (!sent) return json({ error: "Couldn't send the email. Try again." }, 502);
+    return json({ ok: true, sentTo: toEmail, children: verified.map(v => v.childName), count: verified.length });
+  }
+
+  if (action === "visit-history") {
+    const code = normalizeCode(b.code);
+    if (!code) return json({ error: "Missing code." }, 400);
+    let rec = null; try { rec = await loyalty.get("card:" + code, { type: "json" }); } catch {}
+    if (!rec) return json({ error: "Card not found." }, 404);
+    const visits = Array.isArray(rec.visits) ? rec.visits : [];
+    return json({ ok: true, code, childName: rec.childName || "", visits });
+  }
+
   if (action === "lookup") {
     const direct = normalizeCode(b.code);
     if (direct && await isLegacyPassCode(direct)) {
@@ -162,7 +200,12 @@ export default async (req) => {
       const wasVerified = !!rec.militaryVerified;
       if (mv !== wasVerified) rec.history.push({ at: new Date().toISOString(), action: mv ? "military-verified" : "military-unverified" });
       rec.militaryVerified = mv;
-      if (mv && !wasVerified) { try { await sendMilitaryVerifiedEmail(loyalty, rec); } catch {} }
+      // No email sent automatically here anymore — see action:"send-military-email".
+      // Verifying multiple siblings one at a time used to race: an email sent for
+      // the first child couldn't know about the second one verified a minute
+      // later, so the family got two separate emails instead of one. Staff now
+      // verify everyone in the family first, then send one explicit email that
+      // covers all of them.
     }
     // Re-linking a card to a different family, e.g. a child was mistakenly grouped
     // with someone else's kids because a booking shared one phone number (a parent

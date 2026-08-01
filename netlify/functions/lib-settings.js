@@ -1,6 +1,7 @@
 // Shared configuration used by the serverless functions.
 // Prices are defined HERE (server-side) so they can never be tampered with
 // from the browser. Override any of these with environment variables in Netlify.
+import { getStore } from "@netlify/blobs";
 
 export const CAPACITY = parseInt(process.env.CAPACITY || "13", 10);
 
@@ -31,8 +32,19 @@ const PRICES_NEW = {
   sibling: parseInt(process.env.PRICE_SIBLING_NEW_CENTS || "2100", 10), // $21.00
   infant:  parseInt(process.env.PRICE_INFANT_NEW_CENTS  || "1900", 10), // $19.00
 };
-// Prices for a given checkout date (defaults to today, Pacific).
-export function pricesFor(dateStr) {
+// Prices for a given checkout date. If the studio has manually set current prices
+// via the admin/staff "Manage prices" tool, that ALWAYS wins and applies
+// immediately going forward, regardless of dateStr — manual control means manual
+// control. If nothing has ever been manually saved (a fresh install, or the
+// store is briefly unreachable), this safely falls back to the built-in
+// date-gated defaults below, so checkout never breaks.
+export async function pricesFor(dateStr) {
+  try {
+    const rec = await getStore("site").get("prices", { type: "json" });
+    if (rec && Number.isFinite(rec.regular) && Number.isFinite(rec.sibling) && Number.isFinite(rec.infant)) {
+      return { regular: rec.regular, sibling: rec.sibling, infant: rec.infant };
+    }
+  } catch { /* fall through to the built-in defaults below */ }
   return (dateStr || pacificToday()) >= PRICE_CHANGE_DATE ? PRICES_NEW : PRICES_OLD;
 }
 
@@ -64,7 +76,9 @@ export function additionalAdultCentsFor(dateStr) {
   return adultRuleFor(dateStr).extraCents;
 }
 // Legacy export (today's prices) — request-time code should call pricesFor().
-export const PRICES = pricesFor();
+// (The old module-level `PRICES` constant was removed — it was unused dead code,
+// and pricesFor() is now async since it can read manually-set prices from
+// storage. Callers must use `await pricesFor()`.)
 
 export const STUDIO_NAME = process.env.STUDIO_NAME || "Little Haven Play Studio";
 

@@ -44,6 +44,7 @@ export default async (req) => {
         const jobs = getStore("loyaltyjobs");
         let children = null, phone4 = null, email = (b.email || "").toString();
         let commit = null;   // marks the source as punched so we never double-punch
+        let visitMeta = { date, slotLabel: "", discountCode: null, discountPct: 0, weekdaySpecialLabel: "", militaryAmount: 0, militaryChildren: [] };
 
         // Fast path: the punch job queued at booking time.
         let job = null;
@@ -52,6 +53,8 @@ export default async (req) => {
           children = null;                                   // already punched — do nothing
         } else if (job && Array.isArray(job.children) && job.phone4) {
           children = job.children; phone4 = job.phone4; email = job.email || email;
+          visitMeta = { date, slotLabel: job.slotLabel || "", discountCode: job.discountCode || null, discountPct: job.discountPct || 0,
+            weekdaySpecialLabel: job.weekdaySpecialLabel || "", militaryAmount: job.militaryAmount || 0, militaryChildren: job.militaryChildren || [] };
           commit = async () => { job.punched = true; job.punchedAt = new Date().toISOString(); try { await jobs.setJSON("job:" + id, job); } catch {} };
         } else {
           // Self-heal: no usable job (older booking or any hiccup at booking time). Read the
@@ -67,6 +70,8 @@ export default async (req) => {
               const digits = (entry.phone || "").toString().replace(/\D/g, "");
               if (digits.length >= 4) {
                 children = entry.childNames; phone4 = digits.slice(-4); email = entry.email || email;
+                visitMeta = { date, slotLabel: (bl.key.split("__")[1] || ""), discountCode: entry.discountCode || null, discountPct: entry.discountPct || 0,
+                  weekdaySpecialLabel: entry.weekdaySpecialLabel || "", militaryAmount: entry.militaryAmount || 0, militaryChildren: entry.militaryChildren || [] };
                 commit = async () => { entry.loyaltyPunched = true; try { await bstore.setJSON(bl.key, rec); } catch {} };
               }
             }
@@ -81,16 +86,39 @@ export default async (req) => {
         // created if they don't have one, just with no punch added.
         if (children && phone4) {
           const isFamily = children.filter(c => c && c.first && c.last).length > 1;
+          const nowISO = new Date().toISOString();
           for (const ch of children) {
             if (ch && ch.first && ch.last) {
               try {
+                let cardCode = null;
                 if (ch._freeAdmission) {
                   const r = await issueCode(loyalty, { first: ch.first, last: ch.last, phone4, email, suppressEmail: true });
                   loyaltyPunches.push({ childName: r.childName, code: r.code, freeAdmission: true });
+                  cardCode = r.code;
                 } else {
                   const r = await addPunch(loyalty, { first: ch.first, last: ch.last, phone4, email, suppressEmail: isFamily });
                   if (!r.error) loyaltyPunches.push({ childName: r.childName, code: r.code, punches: r.punches,
                     needed: r.needed, rewardIssued: r.rewardIssued, rewardCode: r.rewardCode });
+                  cardCode = r.code;
+                }
+                // Record this visit on the child's own card — date/time, admission type,
+                // and whatever discount context applied to the booking it was part of.
+                if (cardCode) {
+                  try {
+                    let card = await loyalty.get("card:" + cardCode, { type: "json" });
+                    if (card) {
+                      card.visits = Array.isArray(card.visits) ? card.visits : [];
+                      card.visits.unshift({
+                        date: visitMeta.date, at: nowISO, slotLabel: visitMeta.slotLabel, bookingId: id,
+                        admission: ch.admission || "regular", freeAdmission: !!ch._freeAdmission,
+                        discountCode: visitMeta.discountCode, discountPct: visitMeta.discountPct,
+                        weekdaySpecialLabel: visitMeta.weekdaySpecialLabel,
+                        military: visitMeta.militaryAmount > 0 && (visitMeta.militaryChildren || []).some(n => n && n.toLowerCase() === (ch.first + " " + ch.last).toLowerCase()),
+                      });
+                      card.visits = card.visits.slice(0, 200);   // keep it bounded
+                      await loyalty.setJSON("card:" + cardCode, card);
+                    }
+                  } catch {}
                 }
               } catch {}
             }
