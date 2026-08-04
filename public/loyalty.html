@@ -48,7 +48,7 @@
   <div id="main">
 <div class="card" id="sec-waiver-import">
     <h2>📄 Import waiver info from WaiverMaster</h2>
-    <p class="note" style="margin-top:-2px">Upload a WaiverMaster CSV export to backfill waiver-signed dates and adult names onto <b>existing</b> loyalty cards, matched by phone number. Never creates a new card, never overwrites a date or adult list that's already filled in — only fills in the blanks. If the same family appears more than once in the file, the most recent signing date wins.</p>
+    <p class="note" style="margin-top:-2px">Upload a WaiverMaster CSV export to reconcile waiver-signed dates and adult names onto <b>existing</b> loyalty cards, matched by phone number AND the child's name. If a child appears in more than one submission, every guardian from every submission is combined onto their card — nobody's name gets dropped. Never creates a new card. Flags (without touching) any card whose phone number appears in the file but whose child doesn't match any submission for that number — a sign the card may be linked to the wrong family. Also shows every card in the whole system with no waiver on file at all, so nothing gets missed.</p>
     <input type="file" id="wiFile" accept=".csv">
     <button id="wiPreview">Preview import</button>
     <div class="out" id="wiOut"></div>
@@ -246,37 +246,65 @@ function wiRender(r){
   var wrap=$("#wiResult");
   var t=r.totals;
   var html='<div style="background:#fdf1ec;border:1px solid #f0dcd2;border-radius:12px;padding:14px 16px;margin-bottom:12px">'
-    +'<div style="display:flex;gap:20px;flex-wrap:wrap;font-size:.85rem">'
-      +'<div><b>'+t.familiesInFile+'</b> families in file</div>'
-      +'<div><b style="color:#4d7848">'+t.familiesMatched+'</b> matched to an existing card</div>'
-      +'<div><b>'+t.familiesNoCard+'</b> no matching card on file (skipped)</div>'
-      +'<div><b style="color:#4d7848">'+t.cardsWithDateFilled+'</b> dates to fill</div>'
-      +'<div><b style="color:#4d7848">'+t.cardsWithAdultsFilled+'</b> adult lists to fill</div>'
-      +(t.flaggedForReview?'<div><b style="color:#b5622f">'+t.flaggedForReview+'</b> flagged \u2014 check these</div>':'')
+    +'<div style="display:flex;gap:18px;flex-wrap:wrap;font-size:.85rem">'
+      +'<div><b>'+t.rowsInFile+'</b> submissions in file</div>'
+      +'<div><b style="color:#4d7848">'+t.cardsUpdated+'</b> cards to update</div>'
+      +'<div><b>'+t.cardsAlreadyCurrent+'</b> already up to date</div>'
+      +(t.possibleMislinks?'<div><b style="color:#b5382f">\u26a0\ufe0f '+t.possibleMislinks+'</b> possible mislinks \u2014 review these</div>':'')
+      +(t.cardsWithNoWaiverAtAll?'<div><b style="color:#b5622f">'+t.cardsWithNoWaiverAtAll+'</b> cards with NO waiver on file at all</div>':'')
+      +'<div style="color:var(--taupe)">'+t.rowsWithNoMatchingCard+' submissions have no matching card (skipped, no card created)</div>'
     +'</div></div>';
-  var toApply=r.results.filter(function(x){ return x.willFillDate>0 || x.willFillAdults>0; });
-  if(!toApply.length){ html+='<div class="note">Nothing to import \u2014 either no families matched, or everything matched already has waiver info on file.</div>'; wrap.innerHTML=html; return; }
-  html+='<div style="display:flex;flex-direction:column;gap:6px;max-height:340px;overflow-y:auto;margin-bottom:12px">';
-  toApply.forEach(function(x){
-    var flag=x.confidence==="check"?'<span style="color:#b5622f;font-weight:800">\u26a0\ufe0f verify \u2014 names don\u2019t obviously match</span>':'';
-    html+='<div style="background:#fff;border:1px solid #e7ddd0;border-radius:9px;padding:8px 10px;font-size:.78rem">'
-      +'<b>\u2022\u2022\u2022'+esc(x.phone4)+'</b> \u2014 signed '+esc(x.date)+' by '+esc((x.adults||[]).join(", "))+' '+flag
-      +'<div style="margin-top:3px;color:var(--taupe)">Cards: '+x.cards.map(function(c){ return esc(c.childName)+(c.willSetDate?' (date+adults)':''); }).join(", ")+'</div>'
+
+  var updates=(r.matched||[]).filter(function(x){ return x.changed; });
+  if(updates.length){
+    html+='<div style="font-weight:800;font-size:.82rem;margin-bottom:6px">\u2705 Will update ('+updates.length+')</div>';
+    html+='<div style="display:flex;flex-direction:column;gap:6px;max-height:280px;overflow-y:auto;margin-bottom:14px">';
+    updates.forEach(function(x){
+      html+='<div style="background:#fff;border:1px solid #e7ddd0;border-radius:9px;padding:8px 10px;font-size:.78rem">'
+        +'<b>'+esc(x.childName)+'</b> ('+esc(x.code)+') \u2014 '+x.submissionCount+' submission'+(x.submissionCount===1?"":"s")+' in file'
+        +'<div style="margin-top:3px">Waiver date: '+(x.before.waiverSigned?esc(x.before.waiverSigned):'<i>none</i>')+' \u2192 <b>'+esc(x.after.waiverSigned)+'</b></div>'
+        +'<div>Adults: '+(x.before.adultCount||0)+' on file \u2192 <b>'+x.after.adultCount+'</b> (' +esc((x.after.adultNames||[]).join(", "))+')</div>'
+      +'</div>';
+    });
+    html+='</div>';
+  }
+
+  if((r.mislinked||[]).length){
+    html+='<div style="font-weight:800;font-size:.82rem;margin-bottom:6px;color:#b5382f">\u26a0\ufe0f Possible mislinks \u2014 NOT touched, review by hand ('+r.mislinked.length+')</div>';
+    html+='<div style="display:flex;flex-direction:column;gap:6px;max-height:220px;overflow-y:auto;margin-bottom:14px">';
+    r.mislinked.forEach(function(x){
+      html+='<div style="background:#fdf0ee;border:1px solid #f0c9c2;border-radius:9px;padding:8px 10px;font-size:.78rem">'
+        +'<b>'+esc(x.childName)+'</b> ('+esc(x.code)+') has phone \u2022\u2022\u2022'+esc(x.phone4)+', but the file\'s submissions for that number are for: <b>'+esc((x.fileHasChildren||[]).join(", "))+'</b> \u2014 not this child. Could be a mislinked card, or a different family sharing this phone\'s last 4 digits by coincidence.'
+      +'</div>';
+    });
+    html+='</div>';
+  }
+
+  if((r.noWaiverOnFile||[]).length){
+    html+='<div style="font-weight:800;font-size:.82rem;margin-bottom:6px;color:#b5622f">\uD83D\uDCCB Cards with NO waiver on file anywhere in the system ('+r.noWaiverOnFile.length+')</div>';
+    html+='<div style="max-height:180px;overflow-y:auto;margin-bottom:14px;font-size:.78rem;color:var(--taupe);background:#fffaf0;border:1px solid #f0e0c0;border-radius:9px;padding:8px 10px">'
+      +r.noWaiverOnFile.map(function(x){ return esc(x.childName)+' ('+esc(x.code)+')'; }).join(' \u00b7 ')
     +'</div>';
-  });
-  html+='</div><button type="button" id="wiRun">Apply '+toApply.length+' update'+(toApply.length===1?"":"s")+' now</button>';
+  }
+
+  if(!updates.length && !(r.mislinked||[]).length){
+    html+='<div class="note">Nothing to update \u2014 either no submissions matched an existing card, or everything matched is already current.</div>';
+  } else if(updates.length){
+    html+='<button type="button" id="wiRun">Apply '+updates.length+' update'+(updates.length===1?"":"s")+' now</button>';
+  }
   wrap.innerHTML=html;
-  $("#wiRun").onclick=async function(){
-    if(!confirm("Apply these "+toApply.length+" waiver updates to existing loyalty cards now?\n\nThis only fills in blanks \u2014 nothing already on file gets overwritten."))return;
+  if($("#wiRun")) $("#wiRun").onclick=async function(){
+    if(!confirm("Apply these "+updates.length+" waiver updates to existing loyalty cards now?\n\nThis MERGES the file's info with what's already on the card \u2014 every guardian from every matching submission gets combined onto the card, and the most recent signing date is used. Nothing is deleted, but dates/adult lists may change to match the file. Cards flagged as possible mislinks are never touched."))return;
     $("#wiRun").disabled=true; $("#wiRun").textContent="Applying\u2026";
     try{
       var r2=await (await fetch("/api/waiver-import",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key:KEY,action:"run",rows:wiRows})})).json();
-      if(r2.ok){ wrap.innerHTML='<div class="out ok" style="display:block">\u2705 Done \u2014 filled '+r2.totals.cardsWithDateFilled+' date(s) and '+r2.totals.cardsWithAdultsFilled+' adult list(s).</div>'; renderLoyaltyList(); }
-      else { alert(r2.error||"Couldn't apply."); $("#wiRun").disabled=false; $("#wiRun").textContent="Apply "+toApply.length+" updates now"; }
+      if(r2.ok){ wrap.innerHTML='<div class="out ok" style="display:block">\u2705 Done \u2014 updated '+r2.totals.cardsUpdated+' card(s).</div>'; renderLoyaltyList(); }
+      else { alert(r2.error||"Couldn't apply."); $("#wiRun").disabled=false; $("#wiRun").textContent="Apply "+updates.length+" updates now"; }
     }catch(e){ alert("Network error."); $("#wiRun").disabled=false; }
   };
 }
 
+$("#bfPreview")
 $("#bfPreview").onclick=async function(){
   var out=$("#bfOut"); out.style.display="block"; out.className="out";
   out.textContent="Scanning past bookings\u2026 this can take a little while.";

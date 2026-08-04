@@ -1,20 +1,48 @@
 // POST /api/waiver-import   (admin key or staff PIN)
-// Backfills waiver-signed date + adult names onto EXISTING loyalty cards from a
-// WaiverMaster CSV export, matched by phone number. Never creates a new card.
-// Never overwrites a field that already has something in it — only fills blanks.
-// The browser parses the CSV and sends structured rows here; this function does
-// the matching, the "most recent wins" dedup, and the actual (or previewed) write.
+//
+// Imports a WaiverMaster CSV export and reconciles it against EXISTING loyalty
+// cards. This is a MERGE, not a blind overwrite and not a fill-blanks-only tool:
+//   - Matches each CSV submission to a specific card by phone number AND the
+//     child's name (not phone number alone — two unrelated families can share
+//     the same last-4 digits, confirmed in real data, so phone alone isn't safe).
+//   - If the same child appears in more than one submission (updated waiver,
+//     or a different guardian signed at a different visit), every adult from
+//     every matching submission is combined onto that one card — nobody's name
+//     gets dropped just because a later submission didn't repeat it.
+//   - The most recent submission date becomes the card's waiver-signed date.
+//   - Never creates a new card.
+//   - Flags (does NOT silently touch) any card whose phone number shows up in
+//     the file but whose child's name never appears in any of that number's
+//     submissions — that's the signature of a card linked to the wrong family,
+//     or two different families coincidentally sharing a phone's last 4 digits.
+//     Staff review and fix these by hand via "Manage an existing card."
+//   - Separately reports every card in the WHOLE loyalty system with no waiver
+//     date on file at all, whether or not it appears in this file, so nothing
+//     missing gets missed.
 //
 //   { key, action:"preview", rows:[{phone, date, adults:[names], participants:[names]}] }
 //   { key, action:"run",     rows:[...same shape...] }
-//
-// rows.date should be an ISO date string (YYYY-MM-DD) — dedup picks the latest
-// per phone number before doing anything else.
 import { getStore } from "@netlify/blobs";
 import { listAllKeys } from "./lib-blobs.js";
 
 function last4(phone) { return (phone || "").toString().replace(/\D/g, "").slice(-4); }
 function normName(s) { return (s || "").toString().toLowerCase().replace(/[^a-z]/g, ""); }
+function firstNameOf(s) { return normName((s || "").toString().trim().split(/\s+/)[0] || ""); }
+
+// Does this CSV participant name plausibly refer to this card's child? Many
+// WaiverMaster entries only have a first name (no last name), so match on
+// first name, and treat a full last-name match as extra confirmation when
+// both sides actually have one.
+function childMatches(participant, cardChildName) {
+  const pFirst = firstNameOf(participant);
+  const cFirst = firstNameOf(cardChildName);
+  if (!pFirst || !cFirst) return false;
+  if (pFirst !== cFirst) return false;
+  const pFull = normName(participant), cFull = normName(cardChildName);
+  const pRest = pFull.slice(pFirst.length), cRest = cFull.slice(cFirst.length);
+  if (pRest && cRest && pRest !== cRest && !pRest.includes(cRest) && !cRest.includes(pRest)) return false;
+  return true;
+}
 
 export default async (req) => {
   if (req.method !== "POST") return json({ error: "Use POST." }, 405);
@@ -24,92 +52,112 @@ export default async (req) => {
   if (provided !== adminKey && provided !== staffPin) return json({ error: "Wrong key." }, 401);
 
   const dryRun = (b.action || "preview") !== "run";
-  const rows = Array.isArray(b.rows) ? b.rows : [];
-  if (!rows.length) return json({ error: "No rows to import." }, 400);
-
-  // Dedup: keep only the most recent row per phone4.
-  const byPhone4 = {};
-  for (const r of rows) {
-    const p4 = last4(r.phone);
-    if (p4.length !== 4) continue;
-    const existing = byPhone4[p4];
-    if (!existing || (r.date || "") > (existing.date || "")) byPhone4[p4] = r;
-  }
+  const rows = (Array.isArray(b.rows) ? b.rows : [])
+    .map(r => ({ ...r, phone4: last4(r.phone) }))
+    .filter(r => r.phone4.length === 4);
+  if (!rows.length) return json({ error: "No usable rows found in that file." }, 400);
 
   const loyalty = getStore("loyalty");
   const allKeys = await listAllKeys(loyalty, { prefix: "card:" });
-  // Index existing cards by phone4 once, so we're not re-scanning per row.
+  const allCards = [];
   const cardsByPhone4 = {};
   for (const k of allKeys) {
     let rec = null; try { rec = await loyalty.get(k, { type: "json" }); } catch {}
-    if (!rec || !rec.phone4) continue;
-    (cardsByPhone4[rec.phone4] = cardsByPhone4[rec.phone4] || []).push(rec);
+    if (!rec) continue;
+    allCards.push(rec);
+    if (rec.phone4) (cardsByPhone4[rec.phone4] = cardsByPhone4[rec.phone4] || []).push(rec);
   }
 
-  const results = [];   // one entry per phone4 that matched an existing family
-  let noMatch = 0;
+  const rowsByPhone4 = {};
+  for (const r of rows) (rowsByPhone4[r.phone4] = rowsByPhone4[r.phone4] || []).push(r);
 
-  for (const p4 of Object.keys(byPhone4)) {
-    const row = byPhone4[p4];
-    const cards = cardsByPhone4[p4];
-    if (!cards || !cards.length) { noMatch++; continue; }
+  const matched = [];          // cards successfully reconciled
+  const mislinked = [];        // phone matches, but no child in the file matches this card
+  const unmatchedRows = [];    // csv rows whose phone4 has no card at all
+  const usedRowIdx = new Set();
 
-    // Soft confidence check: does any name in this row resemble any name already
-    // associated with this family (a card's child name, or an already-on-file
-    // waiver adult)? If NOTHING overlaps at all, this phone4 might coincidentally
-    // match a different, unrelated family — flag it rather than silently apply.
-    const rowNames = [...(row.adults || []), ...(row.participants || [])]
-      .filter(Boolean).map(normName).filter(Boolean);
-    const cardNames = [];
-    for (const c of cards) {
-      if (c.childName) cardNames.push(normName(c.childName));
-      for (const a of (c.waiverAdults || [])) if (a && a.name) cardNames.push(normName(a.name));
-    }
-    const overlap = rowNames.some(rn => cardNames.some(cn => cn && rn && (cn.includes(rn) || rn.includes(cn))));
-    const confidence = (cardNames.length === 0) ? "new" : (overlap ? "match" : "check");
-
-    const entry = { phone4: p4, date: row.date, adults: row.adults || [], participants: row.participants || [],
-      confidence, cards: [], willFillDate: 0, willFillAdults: 0 };
+  for (const p4 of Object.keys(rowsByPhone4)) {
+    const csvRows = rowsByPhone4[p4];
+    const cards = cardsByPhone4[p4] || [];
+    if (!cards.length) { unmatchedRows.push(...csvRows); continue; }
 
     for (const card of cards) {
-      const cardInfo = { code: card.code, childName: card.childName, hadDate: !!card.waiverSigned, hadAdults: (card.waiverAdults || []).length > 0 };
-      entry.cards.push(cardInfo);
+      const matchingRows = csvRows.filter(r => (r.participants || []).some(p => childMatches(p, card.childName)));
+      if (!matchingRows.length) continue;   // this card gets no update from this phone4's rows
+      matchingRows.forEach(r => usedRowIdx.add(r));
 
-      let touched = false;
-      if (!card.waiverSigned && row.date) {
-        cardInfo.willSetDate = row.date;
-        entry.willFillDate++;
-        if (!dryRun) { card.waiverSigned = row.date; touched = true; }
+      // Merge: union of adults already on the card + every adult from every
+      // matching submission, deduped by normalized name (keeps the FULL name
+      // with the most characters when the same person appears with varying
+      // detail, e.g. "Samantha" vs "Samantha Jensen").
+      const byNorm = new Map();
+      for (const a of (card.waiverAdults || [])) {
+        if (a && a.name) byNorm.set(normName(a.name), { name: a.name, signedDate: a.signedDate || null });
       }
-
-      if ((!card.waiverAdults || card.waiverAdults.length === 0) && row.adults && row.adults.length) {
-        cardInfo.willSetAdults = row.adults;
-        entry.willFillAdults++;
-        if (!dryRun) {
-          card.waiverAdults = row.adults.map(n => ({ name: n, signedDate: row.date || null }));
-          touched = true;
+      let latestDate = card.waiverSigned || null;
+      for (const r of matchingRows) {
+        for (const name of (r.adults || [])) {
+          const key = normName(name);
+          if (!key) continue;
+          const existing = byNorm.get(key);
+          if (!existing || name.length > existing.name.length) {
+            byNorm.set(key, { name, signedDate: r.date || existing?.signedDate || null });
+          } else if (r.date && (!existing.signedDate || r.date > existing.signedDate)) {
+            existing.signedDate = r.date;
+          }
         }
+        if (r.date && (!latestDate || r.date > latestDate)) latestDate = r.date;
       }
+      const mergedAdults = [...byNorm.values()];
 
-      if (touched) {
+      const before = { waiverSigned: card.waiverSigned || null, adultCount: (card.waiverAdults || []).length };
+      const changed = (latestDate !== before.waiverSigned) || (mergedAdults.length !== before.adultCount);
+
+      matched.push({
+        code: card.code, childName: card.childName, phone4: p4,
+        submissionCount: matchingRows.length, submissionDates: matchingRows.map(r => r.date).sort(),
+        before, after: { waiverSigned: latestDate, adultCount: mergedAdults.length, adultNames: mergedAdults.map(a => a.name) },
+        changed,
+      });
+
+      if (!dryRun && changed) {
+        card.waiverSigned = latestDate;
+        card.waiverAdults = mergedAdults;
         card.history = Array.isArray(card.history) ? card.history : [];
-        card.history.push({ at: new Date().toISOString(), action: "waiver-imported", from: "WaiverMaster CSV" });
+        card.history.push({ at: new Date().toISOString(), action: "waiver-imported", from: "WaiverMaster CSV", submissions: matchingRows.length });
         try { await loyalty.setJSON("card:" + card.code, card); } catch {}
       }
     }
-    results.push(entry);
+
+    // Any card at this phone4 that got zero matching rows, while the file DOES
+    // have submissions for this phone number — that's the mislink signal.
+    for (const card of cards) {
+      if (!matched.some(m => m.code === card.code)) {
+        mislinked.push({
+          code: card.code, childName: card.childName, phone4: p4,
+          fileHasChildren: [...new Set(csvRows.flatMap(r => r.participants || []))],
+        });
+      }
+    }
+    unmatchedRows.push(...csvRows.filter(r => !usedRowIdx.has(r)));
   }
 
+  // Whole-system check, independent of this file: any card with no waiver date at all.
+  const noWaiverOnFile = allCards
+    .filter(c => !c.waiverSigned)
+    .map(c => ({ code: c.code, childName: c.childName, phone4: c.phone4 || null }));
+
   const totals = {
-    familiesInFile: Object.keys(byPhone4).length,
-    familiesMatched: results.length,
-    familiesNoCard: noMatch,
-    cardsWithDateFilled: results.reduce((s, r) => s + r.willFillDate, 0),
-    cardsWithAdultsFilled: results.reduce((s, r) => s + r.willFillAdults, 0),
-    flaggedForReview: results.filter(r => r.confidence === "check").length,
+    rowsInFile: rows.length,
+    cardsUpdated: matched.filter(m => m.changed).length,
+    cardsAlreadyCurrent: matched.filter(m => !m.changed).length,
+    possibleMislinks: mislinked.length,
+    rowsWithNoMatchingCard: unmatchedRows.length,
+    cardsWithNoWaiverAtAll: noWaiverOnFile.length,
   };
 
-  return json({ ok: true, dryRun, totals, results });
+  return json({ ok: true, dryRun, totals, matched, mislinked, noWaiverOnFile,
+    unmatchedRows: unmatchedRows.slice(0, 50) });
 };
 
 function json(obj, status = 200) {
