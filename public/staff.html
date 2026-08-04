@@ -17,8 +17,8 @@
   .card{background:#fff;border:1px solid rgba(0,0,0,.05);border-radius:18px;padding:18px;box-shadow:0 3px 16px rgba(0,0,0,.05);margin-bottom:16px}
   h2{font-family:'Cormorant Garamond',serif;font-weight:500;font-size:1.3rem;margin-bottom:10px}
   label{display:block;font-size:.64rem;font-weight:800;color:var(--taupe);text-transform:uppercase;letter-spacing:.08em;margin:11px 0 5px}
-  input,select,textarea{width:100%;border:1.5px solid #e7ddd0;border-radius:11px;padding:10px 12px;font-family:'Nunito';font-weight:600;font-size:.94rem;background:#fcfaf6;outline:none}
-  input:focus,select:focus,textarea:focus{border-color:var(--rose)}
+  input,select,textarea{width:100%;border:1.5px solid #d9c9b0;border-radius:11px;padding:10px 12px;font-family:'Nunito';font-weight:600;font-size:.94rem;background:#f3ebe0;outline:none;color:var(--charcoal)}
+  input:focus,select:focus,textarea:focus{border-color:var(--rose);background:#fff;box-shadow:0 0 0 3px rgba(201,125,118,.18)}
   button{border:none;border-radius:30px;padding:12px 18px;font-family:'Nunito';font-weight:800;font-size:.74rem;letter-spacing:.06em;text-transform:uppercase;color:#fff;background:var(--rose);cursor:pointer;margin-top:10px}
   button:hover{background:var(--rose-deep)}button.alt{background:var(--sage)}button.alt:hover{background:var(--sage-dark)}
   button.ghost{background:#eee;color:var(--charcoal)}
@@ -31,7 +31,7 @@
   .sess .h{font-weight:800;color:var(--rose-deep)}
   .sess table{width:100%;border-collapse:collapse;margin-top:6px;font-size:.85rem}
   .sess td{padding:5px 0;border-top:1px solid #f0e9df}
-  .pty{border:1px solid #ddd2c5;border-radius:12px;padding:12px;margin-top:10px;background:#fcfaf6}
+  .pty{border:1px solid #ddd2c5;border-radius:12px;padding:12px;margin-top:10px;background:#f3ebe0}
   .pty .h{font-weight:800}
   .badge{font-size:.68rem;font-weight:800;padding:3px 9px;border-radius:20px;background:#f6ecce;color:#b9831a}
   .badge.ok{background:#e3f0e6;color:#3f7d5c}
@@ -134,7 +134,7 @@
     <label>Image</label>
     <input type="file" id="prmImage" accept="image/*">
     <label>Caption (optional)</label>
-    <textarea id="prmCaption" rows="2" style="width:100%;border:1.5px solid #e7ddd0;border-radius:11px;padding:10px 12px;font-family:'Nunito';font-weight:600;background:#fcfaf6" placeholder="e.g. 25% off any admission every Monday &amp; Tuesday!"></textarea>
+    <textarea id="prmCaption" rows="2" style="width:100%;border:1.5px solid #e7ddd0;border-radius:11px;padding:10px 12px;font-family:'Nunito';font-weight:600;background:#f3ebe0" placeholder="e.g. 25% off any admission every Monday &amp; Tuesday!"></textarea>
     <button id="prmPost">Post it</button>
     <div class="out" id="prmOut"></div>
     <div id="prmList" style="margin-top:14px;display:flex;flex-direction:column;gap:10px"></div>
@@ -146,9 +146,9 @@
     <label>Title</label>
     <input type="text" id="evTitle" placeholder="e.g. Toddler Music Class">
     <label>Description</label>
-    <textarea id="evDesc" rows="3" style="width:100%;border:1.5px solid #e7ddd0;border-radius:11px;padding:10px 12px;font-family:'Nunito';font-weight:600;background:#fcfaf6" placeholder="What the event is about, what to bring, age range…"></textarea>
+    <textarea id="evDesc" rows="3" style="width:100%;border:1.5px solid #e7ddd0;border-radius:11px;padding:10px 12px;font-family:'Nunito';font-weight:600;background:#f3ebe0" placeholder="What the event is about, what to bring, age range…"></textarea>
     <label style="margin-top:10px">Requirements / terms <span style="font-weight:400;color:var(--slate);text-transform:none">(parents must check "I've read & understood" before paying)</span></label>
-    <textarea id="evReq" rows="4" style="width:100%;border:1.5px solid #e7ddd0;border-radius:11px;padding:10px 12px;font-family:'Nunito';font-weight:600;background:#fcfaf6" placeholder="e.g. Ages 3–6, fully potty-trained (self-toilets & washes hands). Same adult with photo ID must pick up. Doors lock at start — no late drop-ins. Non-refundable (store credit only). Parents must complete the event agreement before drop-off."></textarea>
+    <textarea id="evReq" rows="4" style="width:100%;border:1.5px solid #e7ddd0;border-radius:11px;padding:10px 12px;font-family:'Nunito';font-weight:600;background:#f3ebe0" placeholder="e.g. Ages 3–6, fully potty-trained (self-toilets & washes hands). Same adult with photo ID must pick up. Doors lock at start — no late drop-ins. Non-refundable (store credit only). Parents must complete the event agreement before drop-off."></textarea>
     <div class="row">
       <div><label>Event waiver link (WaiverMaster URL)</label><input type="text" id="evWaiver" placeholder="https://…"></div>
       <div><label>Regular waiver link (WaiverMaster URL)</label><input type="text" id="evWaiver2" placeholder="https://…"></div>
@@ -576,7 +576,7 @@
       <label>Headline (optional)</label>
       <input type="text" id="snHead" placeholder="e.g. Closed Monday 6/8">
       <label>Message</label>
-      <textarea id="snBody" rows="3" style="width:100%;border:1.5px solid #e7ddd0;border-radius:11px;padding:10px 12px;font-family:'Nunito';font-weight:600;background:#fcfaf6" placeholder="e.g. We'll be closed Monday 6/8 — back Tuesday at 9 AM!"></textarea>
+      <textarea id="snBody" rows="3" style="width:100%;border:1.5px solid #e7ddd0;border-radius:11px;padding:10px 12px;font-family:'Nunito';font-weight:600;background:#f3ebe0" placeholder="e.g. We'll be closed Monday 6/8 — back Tuesday at 9 AM!"></textarea>
       <label>Show until (optional) — banner auto-hides the day after</label>
       <input type="date" id="snUntil">
       <button id="snSave">Post banner</button>
@@ -1251,29 +1251,50 @@ var pnData=[];
 function pnRender(){
   var box=$("#pnList"); if(!box) return;
   box.innerHTML=pnData.map(function(p,i){
-    return '<div style="border:1.5px solid #e7ddd0;border-radius:12px;padding:12px;margin-bottom:10px;background:#fcfaf6">'
+    var logoPreviewSrc = p.logoUploaded ? ("/api/partner-logo?id="+encodeURIComponent(p.id||"")) : (p.logo||"");
+    return '<div style="border:1.5px solid #e7ddd0;border-radius:12px;padding:12px;margin-bottom:10px;background:#f3ebe0">'
       +'<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px">'
         +'<label style="display:flex;align-items:center;gap:6px;margin:0;text-transform:none;letter-spacing:0;font-weight:700"><input type="checkbox" class="pnActive" data-i="'+i+'" '+(p.active!==false?"checked":"")+' style="width:auto;margin:0"> Show on site</label>'
         +'<button type="button" class="pnDel" data-i="'+i+'" style="margin:0;padding:4px 10px;font-size:.72rem;border-radius:7px;background:#f7e2e0;color:#b5382f;width:auto">Remove</button>'
       +'</div>'
       +'<label>Business name</label><input type="text" class="pnName" data-i="'+i+'" value="'+esc(p.name||"")+'">'
-      +'<label>Logo URL <span style="font-weight:400;color:var(--slate);text-transform:none">(e.g. /assets/tost-pizza-logo.avif)</span></label><input type="text" class="pnLogo" data-i="'+i+'" value="'+esc(p.logo||"")+'">'
+      +'<label>Logo</label>'
+      +'<div style="display:flex;gap:10px;align-items:center;margin-bottom:6px">'
+        +(logoPreviewSrc?'<img src="'+esc(logoPreviewSrc)+'" style="width:52px;height:52px;object-fit:contain;border-radius:8px;border:1px solid #e0d5c6;background:#fff;flex:0 0 auto" onerror="this.style.display=\'none\'">':'')
+        +'<input type="file" accept="image/*" class="pnLogoFile" data-i="'+i+'" style="flex:1">'
+      +'</div>'
+      +'<input type="text" class="pnLogo" data-i="'+i+'" value="'+esc(p.logo||"")+'" placeholder="...or paste an image URL/path instead, e.g. /assets/tost-pizza-logo.avif">'
+      +'<p class="note" style="margin-top:4px">Upload a file above, or type a URL/path here instead — an uploaded file always takes priority if both are set.</p>'
       +'<label>Website / Yelp URL</label><input type="text" class="pnUrl" data-i="'+i+'" value="'+esc(p.url||"")+'">'
       +'<label>Short blurb <span style="font-weight:400;color:var(--slate);text-transform:none">(who they are)</span></label><input type="text" class="pnBlurb" data-i="'+i+'" value="'+esc(p.blurb||"")+'">'
       +'<label>Party perk <span style="font-weight:400;color:var(--slate);text-transform:none">(the deal for party bookings)</span></label><textarea class="pnPerk" data-i="'+i+'" rows="2" style="width:100%;border:1.5px solid #e7ddd0;border-radius:11px;padding:8px 11px;font-family:\'Nunito\';font-weight:600;background:#fff">'+esc(p.perk||"")+'</textarea>'
     +'</div>';
   }).join("");
-  box.querySelectorAll(".pnDel").forEach(function(b){ b.onclick=function(){ pnCollect(); pnData.splice(+b.getAttribute("data-i"),1); pnRender(); }; });
+  box.querySelectorAll(".pnDel").forEach(function(b){ b.onclick=async function(){ await pnCollect(); pnData.splice(+b.getAttribute("data-i"),1); pnRender(); }; });
 }
-function pnCollect(){
+async function pnCollect(){
   function val(cls,i){ var el=$("#pnList").querySelector(cls+'[data-i="'+i+'"]'); return el?el.value:""; }
   function chk(cls,i){ var el=$("#pnList").querySelector(cls+'[data-i="'+i+'"]'); return el?el.checked:true; }
-  pnData=pnData.map(function(_,i){ return { name:val(".pnName",i), logo:val(".pnLogo",i), url:val(".pnUrl",i), blurb:val(".pnBlurb",i), perk:val(".pnPerk",i), active:chk(".pnActive",i) }; });
+  var next=[];
+  for(var i=0;i<pnData.length;i++){
+    var p=pnData[i];
+    var entry={ id:p.id, name:val(".pnName",i), logo:val(".pnLogo",i), url:val(".pnUrl",i), blurb:val(".pnBlurb",i), perk:val(".pnPerk",i), active:chk(".pnActive",i),
+      logoUploaded:p.logoUploaded||false, logoMime:p.logoMime||null };
+    var fileInput=$("#pnList").querySelector('.pnLogoFile[data-i="'+i+'"]');
+    var file=fileInput&&fileInput.files&&fileInput.files[0];
+    if(file){
+      try{ entry.logoImage=await shrinkImage(file); entry.logoUploaded=true; }catch(e){}
+    } else if(p.logoUploaded){
+      entry.keepUploadedLogo=true;
+    }
+    next.push(entry);
+  }
+  pnData=next;
 }
 async function pnLoad(){ try{ var r=await (await fetch("/api/partners")).json(); pnData=(r&&r.partners)||[]; pnRender(); }catch(e){ if($("#pnList"))$("#pnList").innerHTML='<div class="note">Couldn\'t load partners.</div>'; } }
-if($("#pnAdd")) $("#pnAdd").onclick=function(){ pnCollect(); pnData.push({name:"",logo:"",url:"",blurb:"",perk:"",active:true}); pnRender(); };
+if($("#pnAdd")) $("#pnAdd").onclick=async function(){ await pnCollect(); pnData.push({name:"",logo:"",url:"",blurb:"",perk:"",active:true}); pnRender(); };
 if($("#pnSave")) $("#pnSave").onclick=async function(){
-  pnCollect();
+  await pnCollect();
   var out=$("#pnOut"); out.style.display="block";
   var key=PIN;
   if(!key){ out.className="out err"; out.textContent="Enter your admin key (top of page)."; return; }
@@ -1370,7 +1391,7 @@ if($("#ccGen")) $("#ccGen").onclick=async function(){
     out.className="out ok"; out.textContent=r.message||("Generated "+r.codes.length+" codes.");
     var list=r.codes.join("\n");
     var html='<div class="note" style="margin-bottom:6px"><b>'+esc(label)+'</b> · '+r.codes.length+' codes · valid through '+esc(r.expiry)+'</div>'
-      +'<textarea readonly rows="'+Math.min(12,r.codes.length+1)+'" style="width:100%;font-family:monospace;font-size:.95rem;border:1.5px solid #e7ddd0;border-radius:11px;padding:10px 12px;background:#fcfaf6">'+esc(list)+'</textarea>'
+      +'<textarea readonly rows="'+Math.min(12,r.codes.length+1)+'" style="width:100%;font-family:monospace;font-size:.95rem;border:1.5px solid #e7ddd0;border-radius:11px;padding:10px 12px;background:#f3ebe0">'+esc(list)+'</textarea>'
       +'<button type="button" id="ccCopy" style="margin-top:6px">📋 Copy all codes</button>';
     $("#ccResult").innerHTML=html;
     var cp=document.getElementById("ccCopy");

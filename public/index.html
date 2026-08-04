@@ -534,10 +534,9 @@ nav, .wbar, .ticker, footer{text-align:left}
 </div>
 <div class="lmap reveal"><iframe allowfullscreen="" loading="lazy" src="https://www.google.com/maps?q=58080+29+Palms+Hwy,+Yucca+Valley,+CA+92284&amp;output=embed"></iframe></div>
 </section>
-<div style="text-align:center;padding:26px 20px 6px;background:var(--cream)">
+<div style="text-align:center;padding:26px 20px 6px;background:var(--cream)" id="partnersWrap">
 <div style="font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;color:var(--taupe);font-weight:700;margin-bottom:10px">Our Partners</div>
-<a href="https://www.tostpizza.com" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:9px;text-decoration:none;color:var(--slate);font-weight:700;font-size:.9rem"><img src="/assets/tost-pizza-logo.avif" alt="Tost Pizza" style="height:34px;width:auto;display:block"> Tost Pizza</a>
-<a href="https://www.yelp.com/biz/fine-art-cookies-yucca-valley-3" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:9px;text-decoration:none;color:var(--slate);font-weight:700;font-size:.9rem;margin-left:22px"><img src="/assets/fine-art-cookies-logo.webp" alt="Fine Art Cookies" style="height:34px;width:auto;display:block"></a>
+<div id="partnersList" style="display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:22px"></div>
 </div>
 <footer>
 <div style="display:flex;align-items:center;gap:.6rem">
@@ -720,6 +719,24 @@ if(s)s.style.display="block";var nv=document.getElementById("navNews");if(nv)nv.
     }
     if(badge&&(((wd3&&!wd3.closed))||seasOpenWed)) badge.style.display="none";
   }).catch(function(){});
+})();
+</script>
+<script>
+(function(){
+  var esc3=function(s){ return (s||"").replace(/</g,"&lt;").replace(/>/g,"&gt;"); };
+  fetch("/api/partners").then(function(r){return r.json();}).then(function(d){
+    var partners=(d&&d.partners||[]).filter(function(p){ return p.active!==false && p.name; });
+    var wrap=document.getElementById("partnersWrap"), list=document.getElementById("partnersList");
+    if(!partners.length){ if(wrap) wrap.style.display="none"; return; }
+    list.innerHTML=partners.map(function(p){
+      var logoSrc = p.logoUploaded ? ("/api/partner-logo?id="+encodeURIComponent(p.id||"")) : (p.logo||"");
+      var img = logoSrc ? '<img src="'+esc3(logoSrc)+'" alt="'+esc3(p.name)+'" style="height:34px;width:auto;display:block" onerror="this.style.display=\'none\'">' : "";
+      var inner = img + (img?" ":"") + esc3(p.name);
+      return p.url
+        ? '<a href="'+esc3(p.url)+'" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:9px;text-decoration:none;color:var(--slate);font-weight:700;font-size:.9rem">'+inner+'</a>'
+        : '<span style="display:inline-flex;align-items:center;gap:9px;color:var(--slate);font-weight:700;font-size:.9rem">'+inner+'</span>';
+    }).join("");
+  }).catch(function(){ var wrap=document.getElementById("partnersWrap"); if(wrap) wrap.style.display="none"; });
 })();
 </script>
 <script>

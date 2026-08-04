@@ -16,8 +16,8 @@
   .card{background:#fff;border:1px solid rgba(0,0,0,.05);border-radius:18px;padding:20px 22px;box-shadow:0 4px 24px rgba(0,0,0,.07);margin-bottom:18px}
   .card h2{font-family:'Cormorant Garamond',serif;font-weight:500;font-size:1.35rem;margin-bottom:12px}
   label{display:block;font-size:.66rem;font-weight:800;color:var(--taupe);text-transform:uppercase;letter-spacing:.08em;margin:10px 0 5px}
-  input,textarea,select{width:100%;border:1.5px solid #e7ddd0;border-radius:11px;padding:11px 13px;font-family:'Nunito';font-weight:600;font-size:.95rem;background:#fcfaf6;outline:none}
-  input:focus,textarea:focus{border-color:var(--rose)}
+  input,textarea,select{width:100%;border:1.5px solid #d9c9b0;border-radius:11px;padding:11px 13px;font-family:'Nunito';font-weight:600;font-size:.95rem;background:#f3ebe0;outline:none;color:var(--charcoal)}
+  input:focus,textarea:focus,select:focus{border-color:var(--rose);background:#fff;box-shadow:0 0 0 3px rgba(201,125,118,.18)}
   button{border:none;border-radius:30px;padding:12px 20px;font-family:'Nunito';font-weight:800;font-size:.76rem;letter-spacing:.06em;text-transform:uppercase;color:#fff;background:var(--rose);cursor:pointer;margin-top:12px}
   button:hover{background:var(--rose-deep)}
   button.alt{background:var(--sage)}button.alt:hover{background:var(--sage-dark)}
@@ -385,7 +385,7 @@ $("#loLook").onclick=async()=>{
       }
       if(matches.length>1){
         out.className="out"; out.innerHTML='<b>'+matches.length+' cards match "'+esc(code)+'"</b> — click one:<br>'+matches.map(function(c){
-          return '<button type="button" onclick="loSelectMatch(\''+esc(c.code)+'\')" style="margin:4px 6px 0 0;padding:4px 10px;border:1px solid #e0d5c6;background:#fff;border-radius:16px;cursor:pointer;font-size:.82rem">'+esc(c.childName)+' ('+esc(c.code)+')</button>';
+          return '<button type="button" onclick="loSelectMatch(\''+esc(c.code)+'\')" style="margin:4px 6px 0 0;padding:6px 12px;border:1px solid #e0d5c6;background:#fff;color:var(--charcoal);border-radius:16px;cursor:pointer;font-size:.82rem;font-weight:700;text-transform:none;letter-spacing:0">'+esc(c.childName)+' ('+esc(c.code)+')</button>';
         }).join("");
         $("#loEditWrap").style.display="none";
         return;
