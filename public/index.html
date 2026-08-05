@@ -13,7 +13,7 @@ body{font-family:'Nunito',sans-serif;background:var(--cream);color:var(--charcoa
 img{max-width:100%}
 nav{position:fixed;top:0;left:0;right:0;z-index:300;display:flex;align-items:center;justify-content:space-between;padding:.65rem 3rem;background:rgba(250,247,243,.97);backdrop-filter:blur(20px);border-bottom:1px solid rgba(0,0,0,.06);gap:1rem}
 nav .logo img{height:46px;width:auto;display:block}
-.nav-links{display:flex;gap:1.5rem;list-style:none}
+.nav-links{display:flex;align-items:center;gap:1.5rem;list-style:none}
 .nav-links a{font-size:.71rem;letter-spacing:.09em;text-transform:uppercase;color:var(--slate);text-decoration:none;font-weight:700;transition:color .2s}
 .nav-links a:hover,.nav-links a.active{color:var(--rose)}
 .nav-act{display:flex;gap:.5rem;align-items:center;flex-shrink:0}
@@ -51,7 +51,7 @@ footer{background:var(--charcoal);padding:2rem 3rem;display:flex;align-items:cen
 .fc{font-size:.65rem;color:rgba(255,255,255,.25)}
 .reveal{opacity:0;transform:translateY(20px);transition:opacity .65s,transform .65s}
 .reveal.visible{opacity:1;transform:translateY(0)}
-@media(max-width:768px){nav{padding:.65rem 1.2rem}.navburger{display:flex;align-items:center;justify-content:center}.nav-links{display:none;position:absolute;top:100%;left:0;right:0;flex-direction:column;gap:0;background:rgba(250,247,243,.99);backdrop-filter:blur(20px);border-bottom:1px solid rgba(0,0,0,.08);box-shadow:0 12px 24px rgba(0,0,0,.08);padding:.4rem 0;margin:0}.nav-links.open{display:flex}.nav-links li{width:100%}.nav-links a{display:block;padding:.7rem 1.4rem;font-size:.8rem}.nav-links a:hover{background:rgba(0,0,0,.04)}.sec{padding:3.5rem 1.4rem}footer{flex-direction:column;text-align:center;padding:2rem 1.4rem}}
+@media(max-width:768px){nav{padding:.65rem 1.2rem}.navburger{display:flex;align-items:center;justify-content:center}.nav-links{display:none;position:absolute;top:100%;left:0;right:0;flex-direction:column;align-items:stretch;gap:0;background:rgba(250,247,243,.99);backdrop-filter:blur(20px);border-bottom:1px solid rgba(0,0,0,.08);box-shadow:0 12px 24px rgba(0,0,0,.08);padding:.4rem 0;margin:0}.nav-links.open{display:flex}.nav-links li{width:100%}.nav-links a{display:block;padding:.7rem 1.4rem;font-size:.8rem}.nav-links a:hover{background:rgba(0,0,0,.04)}.sec{padding:3.5rem 1.4rem}footer{flex-direction:column;text-align:center;padding:2rem 1.4rem}}
 
 #hero{position:relative}
 .hr{position:relative;overflow:hidden;height:min(72vh,620px)}
@@ -295,7 +295,7 @@ nav, .wbar, .ticker, footer{text-align:left}
 <li><a href="#openplay">Open Play</a></li>
 <li><a href="#birthday">Parties</a></li>
 <li><a href="/cards.html">Gift &amp; Loyalty Cards</a></li>
-<li><a href="/events.html">Upcoming Events</a></li>
+<li><a href="/events.html"><span style="display:block;font-size:.68em;font-weight:600;color:var(--taupe);letter-spacing:.08em;line-height:1.4">Current /</span>Upcoming Events</a></li>
 <li><a href="/reviews.html" target="_blank" rel="noopener">Reviews</a></li>
 <li><a href="#faq">FAQ</a></li>
 <li><a href="/party-inquiry.html">Contact</a></li>
@@ -548,7 +548,7 @@ nav, .wbar, .ticker, footer{text-align:left}
 <a href="index.html#openplay">Open Play</a>
 <a href="index.html#birthday">Parties</a>
 <a href="/cards.html">Gift &amp; Loyalty Cards</a>
-<a href="/events.html">Upcoming Events</a>
+<a href="/events.html">Current / Upcoming Events</a>
 <a href="/reviews.html" target="_blank" rel="noopener">Reviews</a>
 <a href="#faq">FAQ</a>
 <a href="/party-inquiry.html">Contact</a>
