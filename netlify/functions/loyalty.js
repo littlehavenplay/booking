@@ -233,7 +233,7 @@ export default async (req) => {
       if (await isLegacyPassCode(direct)) return json({ error: "That's a legacy prepaid card — don't punch it here." }, 409);
       let exists = null; try { exists = await loyalty.get("card:" + direct, { type: "json" }); } catch {}
       if (!exists) return json({ error: "No loyalty card found for that code." }, 404);
-      const r = await addPunch(loyalty, { code: direct, waiverSigned, adultNames });
+      const r = await addPunch(loyalty, { code: direct, waiverSigned, adultNames, visitMeta: { date: todayPacific(), source: "manual" } });
       if (r.error) return json({ error: "Couldn't save the punch. Try again." }, 502);
       return json({ ok: true, ...r,
         message: r.rewardIssued
@@ -247,7 +247,7 @@ export default async (req) => {
     if (!phone4)        return json({ error: "Enter the parent's phone (at least the last 4 digits)." }, 400);
     const email = (b.email || "").toString().slice(0, 160).trim();
     const militaryVerified = !!b.militaryVerified;
-    const r = await addPunch(loyalty, { first, last, phone4, email, waiverSigned, adultNames, militaryVerified });
+    const r = await addPunch(loyalty, { first, last, phone4, email, waiverSigned, adultNames, militaryVerified, visitMeta: { date: todayPacific(), source: "manual" } });
     if (r.error) return json({ error: "Couldn't save the punch. Try again." }, 502);
     return json({ ok: true, ...r,
       message: r.rewardIssued
@@ -288,7 +288,7 @@ export default async (req) => {
     const militaryVerified = !!b.militaryVerified;
     const results = [];
     for (const c of kids) {
-      const r = await addPunch(loyalty, { first: c.first, last: c.last, phone4, email, suppressEmail: true, waiverSigned, adultNames, militaryVerified });
+      const r = await addPunch(loyalty, { first: c.first, last: c.last, phone4, email, suppressEmail: true, waiverSigned, adultNames, militaryVerified, visitMeta: { date: todayPacific(), source: "manual" } });
       if (!r.error) results.push(r);
     }
     if (!results.length) return json({ error: "Couldn't save the punches. Try again." }, 502);

@@ -1230,10 +1230,37 @@ window.markArrived=async(el)=>{
   el.disabled=true;
   try{
     const r=await (await fetch("/api/arrivals",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key:key,date:date,id:id,email:email,arrived:arrived,action:"set"})})).json();
-    if(!r.ok){ el.checked=!arrived; alert(r.error||"Couldn't save."); } else { if(arrived && r.coffee) coffeePopup("Offer a free coffee!"); reloadRoster(); }
+    if(!r.ok){ el.checked=!arrived; alert(r.error||"Couldn't save."); }
+    else {
+      if(arrived && r.coffee) coffeePopup("Offer a free coffee!");
+      if(arrived){
+        const lp=r.loyaltyPunches||[];
+        if(lp.length){
+          const lines=lp.map(function(p){
+            if(p.freeAdmission) return "\uD83C\uDF89 "+p.childName+" — free visit, no punch (nothing paid)";
+            if(p.rewardIssued) return "\uD83C\uDF8A "+p.childName+" earned a FREE visit! Reward code emailed.";
+            return "\u2705 "+p.childName+" punched — "+p.punches+"/"+p.needed+" toward a free visit";
+          });
+          toast(lines.join("\n"));
+        } else {
+          toast("\u26A0\uFE0F Checked in, but no loyalty punch was recorded — this booking may not have a name/phone on file. Check manually on the Loyalty page.", true);
+        }
+      }
+      reloadRoster();
+    }
   }catch(e){ el.checked=!arrived; }
   el.disabled=false;
 };
+function toast(msg, isWarning){
+  var el=document.getElementById("rosToast");
+  if(!el){ el=document.createElement("div"); el.id="rosToast"; document.body.appendChild(el); }
+  el.style.cssText="position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:9999;max-width:90vw;white-space:pre-line;padding:12px 18px;border-radius:12px;font-size:.85rem;font-weight:700;box-shadow:0 8px 24px rgba(0,0,0,.18);"
+    +(isWarning?"background:#fdecea;color:#9c3626;border:1px solid #f2c4bb":"background:#eaf3e4;color:#33521f;border:1px solid #cfe6c2");
+  el.textContent=msg;
+  el.style.display="block";
+  clearTimeout(window._toastTimer);
+  window._toastTimer=setTimeout(function(){ el.style.display="none"; }, isWarning?7000:4500);
+}
 var PASSES=[],PARTIES=[];
 function _pkey(){return $("#key")?$("#key").value.trim():"";}
 async function loadPasses(){

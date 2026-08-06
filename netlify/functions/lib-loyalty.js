@@ -17,6 +17,33 @@ export function last4(phone) {
 }
 export function normalizeCode(c) { return (c || "").toString().trim().toUpperCase().replace(/[^A-Z0-9-]/g, ""); }
 
+// Records one visit onto a child's card. Called from inside issueCode/addPunch
+// whenever a caller passes visitMeta — callers that AREN'T a real visit (e.g.
+// issuing a card at booking time, before the child has actually shown up, or
+// graduating a legacy card holder) simply don't pass visitMeta, and nothing
+// gets logged. This is the ONLY place a visit gets written, so every path that
+// results in a punch or a free admission — online check-in, a manual walk-in
+// punch — records history the same way, with no gaps between them.
+async function pushVisit(loyalty, code, visitMeta, freeAdmission) {
+  if (!code || !visitMeta) return;
+  try {
+    let card = await loyalty.get("card:" + code, { type: "json" });
+    if (!card) return;
+    card.visits = Array.isArray(card.visits) ? card.visits : [];
+    card.visits.unshift({
+      date: visitMeta.date || pacificToday(), at: new Date().toISOString(),
+      slotLabel: visitMeta.slotLabel || "", admission: visitMeta.admission || "regular",
+      freeAdmission: !!freeAdmission,
+      discountCode: visitMeta.discountCode || null, discountPct: visitMeta.discountPct || 0,
+      weekdaySpecialLabel: visitMeta.weekdaySpecialLabel || "", military: !!visitMeta.military,
+      bookingId: visitMeta.bookingId || null, source: visitMeta.source || "online",
+    });
+    card.visits = card.visits.slice(0, 200);
+    await loyalty.setJSON("card:" + code, card);
+  } catch {}
+}
+function pacificToday() { return new Date().toLocaleDateString("en-CA", { timeZone: "America/Los_Angeles" }); }
+
 // Resolve a child's card. Default code = first+last initial + last4 (RR4655); on a
 // same-initials sibling collision, use more letters of the first name (RER4655, …).
 // findOnly=true never returns a fresh slot (used for read-only lookups).
@@ -71,13 +98,14 @@ export async function isLegacyPassCode(code) {
 
 // Auto-issue a child's loyalty code (no punch). Creates the card if new and sends
 // the welcome email (with the punch card image). Returns { code, isNew }.
-export async function issueCode(loyalty, { first, last, phone4, email, dob, suppressEmail }) {
+export async function issueCode(loyalty, { first, last, phone4, email, dob, suppressEmail, visitMeta }) {
   const { code, rec } = await resolveCard(loyalty, first, last, phone4, false);
   if (rec) {
     let changed = false;
     if (email && !rec.buyerEmail) { rec.buyerEmail = email; changed = true; }
     if (dob && !rec.dob) { rec.dob = dob; changed = true; }
     if (changed) { try { await loyalty.setJSON("card:" + code, rec); } catch {} }
+    if (visitMeta) await pushVisit(loyalty, code, visitMeta, true);
     return { code, isNew: false, childName: rec.childName };
   }
   const now = new Date();
@@ -86,12 +114,13 @@ export async function issueCode(loyalty, { first, last, phone4, email, dob, supp
     dob: (dob || "").trim() || undefined };
   try { await loyalty.setJSON("card:" + code, fresh); } catch {}
   if (fresh.buyerEmail && !suppressEmail) { try { await sendWelcome(fresh); } catch {} }
+  if (visitMeta) await pushVisit(loyalty, code, visitMeta, true);
   return { code, isNew: true, childName: fresh.childName, rec: fresh };
 }
 
 // Add ONE punch to a child's card. Creates the card if new (welcome email), and
 // on the 7th punch issues a free-visit reward code (reward email). Returns details.
-export async function addPunch(loyalty, { first, last, phone4, email, code: directCode, suppressEmail, waiverSigned, adultNames, militaryVerified }) {
+export async function addPunch(loyalty, { first, last, phone4, email, code: directCode, suppressEmail, waiverSigned, adultNames, militaryVerified, visitMeta }) {
   let code, existing;
   if (directCode) {
     code = normalizeCode(directCode);
@@ -154,6 +183,7 @@ export async function addPunch(loyalty, { first, last, phone4, email, code: dire
   }
 
   try { await loyalty.setJSON("card:" + code, rec); } catch { return { error: true }; }
+  if (visitMeta) await pushVisit(loyalty, code, visitMeta, false);
   return { code, childName: rec.childName, isNew, punches: rec.punches, needed: PUNCHES_FOR_REWARD,
     rewardIssued: !!rewardIssued, rewardCode: rewardIssued ? rewardIssued.rewardCode : null,
     rewardExpiry: rewardIssued ? rewardIssued.expiry : null,

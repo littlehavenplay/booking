@@ -797,6 +797,8 @@ window.markArrived=async(el)=>{
         if(reward){ coffeePopup("🎉 "+esc(reward.childName)+" earned a FREE visit! Code "+esc(reward.rewardCode)+" emailed.","Loyalty reward — their 8th visit is free!","🎉"); }
         else if(punched.length){ const p=punched[0]; coffeePopup("🎈 Punched "+esc(p.childName)+" ("+p.punches+"/"+p.needed+")"+(punched.length>1?" +"+(punched.length-1)+" more":""),"Loyalty punch card updated."+(free.length?" ("+free.length+" free admission — no punch given, as expected.)":""),"🎈"); }
         else if(free.length){ coffeePopup("📋 "+esc(free[0].childName)+(free.length>1?" +"+(free.length-1)+" more":"")+" — free admission today, no punch given.","That's correct — free visits don't count toward the loyalty card.","📋"); }
+      } else if(arrived){
+        coffeePopup("⚠️ No loyalty punch was recorded for this check-in.","This booking may be missing a name or phone on file — check it manually on the Loyalty page so nothing gets missed.","⚠️");
       }
       loadDay(true);
     }

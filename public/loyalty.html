@@ -479,6 +479,7 @@ window.toggleVisitHistory=async function(code){
       var timeStr=dt?dt.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}):"";
       h+='<div style="background:#fff;border:1px solid #dde7f0;border-radius:8px;padding:6px 9px;font-size:.76rem">'
         +'<b>'+esc(v.date||"")+'</b>'+(timeStr?' at '+timeStr:"")+(v.slotLabel?' \u00b7 '+esc(v.slotLabel):"")+(v.admission?' \u00b7 '+esc(v.admission):"")
+        +(v.source==="manual"?' <span style="background:#f0ede5;color:#6b6255;font-size:.68rem;font-weight:800;padding:1px 6px;border-radius:999px">\uD83D\uDEB6 walk-in / manual punch</span>':"")
         +'<br>'+visitDiscountLabel(v)
         +'</div>';
     });

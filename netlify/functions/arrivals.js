@@ -4,6 +4,7 @@
 //   { key, date, id, arrived:true|false, action:"set" } -> { ok, arrivals }
 import { getStore } from "@netlify/blobs";
 import { addPunch, issueCode, sendFamilyPunch } from "./lib-loyalty.js";
+import { listAllKeys } from "./lib-blobs.js";
 
 export default async (req) => {
   if (req.method !== "POST") return json({ error: "Use POST." }, 405);
@@ -34,100 +35,68 @@ export default async (req) => {
     if (b.arrived) map[id] = true; else delete map[id];
     try { await store.setJSON(date, map); } catch { return json({ error: "Couldn't save. Try again." }, 502); }
 
-    // ---- Loyalty: on arrival, punch each child on this booking (once). The punch
-    // job was queued at booking time; legacy-card bookings never get a job, so they
-    // never earn a punch. Best-effort — never blocks the arrival toggle.
+    // ---- Loyalty: on arrival, punch each child on this booking (once). This
+    // reads the actual booking record directly — the one authoritative source
+    // of truth — rather than relying on a separately-queued "job" as a fast
+    // path with this lookup only as a rarely-exercised fallback. That split
+    // was the cause of at least one real missed punch: the fallback used an
+    // unpaginated store listing, so on a day with enough bookings to span more
+    // than one page, a booking outside the first page could be silently
+    // skipped — no error, no punch, nothing to notice until a parent asked
+    // why their count was short. Every check-in now goes through this one
+    // reliable, fully-paginated path instead. Best-effort — never blocks the
+    // arrival toggle itself.
     let loyaltyPunches = [];
     if (b.arrived) {
       try {
         const loyalty = getStore("loyalty");
-        const jobs = getStore("loyaltyjobs");
-        let children = null, phone4 = null, email = (b.email || "").toString();
-        let commit = null;   // marks the source as punched so we never double-punch
-        let visitMeta = { date, slotLabel: "", discountCode: null, discountPct: 0, weekdaySpecialLabel: "", militaryAmount: 0, militaryChildren: [] };
-
-        // Fast path: the punch job queued at booking time.
-        let job = null;
-        try { job = await jobs.get("job:" + id, { type: "json" }); } catch {}
-        if (job && job.punched) {
-          children = null;                                   // already punched — do nothing
-        } else if (job && Array.isArray(job.children) && job.phone4) {
-          children = job.children; phone4 = job.phone4; email = job.email || email;
-          visitMeta = { date, slotLabel: job.slotLabel || "", discountCode: job.discountCode || null, discountPct: job.discountPct || 0,
-            weekdaySpecialLabel: job.weekdaySpecialLabel || "", militaryAmount: job.militaryAmount || 0, militaryChildren: job.militaryChildren || [] };
-          commit = async () => { job.punched = true; job.punchedAt = new Date().toISOString(); try { await jobs.setJSON("job:" + id, job); } catch {} };
-        } else {
-          // Self-heal: no usable job (older booking or any hiccup at booking time). Read the
-          // booking record itself so EVERY check-in issues a card (if missing) and punches.
-          const bstore = getStore("bookings");
-          let list = []; try { list = (await bstore.list()).blobs || []; } catch {}
-          for (const bl of list) {
-            if (!bl.key.startsWith(date + "__")) continue;
-            let rec = null; try { rec = await bstore.get(bl.key, { type: "json" }); } catch {}
-            const entry = rec && Array.isArray(rec.bookings) ? rec.bookings.find(x => x.id === id) : null;
-            if (!entry) continue;
-            if (!entry.loyaltyPunched && !entry.legacyUsed && Array.isArray(entry.childNames) && entry.childNames.length) {
-              const digits = (entry.phone || "").toString().replace(/\D/g, "");
-              if (digits.length >= 4) {
-                children = entry.childNames; phone4 = digits.slice(-4); email = entry.email || email;
-                visitMeta = { date, slotLabel: (bl.key.split("__")[1] || ""), discountCode: entry.discountCode || null, discountPct: entry.discountPct || 0,
-                  weekdaySpecialLabel: entry.weekdaySpecialLabel || "", militaryAmount: entry.militaryAmount || 0, militaryChildren: entry.militaryChildren || [] };
-                commit = async () => { entry.loyaltyPunched = true; try { await bstore.setJSON(bl.key, rec); } catch {} };
-              }
-            }
-            break;
-          }
+        const bstore = getStore("bookings");
+        const allKeys = await listAllKeys(bstore);
+        let entry = null, rec = null, bookingKey = null;
+        for (const key of allKeys) {
+          if (!key.startsWith(date + "__")) continue;
+          let r = null; try { r = await bstore.get(key, { type: "json" }); } catch {}
+          const e = r && Array.isArray(r.bookings) ? r.bookings.find(x => x.id === id) : null;
+          if (e) { entry = e; rec = r; bookingKey = key; break; }
         }
 
-        // addPunch CREATES the card if the child doesn't have one yet, then punches it.
-        // A child whose admission was FREE that visit (a birthday/loyalty/classroom
-        // reward code zeroed it out) never gets a punch for it — nothing was paid, so
-        // it shouldn't count toward earning another free visit. Their card still gets
-        // created if they don't have one, just with no punch added.
-        if (children && phone4) {
-          const isFamily = children.filter(c => c && c.first && c.last).length > 1;
-          const nowISO = new Date().toISOString();
-          for (const ch of children) {
-            if (ch && ch.first && ch.last) {
+        if (entry && !entry.loyaltyPunched && !entry.legacyUsed && Array.isArray(entry.childNames) && entry.childNames.length) {
+          const digits = (entry.phone || "").toString().replace(/\D/g, "");
+          if (digits.length >= 4) {
+            const phone4 = digits.slice(-4);
+            const email = entry.email || (b.email || "").toString();
+            const slotLabel = (bookingKey.split("__")[1] || "");
+            const children = entry.childNames;
+            const isFamily = children.filter(c => c && c.first && c.last).length > 1;
+
+            // addPunch/issueCode CREATE the card if the child doesn't have one yet,
+            // then punch it — or, for a free admission, just create/link the card
+            // with no punch, since nothing was paid. Either way, a visit gets
+            // logged (via visitMeta) so history always reflects the actual visit.
+            for (const ch of children) {
+              if (!(ch && ch.first && ch.last)) continue;
+              const visitMeta = { date, slotLabel, admission: ch.admission || "regular", bookingId: id, source: "online",
+                discountCode: entry.discountCode || null, discountPct: entry.discountPct || 0,
+                weekdaySpecialLabel: entry.weekdaySpecialLabel || "",
+                military: (entry.militaryAmount || 0) > 0 && (entry.militaryChildren || []).some(n => n && n.toLowerCase() === (ch.first + " " + ch.last).toLowerCase()) };
               try {
-                let cardCode = null;
                 if (ch._freeAdmission) {
-                  const r = await issueCode(loyalty, { first: ch.first, last: ch.last, phone4, email, suppressEmail: true });
+                  const r = await issueCode(loyalty, { first: ch.first, last: ch.last, phone4, email, suppressEmail: true, visitMeta });
                   loyaltyPunches.push({ childName: r.childName, code: r.code, freeAdmission: true });
-                  cardCode = r.code;
                 } else {
-                  const r = await addPunch(loyalty, { first: ch.first, last: ch.last, phone4, email, suppressEmail: isFamily });
+                  const r = await addPunch(loyalty, { first: ch.first, last: ch.last, phone4, email, suppressEmail: isFamily, visitMeta });
                   if (!r.error) loyaltyPunches.push({ childName: r.childName, code: r.code, punches: r.punches,
                     needed: r.needed, rewardIssued: r.rewardIssued, rewardCode: r.rewardCode });
-                  cardCode = r.code;
-                }
-                // Record this visit on the child's own card — date/time, admission type,
-                // and whatever discount context applied to the booking it was part of.
-                if (cardCode) {
-                  try {
-                    let card = await loyalty.get("card:" + cardCode, { type: "json" });
-                    if (card) {
-                      card.visits = Array.isArray(card.visits) ? card.visits : [];
-                      card.visits.unshift({
-                        date: visitMeta.date, at: nowISO, slotLabel: visitMeta.slotLabel, bookingId: id,
-                        admission: ch.admission || "regular", freeAdmission: !!ch._freeAdmission,
-                        discountCode: visitMeta.discountCode, discountPct: visitMeta.discountPct,
-                        weekdaySpecialLabel: visitMeta.weekdaySpecialLabel,
-                        military: visitMeta.militaryAmount > 0 && (visitMeta.militaryChildren || []).some(n => n && n.toLowerCase() === (ch.first + " " + ch.last).toLowerCase()),
-                      });
-                      card.visits = card.visits.slice(0, 200);   // keep it bounded
-                      await loyalty.setJSON("card:" + cardCode, card);
-                    }
-                  } catch {}
                 }
               } catch {}
             }
+            // Family: at most ONE combined email, and only if someone earned a free visit.
+            if (isFamily && email && loyaltyPunches.some(p => p.rewardIssued)) {
+              try { await sendFamilyPunch(email, loyaltyPunches); } catch {}
+            }
+            entry.loyaltyPunched = true;
+            try { await bstore.setJSON(bookingKey, rec); } catch {}
           }
-          // Family: at most ONE combined email, and only if someone earned a free visit.
-          if (isFamily && email && loyaltyPunches.some(p => p.rewardIssued)) {
-            try { await sendFamilyPunch(email, loyaltyPunches); } catch {}
-          }
-          if (commit) { try { await commit(); } catch {} }
         }
       } catch {}
     }
