@@ -90,32 +90,6 @@
     </div>
     <button id="loPunch">Add a punch</button>
     <div class="out" id="loOut"></div>
-    <div style="border-top:1px dashed #e2d9cc;margin-top:12px;padding-top:12px">
-      <label>✏️ Manage an existing card</label>
-      <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
-        <input type="text" id="loLookCode" placeholder="Code, or type a child's name" style="flex:1;min-width:150px">
-        <button id="loLook" style="margin-top:0">Look up</button>
-      </div>
-      <div class="out" id="loLookOut"></div>
-      <div id="loEditWrap" style="display:none;margin-top:10px;background:#fdf9f4;border:1px solid #efe4d5;border-radius:10px;padding:10px 12px">
-        <div class="row">
-          <div><label>First name</label><input type="text" id="loEditFirst"></div>
-          <div><label>Last name</label><input type="text" id="loEditLast"></div>
-        </div>
-        <div class="row">
-          <div><label>Birthday</label><input type="date" id="loEditDob"></div>
-          <div><label>Punches (0–7)</label><input type="number" id="loEditPunches" min="0" max="7"></div>
-        </div>
-        <div><label>Family phone (last 4) <span style="font-weight:400;color:var(--taupe);text-transform:none">— which family this card is grouped under</span></label><input type="text" id="loEditPhone4" maxlength="4" placeholder="e.g. 5911"></div>
-        <p class="note" style="margin-top:2px">Change this if a card ended up grouped with the wrong family (e.g. a booking shared one phone for two different families' kids). The card's code, punches, waiver, and history all stay exactly as they are — only which family it's linked to changes.</p>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
-          <button id="loEditSave" style="margin:0">💾 Save changes</button>
-          <button id="loEditDelete" class="alt" style="margin:0;background:#fbe6e2;color:#b5382f">🗑️ Delete card</button>
-        </div>
-        <div class="out" id="loEditOut"></div>
-      </div>
-      <p class="note">Look up a card by code (or name+phone above), then fix a misspelled name, add/correct a birthday, adjust punches, or delete the card — all in one place. Changes save immediately.</p>
-    </div>
   </div>
 
   <div class="card" id="sec-loyalty-list">
@@ -362,61 +336,37 @@ $("#loPunch").onclick=async()=>{
   }catch(e){ out.className="out err"; out.textContent="Network error."; }
   $("#loPunch").disabled=false; $("#loPunch").textContent="Add a punch";
 };
-$("#loLook").onclick=async()=>{
-  const key=KEY, out=$("#loLookOut"); out.style.display="block";
-  const code=$("#loLookCode").value.trim(), childFirst=$("#loFirst").value.trim(), childLast=$("#loLast").value.trim(), phone=$("#loPhone").value.trim();
-  if(!key){ out.className="out err"; out.textContent="Enter your admin key."; return; }
-  try{
-    const r=await (await fetch("/api/loyalty",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key,action:"lookup",code,childFirst,childLast,phone})})).json();
-    if(r.ok&&r.found){
-      loShowCard(r);
-      return;
-    }
-    // Not found as an exact code — the box also accepts a name (typed by mistake or
-    // on purpose), so search the customer list already loaded on this page before
-    // giving up. Prevents "no card" from showing for a child who very much has one.
-    if(code && Array.isArray(LOYALTY) && LOYALTY.length){
-      const needle=code.toLowerCase();
-      const matches=LOYALTY.filter(function(c){ return (c.childName||"").toLowerCase().indexOf(needle)>-1 || (c.code||"").toLowerCase()===needle; });
-      if(matches.length===1){
-        out.className="out ok"; out.innerHTML='Found by name — showing <b>'+esc(matches[0].childName)+'</b> (\u2192 not an exact code match, but only one card matched "'+esc(code)+'").';
-        loShowCard({found:true, code:matches[0].code, childName:matches[0].childName, dob:matches[0].dob, punches:matches[0].punches, needed:7, rewardsEarned:matches[0].rewardsEarned||0, phone4:matches[0].phone4});
-        return;
-      }
-      if(matches.length>1){
-        out.className="out"; out.innerHTML='<b>'+matches.length+' cards match "'+esc(code)+'"</b> — click one:<br>'+matches.map(function(c){
-          return '<button type="button" onclick="loSelectMatch(\''+esc(c.code)+'\')" style="margin:4px 6px 0 0;padding:6px 12px;border:1px solid #e0d5c6;background:#fff;color:var(--charcoal);border-radius:16px;cursor:pointer;font-size:.82rem;font-weight:700;text-transform:none;letter-spacing:0">'+esc(c.childName)+' ('+esc(c.code)+')</button>';
-        }).join("");
-        $("#loEditWrap").style.display="none";
-        return;
-      }
-    }
-    if(r.ok){ out.className="out"; out.textContent='No card found for "'+(code||childFirst||'that')+'" — check the spelling, or this may be their first visit (their first punch will create one).'; $("#loEditWrap").style.display="none"; }
-    else { out.className="out err"; out.textContent=r.error||"Not found."; $("#loEditWrap").style.display="none"; }
-  }catch(e){ out.className="out err"; out.textContent="Network error."; }
+window.loEditFromList=function(code){
+  var row=document.getElementById("editRow-"+code); if(!row) return;
+  var showing = row.style.display!=="none" && row.style.display!=="";
+  if(showing){ row.style.display="none"; return; }
+  var c=LOYALTY.find(function(x){return x.code===code;});
+  if(!c){ return; }
+  var parts=(c.childName||"").trim().split(/\s+/);
+  var first=parts[0]||"", last=parts.slice(1).join(" ")||"";
+  row.innerHTML='<div class="row">'
+    +'<div><label style="font-size:.72rem">First name</label><input type="text" id="editFirst-'+code+'" value="'+esc(first)+'"></div>'
+    +'<div><label style="font-size:.72rem">Last name</label><input type="text" id="editLast-'+code+'" value="'+esc(last)+'"></div>'
+    +'</div>'
+    +'<div class="row">'
+    +'<div><label style="font-size:.72rem">Birthday</label><input type="date" id="editDob-'+code+'" value="'+esc(c.dob||"")+'"></div>'
+    +'<div><label style="font-size:.72rem">Punches (0\u20137)</label><input type="number" id="editPunches-'+code+'" min="0" max="7" value="'+(c.punches!=null?c.punches:0)+'"></div>'
+    +'</div>'
+    +'<div><label style="font-size:.72rem">Family phone (last 4) <span style="font-weight:400;color:var(--taupe);text-transform:none">\u2014 which family this card is grouped under</span></label><input type="text" id="editPhone4-'+code+'" maxlength="4" placeholder="e.g. 5911" value="'+esc(c.phone4||"")+'"></div>'
+    +'<p class="note" style="margin-top:2px">Change this if a card ended up grouped with the wrong family. The card\'s code, punches, waiver, and history all stay exactly as they are \u2014 only which family it\'s linked to changes.</p>'
+    +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">'
+    +'<button type="button" onclick="loSaveEdit(\''+code+'\')" style="margin:0">\uD83D\uDCBE Save changes</button>'
+    +'<button type="button" onclick="loDeleteFromEdit(\''+code+'\')" style="margin:0;background:#fbe6e2;color:#b5382f">\uD83D\uDDD1\uFE0F Delete card</button>'
+    +'</div>'
+    +'<div class="out" id="editOut-'+code+'"></div>';
+  row.style.display="block";
 };
-function loShowCard(r){
-  const out=$("#loLookOut");
-  out.className="out ok"; out.innerHTML='<b>'+esc(r.childName)+'</b> ('+esc(r.code)+') \u2192 <b>'+r.punches+'/'+r.needed+'</b> punches \u00b7 rewards earned: '+r.rewardsEarned+(r.dob?' \u00b7 \uD83C\uDF82 birthday on file: '+esc(r.dob):' \u00b7 <span style="color:#b5382f">no birthday on file</span>');
-  if(r.code) $("#loLookCode").value=r.code;
-  const parts=(r.childName||"").trim().split(/\s+/);
-  $("#loEditFirst").value=parts[0]||""; $("#loEditLast").value=parts.slice(1).join(" ")||"";
-  $("#loEditDob").value=r.dob||""; $("#loEditPunches").value=r.punches!=null?r.punches:"";
-  $("#loEditPhone4").value=r.phone4||"";
-  $("#loEditWrap").style.display="block";
-}
-window.loSelectMatch=async function(code){
-  $("#loLookCode").value=code;
-  $("#loLook").click();
-};
-$("#loEditSave").onclick=async()=>{
-  const key=KEY, out=$("#loEditOut"); out.style.display="block";
-  const code=$("#loLookCode").value.trim();
+window.loSaveEdit=async function(code){
+  const key=KEY, out=document.getElementById("editOut-"+code); out.style.display="block";
   if(!key){ out.className="out err"; out.textContent="Enter your admin key."; return; }
-  if(!code){ out.className="out err"; out.textContent="Look up a card first."; return; }
-  const editFirst=$("#loEditFirst").value.trim(), editLast=$("#loEditLast").value.trim();
-  const dob=$("#loEditDob").value, punchesRaw=$("#loEditPunches").value;
-  const phone4Raw=$("#loEditPhone4").value.trim();
+  const editFirst=document.getElementById("editFirst-"+code).value.trim(), editLast=document.getElementById("editLast-"+code).value.trim();
+  const dob=document.getElementById("editDob-"+code).value, punchesRaw=document.getElementById("editPunches-"+code).value;
+  const phone4Raw=document.getElementById("editPhone4-"+code).value.trim();
   if(phone4Raw && !/^\d{4}$/.test(phone4Raw)){ out.className="out err"; out.textContent="Family phone must be exactly 4 digits."; return; }
   const body={key,action:"adjust",code};
   if(editFirst) body.editFirst=editFirst;
@@ -427,29 +377,22 @@ $("#loEditSave").onclick=async()=>{
   try{
     const r=await (await fetch("/api/loyalty",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)})).json();
     if(r.ok){
-      out.className="out ok"; out.innerHTML='✅ Saved — <b>'+esc(r.childName||code)+'</b>, <b>'+r.punches+'/'+r.needed+'</b> punches'+(r.dob?', birthday '+esc(r.dob):'')+(phone4Raw?', family phone \u2022\u2022\u2022'+esc(r.phone4):'')+'.';
+      out.className="out ok"; out.innerHTML="\u2705 Saved \u2014 <b>"+esc(r.childName||code)+"</b>, <b>"+r.punches+"/"+r.needed+"</b> punches"+(r.dob?", birthday "+esc(r.dob):"")+(phone4Raw?", family phone \u2022\u2022\u2022"+esc(r.phone4):"")+".";
       var c=LOYALTY.find(function(x){return x.code===code;});
       if(c){ c.childName=r.childName; c.punches=r.punches; c.dob=r.dob; c.phone4=r.phone4; renderLoyaltyList(); }
     }
     else { out.className="out err"; out.textContent=r.error||"Couldn't save."; }
   }catch(e){ out.className="out err"; out.textContent="Network error."; }
 };
-$("#loEditDelete").onclick=async()=>{
-  const key=KEY, out=$("#loEditOut"); out.style.display="block";
-  const code=$("#loLookCode").value.trim();
+window.loDeleteFromEdit=async function(code){
+  const key=KEY, out=document.getElementById("editOut-"+code); out.style.display="block";
   if(!key){ out.className="out err"; out.textContent="Enter your admin key."; return; }
-  if(!code){ out.className="out err"; out.textContent="Look up a card first."; return; }
   if(!confirm("Delete this loyalty card ("+code+")? This can't be undone.")) return;
   try{
     const r=await (await fetch("/api/loyalty",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key,action:"delete",code})})).json();
-    if(r.ok){ out.className="out ok"; out.textContent="Deleted."; $("#loEditWrap").style.display="none"; $("#loLookOut").style.display="none"; LOYALTY=LOYALTY.filter(function(c){return c.code!==code;}); renderLoyaltyList(); }
+    if(r.ok){ LOYALTY=LOYALTY.filter(function(c){return c.code!==code;}); renderLoyaltyList(); }
     else { out.className="out err"; out.textContent=r.error||"Couldn't delete."; }
   }catch(e){ out.className="out err"; out.textContent="Network error."; }
-};
-window.loEditFromList=function(code){
-  $("#loLookCode").value=code;
-  document.getElementById("sec-loyalty").scrollIntoView({behavior:"smooth",block:"start"});
-  $("#loLook").click();
 };
 window.toggleBdayRow=function(code){
   var row=document.getElementById("bdayRow-"+code); if(!row) return;
@@ -628,6 +571,7 @@ function llChildRow(c){
       +'<button onclick="deleteLoyalty(\''+esc(c.code)+'\',\''+esc((c.childName||"").replace(/[\x27\\]/g,""))+'\')" title="Delete card" style="border:none;background:#fbe6e2;color:#b5382f;border-radius:6px;cursor:pointer;font-size:.8rem;padding:3px 7px">\uD83D\uDDD1\uFE0F</button>'
     +'</span>'
     +'<div id="visitRow-'+esc(c.code)+'" style="display:none;width:100%;background:#f3f7fb;border:1px solid #dde7f0;border-radius:9px;padding:8px 10px;margin-top:2px"></div>'
+    +'<div id="editRow-'+esc(c.code)+'" style="display:none;width:100%;background:#fdf9f4;border:1px solid #efe4d5;border-radius:9px;padding:10px 12px;margin-top:2px"></div>'
     +'<div id="bdayRow-'+esc(c.code)+'" style="display:none;width:100%;align-items:center;gap:8px;background:#fdf9f4;border:1px solid #efe4d5;border-radius:9px;padding:8px 10px;margin-top:2px">'
       +'<span style="font-size:.78rem;font-weight:700;color:var(--charcoal)">\uD83C\uDF82 Birthday for '+esc(c.childName)+':</span>'
       +'<input type="date" id="bdayInput-'+esc(c.code)+'" value="'+(c.dob||"")+'" style="border:1px solid #e0d5c6;border-radius:7px;padding:4px 8px;font-size:.8rem">'

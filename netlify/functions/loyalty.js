@@ -248,7 +248,7 @@ export default async (req) => {
     const email = (b.email || "").toString().slice(0, 160).trim();
     const militaryVerified = !!b.militaryVerified;
     const r = await addPunch(loyalty, { first, last, phone4, email, waiverSigned, adultNames, militaryVerified, visitMeta: { date: todayPacific(), source: "manual" } });
-    if (r.error) return json({ error: "Couldn't save the punch. Try again." }, 502);
+    if (r.error) return json({ error: r.message || "Couldn't save the punch. Try again." }, 502);
     return json({ ok: true, ...r,
       message: r.rewardIssued
         ? `${r.childName} earned a FREE visit! Reward code ${r.rewardCode} was emailed (expires ${r.rewardExpiry}).`

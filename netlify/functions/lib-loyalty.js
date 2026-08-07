@@ -53,6 +53,15 @@ export async function resolveCard(loyalty, first, last, phone4, findOnly = false
   const target = cleanName(first, last).toLowerCase().replace(/\s+/g, " ").trim();
   const maxLen = Math.min(Math.max(fn.length, 1), 8);
 
+  // Every read here uses strong consistency deliberately — this function decides
+  // which code a NEW card gets, so it must always see the truly latest state, not
+  // a possibly-stale cached copy. A stale read here was the actual root cause of
+  // two siblings with the same initials (e.g. Victoria and Vincente) ending up
+  // assigned the identical code: sibling B's check for "is the short code already
+  // taken?" briefly still said no right after sibling A's card was saved, so B got
+  // the same code and silently overwrote A's card on save. Strong consistency
+  // closes that window.
+
   // Pass 1 — search EVERY base-length code for THIS child's existing card first.
   // (Don't stop at the first empty slot; the child's card may live at a longer code
   //  because shorter ones are taken by other children sharing the phone.)
@@ -60,7 +69,7 @@ export async function resolveCard(loyalty, first, last, phone4, findOnly = false
   for (let len = 1; len <= maxLen; len++) {
     const code = (fn.slice(0, len).toUpperCase() + li + phone4).replace(/[^A-Z0-9]/g, "");
     let rec = null;
-    try { rec = await loyalty.get("card:" + code, { type: "json" }); } catch { rec = null; }
+    try { rec = await loyalty.get("card:" + code, { type: "json", consistency: "strong" }); } catch { rec = null; }
     if (!rec) { if (firstEmpty === null) firstEmpty = code; continue; }
     const onFile = (rec.childName || "").toLowerCase().replace(/\s+/g, " ").trim();
     if (onFile === target) return { code, rec };
@@ -72,7 +81,7 @@ export async function resolveCard(loyalty, first, last, phone4, findOnly = false
   for (let n = 2; n <= 20; n++) {
     const code = base + "-" + n;
     let rec = null;
-    try { rec = await loyalty.get("card:" + code, { type: "json" }); } catch { rec = null; }
+    try { rec = await loyalty.get("card:" + code, { type: "json", consistency: "strong" }); } catch { rec = null; }
     if (!rec) { if (firstEmptySuffix === null) firstEmptySuffix = code; continue; }
     const onFile = (rec.childName || "").toLowerCase().replace(/\s+/g, " ").trim();
     if (onFile === target) return { code, rec };
@@ -80,10 +89,27 @@ export async function resolveCard(loyalty, first, last, phone4, findOnly = false
 
   // No existing card found anywhere.
   if (findOnly) return { code: null, rec: null };
-  // Create at the first empty slot (prefer the shortest base code).
-  if (firstEmpty) return { code: firstEmpty, rec: null };
-  if (firstEmptySuffix) return { code: firstEmptySuffix, rec: null };
-  return { code: base + "-" + Date.now().toString(36).slice(-3).toUpperCase(), rec: null };
+
+  // Hand back the best candidate — but as a hard safety net, re-verify it's
+  // genuinely empty right before handing it off, one more strong-consistency
+  // check. If something is unexpectedly there now (another request beat us to
+  // it a split second ago), walk forward to the next candidate instead of ever
+  // returning a code that would overwrite an existing card.
+  const candidates = [];
+  if (firstEmpty) candidates.push(firstEmpty);
+  for (let len = 1; len <= maxLen; len++) {
+    const c = (fn.slice(0, len).toUpperCase() + li + phone4).replace(/[^A-Z0-9]/g, "");
+    if (!candidates.includes(c)) candidates.push(c);
+  }
+  if (firstEmptySuffix) candidates.push(firstEmptySuffix);
+  for (let n = 2; n <= 20; n++) candidates.push(base + "-" + n);
+
+  for (const code of candidates) {
+    let rec = null;
+    try { rec = await loyalty.get("card:" + code, { type: "json", consistency: "strong" }); } catch { rec = null; }
+    if (!rec) return { code, rec: null };
+  }
+  return { code: base + "-" + Date.now().toString(36).slice(-4).toUpperCase(), rec: null };
 }
 
 // True if a code belongs to a legacy pre-paid punch card (those never earn loyalty punches).
@@ -130,6 +156,18 @@ export async function addPunch(loyalty, { first, last, phone4, email, code: dire
   }
   let rec = existing, isNew = false;
   if (!rec) {
+    // Final hard safety net: re-check this exact code, strong-consistency, one
+    // more time right before committing to it as a NEW card. resolveCard already
+    // does this, but re-checking here too — right at the moment of creation,
+    // after any other work this function did in between — makes it structurally
+    // impossible for this function to silently overwrite an existing card no
+    // matter what changed in the moments in between.
+    let doubleCheck = null;
+    try { doubleCheck = await loyalty.get("card:" + code, { type: "json", consistency: "strong" }); } catch {}
+    if (doubleCheck) {
+      return { error: true, collision: true,
+        message: `Code ${code} was just taken by another card (${doubleCheck.childName || "unknown"}) — try again, a new code will be assigned.` };
+    }
     isNew = true;
     rec = { code, childName: cleanName(first, last), phone4, punches: 0, rewardsEarned: 0, totalVisits: 0,
       createdAt: new Date().toISOString(), history: [], buyerEmail: (email || "").trim() };
