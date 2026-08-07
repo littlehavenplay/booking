@@ -159,10 +159,10 @@ footer{background:var(--charcoal);padding:2rem 3rem;display:flex;align-items:cen
 .rev-viewport{overflow:hidden;margin-top:1.4rem;-webkit-mask-image:linear-gradient(90deg,transparent,#000 5%,#000 95%,transparent);mask-image:linear-gradient(90deg,transparent,#000 5%,#000 95%,transparent)}
 .rev-track{display:flex;gap:16px;width:max-content;padding:22px 20px 10px;animation:revScroll 50s linear infinite}
 .rev-viewport:hover .rev-track{animation-play-state:paused}
-.rev-track img{height:210px;width:auto;border-radius:14px;box-shadow:0 4px 20px rgba(0,0,0,.09);flex:0 0 auto;border:1px solid rgba(0,0,0,.05);cursor:pointer;transition:transform .25s ease,box-shadow .25s ease}
+.rev-track img{height:210px;width:280px;object-fit:cover;object-position:top;border-radius:14px;box-shadow:0 4px 20px rgba(0,0,0,.09);flex:0 0 auto;border:1px solid rgba(0,0,0,.05);cursor:pointer;transition:transform .25s ease,box-shadow .25s ease;background:#fff}
 .rev-track img:hover{transform:translateY(-5px) scale(1.02);box-shadow:0 14px 32px rgba(0,0,0,.16)}
 @keyframes revScroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
-@media(max-width:600px){.rev-track img{height:165px}}
+@media(max-width:600px){.rev-track img{height:165px;width:220px}}
 @media(prefers-reduced-motion:reduce){.rev-track{animation:none}.rev-viewport{overflow-x:auto}}
 .cp-label{text-align:center;font-size:.76rem;font-weight:700;letter-spacing:.03em;color:var(--taupe);margin:2px 0 0}
 .cp-viewport{margin:2px auto 0;max-width:600px}

@@ -130,9 +130,9 @@
 
   <div class="card" id="sec-promos">
     <h2>📌 Promotions &amp; Flyers</h2>
-    <p class="note" style="margin-top:-2px">A simple ongoing post — just an image and an optional caption, like a Facebook/Instagram post. No date, no requirements, nothing to expire — it stays up on the Events page until you remove it. Use this for a weekday discount flyer, an extended-hours graphic, anything that should just stay posted. For anything needing registration or a specific date, use "Upcoming events" below instead.</p>
+    <p class="note" style="margin-top:-2px">A simple ongoing post — just an image and an optional caption, like a Facebook/Instagram post. No date, no requirements, nothing to expire — it stays up on the Events page until you remove it. Select more than one image at once to post them all in one go — each becomes its own separate post, sharing the same caption if you write one. Use this for a weekday discount flyer, an extended-hours graphic, anything that should just stay posted. For anything needing registration or a specific date, use "Upcoming events" below instead.</p>
     <label>Image</label>
-    <input type="file" id="prmImage" accept="image/*">
+    <input type="file" id="prmImage" accept="image/*" multiple>
     <label>Caption (optional)</label>
     <textarea id="prmCaption" rows="2" style="width:100%;border:1.5px solid #e7ddd0;border-radius:11px;padding:10px 12px;font-family:'Nunito';font-weight:600;background:#f3ebe0" placeholder="e.g. 25% off any admission every Monday &amp; Tuesday!"></textarea>
     <button id="prmPost">Post it</button>
@@ -623,7 +623,7 @@
         <button type="button" class="phTab alt" data-set="customer">📸 Customer photos</button>
       </div>
       <label>Add a photo (JPG or PNG, under ~5MB)</label>
-      <input type="file" id="phFile" accept="image/png,image/jpeg,image/webp">
+      <input type="file" id="phFile" accept="image/png,image/jpeg,image/webp" multiple>
       <button id="phUpload">⬆️ Upload photo</button>
       <div class="out" id="phOut"></div>
       <div id="phGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px;margin-top:14px"></div>
@@ -735,7 +735,7 @@ function renderPasses(){
   var rows=PASSES.filter(function(p){return !q||((p.name||"")+" "+(p.code||"")+" "+(p.childName||"")+" "+(p.email||"")).toLowerCase().indexOf(q)>=0;});
   var B={active:["#e7f0df","#4f6b43","Active"],expired:["#fbe7e4","#c0524b","Expired"],usedup:["#f0ece4","#8a7d6a","Used up"],inactive:["#f0ece4","#8a7d6a","Inactive"]};
   if(!rows.length){$("#pcList").innerHTML='<div class="note">No matching cards.</div>';return;}
-  var h='<div class="note" style="margin:6px 0">'+rows.length+' card(s)</div><table style="width:100%;border-collapse:collapse;font-size:.84rem">';
+  var h='<div class="note" style="margin:6px 0">'+rows.length+' card(s) — scroll right to see the full code →</div><div style="overflow-x:auto"><table style="width:100%;min-width:640px;border-collapse:collapse;font-size:.84rem">';
   rows.forEach(function(p){var b=B[p.status]||B.inactive;
     h+='<tr style="border-top:1px solid #f0e9df">'
       +'<td style="padding:7px 6px 7px 0;font-weight:700">'+esc(p.name||"—")+(p.childName?'<div style="font-weight:400;color:var(--taupe);font-size:.78rem">child: '+esc(p.childName)+'</div>':'')+'</td>'
@@ -744,7 +744,7 @@ function renderPasses(){
       +'<td style="padding:7px 6px;white-space:nowrap;color:var(--taupe);font-size:.76rem">bought '+(p.purchaseDate?p.purchaseDate.slice(0,10):"—")+'<br>exp '+(p.expiry||"—")+'</td>'
       +'<td style="padding:7px 0 7px 6px;text-align:right;white-space:nowrap"><span style="background:'+b[0]+';color:'+b[1]+';font-weight:800;font-size:.7rem;padding:3px 8px;border-radius:999px">'+b[2]+'</span><br><span style="font-family:monospace;font-size:.74rem">'+esc(p.code)+'</span></td>'
       +'</tr>';});
-  $("#pcList").innerHTML=h+'</table>';
+  $("#pcList").innerHTML=h+'</table></div>';
 }
 async function loadParties(){
   var key=_pkey(),out=$("#ptOut");out.className="out";
@@ -908,22 +908,36 @@ window.phMove=async function(id,dir){
   try{ await fetch("/api/site-photos",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key:PIN,action:"reorder",set:phSet,order:phList.map(function(p){return p.id;})})}); }catch(e){}
 };
 document.querySelectorAll(".phTab").forEach(function(bt){ bt.onclick=function(){ phSet=bt.getAttribute("data-set"); document.querySelectorAll(".phTab").forEach(function(x){x.className="phTab alt";}); bt.className="phTab"; phLoad(); }; });
-if($("#phUpload")) $("#phUpload").onclick=function(){
+function phReadFile(f){
+  return new Promise(function(resolve,reject){
+    var rd=new FileReader();
+    rd.onload=function(){ resolve(rd.result); };
+    rd.onerror=function(){ reject(new Error("read failed")); };
+    rd.readAsDataURL(f);
+  });
+}
+if($("#phUpload")) $("#phUpload").onclick=async function(){
   var out=$("#phOut"); out.style.display="block";
   if(!PIN){ out.className="out err"; out.textContent="Enter your staff PIN first."; return; }
-  var f=$("#phFile").files[0]; if(!f){ out.className="out err"; out.textContent="Choose a photo first."; return; }
-  if(f.size>5200000){ out.className="out err"; out.textContent="That image is too big \u2014 please use one under ~5MB."; return; }
-  out.className="out"; out.textContent="Uploading\u2026"; $("#phUpload").disabled=true;
-  var rd=new FileReader();
-  rd.onload=async function(){
+  var files=Array.prototype.slice.call($("#phFile").files||[]);
+  if(!files.length){ out.className="out err"; out.textContent="Choose one or more photos first."; return; }
+  var tooBig=files.filter(function(f){return f.size>5200000;});
+  if(tooBig.length){ out.className="out err"; out.textContent=tooBig.length+" image(s) are too big \u2014 please use ones under ~5MB each."; return; }
+  $("#phUpload").disabled=true;
+  var okCount=0, failCount=0;
+  for(var i=0;i<files.length;i++){
+    out.className="out"; out.textContent="Uploading "+(i+1)+" of "+files.length+"\u2026";
     try{
-      var r=await (await fetch("/api/site-photos",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key:PIN,action:"upload",set:phSet,dataUrl:rd.result})})).json();
-      if(r.ok){ out.className="out ok"; out.textContent="Uploaded! It'll show on the site shortly (hard-refresh to see it)."; $("#phFile").value=""; phLoad(); }
-      else { out.className="out err"; out.textContent=r.error||"Couldn't upload."; }
-    }catch(e){ out.className="out err"; out.textContent="Network error."; }
-    $("#phUpload").disabled=false;
-  };
-  rd.readAsDataURL(f);
+      var dataUrl=await phReadFile(files[i]);
+      var r=await (await fetch("/api/site-photos",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key:PIN,action:"upload",set:phSet,dataUrl:dataUrl})})).json();
+      if(r.ok) okCount++; else failCount++;
+    }catch(e){ failCount++; }
+  }
+  $("#phFile").value="";
+  if(failCount===0){ out.className="out ok"; out.textContent="\u2705 Uploaded "+okCount+" photo"+(okCount===1?"":"s")+"! They'll show on the site shortly (hard-refresh to see them)."; }
+  else { out.className="out err"; out.textContent="Uploaded "+okCount+", but "+failCount+" failed \u2014 try those again."; }
+  phLoad();
+  $("#phUpload").disabled=false;
 };
 phLoad();
 var RT_PREFIX={google:"rt",yelp:"rtYelp",facebook:"rtFb"};
@@ -1028,9 +1042,9 @@ function ledRender(){
   if(!ledRows.length){ wrap.innerHTML='<div class="note">No codes loaded yet — tap "Load all codes".</div>'; return; }
   if(!rows.length){ wrap.innerHTML='<div class="note">No codes match "'+esc(q)+'".</div>'; return; }
   var today=new Date().toISOString().slice(0,10);
-  var html='<table style="width:100%;border-collapse:collapse;font-size:.82rem;min-width:640px">'
+  var html='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:.82rem;min-width:640px">'
     +'<thead><tr style="text-align:left;color:#8a8276;font-size:.7rem;text-transform:uppercase;letter-spacing:.05em">'
-    +'<th style="padding:6px 8px">Type</th><th style="padding:6px 8px">Code</th><th style="padding:6px 8px">Value</th><th style="padding:6px 8px">Status</th><th style="padding:6px 8px">Expires</th><th style="padding:6px 8px">Issued</th><th style="padding:6px 8px">Customer</th><th style="padding:6px 8px">Actions</th></tr></thead><tbody>';
+    +'<th style="padding:6px 8px">Type</th><th style="padding:6px 8px">Code</th><th style="padding:6px 8px">Value</th><th style="padding:6px 8px">Status</th><th style="padding:6px 8px">Expires</th><th style="padding:6px 8px">Issued</th><th style="padding:6px 8px">Redeemed</th><th style="padding:6px 8px">Customer</th><th style="padding:6px 8px">Actions</th></tr></thead><tbody>';
   rows.forEach(function(r){
     var expSoon=r.expiry&&r.status==="active"&&r.expiry>=today&&r.expiry<=new Date(Date.now()+14*86400000).toISOString().slice(0,10);
     var who=[r.name,r.email].filter(Boolean).join(" · ");
@@ -1044,11 +1058,12 @@ function ledRender(){
       +'<td style="padding:7px 8px">'+ledBadge(r.status)+'</td>'
       +'<td style="padding:7px 8px;white-space:nowrap'+(expSoon?';color:#b5382f;font-weight:800':'')+'">'+(esc(r.expiry)||"—")+(expSoon?" ⚠️":"")+'</td>'
       +'<td style="padding:7px 8px;white-space:nowrap;color:#8a8276">'+(esc(r.issued)||"—")+'</td>'
+      +'<td style="padding:7px 8px;white-space:nowrap;color:#8a8276">'+(r.redeemed?esc(r.redeemed)+(r.redeemedCount>1?' <span style="color:var(--taupe)">('+r.redeemedCount+'\u00d7)</span>':''):'—')+'</td>'
       +'<td style="padding:7px 8px;color:#5b4636">'+(esc(who)||"—")+'</td>'
       +'<td style="padding:7px 8px;white-space:nowrap">'+acts+'</td>'
       +'</tr>';
   });
-  html+='</tbody></table>';
+  html+='</tbody></table></div>';
   wrap.innerHTML=html;
 }
 async function ledLoad(){
@@ -1092,17 +1107,24 @@ async function prmLoad(){
 if($("#prmPost")) $("#prmPost").onclick=async function(){
   var key=PIN; var out=$("#prmOut"); out.style.display="block";
   if(!key){ out.className="out err"; out.textContent="Enter your staff PIN first."; return; }
-  var file=$("#prmImage").files[0];
-  if(!file){ out.className="out err"; out.textContent="Choose an image first."; return; }
-  out.className="out"; out.textContent="Posting\u2026"; $("#prmPost").disabled=true;
-  try{
-    var dataUrl=await shrinkImage(file);
-    if(!dataUrl){ out.className="out err"; out.textContent="Couldn't read that image."; $("#prmPost").disabled=false; return; }
-    var caption=$("#prmCaption").value.trim();
-    var r=await (await fetch("/api/promo-admin",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key,action:"save",caption,image:dataUrl})})).json();
-    if(r.ok){ out.className="out ok"; out.textContent="\u2705 Posted!"; $("#prmImage").value=""; $("#prmCaption").value=""; prmLoad(); }
-    else { out.className="out err"; out.textContent=r.error||"Couldn't post."; }
-  }catch(e){ out.className="out err"; out.textContent="Network error."; }
+  var files=Array.prototype.slice.call($("#prmImage").files||[]);
+  if(!files.length){ out.className="out err"; out.textContent="Choose one or more images first."; return; }
+  $("#prmPost").disabled=true;
+  var caption=$("#prmCaption").value.trim();
+  var okCount=0, failCount=0;
+  for(var i=0;i<files.length;i++){
+    out.className="out"; out.textContent="Posting "+(i+1)+" of "+files.length+"\u2026";
+    try{
+      var dataUrl=await shrinkImage(files[i]);
+      if(!dataUrl){ failCount++; continue; }
+      var r=await (await fetch("/api/promo-admin",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key,action:"save",caption,image:dataUrl})})).json();
+      if(r.ok) okCount++; else failCount++;
+    }catch(e){ failCount++; }
+  }
+  $("#prmImage").value=""; $("#prmCaption").value="";
+  if(failCount===0){ out.className="out ok"; out.textContent="\u2705 Posted "+okCount+" flyer"+(okCount===1?"":"s")+"!"; }
+  else { out.className="out err"; out.textContent="Posted "+okCount+", but "+failCount+" failed \u2014 try those again."; }
+  prmLoad();
   $("#prmPost").disabled=false;
 };
 window.prmDelete=async function(id){
@@ -1316,7 +1338,7 @@ function bdDayLabel(r){ var mi=parseInt(r.month,10)-1; var mn=BD_MONTH_NAMES[mi]
 function bdRender(){
   var wrap=$("#bdTableWrap"); if(!wrap) return;
   if(!bdRows.length){ wrap.innerHTML='<div class="note">No birthdays on file yet. Families add them (optionally) when booking online.</div>'; return; }
-  var html='<table style="width:100%;border-collapse:collapse;font-size:.82rem;min-width:660px">'
+  var html='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:.82rem;min-width:660px">'
     +'<thead><tr style="text-align:left;color:#8a8276;font-size:.7rem;text-transform:uppercase;letter-spacing:.05em">'
     +'<th style="padding:6px 8px">Day</th><th style="padding:6px 8px">Child</th><th style="padding:6px 8px">Turning</th>'
     +'<th style="padding:6px 8px">Email</th><th style="padding:6px 8px">Phone</th>'
@@ -1335,7 +1357,7 @@ function bdRender(){
         +'<button type="button" onclick="bdRemove(\''+esc(r.code)+'\')" style="margin:0;padding:4px 9px;font-size:.7rem;border-radius:7px;background:#f7e2e0;color:#b5382f;width:auto">Remove</button>'
       +'</td></tr>';
   });
-  wrap.innerHTML=html+'</tbody></table>';
+  wrap.innerHTML=html+'</tbody></table></div>';
 }
 async function bdLoad(){
   var out=$("#bdOut"); out.style.display="block";
@@ -1436,7 +1458,7 @@ async function frLoad(){
 function frRender(rows){
   var wrap=$("#frTableWrap");
   if(!rows.length){ wrap.innerHTML='<div class="note">🎉 No failed codes on file — everyone who tried a code got through.</div>'; return; }
-  var html='<table style="width:100%;border-collapse:collapse;font-size:.82rem;min-width:640px">'
+  var html='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:.82rem;min-width:640px">'
     +'<thead><tr style="text-align:left;color:#8a8276;font-size:.7rem;text-transform:uppercase;letter-spacing:.05em">'
     +'<th style="padding:6px 8px">When</th><th style="padding:6px 8px">Code</th><th style="padding:6px 8px">Reason</th><th style="padding:6px 8px">Name</th><th style="padding:6px 8px">Email</th><th style="padding:6px 8px">Phone</th><th style="padding:6px 8px">Actions</th></tr></thead><tbody>';
   rows.forEach(function(r){
@@ -1450,7 +1472,7 @@ function frRender(rows){
       +'<td style="padding:7px 8px;white-space:nowrap"><button type="button" onclick="frClear(\''+esc(r.id)+'\')" style="border:none;background:#e7f0df;color:#4d6b3e;border-radius:6px;cursor:pointer;font-weight:800;font-size:.72rem;padding:4px 9px">✓ Followed up</button></td>'
       +'</tr>';
   });
-  wrap.innerHTML=html+'</tbody></table>';
+  wrap.innerHTML=html+'</tbody></table></div>';
 }
 window.frClear=async function(id){
   if(!PIN){ alert("Enter your staff PIN first."); return; }
