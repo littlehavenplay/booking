@@ -1,7 +1,9 @@
 // POST /api/credit-issue   (admin key or staff PIN)
-// Body: { key, amount, reason, email?, name?, type, expiryDays? }   type = "courtesy" | "standard"
-//   courtesy = single-use, online + open-play only, flyer email
-//   standard = balance (carries over), redeemable anywhere (online + in store)
+// Body: { key, amount, reason, email?, name?, scope, expiryDays? }
+//   scope = "any" (redeemable anywhere — online or in store) | "openplay" (online
+//   Open Play checkout only). Every credit issued here is standard: multi-use,
+//   balance carries over until spent or expired. There's no separate "courtesy"
+//   type anymore — scope is the only thing that controls where it can be redeemed.
 // Shares its credit-creation and email logic with reschedule.js's cancel-booking
 // flow and noshow-cron.js — see lib-credit.js.
 import { makeCredit, sendCreditEmail } from "./lib-credit.js";
@@ -18,7 +20,7 @@ export default async (req) => {
   if (!adminKey && !staffPin) return json({ error: "Admin key isn't configured. Set ADMIN_KEY in Netlify." }, 500);
   if (provided !== adminKey && provided !== staffPin) return json({ error: "Wrong key." }, 401);
 
-  const type = (body.type || "standard").toString() === "courtesy" ? "courtesy" : "standard";
+  const scope = (body.scope || "any").toString() === "openplay" ? "openplay" : "any";
   const dollars = parseFloat(body.amount);
   if (!(dollars > 0)) return json({ error: "Enter a dollar amount greater than 0." }, 400);
   const amount = Math.round(dollars * 100); // cents
@@ -34,7 +36,7 @@ export default async (req) => {
   expiryDays = Math.min(Math.max(expiryDays, 1), 366);
   const custEmail = (body.email || "").toString().slice(0, 160).trim();
 
-  const record = await makeCredit(type, amount, reason, { custName, email: custEmail, expiryDays });
+  const record = await makeCredit("standard", amount, reason, { custName, email: custEmail, expiryDays, scope, singleUse: false });
   if (!record) return json({ error: "Couldn't save the credit. Try again." }, 502);
 
   let emailedCustomer = false;
@@ -44,7 +46,7 @@ export default async (req) => {
   const ownerEmail = process.env.STUDIO_EMAIL || "";
   if (ownerEmail) await sendCreditEmail(ownerEmail, record, true);
 
-  return json({ ok: true, code: record.code, amount, expiry: record.expiry, reason, type, emailedCustomer });
+  return json({ ok: true, code: record.code, amount, expiry: record.expiry, reason, scope, emailedCustomer });
 };
 
 function json(obj, status = 200) {

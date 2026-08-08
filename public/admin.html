@@ -233,10 +233,10 @@
 
   <div class="card" id="sec-issue">
     <h2>Issue a new credit</h2>
-    <label>Credit type</label>
-    <select id="creditType">
-      <option value="courtesy">Courtesy credit — one-time, online open-play only (flyer email)</option>
-      <option value="standard">Standard credit — balance, usable online or in store</option>
+    <label>Redeemable</label>
+    <select id="creditScope">
+      <option value="any" selected>Anywhere — online or in store</option>
+      <option value="openplay">Online Open Play only</option>
     </select>
     <label>Amount (USD)</label>
     <input type="text" id="amount" inputmode="decimal" placeholder="e.g. 10">
@@ -256,7 +256,26 @@
     </select>
     <button id="issue">Generate code</button>
     <div class="out" id="issueOut"></div>
-    <p class="note">Courtesy credits are single-use and forfeit any leftover balance (per the flyer). Standard credits keep their balance and work online or in store. The credit — and the customer's email — expire on the date you select above (default 30 days). A copy is always sent to your studio email.</p>
+    <p class="note">The balance carries over until it's used up or expires. The credit — and the customer's email — expire on the date you select above (default 30 days). A copy is always sent to your studio email.</p>
+  </div>
+
+  <div class="card" id="sec-birthdaycode">
+    <h2>🎂 Issue a birthday code (custom dates)</h2>
+    <p class="note" style="margin-top:-2px">For when a birthday falls on a day we're closed (Mondays) — a 100% free admission code for that child, valid over whatever date range you pick instead of the usual single birthday day. Works even for a child who's never visited before; a punch card gets created automatically the first time this code is used at check-in.</p>
+    <div class="row">
+      <div><label>Child's first name</label><input type="text" id="bcFirst" placeholder="e.g. Liliana"></div>
+      <div><label>Child's last name</label><input type="text" id="bcLast" placeholder="e.g. Rivero"></div>
+    </div>
+    <label>Parent's email (to send the code)</label>
+    <input type="email" id="bcEmail" placeholder="parent@email.com">
+    <label>Existing loyalty code <span style="font-weight:400;color:var(--slate);text-transform:none">(optional — only if this family already has one)</span></label>
+    <input type="text" id="bcLoyaltyCode" placeholder="e.g. LR1234 — leave blank if they don't have one yet">
+    <div class="row">
+      <div><label>Valid from</label><input type="date" id="bcFrom"></div>
+      <div><label>Valid through</label><input type="date" id="bcUntil"></div>
+    </div>
+    <button id="bcIssue">Send birthday code</button>
+    <div class="out" id="bcOut"></div>
   </div>
 
   <div class="card" id="sec-punchissue">
@@ -660,17 +679,36 @@ if($("#isSave")) $("#isSave").onclick=async()=>{
 $("#issue").onclick=async()=>{
   const out=$("#issueOut"); out.className="out"; out.style.display="";
   const key=$("#key").value.trim(), amount=$("#amount").value.trim(), reason=$("#reason").value.trim();
-  const email=$("#creditEmail").value.trim(), type=$("#creditType").value;
+  const email=$("#creditEmail").value.trim(), scope=$("#creditScope").value;
   if(!key){ out.className="out err"; out.textContent="Enter your admin key."; return; }
   if(!amount){ out.className="out err"; out.textContent="Enter an amount."; return; }
   $("#issue").disabled=true; $("#issue").textContent="Working…";
   try{
     const r=await (await fetch("/api/credit-issue",{method:"POST",headers:{"content-type":"application/json"},
-      body:JSON.stringify({key,amount,reason,email,name:$("#creditName").value.trim(),type,expiryDays:$("#creditExpiry").value})})).json();
-    if(r.ok){ out.className="out ok"; out.innerHTML=`${r.type==="courtesy"?"Courtesy":"Standard"} credit created:<div class="code">${r.code}</div>${money(r.amount)} · expires ${r.expiry}`+(r.emailedCustomer?'<br>✅ Emailed to the customer.':(email?'<br>⚠️ Could not email the customer — share the code above.':''))+'<br><span style="font-size:.8rem;color:var(--slate)">A record copy was sent to your studio email.</span>'; $("#amount").value="";$("#reason").value="";$("#creditEmail").value="";$("#creditName").value=""; }
+      body:JSON.stringify({key,amount,reason,email,name:$("#creditName").value.trim(),scope,expiryDays:$("#creditExpiry").value})})).json();
+    if(r.ok){ out.className="out ok"; out.innerHTML=`Store credit created:<div class="code">${r.code}</div>${money(r.amount)} · expires ${r.expiry} · ${r.scope==="openplay"?"online Open Play only":"redeemable anywhere"}`+(r.emailedCustomer?'<br>✅ Emailed to the customer.':(email?'<br>⚠️ Could not email the customer — share the code above.':''))+'<br><span style="font-size:.8rem;color:var(--slate)">A record copy was sent to your studio email.</span>'; $("#amount").value="";$("#reason").value="";$("#creditEmail").value="";$("#creditName").value=""; }
     else { out.className="out err"; out.textContent=r.error||"Couldn't create credit."; }
   }catch(e){ out.className="out err"; out.textContent="Network error."; }
   $("#issue").disabled=false; $("#issue").textContent="Generate code";
+};
+
+if($("#bcIssue")) $("#bcIssue").onclick=async()=>{
+  const out=$("#bcOut"); out.className="out"; out.style.display="";
+  const key=$("#key").value.trim();
+  const first=$("#bcFirst").value.trim(), last=$("#bcLast").value.trim(), email=$("#bcEmail").value.trim();
+  const loyaltyCode=$("#bcLoyaltyCode").value.trim(), validFrom=$("#bcFrom").value, validUntil=$("#bcUntil").value;
+  if(!key){ out.className="out err"; out.textContent="Enter your admin key."; return; }
+  if(!first||!last){ out.className="out err"; out.textContent="Enter the child's first and last name."; return; }
+  if(!email){ out.className="out err"; out.textContent="Enter the parent's email."; return; }
+  if(!validFrom||!validUntil){ out.className="out err"; out.textContent="Pick both a start and end date."; return; }
+  $("#bcIssue").disabled=true; $("#bcIssue").textContent="Sending…";
+  try{
+    const r=await (await fetch("/api/birthdays",{method:"POST",headers:{"content-type":"application/json"},
+      body:JSON.stringify({key,action:"send-custom",first,last,email,loyaltyCode,validFrom,validUntil})})).json();
+    if(r.ok){ out.className="out ok"; out.innerHTML=`🎂 Birthday code created:<div class="code">${r.code}</div>Valid ${r.validFrom===r.validUntil?("on "+r.validFrom):("from "+r.validFrom+" through "+r.validUntil)}`+(r.emailed?'<br>✅ Emailed to the family.':'<br>⚠️ Could not email — share the code directly.'); $("#bcFirst").value="";$("#bcLast").value="";$("#bcEmail").value="";$("#bcLoyaltyCode").value="";$("#bcFrom").value="";$("#bcUntil").value=""; }
+    else { out.className="out err"; out.textContent=r.error||"Couldn't create the code."; }
+  }catch(e){ out.className="out err"; out.textContent="Network error."; }
+  $("#bcIssue").disabled=false; $("#bcIssue").textContent="Send birthday code";
 };
 
 $("#crGo").onclick=async()=>{
@@ -1972,7 +2010,7 @@ if($("#wsSave")) $("#wsSave").onclick=async function(){
   var GROUPS=[
     {t:"\u2600\uFE0F Today \u2014 Check-in & Walk-ins", open:true, c:"#7ba676", bg:"#eef4e8", ids:["sec-bookings","sec-schedule","sec-walkin","sec-punch"]},
     {t:"\uD83C\uDF88 Loyalty & Punch Cards", c:"#c97d76", bg:"#fdf1ec", ids:["sec-loyalty-list","sec-birthdays","sec-punchissue","sec-passes"]},
-    {t:"\uD83D\uDCB3 Credits, Codes & Bookings", c:"#8a94c9", bg:"#eef0f9", ids:["sec-issue","sec-redeem","sec-credit-backfill","sec-code","sec-weekday-special","sec-discount","sec-reschedule","sec-deposit"]},
+    {t:"\uD83D\uDCB3 Credits, Codes & Bookings", c:"#8a94c9", bg:"#eef0f9", ids:["sec-issue","sec-birthdaycode","sec-redeem","sec-credit-backfill","sec-code","sec-weekday-special","sec-discount","sec-reschedule","sec-deposit"]},
     {t:"\uD83C\uDF89 Parties & Events", c:"#d9a441", bg:"#fbf3e1", ids:["sec-party","sec-parties","sec-deposit","sec-promos","sec-events","sec-partners"]},
     {t:"\u2699\uFE0F Hours & Settings", c:"#a89a89", bg:"#f2ede7", ids:["sec-prices","sec-rating","sec-photos","sec-closures","sec-weekly","sec-seasonal","sec-news"]}
   ];

@@ -250,13 +250,17 @@ export default async (req) => {
     if (rewardRec.validFrom && today2 < rewardRec.validFrom) {
       await logFailedCode({ code: rewardCode, reason: `not valid until ${rewardRec.validFrom}`, name, email, phone });
       return json({ error: "reward", message: rewardRec.kind === "birthday"
-        ? `🎂 This birthday gift can be used on ${rewardRec.validFrom} — see you then!`
+        ? (rewardRec.expiry && rewardRec.expiry !== rewardRec.validFrom
+            ? `🎂 This birthday gift can be used any day between ${rewardRec.validFrom} and ${rewardRec.expiry} — see you then!`
+            : `🎂 This birthday gift can be used on ${rewardRec.validFrom} — see you then!`)
         : `Free-visit code ${rewardCode} isn't valid until ${rewardRec.validFrom}.` }, 409);
     }
     if (rewardRec.expiry && rewardRec.expiry < today2) {
       await logFailedCode({ code: rewardCode, reason: `expired ${rewardRec.expiry}`, name, email, phone });
       return json({ error: "reward", message: rewardRec.kind === "birthday"
-        ? `🎂 This birthday gift was good on ${rewardRec.expiry} only and has expired.`
+        ? (rewardRec.validFrom && rewardRec.validFrom !== rewardRec.expiry
+            ? `🎂 This birthday gift was good between ${rewardRec.validFrom} and ${rewardRec.expiry} only and has expired.`
+            : `🎂 This birthday gift was good on ${rewardRec.expiry} only and has expired.`)
         : `Free-visit code ${rewardCode} has expired.` }, 409);
     }
     // Value = one admission of the most expensive child type present in the cart.
@@ -301,11 +305,15 @@ export default async (req) => {
       }
       if (r.validFrom && today2 < r.validFrom) {
         await logFailedCode({ code: bc, reason: `not valid until ${r.validFrom}`, name, email, phone });
-        return json({ error: "reward", message: `🎂 Birthday code ${bc} can be used on ${r.validFrom} — see you then!` }, 409);
+        return json({ error: "reward", message: (r.expiry && r.expiry !== r.validFrom)
+          ? `🎂 Birthday code ${bc} can be used any day between ${r.validFrom} and ${r.expiry} — see you then!`
+          : `🎂 Birthday code ${bc} can be used on ${r.validFrom} — see you then!` }, 409);
       }
       if (r.expiry && r.expiry < today2) {
         await logFailedCode({ code: bc, reason: `expired ${r.expiry}`, name, email, phone });
-        return json({ error: "reward", message: `🎂 Birthday code ${bc} was good on ${r.expiry} only and has expired.` }, 409);
+        return json({ error: "reward", message: (r.validFrom && r.validFrom !== r.expiry)
+          ? `🎂 Birthday code ${bc} was good between ${r.validFrom} and ${r.expiry} only and has expired.`
+          : `🎂 Birthday code ${bc} was good on ${r.expiry} only and has expired.` }, 409);
       }
       const admissionType = ch.admission || "regular";
       const price = admissionType === "sibling" ? PRICES.sibling : admissionType === "infant" ? PRICES.infant : PRICES.regular;

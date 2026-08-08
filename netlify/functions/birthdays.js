@@ -1,6 +1,10 @@
 // POST /api/birthdays  (admin key or staff PIN)
 //   { key, action:"list", month:"09" | "all" }  → children with birthdays that month + parent contact
 //   { key, action:"send", code }                 → generate + email that child's birthday gift code now
+//   { key, action:"send-custom", first, last, email, validFrom, validUntil, loyaltyCode? }
+//                                                 → manual version for a birthday that falls on a closed
+//                                                   day: a custom date-range 100%-free-admission code for
+//                                                   a named child. Works even with no existing loyalty card.
 //   { key, action:"remove", code }                → forget a child's birthday (keeps the loyalty card + punch history)
 // To set/edit a birth date, use POST /api/loyalty { action:"adjust", code, dob } instead —
 // that's the one place all loyalty-card edits (name, dob, punches) now live.
@@ -85,6 +89,41 @@ export default async (req) => {
 
     return json({ ok: true, code: result.code, when, emailed: result.emailed,
       message: `Birthday gift ${result.code} for ${first} — good on ${when}.` +
+               (result.emailed ? " Emailed to the family." : " (Email didn't send — share the code directly.)") });
+  }
+
+  // Manual, staff-triggered version for when a birthday falls on a closed day
+  // (e.g. Mondays) — same 100%-free-admission mechanism as the automatic
+  // birthday emails, but with a custom date window instead of a single day,
+  // and it works even for a child who has never visited before: it only needs
+  // a name to match at checkout, so no existing loyalty card is required. If
+  // the family already has one and you know the code, link it so "it's their
+  // birthday!" shows up on the card too — otherwise just leave that blank and
+  // a card gets created automatically the same way any first free visit does.
+  if (action === "send-custom") {
+    const first = (b.first || "").toString().trim().slice(0, 60);
+    const last = (b.last || "").toString().trim().slice(0, 60);
+    const email = (b.email || "").toString().trim().slice(0, 160);
+    const validFrom = (b.validFrom || "").toString().trim();
+    const validUntil = (b.validUntil || "").toString().trim() || validFrom;
+    const loyaltyCode = normalizeCode(b.loyaltyCode || "");
+    if (!first || !last) return json({ error: "Enter the child's first and last name." }, 400);
+    if (!email || !/^\S+@\S+\.\S+$/.test(email)) return json({ error: "Enter a valid email to send the code to." }, 400);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(validFrom)) return json({ error: "Pick a valid start date." }, 400);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(validUntil)) return json({ error: "Pick a valid end date." }, 400);
+    if (validUntil < validFrom) return json({ error: "The end date can't be before the start date." }, 400);
+
+    let dob = "", cardRec = null;
+    if (loyaltyCode) {
+      try { cardRec = await loyalty.get("card:" + loyaltyCode, { type: "json" }); } catch {}
+      if (cardRec) dob = cardRec.dob || "";
+    }
+
+    const result = await issueBirthdayCode({ first, last, email, dob }, { validFrom, validUntil }, loyaltyCode || null);
+    if (!result.ok) return json({ error: result.error }, 502);
+
+    return json({ ok: true, code: result.code, validFrom, validUntil, emailed: result.emailed,
+      message: `Birthday gift ${result.code} for ${first} ${last} — good ${validFrom === validUntil ? "on " + validFrom : "between " + validFrom + " and " + validUntil}.` +
                (result.emailed ? " Emailed to the family." : " (Email didn't send — share the code directly.)") });
   }
 

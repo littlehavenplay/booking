@@ -25,8 +25,8 @@ export default async (req) => {
   let rec = null;
   try { rec = await store.get("credit:" + code, { type: "json" }); } catch { rec = null; }
   if (!rec) return json({ error: "That credit code wasn't found." }, 404);
-  if (rec.type === "courtesy" || rec.channel === "online")
-    return json({ error: "This is a courtesy credit — it's valid online for open play only and can't be redeemed in store." }, 400);
+  if (rec.scope === "openplay" || rec.channel === "online")
+    return json({ error: "This credit is valid online for open play only and can't be redeemed in store." }, 400);
   if (!rec.active || (rec.amount || 0) < 1) return json({ error: "That credit has no balance left." }, 400);
   const today = new Date().toISOString().slice(0, 10);
   if (rec.expiry && rec.expiry < today) return json({ error: `That credit expired on ${rec.expiry}.` }, 400);

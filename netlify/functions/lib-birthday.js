@@ -18,7 +18,15 @@ export function ageOn(dob, onDate) {
   return Number(onDate.slice(0, 4)) - Number(dob.slice(0, 4));
 }
 
+// `when` can be a single "YYYY-MM-DD" string (the existing automatic birthday
+// flow — validFrom and expiry both land on that one day, unchanged behavior),
+// or an object { validFrom, validUntil } for a custom multi-day window (the
+// manual staff tool, e.g. covering a birthday that falls on a closed Monday).
 export async function issueBirthdayCode(rec, when, loyaltyCode) {
+  const isRange = when && typeof when === "object";
+  const validFrom = isRange ? when.validFrom : when;
+  const validUntil = isRange ? (when.validUntil || when.validFrom) : when;
+
   const rewards = getStore("rewards");
   let code = "";
   for (let i = 0; i < 10; i++) {
@@ -34,7 +42,7 @@ export async function issueBirthdayCode(rec, when, loyaltyCode) {
       code, type: "free-visit", kind: "birthday", source: "birthday",
       childName: ((rec.first || "") + " " + (rec.last || "")).trim(),
       loyaltyCode: loyaltyCode || rec.code || null,
-      validFrom: when, expiry: when, used: false,
+      validFrom, expiry: validUntil, used: false,
       issuedAt: new Date().toISOString(),
     });
   } catch { return { ok: false, error: "Couldn't save the gift code. Try again." }; }
@@ -48,15 +56,15 @@ export async function issueBirthdayCode(rec, when, loyaltyCode) {
       const card = await loyalty.get("card:" + lc, { type: "json" });
       if (card) {
         card.activeBirthdayCode = code;
-        card.activeBirthdayExpiry = when;
+        card.activeBirthdayExpiry = validUntil;
         await loyalty.setJSON("card:" + lc, card);
       }
     } catch {}
   }
 
   let emailed = false;
-  try { emailed = await sendBirthdayEmail(rec, code, when); } catch {}
-  return { ok: true, code, emailed };
+  try { emailed = await sendBirthdayEmail(rec, code, isRange ? { validFrom, validUntil } : when); } catch {}
+  return { ok: true, code, emailed, validFrom, validUntil };
 }
 
 export async function sendBirthdayEmail(rec, code, when) {
@@ -66,8 +74,16 @@ export async function sendBirthdayEmail(rec, code, when) {
   const bcc = process.env.STUDIO_EMAIL || undefined;
   const studio = process.env.STUDIO_NAME || "Little Haven Play Studio";
   const name = esc(rec.first || "your little one");
-  const pretty = prettyDate(when);
-  const turning = ageOn(rec.dob, when);
+  const isRange = when && typeof when === "object" && when.validFrom !== when.validUntil;
+  const singleDay = isRange ? when.validFrom : when;
+  const pretty = prettyDate(singleDay);
+  const turning = ageOn(rec.dob, singleDay);
+  const validityLine = isRange
+    ? `Good between <b>${esc(prettyDate(when.validFrom))}</b> and <b>${esc(prettyDate(when.validUntil))}</b> 🎈`
+    : `Good on ${esc(pretty)} — birthday day only 🎈`;
+  const bodyLine = isRange
+    ? `Enter this code in the <b>"Free-visit reward code"</b> box when you book online. It's valid for one child admission any day between <b>${esc(prettyDate(when.validFrom))}</b> and <b>${esc(prettyDate(when.validUntil))}</b>, and can be used once.`
+    : `Enter this code in the <b>"Free-visit reward code"</b> box when you book online. It's valid on ${esc(pretty)} only, for one child admission, and can be used once.`;
 
   const html = `
 <div style="font-family:Arial,Helvetica,sans-serif;background:#fdf1ec;padding:26px 14px">
@@ -85,11 +101,10 @@ export async function sendBirthdayEmail(rec, code, when) {
       <div style="background:#ecf1e8;border:2px dashed #7ba676;border-radius:16px;padding:18px;text-align:center;margin:18px 0">
         <div style="font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#4d7848;font-weight:800">Your birthday gift code</div>
         <div style="font-size:30px;font-weight:800;letter-spacing:3px;color:#2a2622;margin:8px 0">${esc(code)}</div>
-        <div style="font-size:13px;color:#4d7848;font-weight:700">Good on ${esc(pretty)} — birthday day only 🎈</div>
+        <div style="font-size:13px;color:#4d7848;font-weight:700">${validityLine}</div>
       </div>
       <p style="margin:0 0 14px;font-size:14px;color:#5c6470;line-height:1.6">
-        Enter this code in the <b>"Free-visit reward code"</b> box when you book online.
-        It's valid on ${esc(pretty)} only, for one child admission, and can be used once.
+        ${bodyLine}
       </p>
       <div style="text-align:center;margin:22px 0 6px">
         <a href="https://littlehavenplay.com/book.html" style="display:inline-block;background:#c97d76;color:#ffffff;text-decoration:none;font-weight:800;font-size:16px;padding:14px 34px;border-radius:40px">Book the birthday visit →</a>
