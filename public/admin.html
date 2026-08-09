@@ -1346,10 +1346,49 @@ function renderPasses(){
       +'<td style="padding:7px 6px;color:var(--slate);font-size:.8rem">'+esc(p.email||"")+(p.phone?'<br>'+esc(p.phone):'')+'</td>'
       +'<td style="padding:7px 6px;white-space:nowrap">'+(p.admission==="infant"?"Infant":p.admission==="sibling"?"Sibling":"Regular")+(p.visits===8?' <span style="background:#e7f0df;color:#4f6b43;font-size:.58rem;font-weight:800;padding:2px 6px;border-radius:999px;vertical-align:middle">\uD83C\uDF9F\uFE0F 8TH-FREE PREPAID</span>':(p.legacy?' <span style="background:#efe7dd;color:#7a6253;font-size:.6rem;font-weight:800;padding:2px 6px;border-radius:999px;vertical-align:middle">LEGACY (% OFF)</span>':''))+'<br><b>'+p.visitsRemaining+(p.visits?"/"+p.visits:"")+' left</b>'+(p.reloadCount?'<br><span style="color:var(--taupe);font-size:.7rem">reloaded '+p.reloadCount+'×</span>':'')+'</td>'
       +'<td style="padding:7px 6px;white-space:nowrap;color:var(--taupe);font-size:.76rem">bought '+(p.purchaseDate?p.purchaseDate.slice(0,10):"—")+'<br>exp '+(p.expiry||"—")+'</td>'
-      +'<td style="padding:7px 0 7px 6px;text-align:right;white-space:nowrap"><span style="background:'+b[0]+';color:'+b[1]+';font-weight:800;font-size:.7rem;padding:3px 8px;border-radius:999px">'+b[2]+'</span><br><span style="font-family:monospace;font-size:.74rem">'+esc(p.code)+'</span></td>'
-      +'</tr>';});
+      +'<td style="padding:7px 0 7px 6px;text-align:right;white-space:nowrap"><span style="background:'+b[0]+';color:'+b[1]+';font-weight:800;font-size:.7rem;padding:3px 8px;border-radius:999px">'+b[2]+'</span><br><span style="font-family:monospace;font-size:.74rem">'+esc(p.code)+'</span>'
+      +(p.legacy?'<br><button type="button" onclick="pcOpenReload(\''+esc(p.code)+'\')" style="margin-top:4px;padding:4px 9px;font-size:.7rem;border-radius:7px;background:#e7f0df;color:#4f6b43;border:none;cursor:pointer">\uD83D\uDD04 Reload</button>':'')+'</td>'
+      +'</tr>'
+      +(p.legacy?'<tr id="reloadRow-'+esc(p.code)+'" style="display:none"><td colspan="5" style="padding:0"><div id="reloadPanel-'+esc(p.code)+'" style="background:#fdf9f4;border:1px solid #efe4d5;border-radius:10px;padding:10px 12px;margin:6px 0"></div></td></tr>':'');});
   $("#pcList").innerHTML=h+'</table></div>';
 }
+window.pcOpenReload=async function(code){
+  var row=document.getElementById("reloadRow-"+code), panel=document.getElementById("reloadPanel-"+code);
+  if(!row) return;
+  var showing=row.style.display!=="none" && row.style.display!=="";
+  if(showing){ row.style.display="none"; return; }
+  row.style.display="table-row";
+  panel.innerHTML='<span class="note" style="margin:0">Loading current price\u2026</span>';
+  var key=$("#key").value.trim();
+  if(!key){ panel.innerHTML='<span class="note" style="margin:0;color:#b5382f">Enter your admin key (top of page).</span>'; return; }
+  try{
+    var r=await (await fetch("/api/pass-issue",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key,action:"reload-preview",code})})).json();
+    if(!r.ok){ panel.innerHTML='<span class="note" style="margin:0;color:#b5382f">'+esc(r.error||"Couldn't load.")+'</span>'; return; }
+    panel.innerHTML='<div style="font-size:.85rem"><b>\uD83D\uDD04 Grandfathered reload for '+esc(r.childName||r.buyerName||code)+'</b></div>'
+      +'<div style="font-size:.82rem;margin-top:4px">Currently: <b>'+r.visitsBefore+'</b> visits left'+(r.reloadCount?' \u00b7 reloaded '+r.reloadCount+' time'+(r.reloadCount===1?"":"s")+' before':'')+'</div>'
+      +'<div style="font-size:.82rem;margin-top:4px">Adds <b>'+r.reloadVisits+' visits</b> (\u2192 '+r.visitsAfter+' total) \u2014 never expire</div>'
+      +'<div style="margin-top:8px;background:#fff;border:1px solid #e0d5c6;border-radius:8px;padding:8px 10px">'
+        +'<div style="font-size:.72rem;color:var(--taupe);text-transform:uppercase;letter-spacing:.05em">Collect in Square, in store</div>'
+        +'<div style="font-size:1.3rem;font-weight:900;color:#4f6b43">$'+(r.reloadPriceCents/100).toFixed(2)+'</div>'
+        +'<div style="font-size:.72rem;color:var(--taupe)">20% off '+r.reloadVisits+' \u00d7 $'+(r.perVisitCents/100).toFixed(2)+' ('+(r.admission)+', today\'s price) = $'+((r.perVisitCents*r.reloadVisits)/100).toFixed(2)+'</div>'
+      +'</div>'
+      +'<button type="button" onclick="pcConfirmReload(\''+code+'\')" style="margin-top:10px">\u2705 Payment collected \u2014 reload now</button>'
+      +'<div class="out" id="reloadOut-'+code+'"></div>';
+  }catch(e){ panel.innerHTML='<span class="note" style="margin:0;color:#b5382f">Network error.</span>'; }
+};
+window.pcConfirmReload=async function(code){
+  var key=$("#key").value.trim();
+  if(!confirm("Confirm: you've collected payment in Square for this reload? This adds the visits immediately and can't be un-done automatically."))return;
+  var out=document.getElementById("reloadOut-"+code); if(out){ out.style.display="block"; out.className="out"; out.textContent="Reloading\u2026"; }
+  try{
+    var r=await (await fetch("/api/pass-issue",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key,action:"reload-confirm",code})})).json();
+    if(r.ok){
+      if(out){ out.className="out ok"; out.textContent="\u2705 Reloaded! Now "+r.visitsRemaining+" visits, never expires."; }
+      var p=PASSES.find(function(x){return x.code===code;});
+      if(p){ p.visitsRemaining=r.visitsRemaining; p.reloadCount=r.reloadCount; p.expiry=""; p.status="active"; renderPasses(); }
+    } else { if(out){ out.className="out err"; out.textContent=r.error||"Couldn't reload."; } }
+  }catch(e){ if(out){ out.className="out err"; out.textContent="Network error."; } }
+};
 async function loadParties(){
   var key=_pkey(),out=$("#ptOut");out.className="out";
   if(!key){out.className="out err";out.style.display="";out.textContent="Enter your admin key (top of page).";return;}
