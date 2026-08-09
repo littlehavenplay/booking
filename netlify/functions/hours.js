@@ -47,7 +47,7 @@ export default async (req) => {
 
   if (action === "clearWeekly") {
     try { await site.delete("weekly-hours"); } catch {}
-    return json({ ok: true, weekly: null, message: "Weekly hours reset to the studio defaults (9–3, 4 PM Fri/Sat, closed Wednesdays)." });
+    return json({ ok: true, weekly: null, message: "Weekly hours reset to the studio defaults (9–3, 4 PM Fri/Sat, closed Mondays)." });
   }
 
   if (action === "save") {

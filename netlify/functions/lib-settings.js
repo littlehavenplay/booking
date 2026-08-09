@@ -266,9 +266,9 @@ export function closeMinutes(date) {
   return (wd === 5 || wd === 6) ? 960 : 900;   // 4:00 PM Fri/Sat, 3:00 PM otherwise
 }
 
-// Recurring weekly closures fallback (0=Sun ... 3=Wed ... 6=Sat). Used only when
-// no Weekly schedule has been saved in admin/staff. Closed Wednesday by default.
-export const CLOSED_WEEKDAYS = (process.env.CLOSED_WEEKDAYS || "3")
+// Recurring weekly closures fallback (0=Sun ... 6=Sat). Used only when no Weekly
+// schedule has been explicitly saved in admin/staff. Closed Monday by default.
+export const CLOSED_WEEKDAYS = (process.env.CLOSED_WEEKDAYS || "1")
   .split(",").map(s => parseInt(s.trim(), 10)).filter(n => !isNaN(n) && n >= 0 && n <= 6);
 export function weekdayOf(date) { return new Date(date + "T00:00:00Z").getUTCDay(); }
 export function fmtClock(min) {
@@ -276,7 +276,7 @@ export function fmtClock(min) {
   return hh + ":" + String(m).padStart(2, "0") + " " + ap;
 }
 
-// Built-in fallback hours for a date (open 9:00; close 3:00, 4:00 Fri/Sat; Wed closed).
+// Built-in fallback hours for a date (open 9:00; close 3:00, 4:00 Fri/Sat; Mon closed).
 function defaultDay(date) {
   return { open: 540, close: closeMinutes(date), closed: CLOSED_WEEKDAYS.includes(weekdayOf(date)) };
 }

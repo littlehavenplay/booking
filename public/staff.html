@@ -1848,7 +1848,7 @@ async function shLoad(){
   }catch(e){}
 }
 if($("#wkSave")) $("#wkSave").onclick=function(){wkCall("saveWeekly");};
-if($("#wkReset")) $("#wkReset").onclick=function(){if(confirm("Reset weekly hours to the studio defaults (9-3, 4 PM Fri/Sat, closed Wednesdays)?"))wkCall("clearWeekly");};
+if($("#wkReset")) $("#wkReset").onclick=function(){if(confirm("Reset weekly hours to the studio defaults (9-3, 4 PM Fri/Sat, closed Mondays)?"))wkCall("clearWeekly");};
 if($("#shSave")) $("#shSave").onclick=function(){shCall("save");};
 if($("#shClear")) $("#shClear").onclick=function(){shCall("clear");};
 

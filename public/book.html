@@ -122,7 +122,7 @@
     <div class="card">
       <p class="step"><span class="n">2</span> Choose your arrival time</p>
       <p style="margin:-4px 0 6px;font-size:.84rem;color:var(--ink-soft);font-weight:600">💛 Pick when you'll arrive — your 2 hours start then. A few minutes late is always okay; the times just help us keep the room comfy.</p>
-      <p id="closeLine" style="margin:0 0 10px;font-size:.8rem;color:var(--rose-deep);font-weight:700">🕒 We close at 3:00 PM (4:00 PM Fri & Sat) · closed Wednesdays · last admission 1 hour before close.</p>
+      <p id="closeLine" style="margin:0 0 10px;font-size:.8rem;color:var(--rose-deep);font-weight:700">🕒 We close at 3:00 PM (4:00 PM Fri & Sat) · closed Mondays · last admission 1 hour before close.</p>
       <div class="slots" id="slots"><div class="note">Pick a date to see availability…</div></div>
     </div>
 
@@ -951,7 +951,7 @@ init();
 <script>if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("/sw.js").catch(function(){});});}</script><script>
 (function(){
   function fmt(min){var h=Math.floor(min/60),m=min%60,ap=h<12?"AM":"PM",hh=((h+11)%12)+1;return hh+(m?":"+String(m).padStart(2,"0"):"")+" "+ap;}
-  function defSched(){var s={};for(var i=0;i<7;i++)s[i]=(i===3)?{closed:true}:{open:540,close:(i===5||i===6)?960:900,closed:false};return s;}
+  function defSched(){var s={};for(var i=0;i<7;i++)s[i]=(i===1)?{closed:true}:{open:540,close:(i===5||i===6)?960:900,closed:false};return s;}
   function today(){return new Date().toISOString().slice(0,10);}
   fetch("/api/hours",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({action:"public"})})
   .then(function(r){return r.json();}).then(function(d){
