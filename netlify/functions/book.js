@@ -233,10 +233,15 @@ export default async (req) => {
   // payment method, not a promo) — a discount code or store credit may not.
   const rewardCode = (body.rewardCode || "").toString().trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
   let rewardAmount = 0, rewardRec = null;
+  // A reward/birthday code's validFrom/expiry describe when the VISIT is allowed —
+  // e.g. a birthday code good August 16-23 — so every check below compares against
+  // `date` (the play date the customer picked), never today's real-world date.
+  // Comparing against "today" was a real bug: a customer booking in advance for a
+  // date inside the code's valid window (entirely normal — people book ahead) would
+  // get incorrectly rejected as "not valid yet" days before their actual visit.
   if (rewardCode) {
     if (discountCode) return json({ error: "reward", message: "A free-visit reward can't be combined with a discount code." }, 409);
     if (hasStoreCredit) return json({ error: "reward", message: "A free-visit reward can't be combined with store credit." }, 409);
-    const today2 = new Date().toISOString().slice(0, 10);
     const rewardStore = getStore("rewards");
     try { rewardRec = await rewardStore.get("reward:" + rewardCode, { type: "json" }); } catch { rewardRec = null; }
     if (!rewardRec) {
@@ -247,7 +252,7 @@ export default async (req) => {
       await logFailedCode({ code: rewardCode, reason: "already used", name, email, phone });
       return json({ error: "reward", message: `Free-visit code ${rewardCode} has already been used.` }, 409);
     }
-    if (rewardRec.validFrom && today2 < rewardRec.validFrom) {
+    if (rewardRec.validFrom && date < rewardRec.validFrom) {
       await logFailedCode({ code: rewardCode, reason: `not valid until ${rewardRec.validFrom}`, name, email, phone });
       return json({ error: "reward", message: rewardRec.kind === "birthday"
         ? (rewardRec.expiry && rewardRec.expiry !== rewardRec.validFrom
@@ -255,7 +260,7 @@ export default async (req) => {
             : `🎂 This birthday gift can be used on ${rewardRec.validFrom} — see you then!`)
         : `Free-visit code ${rewardCode} isn't valid until ${rewardRec.validFrom}.` }, 409);
     }
-    if (rewardRec.expiry && rewardRec.expiry < today2) {
+    if (rewardRec.expiry && rewardRec.expiry < date) {
       await logFailedCode({ code: rewardCode, reason: `expired ${rewardRec.expiry}`, name, email, phone });
       return json({ error: "reward", message: rewardRec.kind === "birthday"
         ? (rewardRec.validFrom && rewardRec.validFrom !== rewardRec.expiry
@@ -288,7 +293,6 @@ export default async (req) => {
     if (discountCode) return json({ error: "reward", message: "A birthday reward can't be combined with a discount code." }, 409);
     if (hasStoreCredit) return json({ error: "reward", message: "A birthday reward can't be combined with store credit." }, 409);
     const rewardStore = getStore("rewards");
-    const today2 = new Date().toISOString().slice(0, 10);
     const usedCodes = new Set();
     for (const ch of birthdayRows) {
       const bc = ch.birthdayCode;
@@ -303,13 +307,13 @@ export default async (req) => {
         await logFailedCode({ code: bc, reason: "already used", name, email, phone });
         return json({ error: "reward", message: `Birthday code ${bc} has already been used.` }, 409);
       }
-      if (r.validFrom && today2 < r.validFrom) {
+      if (r.validFrom && date < r.validFrom) {
         await logFailedCode({ code: bc, reason: `not valid until ${r.validFrom}`, name, email, phone });
         return json({ error: "reward", message: (r.expiry && r.expiry !== r.validFrom)
           ? `🎂 Birthday code ${bc} can be used any day between ${r.validFrom} and ${r.expiry} — see you then!`
           : `🎂 Birthday code ${bc} can be used on ${r.validFrom} — see you then!` }, 409);
       }
-      if (r.expiry && r.expiry < today2) {
+      if (r.expiry && r.expiry < date) {
         await logFailedCode({ code: bc, reason: `expired ${r.expiry}`, name, email, phone });
         return json({ error: "reward", message: (r.validFrom && r.validFrom !== r.expiry)
           ? `🎂 Birthday code ${bc} was good between ${r.validFrom} and ${r.expiry} only and has expired.`

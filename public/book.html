@@ -356,7 +356,10 @@ async function init(){
   if(!CFG.configured) $("#setupBanner").classList.remove("hidden");
 
   wireSteppers();
-  $("#date").onchange=()=>{state.date=$("#date").value;state.slot="";loadAvailability();};
+  $("#date").onchange=()=>{state.date=$("#date").value;state.slot="";loadAvailability();
+    if(($("#rewardCode")||{}).value) checkReward();
+    document.querySelectorAll(".cn-bdcode").forEach(function(inp){ if(inp.value) cnCheckBirthdayMismatch(inp.closest(".cn-row")); });
+  };
   $("#agree").onchange=updateTotals;
   $("#name").oninput=updateTotals;
   $("#email").oninput=updateTotals;
@@ -631,7 +634,7 @@ async function cnCheckBirthdayMismatch(row){
   if(!code){ msg.textContent=""; return; }
   msg.style.color="var(--ink-soft)"; msg.textContent="Checking…";
   try{
-    const r=await (await fetch("/api/loyalty",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({action:"reward-check",rewardCode:code})})).json();
+    const r=await (await fetch("/api/loyalty",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({action:"reward-check",rewardCode:code,date:state.date})})).json();
     if(!r || !r.valid){
       msg.style.color="#b5382f";
       msg.textContent=r&&r.reason==="used"?"This code was already used.":r&&r.reason==="not_yet"?("Good starting "+r.validFrom+"."):r&&r.reason==="expired"?"This code has expired.":"Code not found.";
@@ -891,7 +894,7 @@ async function checkReward(){
   if(!code){ msg.style.display="none"; state.reward={code:"",amount:0,ok:false}; updateTotals(); return; }
   msg.textContent="Checking…"; msg.style.color="var(--ink-soft)";
   try{
-    const r=await (await fetch("/api/loyalty",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({action:"reward-check",rewardCode:code})})).json();
+    const r=await (await fetch("/api/loyalty",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({action:"reward-check",rewardCode:code,date:state.date})})).json();
     if(r.valid){
       // Value = one admission of the most expensive type currently in the cart —
       // matches the server's own calculation exactly.

@@ -27,9 +27,12 @@ export default async (req) => {
     try { r = await rewards.get("reward:" + rc, { type: "json" }); } catch { r = null; }
     if (!r) return json({ valid: false, reason: "not_found" });
     if (r.used) return json({ valid: false, reason: "used" });
-    const today = todayPacific();
-    if (r.validFrom && today < r.validFrom) return json({ valid: false, reason: "not_yet", validFrom: r.validFrom });
-    if (today > r.expiry) return json({ valid: false, reason: "expired" });
+    // Validate against the play date the customer picked, not today's real date —
+    // a code good for a future window (e.g. a birthday code valid Aug 16-23) must
+    // check out fine when booked in advance for a date inside that window.
+    const playDate = (b.date || "").toString().trim() || todayPacific();
+    if (r.validFrom && playDate < r.validFrom) return json({ valid: false, reason: "not_yet", validFrom: r.validFrom });
+    if (r.expiry && playDate > r.expiry) return json({ valid: false, reason: "expired" });
     return json({ valid: true, code: rc, childName: r.childName || "", expiry: r.expiry,
       type: "free-visit", kind: r.kind || "visit", loyaltyCode: r.loyaltyCode || null });
   }
