@@ -73,12 +73,12 @@
     <label>Arrival time</label>
     <select id="awSlot">
       <option value="">Auto — nearest to now</option>
-      <option value="arr09">9:00 AM</option>
-      <option value="arr10">10:00 AM</option>
-      <option value="arr11">11:00 AM</option>
-      <option value="arr12">12:00 PM</option>
-      <option value="arr13">1:00 PM</option>
-      <option value="arr14">2:00 PM</option><option value="arr15">3:00 PM (Fri/Sat)</option>
+      <option value="arr09">9:00 AM</option><option value="arr0930">9:30 AM</option>
+      <option value="arr10">10:00 AM</option><option value="arr1030">10:30 AM</option>
+      <option value="arr11">11:00 AM</option><option value="arr1130">11:30 AM</option>
+      <option value="arr12">12:00 PM</option><option value="arr1230">12:30 PM</option>
+      <option value="arr13">1:00 PM</option><option value="arr1330">1:30 PM</option>
+      <option value="arr14">2:00 PM</option><option value="arr1430">2:30 PM</option><option value="arr15">3:00 PM (Fri/Sat)</option>
     </select>
     <label>Children walking in</label>
     <input type="number" id="awCount" min="1" placeholder="e.g. 2">
@@ -127,12 +127,12 @@
       <label>New time slot</label>
       <select id="rsToSlot">
         <optgroup label="Open play arrival times">
-          <option value="arr09">9:00 AM</option>
-          <option value="arr10">10:00 AM</option>
-          <option value="arr11">11:00 AM</option>
-          <option value="arr12">12:00 PM</option>
-          <option value="arr13">1:00 PM</option>
-          <option value="arr14">2:00 PM</option><option value="arr15">3:00 PM (Fri/Sat)</option>
+          <option value="arr09">9:00 AM</option><option value="arr0930">9:30 AM</option>
+          <option value="arr10">10:00 AM</option><option value="arr1030">10:30 AM</option>
+          <option value="arr11">11:00 AM</option><option value="arr1130">11:30 AM</option>
+          <option value="arr12">12:00 PM</option><option value="arr1230">12:30 PM</option>
+          <option value="arr13">1:00 PM</option><option value="arr1330">1:30 PM</option>
+          <option value="arr14">2:00 PM</option><option value="arr1430">2:30 PM</option><option value="arr15">3:00 PM (Fri/Sat)</option>
         </optgroup>
         <optgroup label="Private party times (Fri–Sun)">
           <option value="p0930">9:30 - 11:30 AM (party)</option>
@@ -201,12 +201,12 @@
     <label>Time slot</label>
     <select id="rzSlot">
       <optgroup label="Open play arrival times">
-        <option value="arr09">9:00 AM</option>
-        <option value="arr10">10:00 AM</option>
-        <option value="arr11">11:00 AM</option>
-        <option value="arr12">12:00 PM</option>
-        <option value="arr13">1:00 PM</option>
-        <option value="arr14">2:00 PM</option><option value="arr15">3:00 PM (Fri/Sat)</option>
+        <option value="arr09">9:00 AM</option><option value="arr0930">9:30 AM</option>
+        <option value="arr10">10:00 AM</option><option value="arr1030">10:30 AM</option>
+        <option value="arr11">11:00 AM</option><option value="arr1130">11:30 AM</option>
+        <option value="arr12">12:00 PM</option><option value="arr1230">12:30 PM</option>
+        <option value="arr13">1:00 PM</option><option value="arr1330">1:30 PM</option>
+        <option value="arr14">2:00 PM</option><option value="arr1430">2:30 PM</option><option value="arr15">3:00 PM (Fri/Sat)</option>
       </optgroup>
       <optgroup label="Private party times (Fri–Sun)">
         <option value="p0930">9:30 - 11:30 AM (party)</option>
@@ -819,7 +819,7 @@ $("#rosView").onclick=async()=>{
           const arrived=p.id&&arr[p.id];
           html+='<tr style="border-top:1px solid #f0e9df'+(arrived?';background:#eaf3e4':'')+'">'
               +'<td style="padding:6px 0;width:30px;text-align:center">'+(p.id?'<input type="checkbox" data-id="'+p.id+'" data-email="'+(p.email||'')+'" '+(arrived?'checked':'')+' onchange="markArrived(this)" title="Mark arrived" style="width:auto;transform:scale(1.35);cursor:pointer">':'')+'</td>'
-              +'<td style="padding:6px 0;font-weight:700">'+(arrived?'\u2705 ':'')+esc(p.name)+(p.legacy?' <span style="font-size:.7rem;color:var(--taupe)">(2-hr session)</span>':'')+'</td>'
+              +'<td style="padding:6px 0;font-weight:700">'+(arrived?'\u2705 ':'')+esc(p.name)+(p.arrivalLabel?' <span style="font-size:.68rem;font-weight:800;color:#7a6f95;background:#efeaf3;border-radius:6px;padding:1px 6px;white-space:nowrap">\u23F1 '+esc(p.arrivalLabel)+'</span>':'')+(p.legacy?' <span style="font-size:.7rem;color:var(--taupe)">(2-hr session)</span>':'')+'</td>'
               +'<td style="padding:6px 0;color:var(--slate)">'+parts.join(", ")+' · '+p.adults+' adult'+(p.adults===1?'':'s')+'</td>'
               +'<td style="padding:6px 0;color:var(--taupe);text-align:right">'+esc(p.paid)+'</td></tr>';
           if(p.email) html+='<tr'+(arrived?' style="background:#eaf3e4"':'')+'><td colspan="4" style="padding:0 0 6px 30px;color:var(--taupe);font-size:.78rem">'+esc(p.email)+'</td></tr>';
@@ -2155,5 +2155,6 @@ if($("#wsSave")) $("#wsSave").onclick=async function(){
 })();
 </script>
 
+<script src="/assets/phone-format.js" defer></script>
 </body>
 </html>

@@ -258,5 +258,6 @@ async function submitQuestionnaire(){
   }catch(e){ msg.className="msg err"; msg.textContent="Network error. Please try again."; $("#qSubmit").disabled=false; $("#qSubmit").textContent="Send my preferences"; }
 }
 </script>
-<script>if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("/sw.js").catch(function(){});});}</script></body>
+<script>if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("/sw.js").catch(function(){});});}</script><script src="/assets/phone-format.js" defer></script>
+</body>
 </html>

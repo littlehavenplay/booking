@@ -1,5 +1,5 @@
 import { getStore } from "@netlify/blobs";
-import { CAPACITY, openPlayForDate, effectivePartyBlocks, slotCap, slotKey, arrivalStartMin, PARTY_SLOT_IDS, CLOSED_DATES, CLOSED_MESSAGE, ARRIVAL_TO_LEGACY, hoursFor, fmtClock, isClosedWeekday } from "./lib-settings.js";
+import { CAPACITY, openPlayForDate, effectivePartyBlocks, slotCap, slotKey, arrivalStartMin, PARTY_SLOT_IDS, CLOSED_DATES, CLOSED_MESSAGE, ARRIVAL_TO_LEGACY, hoursFor, fmtClock, isClosedWeekday, countHourChildren, hourMatesFor } from "./lib-settings.js";
 import { loadSeasonal, loadWeekly } from "./lib-hours.js";
 import { getClosure, applyClosure } from "./lib-closures.js";
 
@@ -49,20 +49,20 @@ export default async (req) => {
   const _todayPT = new Date().toLocaleDateString("en-CA", { timeZone: "America/Los_Angeles" });
   const _nowMinPT = (() => { const t = new Date().toLocaleTimeString("en-GB", { timeZone: "America/Los_Angeles", hour12: false }); const [h, m] = t.split(":").map(Number); return h * 60 + m; })();
   for (const slot of daySlots) {
-    let rec = null, blockRec = null;
-    try { rec = await store.get(slotKey(date, slot.id), { type: "json" }); } catch { rec = null; }
-    try { blockRec = await blocks.get(slotKey(date, slot.id), { type: "json" }); } catch { blockRec = null; }
+    // A reservation/limit on either the :00 or the :30 covers the shared hour.
+    let blockRec = null;
+    for (const mid of hourMatesFor(slot.id)) {
+      try { const br = await blocks.get(slotKey(date, mid), { type: "json" }); if (br) { blockRec = br; break; } } catch {}
+    }
     let cap = slotCap(slot.id);
     let hardBlocked = false, limited = false;
     if (blockRec) {
       if (typeof blockRec.cap === "number") { cap = Math.min(cap, Math.max(0, blockRec.cap)); limited = true; }
       else hardBlocked = true;   // full block / manual reservation
     }
-    let children = rec && typeof rec.children === "number" ? rec.children : 0;
-    // Add any existing OLD-session bookings that map onto this arrival time.
-    for (const legacy of (ARRIVAL_TO_LEGACY[slot.id] || [])) {
-      try { const lr = await store.get(slotKey(date, legacy), { type: "json" }); if (lr && typeof lr.children === "number") children += lr.children; } catch {}
-    }
+    // Children booked into this slot's shared hourly pool (its :00, :30, and any
+    // legacy session for the same hour) — so 1:00 and 1:30 report the SAME remaining.
+    let children = await countHourChildren(store, date, slot.id);
     const _start = arrivalStartMin(slot.id);
     const past = (date === _todayPT && _start != null && _start <= _nowMinPT);
     const partyReserved = !openAfterBooked.has(slot.id);

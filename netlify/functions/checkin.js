@@ -11,7 +11,7 @@
 // nearest the current Pacific time (e.g. 10:50 AM -> 11:00-1:00). Each is tagged
 // with a timestamp so you can see exactly when each group arrived.
 import { getStore } from "@netlify/blobs";
-import { ARRIVAL, openPlayForDate, slotCap, slotKey, PARTY_SLOT_IDS, hoursFor } from "./lib-settings.js";
+import { ARRIVAL, openPlayForDate, slotCap, slotKey, PARTY_SLOT_IDS, hoursFor, countHourChildren } from "./lib-settings.js";
 import { loadSeasonal, loadWeekly } from "./lib-hours.js";
 import { graduateLegacyCard } from "./lib-loyalty.js";
 
@@ -109,12 +109,13 @@ export default async (req) => {
       id: crypto.randomUUID(), type: "pass", code, childName: p.childName || "", children: count,
       label: p.label || "", at: atISO, atLabel, waiverConfirmed, waiverConfirmedAt: waiverConfirmed ? atISO : null,
     });
+    const hourKids = await countHourChildren(bookings, date, slot);   // whole hour (:00 + :30), not just this slot
     return json({
       ok: true, slot, slotLabel: chosen.label, atLabel,
       visitsRemaining: p.visitsRemaining, code, label: p.label || "",
       freeVisit, graduated: freeVisit, reminderEmailed,
       celebration: freeVisit ? "📋 That was their last prepaid visit. This card is now complete — they're on our free loyalty program going forward, no reload available." : "",
-      children: rec.children, cap, remaining: Math.max(0, cap - rec.children), over: rec.children > cap,
+      children: hourKids, cap, remaining: Math.max(0, cap - hourKids), over: hourKids > cap,
       message: freeVisit
         ? `Pass ${code} is now used up — that was their last prepaid visit (already paid for, not free). This card is retired; they're automatically on the free loyalty program going forward.`
         : `Checked in ${count} on pass ${code} to ${chosen.label}. ${p.visitsRemaining} visit(s) left.`,
@@ -130,9 +131,10 @@ export default async (req) => {
       id: crypto.randomUUID(), type: "walkin", children: count, adults: adultCount, at: atISO, atLabel,
       waiverConfirmed, waiverConfirmedAt: waiverConfirmed ? atISO : null,
     });
+    const hourKids = await countHourChildren(bookings, date, slot);   // whole hour (:00 + :30), not just this slot
     return json({
       ok: true, slot, slotLabel: chosen.label, atLabel,
-      children: rec.children, cap, remaining: Math.max(0, cap - rec.children), over: rec.children > cap,
+      children: hourKids, cap, remaining: Math.max(0, cap - hourKids), over: hourKids > cap,
       message: `Logged ${count} walk-in child${count === 1 ? "" : "ren"}${adultCount ? ` + ${adultCount} adult${adultCount === 1 ? "" : "s"}` : ""} at ${atLabel} → ${chosen.label}.`,
     });
   }

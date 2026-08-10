@@ -608,9 +608,11 @@ function renderLoyaltyList(){
     var adultsBlock='<div style="padding:8px 12px;border-top:1px dashed #eee1d2;background:#fffdf9">'
       +'<div class="note" style="margin:0 0 4px;font-size:.72rem;font-weight:700">\uD83D\uDC65 Adults/supervisors who signed the waiver \u2014 tracked separately per person, even for the same child:</div>'
       +(adults.length?'<div style="display:flex;flex-direction:column;gap:4px">'+adults.map(function(a,i){
-          var exp=a.expiry?new Date(a.expiry+"T12:00:00"):null;
+          var expStr=a.expiry;
+          if(!expStr && a.signedDate && /^\d{4}-\d{2}-\d{2}$/.test(a.signedDate)){ var _e=new Date(a.signedDate+"T12:00:00"); _e.setDate(_e.getDate()+365); expStr=_e.toISOString().slice(0,10); }
+          var exp=expStr?new Date(expStr+"T12:00:00"):null;
           var ok=exp && exp>=new Date();
-          var tag=a.expiry?(ok?('<span style="color:#4d7848;font-weight:700">valid to '+esc(a.expiry)+'</span>'):('<span style="color:#b5382f;font-weight:700">expired '+esc(a.expiry)+'</span>')):'<span style="color:var(--taupe)">no date on file</span>';
+          var tag=expStr?(ok?('<span style="color:#4d7848;font-weight:700">valid to '+esc(expStr)+'</span>'):('<span style="color:#b5382f;font-weight:700">expired '+esc(expStr)+'</span>')):'<span style="color:var(--taupe)">no waiver date on file</span>';
           return '<div style="display:flex;align-items:center;gap:8px;background:#f0ede5;border-radius:9px;padding:5px 10px;font-size:.78rem"><b style="min-width:120px">'+esc(a.name)+'</b><span>Signed: <b>'+(a.signedDate?esc(a.signedDate):'\u2014')+'</b></span><span>\u00b7 '+tag+'</span><button type="button" onclick="removeWaiverAdult('+famRef+','+i+')" style="margin-left:auto;border:none;background:none;color:#b5382f;cursor:pointer;font-weight:900;padding:0 2px">\u2715</button></div>';
         }).join("")+'</div>':'<span class="note" style="margin:0;font-size:.75rem">none on file yet</span>')
       +'<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;align-items:center">'
@@ -660,5 +662,6 @@ window.removeWaiverAdult=async function(phone4,code,idx){
 };
 
 </script>
+<script src="/assets/phone-format.js" defer></script>
 </body>
 </html>

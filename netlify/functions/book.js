@@ -13,7 +13,7 @@ import { getStore } from "@netlify/blobs";
 import { SIGNATURE_HTML, sendOwnerAlert } from "./lib-email.js";
 import {
   CAPACITY, pricesFor, SLOTS, SLOT_IDS, openPlayForDate, effectivePartyBlocks, hoursFor, slotCap, slotKey, arrivalStartMin, squareApiBase, SQUARE_VERSION, BOOKING_WINDOW_DAYS,
-  PARTY_SLOT_IDS, ARRIVAL_TO_LEGACY,
+  PARTY_SLOT_IDS, ARRIVAL_TO_LEGACY, countHourChildren, hourMatesFor,
   STUDIO_NAME, POLICY_TITLE, POLICY_LINES, CLOSED_DATES, CLOSED_MESSAGE, ADDITIONAL_ADULT, isClosedWeekday, weekdayOf,
   additionalAdultsFor, additionalAdultCentsFor,
 } from "./lib-settings.js";
@@ -342,24 +342,24 @@ export default async (req) => {
   const store = getStore("bookings");
   const key = slotKey(date, slot);
 
-  // Reserved for a private party?
+  // Reserved for a private party? A block on either the :00 or the :30 reserves the
+  // whole shared hour, so check every mate before allowing a booking into it.
   try {
-    const blocked = await getStore("blocks").get(key, { type: "json" });
-    if (blocked) return json({ error: "reserved", message: "That session is reserved for a private party." }, 409);
+    const blocksStore = getStore("blocks");
+    for (const mid of hourMatesFor(slot)) {
+      if (await blocksStore.get(slotKey(date, mid), { type: "json" }))
+        return json({ error: "reserved", message: "That session is reserved for a private party." }, 409);
+    }
   } catch {}
 
-  // Capacity check (read current count). Existing bookings under the OLD session
-  // that maps to this arrival time count too, so the room is never oversold.
-  let rec = null;
-  try { rec = await store.get(key, { type: "json" }); } catch { rec = null; }
-  let current = rec && typeof rec.children === "number" ? rec.children : 0;
-  for (const legacy of (ARRIVAL_TO_LEGACY[slot] || [])) {
-    try { const lr = await store.get(slotKey(date, legacy), { type: "json" }); if (lr && typeof lr.children === "number") current += lr.children; } catch {}
-  }
+  // Capacity check: this arrival shares one pool of `cap` children with its :00/:30
+  // partner (and any legacy session for the same hour), so a 1:00 and a 1:30 booking
+  // draw from the SAME 6 and the room is never oversold.
+  const current = await countHourChildren(store, date, slot);
   if (current + children > cap) {
     const remaining = Math.max(0, cap - current);
     return json({ error: "full", remaining,
-      message: `Only ${remaining} spot${remaining === 1 ? "" : "s"} left in that session.` }, 409);
+      message: `Only ${remaining} spot${remaining === 1 ? "" : "s"} left in that hour.` }, 409);
   }
 
   const note = `Open Play ${date} ${slot} - ${regular} reg + ${sibling} sib + ${infant} infant`;
@@ -426,6 +426,12 @@ export default async (req) => {
     return json({ error: "payment_error", message: "Could not reach the payment processor." }, 502);
   }
   const payment = payments[0] || null;
+  // Last 4 digits of the credit/debit card used (from Square's payment response),
+  // so staff can match this booking to the Square transaction at check-in. Only
+  // the last 4 is stored — that's explicitly permitted under PCI and is never the
+  // full card number. Null when nothing was charged to a card (gift card / credit / free).
+  const cardPayment = payments.find(p => p && p.card_details && p.card_details.card && p.card_details.card.last_4);
+  const cardLast4 = cardPayment ? String(cardPayment.card_details.card.last_4).replace(/\D/g, "").slice(-4) : null;
 
   // Spend store credit (if used).
   if (creditApplied > 0 && creditRec) {
@@ -534,6 +540,7 @@ export default async (req) => {
     militaryAmount, militaryChildren: militaryAmount > 0 ? militaryChildren : [],
     passesUsed,
     paymentId: payment?.id || null,
+    cardLast4,
     at: new Date().toISOString(),
   });
   base.children = (base.children || 0) + children;
@@ -637,7 +644,7 @@ export default async (req) => {
     birthdayWarnings,
     adults: totalAdults,
     additionalAdults,
-    remaining: Math.max(0, cap - base.children),
+    remaining: Math.max(0, cap - (current + children)),
     paymentId: payment?.id || null,
   });
 };

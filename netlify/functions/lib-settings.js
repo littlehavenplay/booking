@@ -227,6 +227,19 @@ export const ARRIVAL = {
   "arr16": { label: "4:00 PM",  start: 960 },  // only via seasonal extended hours
   "arr17": { label: "5:00 PM",  start: 1020 },
   "arr18": { label: "6:00 PM",  start: 1080 },
+  // ---- :30 arrival times (share their clock hour's cap of ARRIVAL_CAP) ----
+  // A 1:30 booking draws from the SAME pool of 6 as the 1:00 booking, and these
+  // only appear on a day when they fall within that day's open hours (see
+  // openPlayForDate), so they self-adjust to any weekly/seasonal hours change.
+  "arr0930": { label: "9:30 AM",  start: 570,  half: true },
+  "arr1030": { label: "10:30 AM", start: 630,  half: true },
+  "arr1130": { label: "11:30 AM", start: 690,  half: true },
+  "arr1230": { label: "12:30 PM", start: 750,  half: true },
+  "arr1330": { label: "1:30 PM",  start: 810,  half: true },
+  "arr1430": { label: "2:30 PM",  start: 870,  half: true },
+  "arr1530": { label: "3:30 PM",  start: 930,  half: true },
+  "arr1630": { label: "4:30 PM",  start: 990,  half: true },
+  "arr1730": { label: "5:30 PM",  start: 1050, half: true },
 };
 export const ARRIVAL_IDS = Object.keys(ARRIVAL);
 
@@ -258,6 +271,32 @@ export function arrivalStartMin(slotId) {
 
 export function slotCap(slotId) {
   return ARRIVAL[slotId] ? ARRIVAL_CAP : ((OPENPLAY[slotId] && OPENPLAY[slotId].cap) || ARRIVAL_CAP);
+}
+
+// ---- Shared per-hour capacity ----
+// A clock hour is one pool of ARRIVAL_CAP (6) children shared by its :00 and :30
+// arrivals. hourMatesFor lists every slot id whose bookings count into that pool
+// (the :00, the :30, and any legacy session that maps to the same hour), so a
+// 1:00 booking and a 1:30 booking draw from the same 6.
+export function hourMatesFor(slotId) {
+  const start = arrivalStartMin(slotId);
+  if (start == null) return [slotId, ...(ARRIVAL_TO_LEGACY[slotId] || [])];  // legacy/unknown id
+  const hour = Math.floor(start / 60);
+  const arrivals = ARRIVAL_IDS.filter(id => Math.floor(ARRIVAL[id].start / 60) === hour);
+  const legacy = [];
+  for (const a of arrivals) legacy.push(...(ARRIVAL_TO_LEGACY[a] || []));
+  return [...new Set([...arrivals, ...legacy])];
+}
+
+// Count children already booked into slotId's shared hourly pool. One helper used
+// by availability, the booking check, reschedule, and the staff schedule so they
+// can never disagree and let the hour go over 6.
+export async function countHourChildren(store, date, slotId) {
+  let n = 0;
+  for (const id of hourMatesFor(slotId)) {
+    try { const r = await store.get(slotKey(date, id), { type: "json" }); if (r && typeof r.children === "number") n += r.children; } catch {}
+  }
+  return n;
 }
 
 // Closing time per day (minutes from midnight). Last admission is 1 hour before.
@@ -329,19 +368,30 @@ export function openPlayForDate(date, bookedPartyIds = [], hours = null) {
     .filter(id => {
       const a = ARRIVAL[id];
       if (a.start < open) return false;                       // before we open
-      if (a.start > close - 60) return false;                 // last admission = close − 1hr
+      // :00 last admission = close − 1hr. :30 slots stop 90 min before close, so the
+      // final (last-hour) hour never gets a :30 — e.g. no 2:30 when we close at 3:00.
+      const lastAdmit = a.half ? (close - 90) : (close - 60);
+      if (a.start > lastAdmit) return false;
       const vEnd = Math.min(a.start + VISIT_MINUTES, close);
       return !windows.some(w => a.start < w[1] && vEnd > w[0]); // visit overlaps a party
     })
+    .sort((x, y) => ARRIVAL[x].start - ARRIVAL[y].start)       // chronological — interleaves :00 & :30
     .map(id => {
       const a = ARRIVAL[id];
       const vEnd = Math.min(a.start + VISIT_MINUTES, close);
-      const lastCall = (vEnd - a.start) < VISIT_MINUTES;
+      const visitMin = vEnd - a.start;
+      const shortVisit = visitMin < VISIT_MINUTES;
+      const lastCall = shortVisit && !a.half;                  // only the final :00 slot is the "last hour"
+      const hrs = visitMin / 60;
+      const hrsLabel = Number.isInteger(hrs) ? String(hrs) : hrs.toFixed(1);
       return {
         id,
         label: a.label + (lastCall ? " (last hour)" : ""),
-        note: lastCall ? `We close at ${fmtClock(close)} — about a 1-hour visit. Come on by if an hour works for you!` : "",
+        note: lastCall
+          ? `We close at ${fmtClock(close)} — about a 1-hour visit. Come on by if an hour works for you!`
+          : (shortVisit ? `We close at ${fmtClock(close)} — about a ${hrsLabel}-hour visit for this arrival.` : ""),
         lastCall,
+        half: !!a.half,
       };
     });
 }

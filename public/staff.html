@@ -71,7 +71,7 @@
 
   <div id="app" class="hidden">
 <div id="secBar"><button id="secToggle" type="button">Sections ▾</button><div id="secMenu"><a href="#sec-schedule">Daily schedule</a><a href="#sec-walkin">Walk-in check-in</a><a href="#sec-punch">Punch-card check-in</a><a href="/loyalty.html">Loyalty &amp; Punch Cards</a><a href="#sec-reschedule">Reschedule &amp; cancel</a><a href="#sec-party">Session capacity &amp; blocking</a><a href="#sec-deposit">Record a party deposit</a><a href="#sec-redeem">Redeem a credit</a><a href="#sec-credit-backfill">Backfill credit emails</a><a href="#sec-issue">Issue a credit</a><a href="#sec-code">Manage a code</a><a href="#sec-punchissue">Legacy card tools</a><a href="#sec-closures">Closures &amp; hours</a><a href="#sec-passes">Legacy prepaid holders</a><a href="#sec-parties">Party bookings</a><a href="/headcount.html">Head count</a><a href="#sec-prices">Manage prices</a><a href="#sec-weekly">Weekly hours</a><a href="#sec-seasonal">Seasonal hours</a><a href="#sec-weekday-special">Weekday special</a><a href="#sec-discount">Discount codes</a><a href="#sec-news">News banner</a></div></div>
-<nav id="sideNav" aria-label="Sections"><div class="snav-title">Sections</div><a href="#sec-schedule">Daily schedule</a><a href="#sec-walkin">Walk-in check-in</a><a href="#sec-punch">Punch-card check-in</a><a href="/loyalty.html">Loyalty &amp; Punch Cards</a><a href="#sec-reschedule">Reschedule &amp; cancel</a><a href="#sec-party">Session capacity &amp; blocking</a><a href="#sec-deposit">Record a party deposit</a><a href="#sec-redeem">Redeem a credit</a><a href="#sec-credit-backfill">Backfill credit emails</a><a href="#sec-issue">Issue a credit</a><a href="#sec-code">Manage a code</a><a href="#sec-punchissue">Legacy card tools</a><a href="#sec-closures">Closures &amp; hours</a><a href="#sec-passes">Legacy prepaid holders</a><a href="#sec-parties">Party bookings</a><a href="/headcount.html">Head count</a><a href="#sec-prices">Manage prices</a><a href="#sec-weekly">Weekly hours</a><a href="#sec-seasonal">Seasonal hours</a><a href="#sec-weekday-special">Weekday special</a><a href="#sec-discount">Discount codes</a><a href="#sec-news">News banner</a><a href="#sec-rating">Reviews rating</a><a href="#sec-photos">Site photos</a><a href="#sec-promos">Promotions &amp; Flyers</a><a href="#sec-events">Upcoming events</a><a href="#sec-partners">Partners page</a><a href="#sec-birthdays">Birthday club</a></nav>
+<nav id="sideNav" aria-label="Sections"><div class="snav-title">Sections</div><a href="#sec-schedule">Daily schedule</a><a href="#sec-walkin">Walk-in check-in</a><a href="#sec-punch">Punch-card check-in</a><a href="/loyalty.html">Loyalty &amp; Punch Cards</a><a href="#sec-reschedule">Reschedule &amp; cancel</a><a href="#sec-party">Session capacity &amp; blocking</a><a href="#sec-deposit">Record a party deposit</a><a href="#sec-redeem">Redeem a credit</a><a href="#sec-credit-backfill">Backfill credit emails</a><a href="#sec-issue">Issue a credit</a><a href="#sec-code">Manage a code</a><a href="#sec-punchissue">Legacy card tools</a><a href="#sec-closures">Closures &amp; hours</a><a href="#sec-passes">Legacy prepaid holders</a><a href="#sec-parties">Party bookings</a><a href="/headcount.html">Head count</a><a href="#sec-prices">Manage prices</a><a href="#sec-weekly">Weekly hours</a><a href="#sec-seasonal">Seasonal hours</a><a href="#sec-weekday-special">Weekday special</a><a href="#sec-discount">Discount codes</a><a href="#sec-news">News banner</a><a href="#sec-rating">Reviews rating</a><a href="#sec-photos">Site photos</a><a href="#sec-promos">Promotions &amp; Flyers</a><a href="#sec-events">Upcoming events</a><a href="#sec-newsletter">📧 Newsletter</a><a href="#sec-partners">Partners page</a><a href="#sec-birthdays">Birthday club</a></nav>
     <h1>Daily schedule</h1>
     <div class="card" id="sec-schedule">
       <label>Date</label>
@@ -84,12 +84,12 @@
       <label>Arrival time</label>
       <select id="wiSlot">
         <option value="">Auto — nearest to now</option>
-        <option value="arr09">9:00 AM</option>
-        <option value="arr10">10:00 AM</option>
-        <option value="arr11">11:00 AM</option>
-        <option value="arr12">12:00 PM</option>
-        <option value="arr13">1:00 PM</option>
-        <option value="arr14">2:00 PM</option><option value="arr15">3:00 PM (Fri/Sat)</option>
+        <option value="arr09">9:00 AM</option><option value="arr0930">9:30 AM</option>
+        <option value="arr10">10:00 AM</option><option value="arr1030">10:30 AM</option>
+        <option value="arr11">11:00 AM</option><option value="arr1130">11:30 AM</option>
+        <option value="arr12">12:00 PM</option><option value="arr1230">12:30 PM</option>
+        <option value="arr13">1:00 PM</option><option value="arr1330">1:30 PM</option>
+        <option value="arr14">2:00 PM</option><option value="arr1430">2:30 PM</option><option value="arr15">3:00 PM (Fri/Sat)</option>
       </select>
       <div class="row">
         <div><label>Children walking in</label><input type="number" id="wiCount" min="1" placeholder="e.g. 2"></div>
@@ -174,6 +174,43 @@
     <p class="note">Events automatically move to "Past events" on the site after their date (no ticket sales). Capacity can't drop below tickets already sold.</p>
   </div>
 
+  <div class="card" id="sec-newsletter">
+    <h2>📧 Newsletter</h2>
+    <p class="note" style="margin-top:-2px">Send a promotion, event or closure update to everyone who opted in through the pop-up on your website. Write your message, add a photo if you like, then <b>send it now</b> or <b>schedule</b> it for later. Every email has a one-click <b>unsubscribe</b> at the bottom — anyone who unsubscribes is removed from your list <b>automatically</b>, and you'll get an email letting you know.</p>
+
+    <label>Subject line</label>
+    <input type="text" id="nlSubject" placeholder="e.g. This weekend only — 25% off open play! 🎉">
+    <label>Message</label>
+    <textarea id="nlMessage" rows="6" style="width:100%;border:1.5px solid #e7ddd0;border-radius:11px;padding:10px 12px;font-family:'Nunito';font-weight:600;background:#f3ebe0" placeholder="Hi friends! Here's what's happening at Little Haven this week…&#10;&#10;Leave a blank line between paragraphs."></textarea>
+    <div class="row">
+      <div><label>Photo of the promo/event <span style="font-weight:400;color:var(--slate);text-transform:none">(optional)</span></label><input type="file" id="nlImage" accept="image/*"></div>
+    </div>
+    <label style="display:flex;gap:8px;align-items:center;text-transform:none;letter-spacing:0;font-weight:700;color:var(--charcoal);margin-top:10px;cursor:pointer"><input type="checkbox" id="nlBook" checked style="width:auto;transform:scale(1.15)"> Include a “Book your visit” button that links to open play</label>
+    <div id="nlBookLinkWrap"><label>Button link</label><input type="text" id="nlBookLink" value="https://littlehavenplay.com/book.html"></div>
+
+    <label>When to send</label>
+    <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center;margin-bottom:6px">
+      <label style="text-transform:none;letter-spacing:0;font-weight:700;color:var(--charcoal);margin:0;cursor:pointer"><input type="radio" name="nlWhen" value="now" checked style="width:auto"> Send now</label>
+      <label style="text-transform:none;letter-spacing:0;font-weight:700;color:var(--charcoal);margin:0;cursor:pointer"><input type="radio" name="nlWhen" value="sched" style="width:auto"> Schedule for later</label>
+      <input type="datetime-local" id="nlSchedAt" disabled style="width:auto">
+    </div>
+    <button id="nlSend">📨 Send / Schedule</button>
+    <div class="out" id="nlOut"></div>
+
+    <div style="margin-top:18px;border-top:1px solid #efe4d5;padding-top:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+        <b id="nlCount">Subscribers</b>
+        <span><button id="nlRefresh" class="ghost" style="background:#eee;color:var(--charcoal);margin:0">🔄 Refresh</button> <button id="nlExport" class="alt" style="margin:0">📤 Export CSV</button></span>
+      </div>
+      <div id="nlSubs" style="margin-top:10px;max-height:280px;overflow:auto"></div>
+    </div>
+
+    <div style="margin-top:16px;border-top:1px solid #efe4d5;padding-top:12px">
+      <b>Recent &amp; scheduled sends</b>
+      <div id="nlCampaigns" style="margin-top:10px"></div>
+    </div>
+  </div>
+
   <div class="card" id="sec-partners">
     <h2>🤝 Partners page</h2>
     <p class="note" style="margin-top:-2px">Edit the party perks shown on your public <b>Partners</b> tab. Turn a partner off to hide them without deleting. Changes go live after you save (hard-refresh to see them).</p>
@@ -214,12 +251,12 @@
       <label>New time slot</label>
       <select id="rsToSlot">
         <optgroup label="Open play arrival times">
-          <option value="arr09">9:00 AM</option>
-          <option value="arr10">10:00 AM</option>
-          <option value="arr11">11:00 AM</option>
-          <option value="arr12">12:00 PM</option>
-          <option value="arr13">1:00 PM</option>
-          <option value="arr14">2:00 PM</option><option value="arr15">3:00 PM (Fri/Sat)</option>
+          <option value="arr09">9:00 AM</option><option value="arr0930">9:30 AM</option>
+          <option value="arr10">10:00 AM</option><option value="arr1030">10:30 AM</option>
+          <option value="arr11">11:00 AM</option><option value="arr1130">11:30 AM</option>
+          <option value="arr12">12:00 PM</option><option value="arr1230">12:30 PM</option>
+          <option value="arr13">1:00 PM</option><option value="arr1330">1:30 PM</option>
+          <option value="arr14">2:00 PM</option><option value="arr1430">2:30 PM</option><option value="arr15">3:00 PM (Fri/Sat)</option>
         </optgroup>
         <optgroup label="Private party times (Fri–Sun)">
           <option value="p0930">9:30 - 11:30 AM (party)</option>
@@ -269,12 +306,12 @@
       <label>Time slot</label>
       <select id="ovSlot">
         <optgroup label="Open play arrival times">
-          <option value="arr09">9:00 AM</option>
-          <option value="arr10">10:00 AM</option>
-          <option value="arr11">11:00 AM</option>
-          <option value="arr12">12:00 PM</option>
-          <option value="arr13">1:00 PM</option>
-          <option value="arr14">2:00 PM</option><option value="arr15">3:00 PM (Fri/Sat)</option>
+          <option value="arr09">9:00 AM</option><option value="arr0930">9:30 AM</option>
+          <option value="arr10">10:00 AM</option><option value="arr1030">10:30 AM</option>
+          <option value="arr11">11:00 AM</option><option value="arr1130">11:30 AM</option>
+          <option value="arr12">12:00 PM</option><option value="arr1230">12:30 PM</option>
+          <option value="arr13">1:00 PM</option><option value="arr1330">1:30 PM</option>
+          <option value="arr14">2:00 PM</option><option value="arr1430">2:30 PM</option><option value="arr15">3:00 PM (Fri/Sat)</option>
         </optgroup>
         <optgroup label="Private party times (Fri–Sun)">
           <option value="p0930">9:30 - 11:30 AM (party)</option>
@@ -668,7 +705,7 @@ function esc(s){return (s||"").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
   const t=new Date(); t.setMinutes(t.getMinutes()-t.getTimezoneOffset());
   $("#date").value=t.toISOString().slice(0,10);
   { const od=$("#ovDate"); if(od) od.value=t.toISOString().slice(0,10); }
-  if(PIN){ $("#gate").classList.add("hidden"); $("#app").classList.remove("hidden"); loadDay(); clLoad(); loadEvents(); pnLoad(); }
+  if(PIN){ $("#gate").classList.add("hidden"); $("#app").classList.remove("hidden"); loadDay(); clLoad(); loadEvents(); pnLoad(); nlLoad(); }
 })();
 
 $("#enter").onclick=async()=>{
@@ -677,7 +714,7 @@ $("#enter").onclick=async()=>{
   if(!PIN){ out.className="out err"; out.textContent="Enter the staff PIN."; return; }
   // validate by attempting a load
   const ok=await loadDay(true);
-  if(ok){ sessionStorage.setItem("lh_staff_pin",PIN); $("#gate").classList.add("hidden"); $("#app").classList.remove("hidden"); clLoad(); loadEvents(); pnLoad(); }
+  if(ok){ sessionStorage.setItem("lh_staff_pin",PIN); $("#gate").classList.add("hidden"); $("#app").classList.remove("hidden"); clLoad(); loadEvents(); pnLoad(); nlLoad(); }
   else { out.className="out err"; out.textContent="Wrong staff PIN."; }
 };
 $("#load").onclick=()=>loadDay();
@@ -718,7 +755,7 @@ async function loadDay(silent){
         html+='<table>';
         s.people.forEach(p=>{ const a=[]; if(p.regular)a.push(p.regular+' reg'); if(p.sibling)a.push(p.sibling+' sib'); if(p.infant)a.push(p.infant+' inf');
           const arrived=p.id&&arr[p.id];
-          html+='<tr'+(arrived?' style="background:#eaf3e4"':'')+'><td style="width:30px;text-align:center">'+(p.id?'<input type="checkbox" data-id="'+p.id+'" data-email="'+(p.email||'')+'" '+(arrived?'checked':'')+' onchange="markArrived(this)" title="Mark arrived" style="width:auto;transform:scale(1.35);cursor:pointer">':'')+'</td><td style="font-weight:700">'+(arrived?'\u2705 ':'')+esc(p.name)+(p.legacy?' <span style="font-size:.7rem;color:var(--taupe)">(2-hr session)</span>':'')+(p.childNames&&p.childNames.length?'<div style="font-size:.75rem;font-weight:600;color:var(--sage-dark);margin-top:3px">\uD83E\uDDD2 '+p.childNames.map(function(c){return esc(((c.first||'')+' '+(c.last||'')).trim())}).filter(Boolean).join(', ')+'</div>':'')+'</td><td style="color:var(--slate)">'+a.join(", ")+' · '+p.adults+' adult'+(p.adults===1?'':'s')+'</td><td style="color:var(--taupe);font-size:.78rem">'+esc(p.email)+'</td></tr>';
+          html+='<tr'+(arrived?' style="background:#eaf3e4"':'')+'><td style="width:30px;text-align:center">'+(p.id?'<input type="checkbox" data-id="'+p.id+'" data-email="'+(p.email||'')+'" '+(arrived?'checked':'')+' onchange="markArrived(this)" title="Mark arrived" style="width:auto;transform:scale(1.35);cursor:pointer">':'')+'</td><td style="font-weight:700">'+(arrived?'\u2705 ':'')+esc(p.name)+(p.arrivalLabel?' <span style="font-size:.68rem;font-weight:800;color:#7a6f95;background:#efeaf3;border-radius:6px;padding:1px 6px;white-space:nowrap">\u23F1 '+esc(p.arrivalLabel)+'</span>':'')+(p.legacy?' <span style="font-size:.7rem;color:var(--taupe)">(2-hr session)</span>':'')+(p.childNames&&p.childNames.length?'<div style="font-size:.75rem;font-weight:600;color:var(--sage-dark);margin-top:3px">\uD83E\uDDD2 '+p.childNames.map(function(c){return esc(((c.first||'')+' '+(c.last||'')).trim())}).filter(Boolean).join(', ')+'</div>':'')+'</td><td style="color:var(--slate)">'+a.join(", ")+' · '+p.adults+' adult'+(p.adults===1?'':'s')+'</td><td style="color:var(--taupe);font-size:.78rem">'+esc(p.email)+(p.at?' <button type="button" onclick="showPayRec(this)" data-at="'+esc(p.at)+'" data-last4="'+esc(p.cardLast4||'')+'" data-paid="'+esc(p.paid||'')+'" style="border:none;background:#eef3ea;color:#4f6b43;border-radius:7px;cursor:pointer;font-weight:800;font-size:.68rem;padding:3px 8px;margin-left:6px;white-space:nowrap">💳 Payment record</button>':'')+'</td></tr>';
         });
         html+='</table>';
       } else { html+='<div class="note">No online bookings yet.</div>'; }
@@ -848,20 +885,54 @@ window.markArrived=async(el)=>{
     const r=await (await fetch("/api/arrivals",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key:PIN,date:date,id:id,email:email,arrived:arrived,action:"set"})})).json();
     if(!r.ok){ el.checked=!arrived; alert(r.error||"Couldn't save."); } else {
       if(arrived && r.coffee) coffeePopup("Offer a free coffee!");
-      if(arrived && Array.isArray(r.loyaltyPunches) && r.loyaltyPunches.length){
-        const reward=r.loyaltyPunches.find(function(p){return p.rewardIssued;});
-        const punched=r.loyaltyPunches.filter(function(p){return !p.freeAdmission;});
-        const free=r.loyaltyPunches.filter(function(p){return p.freeAdmission;});
-        if(reward){ coffeePopup("🎉 "+esc(reward.childName)+" earned a FREE visit! Code "+esc(reward.rewardCode)+" emailed.","Loyalty reward — their 8th visit is free!","🎉"); }
-        else if(punched.length){ const p=punched[0]; coffeePopup("🎈 Punched "+esc(p.childName)+" ("+p.punches+"/"+p.needed+")"+(punched.length>1?" +"+(punched.length-1)+" more":""),"Loyalty punch card updated."+(free.length?" ("+free.length+" free admission — no punch given, as expected.)":""),"🎈"); }
-        else if(free.length){ coffeePopup("📋 "+esc(free[0].childName)+(free.length>1?" +"+(free.length-1)+" more":"")+" — free admission today, no punch given.","That's correct — free visits don't count toward the loyalty card.","📋"); }
-      } else if(arrived){
-        coffeePopup("⚠️ No loyalty punch was recorded for this check-in.","This booking may be missing a name or phone on file — check it manually on the Loyalty page so nothing gets missed.","⚠️");
+      if(arrived){
+        // Use the authoritative status from the server. A normal paid reservation
+        // just punches with a green check — no popup needed. We only interrupt for
+        // something celebratory (a reward) or genuinely actionable (missing phone).
+        var st=r.loyaltyStatus, lp=Array.isArray(r.loyaltyPunches)?r.loyaltyPunches:[];
+        // A normal paid reservation just punches SILENTLY with the green check —
+        // no popup, no "error." We only interrupt for two things:
+        //   • reward  → celebratory + actionable (a free visit was earned; give the code)
+        //   • no_phone→ the one real problem (a paid booking with no phone to punch)
+        // Everything else — a normal punch, a free-admission/birthday visit (card set
+        // up, no punch, as intended), an already-punched re-check, a legacy session,
+        // a walk-in with no matching record — is expected and shows no popup at all.
+        if(st==="reward"){
+          var reward=lp.find(function(p){return p.rewardIssued;})||{};
+          coffeePopup("🎉 "+esc(reward.childName||"A child")+" earned a FREE visit! Code "+esc(reward.rewardCode||"")+" emailed.","Loyalty reward — their 8th visit is free!","🎉");
+        } else if(st==="no_phone"){
+          coffeePopup("📵 No phone on this booking, so no card was punched.","Add their phone on the Loyalty page and punch their card there so nothing's missed. (The online booking form now requires a phone.)","📵");
+        }
       }
       loadDay(true);
     }
   }catch(e){ el.checked=!arrived; }
   el.disabled=false;
+};
+// Little "payment record" bubble: when the reservation was booked/paid, the card's
+// last 4, and how it was paid — enough to find the transaction in Square.
+window.showPayRec=function(btn){
+  var old=document.getElementById("payRecPop"); if(old) old.remove();
+  if(window.__payRecFor===btn){ window.__payRecFor=null; return; } // toggle off if same button
+  window.__payRecFor=btn;
+  var at=btn.getAttribute("data-at")||"", last4=btn.getAttribute("data-last4")||"", paid=btn.getAttribute("data-paid")||"";
+  var when="—";
+  if(at){ try{ when=new Date(at).toLocaleString("en-US",{weekday:"short",month:"short",day:"numeric",year:"numeric",hour:"numeric",minute:"2-digit"}); }catch(e){ when=at; } }
+  var pop=document.createElement("div"); pop.id="payRecPop";
+  pop.style.cssText="position:absolute;z-index:9999;background:#fff;border:1px solid #e7ddd0;border-radius:12px;box-shadow:0 12px 34px rgba(0,0,0,.16);padding:12px 14px;font-size:.8rem;line-height:1.5;max-width:280px;color:#2a2622";
+  pop.innerHTML='<div style="font-weight:800;margin-bottom:7px;color:#4f6b43">💳 Payment record</div>'
+    +'<div style="margin-bottom:5px"><span style="color:#9a8d80">Booked &amp; paid</span><br><b>'+esc(when)+'</b></div>'
+    +'<div style="margin-bottom:5px"><span style="color:#9a8d80">Card used</span><br><b>'+(last4?("•••• "+esc(last4)):'<span style="font-weight:600;color:#9a8d80">not on file for this booking</span>')+'</b></div>'
+    +(paid?'<div style="margin-bottom:5px"><span style="color:#9a8d80">Paid with</span><br><b>'+esc(paid)+'</b></div>':'')
+    +'<div style="color:#9a8d80;font-size:.72rem;margin-top:7px;border-top:1px solid #f0e9de;padding-top:6px">Match this to the transaction in Square by date/time'+(last4?" and the last 4":"")+'.</div>';
+  document.body.appendChild(pop);
+  var r=btn.getBoundingClientRect();
+  var top=window.scrollY+r.bottom+6;
+  var left=window.scrollX+Math.min(r.left, window.innerWidth-300);
+  pop.style.top=top+"px"; pop.style.left=Math.max(8,left)+"px";
+  var close=function(e){ if(e.target!==btn && !pop.contains(e.target)){ pop.remove(); window.__payRecFor=null; document.removeEventListener("click",close,true); document.removeEventListener("keydown",esc2,true); } };
+  var esc2=function(e){ if(e.key==="Escape"){ pop.remove(); window.__payRecFor=null; document.removeEventListener("click",close,true); document.removeEventListener("keydown",esc2,true); } };
+  setTimeout(function(){ document.addEventListener("click",close,true); document.addEventListener("keydown",esc2,true); },0);
 };
 window.partyAction=async(partySlot,action)=>{
   if(action==="release" && !confirm("Release this party slot? This frees the slot and reopens overlapping open play.")) return;
@@ -1194,6 +1265,107 @@ window.prmDelete=async function(id){
   }catch(e){ alert("Network error."); }
 };
 try{ if(typeof PIN!=="undefined"&&PIN) prmLoad(); }catch(e){}
+
+// ---- Newsletter manager ----
+(function(){
+  var bk=document.getElementById("nlBook"), wrap=document.getElementById("nlBookLinkWrap");
+  if(bk&&wrap){ bk.addEventListener("change",function(){ wrap.style.display=bk.checked?"":"none"; }); }
+  var radios=document.querySelectorAll('input[name="nlWhen"]'), sched=document.getElementById("nlSchedAt");
+  radios.forEach(function(r){ r.addEventListener("change",function(){ if(sched) sched.disabled=(document.querySelector('input[name="nlWhen"]:checked')||{}).value!=="sched"; }); });
+})();
+
+async function nlLoad(){
+  var key=PIN; if(!key) return;
+  try{
+    var r=await (await fetch("/api/newsletter-admin",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key,action:"list"})})).json();
+    if(!r.ok){ return; }
+    var c=r.counts||{active:0,unsubscribed:0};
+    var cnt=$("#nlCount"); if(cnt) cnt.textContent="Subscribers — "+c.active+" active"+(c.unsubscribed?(" · "+c.unsubscribed+" unsubscribed"):"");
+    var subs=r.subscribers||[];
+    $("#nlSubs").innerHTML = subs.length ? subs.map(function(s){
+      var when=s.subscribedAt?(new Date(s.subscribedAt)).toLocaleDateString():"";
+      return '<div style="display:flex;align-items:center;gap:8px;background:#faf7f2;border:1px solid #efe4d5;border-radius:9px;padding:6px 10px;margin-bottom:5px;font-size:.82rem">'
+        +'<div style="flex:1;min-width:0"><b>'+(s.name?esc(s.name):'<span class="note" style="margin:0">(no name)</span>')+'</b> <span style="color:var(--slate)">'+esc(s.email)+'</span></div>'
+        +'<span class="note" style="margin:0;font-size:.72rem">'+esc(when)+'</span>'
+        +'<button type="button" onclick="nlRemoveSub(\''+esc(s.email).replace(/'/g,"\\'")+'\')" title="Remove" style="border:none;background:#fbe6e2;color:#b5382f;border-radius:6px;cursor:pointer;font-weight:900;padding:3px 8px">\u2715</button>'
+      +'</div>';
+    }).join("") : '<div class="note">No subscribers yet — they\'ll appear here as people opt in on your website.</div>';
+
+    var camps=r.campaigns||[];
+    $("#nlCampaigns").innerHTML = camps.length ? camps.map(function(m){
+      var st=m.status, badge="", when="";
+      if(st==="scheduled"){ badge='<span style="color:#b9831a;font-weight:800">⏳ Scheduled</span>'; when=m.scheduledAt?(" for "+new Date(m.scheduledAt).toLocaleString()):""; }
+      else if(st==="sending"){ badge='<span style="color:#4d7848;font-weight:800">📤 Sending…</span>'; when=" ("+(m.stats.sent||0)+"/"+(m.stats.total||0)+")"; }
+      else if(st==="sent"){ badge='<span style="color:#4d7848;font-weight:800">✅ Sent</span>'; when=" to "+(m.stats.sent||0)+(m.sentAt?(" · "+new Date(m.sentAt).toLocaleDateString()):""); }
+      else { badge='<span class="note" style="margin:0">'+esc(st)+'</span>'; }
+      var canCancel=(st==="scheduled");
+      return '<div style="display:flex;align-items:center;gap:8px;background:#faf7f2;border:1px solid #efe4d5;border-radius:9px;padding:7px 10px;margin-bottom:6px;font-size:.82rem">'
+        +'<div style="flex:1;min-width:0"><b>'+esc(m.subject||"(no subject)")+'</b><br>'+badge+'<span style="color:var(--slate)">'+esc(when)+'</span></div>'
+        +'<button type="button" onclick="nlDeleteCampaign(\''+esc(m.id)+'\','+(canCancel?"true":"false")+')" style="border:none;background:'+(canCancel?'#fbe6e2;color:#b5382f':'#eee;color:#777')+';border-radius:6px;cursor:pointer;font-weight:800;font-size:.72rem;padding:5px 9px">'+(canCancel?"Cancel":"Delete")+'</button>'
+      +'</div>';
+    }).join("") : '<div class="note">Nothing sent yet.</div>';
+  }catch(e){}
+}
+
+if($("#nlSend")) $("#nlSend").onclick=async function(){
+  var key=PIN, out=$("#nlOut"); out.style.display="block";
+  if(!key){ out.className="out err"; out.textContent="Enter your staff PIN first."; return; }
+  var subject=$("#nlSubject").value.trim(), message=$("#nlMessage").value.trim();
+  if(!subject){ out.className="out err"; out.textContent="Add a subject line."; return; }
+  if(!message){ out.className="out err"; out.textContent="Write a message first."; return; }
+  var when=(document.querySelector('input[name="nlWhen"]:checked')||{}).value||"now";
+  var sendNow=(when==="now"), scheduledAt=null;
+  if(!sendNow){
+    var v=$("#nlSchedAt").value;
+    if(!v){ out.className="out err"; out.textContent="Pick a date & time to schedule."; return; }
+    scheduledAt=new Date(v).getTime();
+    if(!scheduledAt||scheduledAt<Date.now()-60000){ out.className="out err"; out.textContent="Pick a future date & time."; return; }
+  }
+  var bookLink = $("#nlBook").checked ? ($("#nlBookLink").value.trim()||"https://littlehavenplay.com/book.html") : false;
+  var active = parseInt(($("#nlCount").textContent.match(/(\d+) active/)||[])[1]||"0",10);
+  var verb = sendNow ? ("Send this to "+(active||"all")+" subscriber"+(active===1?"":"s")+" now?") : "Schedule this newsletter?";
+  if(!confirm(verb)) return;
+  $("#nlSend").disabled=true; out.className="out"; out.textContent=sendNow?"Sending…":"Scheduling…";
+  try{
+    var image=null;
+    var f=($("#nlImage").files||[])[0];
+    if(f){ image=await shrinkImage(f); }
+    var body={ key:key, subject:subject, message:message, sendNow:sendNow, scheduledAt:scheduledAt, bookLink:bookLink };
+    if(image) body.image=image;
+    var r=await (await fetch("/api/newsletter-send",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)})).json();
+    if(r.ok){
+      out.className="out ok"; out.textContent="\u2705 "+(r.message||"Done!");
+      $("#nlSubject").value=""; $("#nlMessage").value=""; $("#nlImage").value="";
+      nlLoad();
+    } else { out.className="out err"; out.textContent=r.error||"Couldn't send."; }
+  }catch(e){ out.className="out err"; out.textContent="Network error — please try again."; }
+  $("#nlSend").disabled=false;
+};
+
+window.nlRemoveSub=async function(email){
+  var key=PIN; if(!key) return;
+  if(!confirm("Remove "+email+" from your newsletter list?")) return;
+  try{ var r=await (await fetch("/api/newsletter-admin",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key,action:"remove-sub",email})})).json();
+    if(r.ok) nlLoad(); else alert(r.error||"Couldn't remove."); }catch(e){ alert("Network error."); }
+};
+window.nlDeleteCampaign=async function(id,isScheduled){
+  var key=PIN; if(!key) return;
+  if(!confirm(isScheduled?"Cancel this scheduled newsletter? It won't be sent.":"Remove this from the list?")) return;
+  try{ var r=await (await fetch("/api/newsletter-admin",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key,action:"delete-campaign",id})})).json();
+    if(r.ok) nlLoad(); else alert(r.error||"Couldn't delete."); }catch(e){ alert("Network error."); }
+};
+if($("#nlRefresh")) $("#nlRefresh").onclick=function(){ nlLoad(); };
+if($("#nlExport")) $("#nlExport").onclick=async function(){
+  var key=PIN; if(!key){ alert("Enter your staff PIN first."); return; }
+  try{
+    var r=await (await fetch("/api/newsletter-admin",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key,action:"export"})})).json();
+    if(!r.ok){ alert(r.error||"Couldn't export."); return; }
+    var blob=new Blob([r.csv||""],{type:"text/csv"}); var a=document.createElement("a");
+    a.href=URL.createObjectURL(blob); a.download="newsletter-subscribers.csv"; a.click();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); },1000);
+  }catch(e){ alert("Network error."); }
+};
+try{ if(typeof PIN!=="undefined"&&PIN) nlLoad(); }catch(e){}
 
 // ---- Events manager ----
 function evMoney(c){return "$"+(c/100).toFixed(2);}
@@ -2008,7 +2180,7 @@ if($("#wsSave")) $("#wsSave").onclick=async function(){
     {t:"\u2600\uFE0F Today \u2014 Check-in & Walk-ins", open:true, c:"#7ba676", bg:"#eef4e8", ids:["sec-bookings","sec-schedule","sec-walkin","sec-punch"]},
     {t:"\uD83C\uDF88 Loyalty & Punch Cards", c:"#c97d76", bg:"#fdf1ec", ids:["sec-loyalty-list","sec-birthdays","sec-punchissue","sec-passes"]},
     {t:"\uD83D\uDCB3 Credits, Codes & Bookings", c:"#8a94c9", bg:"#eef0f9", ids:["sec-issue","sec-birthdaycode","sec-redeem","sec-credit-backfill","sec-code","sec-weekday-special","sec-discount","sec-reschedule","sec-deposit"]},
-    {t:"\uD83C\uDF89 Parties & Events", c:"#d9a441", bg:"#fbf3e1", ids:["sec-party","sec-parties","sec-promos","sec-events"]},
+    {t:"\uD83C\uDF89 Parties & Events", c:"#d9a441", bg:"#fbf3e1", ids:["sec-party","sec-parties","sec-promos","sec-events","sec-newsletter"]},
     {t:"\u2699\uFE0F Hours & Settings", c:"#a89a89", bg:"#f2ede7", ids:["sec-prices","sec-closures","sec-weekly","sec-seasonal","sec-news","sec-rating","sec-photos"]}
   ];
   var TABSETS=[
@@ -2107,5 +2279,6 @@ if($("#wsSave")) $("#wsSave").onclick=async function(){
 })();
 </script>
 
+<script src="/assets/phone-format.js" defer></script>
 </body>
 </html>

@@ -103,7 +103,7 @@
     <div class="logo">🎈</div>
     <div><h1 id="studio">Little Haven Play Studio</h1></div>
   </div>
-  <div class="sub">Book Open Play · each arrival time holds up to <b id="capTxt">6</b> children.</div>
+  <div class="sub">Book Open Play · each hour holds up to <b id="capTxt">6</b> children.</div>
   <div style="background:#a85f59;color:#fff;text-align:center;padding:10px 16px;border-radius:12px;font-weight:800;font-size:.85rem;margin:10px 0 4px">🧦 Grip socks are required for all children and must cover most of the bottom surface of the foot to be accepted.</div>
 
   <div id="setupBanner" class="banner hidden">⚙️ Demo mode — Square keys aren't set yet, so payment won't complete until configured.</div>
@@ -128,7 +128,7 @@
 
     <div class="card">
       <p class="step"><span class="n">3</span> Who's coming?</p>
-      <div style="background:#fdf5ee;border:1px solid #f0e2d2;border-radius:12px;padding:11px 14px;margin:0 0 14px;font-size:.85rem;color:#5c6470;line-height:1.6">✨ <b>Our play area is designed for children 6 years old or 48" tall</b> (whichever comes first). Only children within that range may play in the play area. Older children &amp; teens are welcome to hang out in the lobby with family, but can't play in the play area or act as the supervising adult. A parent/guardian 18+ must supervise at all times.</div>
+      <div style="background:#fdf5ee;border:1px solid #f0e2d2;border-radius:12px;padding:11px 14px;margin:0 0 14px;font-size:.85rem;color:#5c6470;line-height:1.6">✨ <b>Our play area is designed for children ages 0–6 or 48" tall</b> (whichever comes first). Only children within that range may play in the play area. Older children &amp; teens are welcome to hang out in the lobby with family, but can't play in the play area or act as the supervising adult. A parent/guardian 18+ must supervise at all times.</div>
       <div class="qty">
         <div><div class="lab">Regular admission <span style="color:var(--ink-soft);font-weight:700">(18 months+ · 2 adults included)</span></div><div class="pr" id="regPr">$25 each</div></div>
         <div class="stepper" data-k="reg"><button data-d>–</button><span class="num">0</span><button data-i>+</button></div>
@@ -182,8 +182,8 @@
       </div>
       <label class="fld">Email (for your receipt)</label>
       <input type="email" id="email" placeholder="you@email.com">
-      <label class="fld" style="margin-top:12px">Phone number</label>
-      <input type="tel" id="phone" placeholder="(760) 555-1234">
+      <label class="fld" style="margin-top:12px">Phone number <span style="color:var(--ink-soft);font-weight:600">(required — sets up your child's free punch card 🎈)</span></label>
+      <input type="tel" id="phone" placeholder="(760) 555-1234" required>
       <div id="childNamesWrap" style="margin-top:14px;display:none">
         <label class="fld">Who's playing? <span style="color:var(--ink-soft);font-weight:600">(first &amp; last name of each child — this sets up their free Loyalty Punch Card 🎈)</span></label>
         <div id="childNames"></div>
@@ -287,9 +287,9 @@
     </details>
 
     <div class="card">
-      <p class="step"><span class="n">🎈</span> Free-visit reward code</p>
-      <div class="note" style="margin-bottom:8px">Earned your 8th visit, got a classroom code, or received another free-admission code? Enter it here — it makes one child's admission free.</div>
-      <input type="text" id="rewardCode" placeholder="Free-visit code (e.g. FREE1234)" style="text-transform:uppercase;width:100%">
+      <p class="step"><span class="n">🎈</span> Free admission / reward code</p>
+      <div class="note" style="margin-bottom:8px">Earned your 8th visit, got a classroom code, or received a 🎂 birthday reward? Enter that code here — it makes one child's admission free. Birthday rewards are emailed to you about a week before your child's big day.</div>
+      <input type="text" id="rewardCode" placeholder="Reward code (e.g. FREE1234 or BDAYXXXX)" style="text-transform:uppercase;width:100%">
       <div id="rewardMsg" style="margin-top:6px;font-size:.85rem;display:none"></div>
       <div class="note" style="margin-top:6px">Applied automatically at checkout — you'll see it subtracted from your total below. One-time use · can't be combined with a % off discount code.</div>
     </div>
@@ -358,7 +358,6 @@ async function init(){
   wireSteppers();
   $("#date").onchange=()=>{state.date=$("#date").value;state.slot="";loadAvailability();
     if(($("#rewardCode")||{}).value) checkReward();
-    document.querySelectorAll(".cn-bdcode").forEach(function(inp){ if(inp.value) cnCheckBirthdayMismatch(inp.closest(".cn-row")); });
   };
   $("#agree").onchange=updateTotals;
   $("#name").oninput=updateTotals;
@@ -557,22 +556,19 @@ function renderChildNames(){
   const prevRows=[...host.querySelectorAll(".cn-row")];
   const prev=prevRows.map(r=>({
     code:(r.querySelector(".cn-code")||{}).value||"", f:r.querySelector(".cn-f").value, l:r.querySelector(".cn-l").value,
-    d:(r.querySelector(".cn-d")||{}).value||"", bd:!!((r.querySelector(".cn-bd")||{}).checked),
-    bdcode:(r.querySelector(".cn-bdcode")||{}).value||""
+    d:(r.querySelector(".cn-d")||{}).value||""
   }));
   if(!specs.length){ wrap.style.display="none"; host.innerHTML=""; return; }
   wrap.style.display="block";
   let html="";
   for(let i=0;i<specs.length;i++){
-    const p=prev[i]||{}, f=(p.f||"").replace(/"/g,"&quot;"), l=(p.l||"").replace(/"/g,"&quot;"), d=(p.d||"").replace(/"/g,"&quot;"), code=(p.code||"").replace(/"/g,"&quot;"), bdcode=(p.bdcode||"").replace(/"/g,"&quot;");
+    const p=prev[i]||{}, f=(p.f||"").replace(/"/g,"&quot;"), l=(p.l||"").replace(/"/g,"&quot;"), d=(p.d||"").replace(/"/g,"&quot;"), code=(p.code||"").replace(/"/g,"&quot;");
     html+='<div class="cn-row" data-type="'+specs[i].type+'" style="border:1.5px solid #e7ddd0;border-radius:12px;padding:12px;margin-bottom:10px;background:#fcfaf6">'
       +'<div style="font-weight:800;font-size:.76rem;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-soft);margin-bottom:7px">'+specs[i].label+' — Child '+specs[i].n+'</div>'
       +'<input class="cn-code" type="text" autocomplete="off" placeholder="Loyalty card number (optional) — auto-fills child\'s info" style="text-transform:uppercase;margin-bottom:5px" value="'+code+'">'
       +'<div class="cn-codemsg" style="font-size:.76rem;margin:-1px 0 6px;display:none"></div>'
       +'<div class="row" style="margin-bottom:6px"><input class="cn-f" type="text" placeholder="First name" value="'+f+'"><input class="cn-l" type="text" placeholder="Last name (required)" value="'+l+'"></div>'
       +'<input class="cn-d" type="text" inputmode="numeric" autocomplete="off" maxlength="10" placeholder="Birthday mm/dd/yyyy (optional)" value="'+d+'">'
-      +'<label style="display:flex;align-items:center;gap:6px;margin-top:9px;font-size:.8rem;font-weight:700;color:var(--ink-soft)"><input type="checkbox" class="cn-bd" style="width:auto">🎂 Redeeming a birthday reward for this child</label>'
-      +'<div class="cn-bdwrap" style="display:none;margin-top:7px"><input class="cn-bdcode" type="text" autocomplete="off" placeholder="Birthday gift code (e.g. BDAYXXXX)" style="text-transform:uppercase" value="'+bdcode+'"><div class="cn-bdmsg" style="font-size:.76rem;margin-top:4px"></div></div>'
     +'</div>';
   }
   host.innerHTML=html;
@@ -582,7 +578,6 @@ function renderChildNames(){
     // Restore birthday-checkbox state and re-run a code lookup if one was already typed,
     // so the grayed-out "found" display comes back after a stepper re-render.
     const p=prev[i];
-    if(p && p.bd){ row.querySelector(".cn-bd").checked=true; row.querySelector(".cn-bdwrap").style.display="block"; }
     if(p && p.code){ cnLookupCode(row, p.code); }
   });
 }
@@ -615,39 +610,12 @@ async function cnLookupCode(row, code){
         msg.style.color="#3f7d54"; msg.textContent="✓ Found: "+(r.childName||"")+" — no birthday on file yet, add one below if you'd like 🎂"+(r.militaryVerified?" · 🎖️ Military discount eligible":"");
       }
       updateTotals();
-      const bdBox=row.querySelector(".cn-bd"), bdWrap=row.querySelector(".cn-bdwrap"), bdCodeInp=row.querySelector(".cn-bdcode");
-      if(r.birthday && r.birthday.code){
-        bdBox.checked=true; bdBox.disabled=true; bdWrap.style.display="block";
-        bdCodeInp.value=r.birthday.code; bdCodeInp.readOnly=true; bdCodeInp.style.background="#f0ede8";
-        row.querySelector(".cn-bdmsg").style.color="#3f7d54"; row.querySelector(".cn-bdmsg").textContent="🎂 It's their birthday — free admission auto-applied!";
-      }
     } else {
       cnSetReadonly(row,false,false);
       row.dataset.military="0";
       msg.style.color="#b5382f"; msg.textContent="Code not found — check it, or just enter their name below.";
     }
   }catch(e){ msg.style.color="#b5382f"; msg.textContent="Couldn't check that code — enter their name below if needed."; cnSetReadonly(row,false,false); }
-}
-async function cnCheckBirthdayMismatch(row){
-  const code=(row.querySelector(".cn-bdcode").value||"").trim().toUpperCase();
-  const msg=row.querySelector(".cn-bdmsg");
-  if(!code){ msg.textContent=""; return; }
-  msg.style.color="var(--ink-soft)"; msg.textContent="Checking…";
-  try{
-    const r=await (await fetch("/api/loyalty",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({action:"reward-check",rewardCode:code,date:state.date})})).json();
-    if(!r || !r.valid){
-      msg.style.color="#b5382f";
-      msg.textContent=r&&r.reason==="used"?"This code was already used.":r&&r.reason==="not_yet"?("Good starting "+r.validFrom+"."):r&&r.reason==="expired"?"This code has expired.":"Code not found.";
-      return;
-    }
-    const f=(row.querySelector(".cn-f").value||"").trim(), l=(row.querySelector(".cn-l").value||"").trim();
-    const entered=(f+" "+l).toLowerCase().replace(/\s+/g," ").trim(), onFile=(r.childName||"").toLowerCase().replace(/\s+/g," ").trim();
-    if(entered && onFile && entered!==onFile){
-      msg.style.color="#b98a2e"; msg.textContent="⚠️ Issued for \""+r.childName+"\" — you entered a different name. That's okay, just double-checking!";
-    } else {
-      msg.style.color="#3f7d54"; msg.textContent="✓ Valid for "+(r.childName||"this child")+".";
-    }
-  }catch(e){ msg.textContent=""; }
 }
 function wireChildRow(row){
   const codeInp=row.querySelector(".cn-code");
@@ -660,9 +628,6 @@ function wireChildRow(row){
     dInp.value=out;
     dInp.style.borderColor = (dInp.value==="" || isValidDob(dInp.value)) ? "" : "var(--red)";
   });
-  const bdBox=row.querySelector(".cn-bd"), bdWrap=row.querySelector(".cn-bdwrap"), bdCodeInp=row.querySelector(".cn-bdcode");
-  bdBox.addEventListener("change",function(){ bdWrap.style.display=bdBox.checked?"block":"none"; });
-  bdCodeInp.addEventListener("blur",function(){ cnCheckBirthdayMismatch(row); });
 }
 function flashSiblingNote(){
   const n=$("#leftNote");
@@ -771,6 +736,7 @@ function updateTotals(){
   else if(a && kids>a.remaining){ ok=false; note=`Only ${a.remaining} spot${a.remaining===1?"":"s"} left at that time.`; }
   else if(!$("#name").value.trim()){ ok=false; note="Please enter your full name."; }
   else if(!/^\S+@\S+\.\S+$/.test($("#email").value.trim())){ ok=false; note="Please enter a valid email."; }
+  else if((($("#phone")||{}).value||"").replace(/\D/g,"").length<10){ ok=false; note="Please enter your phone number — it sets up your child's free punch card."; }
   else if(!agreed){ ok=false; note="Please agree to the policy to continue."; }
   $("#leftNote").textContent=note;
   $("#leftNote").style.color = ok ? "var(--ink-soft)" : "var(--red)";
@@ -841,19 +807,13 @@ async function pay(){
       dobRaw:((r.querySelector(".cn-d")||{}).value||"").trim(),
       code:((r.querySelector(".cn-code")||{}).value||"").trim().toUpperCase(),
       admission:r.getAttribute("data-type")||"",
-      bdChecked:!!((r.querySelector(".cn-bd")||{}).checked),
-      birthdayCode:((r.querySelector(".cn-bdcode")||{}).value||"").trim().toUpperCase(),
     }));
   if(childRows.some(c=>!c.first||!c.last)){ showMsg("Please enter each child's first AND last name — the last name is required so we can set up their punch card.","err"); const pb=$("#pay"); if(pb)pb.disabled=false; return; }
+  if((($("#phone")||{}).value||"").replace(/\D/g,"").length<10){ showMsg("Please enter your phone number — it's how we set up and find your child's free Loyalty Punch Card, and how you're automatically punched in at check-in.","err"); const pb=$("#pay"); if(pb)pb.disabled=false; return; }
   const badDob=childRows.find(c=>c.dobRaw&&!isValidDob(c.dobRaw));
   if(badDob){ showMsg("Please check the birthday for "+(badDob.first||"your child")+" — use mm/dd/yyyy (for example 04/09/2021), or leave it blank.","err"); const pb=$("#pay"); if(pb)pb.disabled=false; return; }
-  const bdMissingDob=childRows.find(c=>c.bdChecked&&!c.dobRaw);
-  if(bdMissingDob){ showMsg("Enter "+(bdMissingDob.first||"their")+" birthday to redeem a birthday reward for them.","err"); const pb=$("#pay"); if(pb)pb.disabled=false; return; }
-  const bdMissingCode=childRows.find(c=>c.bdChecked&&!c.birthdayCode);
-  if(bdMissingCode){ showMsg("Enter the birthday gift code for "+(bdMissingCode.first||"your child")+", or uncheck that box.","err"); const pb=$("#pay"); if(pb)pb.disabled=false; return; }
   const childNames=childRows.filter(c=>c.first&&c.last).map(c=>({
     first:c.first, last:c.last, dob:dobToISO(c.dobRaw), code:c.code, admission:c.admission,
-    birthdayCode:c.bdChecked?c.birthdayCode:"",
   }));
 
   try{
@@ -964,5 +924,6 @@ init();
   }).catch(function(){});
 })();
 </script>
+<script src="/assets/phone-format.js" defer></script>
 </body>
 </html>

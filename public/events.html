@@ -13,8 +13,9 @@
   .topbar .name{font-family:'Cormorant Garamond',serif;font-weight:500;font-size:1.25rem}.topbar .name em{font-style:italic;color:var(--rose)}
   .topbar a.back{font-size:.66rem;letter-spacing:.09em;text-transform:uppercase;color:var(--slate);text-decoration:none;font-weight:700}
   .wrap{max-width:1100px;margin:0 auto;padding:26px 18px 70px}
-  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:28px;align-items:start}
-  @media (max-width:760px){.two-col{grid-template-columns:1fr}}
+  .two-col{display:flex;flex-wrap:wrap;justify-content:center;gap:28px;align-items:flex-start}
+  .two-col > .col{flex:1 1 360px;max-width:520px;min-width:0;width:100%}
+  @media (max-width:760px){.two-col{gap:20px}.two-col > .col{flex-basis:100%}}
   .col h1{font-size:clamp(1.5rem,5vw,2rem);margin-bottom:2px}
   .promo-card{background:#fff;border:1px solid rgba(0,0,0,.05);border-radius:16px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.06);margin:0 auto 14px;max-width:320px}
   .promo-card img{width:100%;display:block;background:#f7f3ec;cursor:pointer}
@@ -234,5 +235,6 @@ $("#mPay").onclick=async()=>{
 function esc(s){return (s||"").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
 function escAttr(s){return (s||"").replace(/"/g,"&quot;");}
 </script>
-<script>if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("/sw.js").catch(function(){});});}</script></body>
+<script>if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("/sw.js").catch(function(){});});}</script><script src="/assets/phone-format.js" defer></script>
+</body>
 </html>

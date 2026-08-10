@@ -108,7 +108,18 @@ export default async (req) => {
         }
         if (r.date && (!latestDate || r.date > latestDate)) latestDate = r.date;
       }
-      const mergedAdults = [...byNorm.values()];
+      // Each adult's waiver is valid for 365 days from the date they signed.
+      // Stamp that expiry on here (the CSV only gives us the signed date) so the
+      // loyalty page shows "valid to …" instead of "no date on file".
+      const mergedAdults = [...byNorm.values()].map(a => {
+        let expiry = null;
+        if (a.signedDate && /^\d{4}-\d{2}-\d{2}$/.test(a.signedDate)) {
+          const e = new Date(a.signedDate + "T12:00:00");
+          e.setDate(e.getDate() + 365);
+          expiry = e.toISOString().slice(0, 10);
+        }
+        return { name: a.name, signedDate: a.signedDate || null, expiry };
+      });
 
       const before = { waiverSigned: card.waiverSigned || null, adultCount: (card.waiverAdults || []).length };
       const changed = (latestDate !== before.waiverSigned) || (mergedAdults.length !== before.adultCount);

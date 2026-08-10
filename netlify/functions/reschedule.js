@@ -6,7 +6,7 @@
 //   { key, action:"move-party", fromDate, fromSlot, toDate, toSlot, override?, notify? }
 import { getStore } from "@netlify/blobs";
 import { SIGNATURE_HTML } from "./lib-email.js";
-import { SLOT_IDS, SLOTS, ALL_SLOT_IDS, slotLabel, PARTY_SLOT_IDS, PARTY_SLOTS, openPlayForDate, hoursFor, slotCap, slotKey, isPartyDay, CLOSED_DATES, STUDIO_NAME } from "./lib-settings.js";
+import { SLOT_IDS, SLOTS, ALL_SLOT_IDS, slotLabel, PARTY_SLOT_IDS, PARTY_SLOTS, openPlayForDate, hoursFor, slotCap, slotKey, isPartyDay, CLOSED_DATES, STUDIO_NAME, countHourChildren, hourMatesFor } from "./lib-settings.js";
 import { getClosure, slotBlockedByClosure } from "./lib-closures.js";
 import { loadSeasonal, loadWeekly } from "./lib-hours.js";
 import { makeCredit, sendCreditEmail, ownerCopy } from "./lib-credit.js";
@@ -81,7 +81,12 @@ export default async (req) => {
     const toKey = slotKey(toDate, toSlot);
     let toRec = null; try { toRec = await bookings.get(toKey, { type: "json" }); } catch {}
     if (!toRec || typeof toRec.children !== "number") toRec = { children: 0, bookings: [] };
-    const wouldBe = (toRec.children || 0) + childCount;
+    // The target arrival shares one pool of `cap` with its :00/:30 partner, so count
+    // the whole hour. If we're only moving within the same hour, this booking is
+    // already in that count — don't count it against itself.
+    let hourNow = await countHourChildren(bookings, toDate, toSlot);
+    if (toDate === fromDate && hourMatesFor(toSlot).includes(fromSlot)) hourNow = Math.max(0, hourNow - childCount);
+    const wouldBe = hourNow + childCount;
     if (wouldBe > cap && !b.override) {
       return json({ ok: false, needConfirm: true, message: `That session would be at ${wouldBe}/${cap}. Move anyway?` });
     }

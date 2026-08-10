@@ -2,7 +2,7 @@
 // Returns the open-play roster (party-aware sessions) + party reservations for a date.
 
 import { getStore } from "@netlify/blobs";
-import { OPENPLAY, openPlayForDate, slotCap, slotKey, PARTY_SLOTS, PARTY_SLOT_IDS, ARRIVAL_TO_LEGACY, hoursFor } from "./lib-settings.js";
+import { OPENPLAY, openPlayForDate, slotCap, slotKey, PARTY_SLOTS, PARTY_SLOT_IDS, ARRIVAL_TO_LEGACY, hoursFor, hourMatesFor, arrivalStartMin, ARRIVAL, slotLabel } from "./lib-settings.js";
 import { loadSeasonal, loadWeekly } from "./lib-hours.js";
 
 export default async (req) => {
@@ -29,33 +29,52 @@ export default async (req) => {
   // Open play arrival times available that day (given parties), with rosters.
   // Each arrival slot also absorbs any existing OLD-session bookings that map to it.
   const sessions = [];
+  const seenHours = new Set();
   const seasonal = await loadSeasonal();
   const weekly = await loadWeekly();
   for (const slot of openPlayForDate(date, bookedPartyIds, hoursFor(date, seasonal, weekly))) {
+    // Fold each hour's :00 and :30 into ONE session that shares a single cap of 6.
+    // Slots arrive chronologically, so the first one we see for an hour is its anchor.
+    const startMin = arrivalStartMin(slot.id);
+    const hourId = startMin == null ? slot.id : ("h" + Math.floor(startMin / 60));
+    if (seenHours.has(hourId)) continue;
+    seenHours.add(hourId);
+
+    const mateIds = hourMatesFor(slot.id);   // [:00, :30, and any legacy id for this hour]
     let reserved = false;
-    try { reserved = !!(await blocks.get(slotKey(date, slot.id), { type: "json" })); } catch { reserved = false; }
-    // Gather this arrival slot's own record + any legacy session records mapped to it.
-    const recKeys = [{ id: slot.id, legacy: false }, ...((ARRIVAL_TO_LEGACY[slot.id] || []).map(l => ({ id: l, legacy: true })))];
+    for (const mid of mateIds) { try { if (await blocks.get(slotKey(date, mid), { type: "json" })) { reserved = true; break; } } catch {} }
+
     const people = [], checkins = [];
     let childrenTotal = 0, adultsTotal = 0;
-    for (const rk of recKeys) {
+    for (const mid of mateIds) {
       let rec = null;
-      try { rec = await bookings.get(slotKey(date, rk.id), { type: "json" }); } catch { rec = null; }
+      try { rec = await bookings.get(slotKey(date, mid), { type: "json" }); } catch { rec = null; }
       if (!rec || !Array.isArray(rec.bookings)) continue;
       childrenTotal += (typeof rec.children === "number" ? rec.children : 0);
+      const legacy = !ARRIVAL[mid];
+      const arrivalLabel = ARRIVAL[mid] ? ARRIVAL[mid].label : slotLabel(mid);   // "1:00 PM" vs "1:30 PM"
       for (const x of rec.bookings) {
         if (x.type === "walkin" || x.type === "pass") {
           adultsTotal += x.type === "walkin" ? (x.adults || 0) : 1;   // walk-in: entered; pass: 1 included
-          checkins.push({ id: x.id, type: x.type, slot: rk.id, children: x.children || 0, adults: x.type === "walkin" ? (x.adults || 0) : 1,
-            code: x.code || null, childName: x.childName || "", atLabel: x.atLabel || "", at: x.at || null, legacy: rk.legacy });
+          checkins.push({ id: x.id, type: x.type, slot: mid, arrivalLabel, children: x.children || 0, adults: x.type === "walkin" ? (x.adults || 0) : 1,
+            code: x.code || null, childName: x.childName || "", atLabel: x.atLabel || "", at: x.at || null, legacy });
         } else {
           const adults = typeof x.adultsTotal === "number"
             ? x.adultsTotal
             : 1 + (x.adults || 0);                         // legacy bookings stored paid extras only
           adultsTotal += adults;
-          people.push({ id: x.id || null, name: x.name || "(no name)", email: x.email || "", slot: rk.id, legacy: rk.legacy,
+          // Payment record (for matching to Square): when it was booked/paid, the
+          // card's last 4, and how it was paid.
+          const payParts = [];
+          if (x.cardPaid) payParts.push("card" + (x.cardLast4 ? " ••••" + x.cardLast4 : ""));
+          if (x.giftCards && x.giftCards.length) payParts.push("gift card");
+          if (x.creditApplied) payParts.push("store credit");
+          if (x.passesUsed && x.passesUsed.length) payParts.push("prepaid pass");
+          const paid = payParts.join(" + ") || "free / no charge";
+          people.push({ id: x.id || null, name: x.name || "(no name)", email: x.email || "", slot: mid, legacy, arrivalLabel,
             childNames: Array.isArray(x.childNames) ? x.childNames : [], phone: x.phone || "",
-            regular: x.regular || 0, sibling: x.sibling || 0, infant: x.infant || 0, adults });
+            regular: x.regular || 0, sibling: x.sibling || 0, infant: x.infant || 0, adults,
+            at: x.at || null, cardLast4: x.cardLast4 || null, paid });
         }
       }
     }

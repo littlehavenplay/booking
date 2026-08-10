@@ -47,6 +47,17 @@ export default async (req) => {
     // reliable, fully-paginated path instead. Best-effort — never blocks the
     // arrival toggle itself.
     let loyaltyPunches = [];
+    // A plain-language reason so the check-in screen shows the RIGHT message and
+    // only raises a real warning when something actually needs fixing:
+    //   reward       -> a child earned their free 8th visit
+    //   punched      -> normal paid punch (includes gift-card & store-credit payments)
+    //   free         -> free-admission code or birthday reward: card set up, no punch (correct)
+    //   already      -> this booking was already punched on a previous check-in (fine)
+    //   legacy       -> a legacy 2-hr prepaid session: no loyalty punch (correct)
+    //   no_children  -> no child names on the booking, so nothing to punch
+    //   no_phone     -> a paid booking WITH children but no phone on file (the one real problem)
+    //   not_found    -> couldn't find the booking record (e.g. a manual/walk-in arrival)
+    let loyaltyStatus = null;
     if (b.arrived) {
       try {
         const loyalty = getStore("loyalty");
@@ -60,9 +71,19 @@ export default async (req) => {
           if (e) { entry = e; rec = r; bookingKey = key; break; }
         }
 
-        if (entry && !entry.loyaltyPunched && !entry.legacyUsed && Array.isArray(entry.childNames) && entry.childNames.length) {
+        if (!entry) {
+          loyaltyStatus = "not_found";
+        } else if (entry.legacyUsed) {
+          loyaltyStatus = "legacy";
+        } else if (!(Array.isArray(entry.childNames) && entry.childNames.length)) {
+          loyaltyStatus = "no_children";
+        } else if (entry.loyaltyPunched) {
+          loyaltyStatus = "already";   // already handled on a prior check-in — never double-punch
+        } else {
           const digits = (entry.phone || "").toString().replace(/\D/g, "");
-          if (digits.length >= 4) {
+          if (digits.length < 4) {
+            loyaltyStatus = "no_phone";
+          } else {
             const phone4 = digits.slice(-4);
             const email = entry.email || (b.email || "").toString();
             const slotLabel = (bookingKey.split("__")[1] || "");
@@ -81,9 +102,12 @@ export default async (req) => {
                 military: (entry.militaryAmount || 0) > 0 && (entry.militaryChildren || []).some(n => n && n.toLowerCase() === (ch.first + " " + ch.last).toLowerCase()) };
               try {
                 if (ch._freeAdmission) {
+                  // Free-admission code or birthday reward → set up / link the card, NO punch.
                   const r = await issueCode(loyalty, { first: ch.first, last: ch.last, phone4, email, suppressEmail: true, visitMeta });
                   loyaltyPunches.push({ childName: r.childName, code: r.code, freeAdmission: true });
                 } else {
+                  // Everything else (card, gift card, store credit, discount, military,
+                  // weekday special) is a paid visit → punch the card.
                   const r = await addPunch(loyalty, { first: ch.first, last: ch.last, phone4, email, suppressEmail: isFamily, visitMeta });
                   if (!r.error) loyaltyPunches.push({ childName: r.childName, code: r.code, punches: r.punches,
                     needed: r.needed, rewardIssued: r.rewardIssued, rewardCode: r.rewardCode });
@@ -96,6 +120,11 @@ export default async (req) => {
             }
             entry.loyaltyPunched = true;
             try { await bstore.setJSON(bookingKey, rec); } catch {}
+
+            if (!loyaltyPunches.length) loyaltyStatus = "no_children";
+            else if (loyaltyPunches.some(p => p.rewardIssued)) loyaltyStatus = "reward";
+            else if (loyaltyPunches.some(p => !p.freeAdmission)) loyaltyStatus = "punched";
+            else loyaltyStatus = "free";
           }
         }
       } catch {}
@@ -116,7 +145,7 @@ export default async (req) => {
         } catch {}
       }
     }
-    return json({ ok: true, arrivals: map, coffee, loyaltyPunches });
+    return json({ ok: true, arrivals: map, coffee, loyaltyPunches, loyaltyStatus });
   }
   return json({ ok: true, arrivals: map });
 };
