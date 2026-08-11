@@ -36,7 +36,7 @@ export default async (req) => {
     const slot = (b.slot || "").toString();
     const entryId = (b.entryId || "").toString();
     const key = slotKey(date, slot);
-    let rec = null; try { rec = await bookings.get(key, { type: "json" }); } catch {}
+    let rec = null; try { rec = await bookings.get(key, { type: "json", consistency: "strong" }); } catch {}
     if (!rec || !Array.isArray(rec.bookings)) return json({ error: "Nothing to remove." }, 404);
     const idx = rec.bookings.findIndex(x => x.id === entryId && (x.type === "walkin" || x.type === "pass"));
     if (idx < 0) return json({ error: "That entry can't be removed here." }, 400);
@@ -143,7 +143,7 @@ export default async (req) => {
 };
 
 async function addToSession(bookings, key, entry) {
-  let rec = null; try { rec = await bookings.get(key, { type: "json" }); } catch {}
+  let rec = null; try { rec = await bookings.get(key, { type: "json", consistency: "strong" }); } catch {}
   if (!rec || typeof rec.children !== "number") rec = { children: 0, bookings: [] };
   rec.bookings = Array.isArray(rec.bookings) ? rec.bookings : [];
   rec.bookings.push(entry);

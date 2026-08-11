@@ -69,7 +69,7 @@ export default async (req) => {
 
     // Load the original booking
     const fromKey = slotKey(fromDate, fromSlot);
-    let fromRec = null; try { fromRec = await bookings.get(fromKey, { type: "json" }); } catch {}
+    let fromRec = null; try { fromRec = await bookings.get(fromKey, { type: "json", consistency: "strong" }); } catch {}
     if (!fromRec || !Array.isArray(fromRec.bookings)) return json({ error: "Original booking not found." }, 404);
     const idx = fromRec.bookings.findIndex(x => x.id === entryId && x.type !== "walkin" && x.type !== "pass");
     if (idx < 0) return json({ error: "That booking couldn't be found." }, 404);
@@ -79,7 +79,7 @@ export default async (req) => {
     // Capacity check on the new slot (warn but allow override)
     const cap = slotCap(toSlot);
     const toKey = slotKey(toDate, toSlot);
-    let toRec = null; try { toRec = await bookings.get(toKey, { type: "json" }); } catch {}
+    let toRec = null; try { toRec = await bookings.get(toKey, { type: "json", consistency: "strong" }); } catch {}
     if (!toRec || typeof toRec.children !== "number") toRec = { children: 0, bookings: [] };
     // The target arrival shares one pool of `cap` with its :00/:30 partner, so count
     // the whole hour. If we're only moving within the same hour, this booking is
@@ -145,7 +145,7 @@ export default async (req) => {
     const entryId = (b.entryId || "").toString();
     if (!/^\d{4}-\d{2}-\d{2}$/.test(fromDate) || !ALL_SLOT_IDS.includes(fromSlot)) return json({ error: "Bad booking reference." }, 400);
     const fromKey = slotKey(fromDate, fromSlot);
-    let rec = null; try { rec = await bookings.get(fromKey, { type: "json" }); } catch {}
+    let rec = null; try { rec = await bookings.get(fromKey, { type: "json", consistency: "strong" }); } catch {}
     if (!rec || !Array.isArray(rec.bookings)) return json({ error: "That date/slot has no bookings." }, 404);
     const idx = rec.bookings.findIndex(e => e.id === entryId);
     if (idx < 0) return json({ error: "Booking not found." }, 404);

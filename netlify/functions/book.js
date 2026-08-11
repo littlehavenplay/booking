@@ -525,9 +525,12 @@ export default async (req) => {
     }
   }
 
-  // Record the booking (re-read to reduce the chance of a stale write)
+  // Record the booking. Strong-consistency re-read so two near-simultaneous bookings
+  // (or a booking landing on a slot another write just touched) can't stale-read an
+  // older copy and overwrite each other — the same class of bug that dropped a
+  // rescheduled family. Each write appends onto the truly-latest record.
   let latest = null;
-  try { latest = await store.get(key, { type: "json" }); } catch { latest = null; }
+  try { latest = await store.get(key, { type: "json", consistency: "strong" }); } catch { latest = null; }
   const base = latest && typeof latest.children === "number"
     ? latest : { children: 0, bookings: [] };
 

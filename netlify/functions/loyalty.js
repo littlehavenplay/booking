@@ -220,6 +220,16 @@ export default async (req) => {
       rec.history.push({ at: new Date().toISOString(), action: "renamed", from: before, to: rec.childName });
     }
     if (dob) { rec.dob = dob; rec.history.push({ at: new Date().toISOString(), action: "dob-set", to: dob }); }
+    if (b.email !== undefined) {
+      const newEmail = (b.email || "").toString().slice(0, 160).trim();
+      if (newEmail && newEmail !== (rec.buyerEmail || "")) {
+        rec.history.push({ at: new Date().toISOString(), action: "email-changed", from: rec.buyerEmail || "", to: newEmail });
+        rec.buyerEmail = newEmail;   // future reward + reminder emails go here (e.g. a babysitter's address)
+      } else if (!newEmail && rec.buyerEmail) {
+        rec.history.push({ at: new Date().toISOString(), action: "email-cleared", from: rec.buyerEmail });
+        rec.buyerEmail = "";
+      }
+    }
     if (hasSetPunches) { rec.punches = setP; rec.history.push({ at: new Date().toISOString(), action: "adjusted", to: setP }); }
     if (b.militaryVerified !== undefined) {
       const mv = !!b.militaryVerified;
@@ -248,7 +258,7 @@ export default async (req) => {
     }
 
     try { await loyalty.setJSON("card:" + code, rec); } catch { return json({ error: "Couldn't update the card." }, 502); }
-    return json({ ok: true, adjusted: true, code, childName: rec.childName, dob: rec.dob || "", punches: rec.punches, needed: PUNCHES_FOR_REWARD, militaryVerified: !!rec.militaryVerified, phone4: rec.phone4 || "" });
+    return json({ ok: true, adjusted: true, code, childName: rec.childName, dob: rec.dob || "", punches: rec.punches, needed: PUNCHES_FOR_REWARD, militaryVerified: !!rec.militaryVerified, phone4: rec.phone4 || "", email: rec.buyerEmail || "" });
   }
 
   if (action === "punch") {

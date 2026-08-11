@@ -22,7 +22,7 @@ export default async (req) => {
 
   const store = getStore("arrivals");
   let map = {};
-  try { map = (await store.get(date, { type: "json" })) || {}; } catch { map = {}; }
+  try { map = (await store.get(date, { type: "json", consistency: "strong" })) || {}; } catch { map = {}; }
 
   if ((b.action || "") === "set") {
     const id = (b.id || "").toString();
@@ -66,7 +66,7 @@ export default async (req) => {
         let entry = null, rec = null, bookingKey = null;
         for (const key of allKeys) {
           if (!key.startsWith(date + "__")) continue;
-          let r = null; try { r = await bstore.get(key, { type: "json" }); } catch {}
+          let r = null; try { r = await bstore.get(key, { type: "json", consistency: "strong" }); } catch {}
           const e = r && Array.isArray(r.bookings) ? r.bookings.find(x => x.id === id) : null;
           if (e) { entry = e; rec = r; bookingKey = key; break; }
         }
