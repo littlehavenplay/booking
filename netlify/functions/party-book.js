@@ -10,6 +10,7 @@ import { SIGNATURE_HTML } from "./lib-email.js";
 import {
   PARTY_SLOTS, PARTY_SLOT_IDS, PARTY_PACKAGES, isPartyDay,
   PARTY_BOOKING_MIN_DAYS, slotKey, STUDIO_NAME, WAIVER_URL,
+  loadPartyOff, isPartyOff,
 } from "./lib-settings.js";
 
 export default async (req) => {
@@ -37,6 +38,7 @@ export default async (req) => {
   // Validation
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return json({ error: "Pick a valid date." }, 400);
   if (!isPartyDay(date))                 return json({ error: "Parties are available Friday, Saturday and Sunday only." }, 400);
+  if (isPartyOff(date, await loadPartyOff())) return json({ error: "Parties are turned off for this date — it's open play only. No party bookings or deposits are being accepted that day.", partiesOff: true }, 400);
   if (!PARTY_SLOT_IDS.includes(partySlot)) return json({ error: "Pick a valid party time." }, 400);
   const pkg = PARTY_PACKAGES[pkgId];
   if (!pkg)                              return json({ error: "Pick a party package." }, 400);

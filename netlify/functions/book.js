@@ -19,7 +19,7 @@ import {
 } from "./lib-settings.js";
 import { issueCode, sendWelcome, sendFamilyPunch, PUNCHES_FOR_REWARD, cleanName, last4 as loyaltyLast4, graduateLegacyCard } from "./lib-loyalty.js";
 import { loadSeasonal, loadWeekly } from "./lib-hours.js";
-import { getClosure, slotBlockedByClosure } from "./lib-closures.js";
+import { getClosure, slotBlockedByClosure, getEventHold } from "./lib-closures.js";
 import { getWeekdaySpecial } from "./lib-weekday.js";
 
 export default async (req) => {
@@ -101,9 +101,17 @@ export default async (req) => {
   const _closure = await getClosure(date);
   if (slotBlockedByClosure(_closure, slot))
     return json({ error: "closed", message: (_closure && _closure.note) || "We're closed for that time." }, 409);
+
+  // Automatic event hold: block open-play arrivals after last admission on event days.
+  const _eventHold = await getEventHold(date);
+  if (_eventHold) {
+    const _st = arrivalStartMin(slot);
+    if (_st != null && _st > _eventHold.cutoff)
+      return json({ error: "closed", message: `Last admission is ${_eventHold.lastAdmitLabel} this day for a special event. Please choose an earlier time.` }, 409);
+  }
   if (!SLOT_IDS.includes(slot))         return json({ error: "Invalid time slot." }, 400);
   // Open play can only be booked within the rolling window (default 2 weeks).
-  const maxStr = new Date(Date.now() + (BOOKING_WINDOW_DAYS + 1) * 86400000).toISOString().slice(0, 10);
+  const maxStr = new Date(Date.now() + BOOKING_WINDOW_DAYS * 86400000).toISOString().slice(0, 10);
   if (date > maxStr)                    return json({ error: "window", message: `Open play can only be booked up to ${BOOKING_WINDOW_DAYS} days ahead.` }, 400);
   // Parties take precedence — only allow sessions open for this date given booked parties.
   const _bookedParties = [];
@@ -471,7 +479,7 @@ export default async (req) => {
       }
     }
     try { await passStore.setJSON("pass:" + up.code, fresh); } catch {}
-    passesUsed.push({ code: up.code, admission: up.admission, visitsRemaining: after, freeVisit: after === 0 });
+    passesUsed.push({ code: up.code, admission: up.admission, visitsRemaining: after, total: (fresh.visits || (up.rec && up.rec.visits) || null), freeVisit: after === 0 });
   }
 
   // Burn the one-time discount code (payment already succeeded).
@@ -552,6 +560,7 @@ export default async (req) => {
   // Skipped entirely when a legacy prepaid card was used (legacy never joins loyalty
   // for that visit). The actual PUNCH happens later, at check-in (see arrivals.js).
   const phone4 = loyaltyLast4(phone);
+  let loyaltyCards = [];   // each child's punch card — folded into the ONE confirmation email
   if (!legacyUsed && phone4 && childNames.length) {
     const loyalty = getStore("loyalty");
     const issued = [];
@@ -587,13 +596,13 @@ export default async (req) => {
         if (r) issued.push(r);
       } catch {}
     }
-    // Send ONE combined welcome email for the whole family (never one per child).
-    const newCards = issued.filter(r => r && r.isNew);
-    if (email && newCards.length) {
-      try {
-        if (newCards.length === 1) { await sendWelcome(newCards[0].rec); }
-        else { await sendFamilyPunch(email, newCards.map(c => ({ childName: c.childName, code: c.code, punches: 0, needed: PUNCHES_FOR_REWARD, rewardIssued: false }))); }
-      } catch {}
+    // Fold each child's punch card into the ONE confirmation email below — no separate
+    // welcome email at booking. Read current punches so returning families see progress.
+    for (const r of issued) {
+      if (!r || !r.code) continue;
+      let punches = 0;
+      try { const card = await loyalty.get("card:" + r.code, { type: "json" }); if (card && typeof card.punches === "number") punches = card.punches; } catch {}
+      loyaltyCards.push({ childName: r.childName, code: r.code, isNew: !!r.isNew, punches, needed: PUNCHES_FOR_REWARD });
     }
     // Queue a punch job for this booking; check-in (arrivals) will punch each child once.
     try { await getStore("loyaltyjobs").setJSON("job:" + bookingId,
@@ -615,7 +624,7 @@ export default async (req) => {
   try {
     await sendConfirmation({ email, name, date, slotLabel, regular, sibling, infant, adults: totalAdults, additionalAdults,
       coveredRegular, coveredInfant, coveredSibling, paidRegular, paidInfant, paidSibling, subtotal, tax, amount,
-      giftApplied, giftTotal, creditApplied, creditRemaining, cardAmount, passesUsed, discountPct, discountAmount, weekdaySpecialAmount, weekdaySpecialLabel, militaryAmount, militaryChildren });
+      giftApplied, giftTotal, creditApplied, creditRemaining, cardAmount, passesUsed, discountPct, discountAmount, weekdaySpecialAmount, weekdaySpecialLabel, militaryAmount, militaryChildren, loyaltyCards });
   } catch (e) { /* ignore email errors */ }
 
   return json({
@@ -722,7 +731,7 @@ function validDob(s) {
 
 // Sends the customer a confirmation + policy email via Resend.
 // If RESEND_API_KEY isn't set, this quietly does nothing.
-async function sendConfirmation({ email, name, date, slotLabel, regular, sibling, infant, adults = 0, additionalAdults = 0, coveredRegular = 0, coveredInfant = 0, paidRegular = regular, paidInfant = infant, subtotal, tax, amount, giftApplied = [], giftTotal = 0, creditApplied = 0, creditRemaining = null, cardAmount = 0, passesUsed = [], discountPct = 0, discountAmount = 0, weekdaySpecialAmount = 0, weekdaySpecialLabel = "", militaryAmount = 0, militaryChildren = [] }) {
+async function sendConfirmation({ email, name, date, slotLabel, regular, sibling, infant, adults = 0, additionalAdults = 0, coveredRegular = 0, coveredInfant = 0, paidRegular = regular, paidInfant = infant, subtotal, tax, amount, giftApplied = [], giftTotal = 0, creditApplied = 0, creditRemaining = null, cardAmount = 0, passesUsed = [], discountPct = 0, discountAmount = 0, weekdaySpecialAmount = 0, weekdaySpecialLabel = "", militaryAmount = 0, militaryChildren = [], loyaltyCards = [] }) {
   const key = process.env.RESEND_API_KEY;
   if (!key || !email) return;
 
@@ -738,8 +747,29 @@ async function sendConfirmation({ email, name, date, slotLabel, regular, sibling
 
   // Punch card rows (visits remaining after this booking)
   const passLines = passesUsed.map(p =>
-    `<tr><td style="padding:2px 0;color:#5c6470">Pass ${p.code} used (1 visit)</td><td style="padding:2px 0;text-align:right;font-weight:bold">${p.visitsRemaining} left</td></tr>`
+    `<tr><td style="padding:2px 0;color:#5c6470">Prepaid pass ${p.code} used (1 visit)</td><td style="padding:2px 0;text-align:right;font-weight:bold">${p.total ? `${p.visitsRemaining} of ${p.total} left` : `${p.visitsRemaining} left`}</td></tr>`
   ).join("");
+
+  // Combined punch-card section — folds the old separate "welcome" email into this one.
+  const esc = s => (s || "").toString().replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const anyNew = loyaltyCards.some(c => c.isNew);
+  const cardRows = loyaltyCards.map(c =>
+    `<tr><td style="padding:6px 9px;border-top:1px solid #e6eee2"><b>${esc(c.childName)}</b></td>`
+    + `<td style="padding:6px 9px;border-top:1px solid #e6eee2;text-align:center;font-family:monospace;font-weight:bold;color:#a85f59;letter-spacing:1px">${esc(c.code)}</td>`
+    + `<td style="padding:6px 9px;border-top:1px solid #e6eee2;text-align:right;color:#5c6470">${c.punches}/${c.needed} visits</td></tr>`
+  ).join("");
+  const loyaltySection = loyaltyCards.length ? `
+    <div style="background:#f3f7f2;border-radius:14px;padding:16px 18px;margin:20px 0">
+      <h3 style="margin:0 0 6px;color:#5f8060;font-weight:bold;font-size:15px">Your punch card${loyaltyCards.length > 1 ? "s" : ""} 🎈</h3>
+      <p style="margin:0 0 10px;font-size:14px;color:#5c6470">${anyNew
+        ? `Here ${loyaltyCards.length > 1 ? "are your codes" : "is your code"} — next time, enter ${loyaltyCards.length > 1 ? "a code" : "it"} on the booking page to <b>auto-fill your child's information</b> and book faster.`
+        : `Enter your code on the booking page next time to <b>auto-fill your child's information</b> and book faster.`}</p>
+      <table style="width:100%;border-collapse:collapse;font-size:14px">
+        <tr><td style="padding:0 9px 4px;color:#8a8276;font-size:12px">Child</td><td style="padding:0 9px 4px;text-align:center;color:#8a8276;font-size:12px">Code</td><td style="padding:0 9px 4px;text-align:right;color:#8a8276;font-size:12px">Progress</td></tr>
+        ${cardRows}
+      </table>
+      <p style="margin:10px 0 0;font-size:13px;color:#5c6470">We keep track of your visits automatically — after 7 visits each, the 8th is free. Nothing else to do! 💛</p>
+    </div>` : "";
 
   // Payment breakdown rows (shown when a gift card or store credit was used)
   let payRows = `<tr><td style="padding:6px 0 0;color:#5c6470">Total paid</td><td style="padding:6px 0 0;text-align:right;font-weight:bold;font-size:18px;color:#7ba676">${dollars(amount)}</td></tr>`;
@@ -759,8 +789,8 @@ async function sendConfirmation({ email, name, date, slotLabel, regular, sibling
 
   const html = `
   <div style="font-family:Arial,Helvetica,sans-serif;color:#2a2622;max-width:560px;margin:0 auto;line-height:1.6">
-    <h2 style="color:#a85f59;font-weight:normal;margin:0 0 4px">Your booking is confirmed 🌿</h2>
-    <p style="margin:0 0 16px;color:#5c6470">Thank you${name ? ", " + name : ""} — we can't wait to welcome you to ${STUDIO_NAME}. Here are your details:</p>
+    <h2 style="color:#a85f59;font-weight:normal;margin:0 0 4px">Your reservation is confirmed 🌿</h2>
+    <p style="margin:0 0 16px;color:#5c6470">Thank you${name ? ", " + name : ""} — your reservation is confirmed and we can't wait to welcome you to ${STUDIO_NAME}. Here are your details:</p>
     <table style="width:100%;border-collapse:collapse;font-size:15px">
       <tr><td style="padding:6px 0;color:#5c6470">Date</td><td style="padding:6px 0;text-align:right;font-weight:bold">${date}</td></tr>
       <tr><td style="padding:6px 0;color:#5c6470">Session</td><td style="padding:6px 0;text-align:right;font-weight:bold">${slotLabel}</td></tr>
@@ -774,6 +804,7 @@ async function sendConfirmation({ email, name, date, slotLabel, regular, sibling
       ${militaryAmount > 0 ? `<tr><td style="padding:2px 0;color:#7ba676">🎖️ Military discount (10% off)</td><td style="padding:2px 0;text-align:right;font-weight:bold;color:#7ba676">−${dollars(militaryAmount)}</td></tr>` : ""}
       ${payRows}
     </table>
+    ${loyaltySection}
 
     <div style="background:#fdf1ec;border-radius:14px;padding:16px 18px;margin:20px 0">
       <h3 style="margin:0 0 8px;color:#a85f59;font-weight:bold;font-size:15px">One quick thing before you arrive — your waiver 💛</h3>
@@ -792,9 +823,15 @@ async function sendConfirmation({ email, name, date, slotLabel, regular, sibling
     <p style="margin:14px 0 0;background:#fcfaf6;border:1px solid #efe7da;border-radius:10px;padding:11px 13px;font-size:13px;color:#5c6470"><b>📩 Don't see this email?</b> Please check your junk/spam folder and mark it "not spam" so you receive future confirmations.</p>
   </div>`;
 
-  const text = `Your ${STUDIO_NAME} booking is confirmed!\n\n`
+  const cardText = loyaltyCards.length
+    ? `YOUR PUNCH CARD${loyaltyCards.length > 1 ? "S" : ""}\n`
+      + loyaltyCards.map(c => `- ${c.childName}: ${c.code} (${c.punches}/${c.needed} visits)`).join("\n")
+      + `\nEnter your code on the booking page next time to auto-fill your child's information and book faster. We track your visits automatically — after 7 visits each, the 8th is free.\n\n`
+    : "";
+  const text = `Your ${STUDIO_NAME} reservation is confirmed!\n\n`
     + `Date: ${date}\nSession: ${slotLabel}\nChildren: ${total}\n`
     + `Admissions: ${lines.join(", ")}\nSubtotal: ${dollars(subtotal)}\nTotal paid: ${dollars(amount)}\n\n`
+    + cardText
     + `YOUR WAIVER\nA signed waiver is required for every visit and stays valid for 365 days from the date it was first signed.\n`
     + `- If you're the parent/guardian who signed within the last year, you're all set.\n`
     + `- If you've never signed, or a different parent/guardian is bringing the child(ren) this time, please sign a fresh waiver.\n`
@@ -809,7 +846,7 @@ async function sendConfirmation({ email, name, date, slotLabel, regular, sibling
       from: `${STUDIO_NAME} <${from}>`,
       to: [email],
       bcc: bcc ? [bcc] : undefined,
-      subject: `Your ${STUDIO_NAME} booking is confirmed — ${date}`,
+      subject: `Your ${STUDIO_NAME} reservation is confirmed${loyaltyCards.length ? ` + punch card code${loyaltyCards.length > 1 ? "s" : ""}` : ""} 🎈 — ${date}`,
       html, text,
     }),
   });

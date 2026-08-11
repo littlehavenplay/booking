@@ -1,7 +1,7 @@
 import { getStore } from "@netlify/blobs";
 import { CAPACITY, openPlayForDate, effectivePartyBlocks, slotCap, slotKey, arrivalStartMin, PARTY_SLOT_IDS, CLOSED_DATES, CLOSED_MESSAGE, ARRIVAL_TO_LEGACY, hoursFor, fmtClock, isClosedWeekday, countHourChildren, hourMatesFor } from "./lib-settings.js";
 import { loadSeasonal, loadWeekly } from "./lib-hours.js";
-import { getClosure, applyClosure } from "./lib-closures.js";
+import { getClosure, applyClosure, getEventHold } from "./lib-closures.js";
 
 export default async (req) => {
   const url = new URL(req.url);
@@ -45,6 +45,19 @@ export default async (req) => {
   }
   const notice = (closure && applied.partial) ? (closure.note || "") : "";
 
+  // Automatic event hold: on event days, open-play last admission is 2.5h before the
+  // earliest event that day. Late slots are hidden and a banner points to the events tab.
+  const eventHold = await getEventHold(date);
+  let specialEvent = null;
+  if (eventHold) {
+    daySlots = daySlots.filter(s => { const st = arrivalStartMin(s.id); return st == null || st <= eventHold.cutoff; });
+    specialEvent = { lastAdmitLabel: eventHold.lastAdmitLabel,
+      message: `Special event day! Last admission will be at ${eventHold.lastAdmitLabel}. To view our event click on the Events/Promotions tab for more info.` };
+    if (daySlots.length === 0) {
+      return json({ date, capacity: CAPACITY, slots: [], availability: {}, closed: true, closedMessage: specialEvent.message });
+    }
+  }
+
   const result = {};
   const _todayPT = new Date().toLocaleDateString("en-CA", { timeZone: "America/Los_Angeles" });
   const _nowMinPT = (() => { const t = new Date().toLocaleTimeString("en-GB", { timeZone: "America/Los_Angeles", hour12: false }); const [h, m] = t.split(":").map(Number); return h * 60 + m; })();
@@ -74,8 +87,9 @@ export default async (req) => {
   }
 
   const _h = hoursFor(date, seasonal, weekly);
-  const hoursLabel = `🕒 Open ${fmtClock(_h.open)}–${fmtClock(_h.close)} this day · last admission ${fmtClock(_h.close - 60)}` + (_h.seasonal ? ` (${_h.label})` : "");
-  return json({ date, capacity: CAPACITY, slots: daySlots, availability: result, notice, hoursLabel });
+  const _lastAdmit = eventHold ? Math.min(_h.close - 60, eventHold.cutoff) : (_h.close - 60);
+  const hoursLabel = `🕒 Open ${fmtClock(_h.open)}–${fmtClock(_h.close)} this day · last admission ${fmtClock(_lastAdmit)}` + (_h.seasonal ? ` (${_h.label})` : "");
+  return json({ date, capacity: CAPACITY, slots: daySlots, availability: result, notice, hoursLabel, specialEvent });
 };
 
 async function bookedParties(date) {

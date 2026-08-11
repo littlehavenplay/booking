@@ -13,7 +13,7 @@
 // on one of those just hides it from the site (recorded in blob storage); it can be restored.
 import { getStore } from "@netlify/blobs";
 
-const SETS = ["reviews", "yelp", "facebook", "interior", "customer"];
+const SETS = ["reviews", "yelp", "facebook", "interior", "customer", "pastevents"];
 
 // Built-in (repo) photos per set.
 const STATIC = {

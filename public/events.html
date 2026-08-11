@@ -29,7 +29,7 @@
   .sub{text-align:center;color:var(--slate);font-weight:600;font-size:.9rem;margin:4px 0 22px}
   h2.sec{font-family:'Cormorant Garamond',serif;font-weight:500;font-size:1.5rem;margin:26px 0 10px}
   .ev{background:#fff;border:1px solid rgba(0,0,0,.05);border-radius:20px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.07);margin-bottom:18px}
-  .ev img{width:100%;max-height:340px;object-fit:cover;display:block;background:#f1eadf}
+  .ev img{width:100%;height:auto;object-fit:contain;display:block;background:#f1eadf}
   .ev .body{padding:18px}
   .ev .ti{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:1.5rem;color:var(--rose-deep)}
   .ev .wh{font-weight:700;color:var(--slate);font-size:.9rem;margin:2px 0 8px}
@@ -63,19 +63,19 @@
 <div class="topbar"><a class="name" href="/index.html" style="text-decoration:none;color:inherit">Little <em>Haven</em> Play Studio</a><a class="back" href="/index.html">← Back to site</a></div>
 <div class="wrap">
   <div class="two-col">
+    <div class="col">
+      <h1>🎉 Upcoming Events</h1>
+      <div class="sub">Classes &amp; special events at Little Haven 🌟</div>
+      <div id="upcoming"><div class="note" style="text-align:center">Loading…</div></div>
+    </div>
     <div class="col" id="promoWrap" style="display:none">
       <h1>📌 Current Promotions</h1>
       <div class="sub">Ongoing specials and announcements</div>
       <div id="promoList"></div>
       <div class="promo-fine">Promotions shown here can end at any time — take advantage while they're still available! They can't be combined with any other promotion or discount; the larger discount always applies.</div>
     </div>
-    <div class="col">
-      <h1>🎉 Upcoming Events</h1>
-      <div class="sub">Classes &amp; special events at Little Haven 🌟</div>
-      <div id="upcoming"><div class="note" style="text-align:center">Loading…</div></div>
-    </div>
   </div>
-  <div id="pastWrap" style="display:none"><h2 class="sec">Past events</h2><div class="past" id="past"></div></div>
+  <div id="pastWrap" style="display:none"><h2 class="sec">📸 Memories from past events</h2><div class="past" id="past"></div></div>
 </div>
 <div id="promoLightbox" role="dialog" aria-modal="true" aria-label="Enlarged promo image"><img id="promoLightboxImg" src="" alt=""><button id="promoLightboxClose" aria-label="Close">×</button></div>
 
@@ -111,6 +111,24 @@
   </div>
 </div>
 
+<div class="modal" id="wmodal">
+  <div class="sheet">
+    <span class="x" onclick="closeWait()">×</span>
+    <div id="wTitle" style="font-family:'Cormorant Garamond',serif;font-weight:600;font-size:1.4rem;color:var(--rose-deep)"></div>
+    <div class="note" style="margin-top:0">Join the waitlist — if a space opens up, we'll email you.</div>
+    <label>Your name</label>
+    <input type="text" id="wName" placeholder="Full name">
+    <label>Email</label>
+    <input type="email" id="wEmail" placeholder="you@email.com">
+    <label>Phone number</label>
+    <input type="tel" id="wPhone" placeholder="(760) 555-1234">
+    <label>How many tickets / children?</label>
+    <select id="wCount"></select>
+    <div style="margin-top:14px;text-align:right"><button class="btn" id="wJoin">Join the waitlist</button></div>
+    <div class="msg" id="wMsg"></div>
+  </div>
+</div>
+
 <script>
 const $=s=>document.querySelector(s);
 let CFG={}, EV={}, payments=null, card=null, cur=null;
@@ -122,6 +140,7 @@ function whenStr(iso){return new Date(iso).toLocaleString("en-US",{weekday:"long
   await initSquare();
   load();
   loadPromos();
+  loadPastPhotos();
 })();
 
 async function loadPromos(){
@@ -138,6 +157,13 @@ async function loadPromos(){
       +'</div>';
     }).join("");
   }catch(e){}
+}
+async function loadPastPhotos(){
+  let photos=[];
+  try{ const r=await (await fetch("/api/site-photos?set=pastevents")).json(); photos=(r&&r.photos)||[]; }catch(e){ photos=[]; }
+  if(!photos.length){ $("#pastWrap").style.display="none"; return; }
+  $("#pastWrap").style.display="block";
+  $("#past").innerHTML=photos.map(function(p){ var src=(p.src||"").replace(/'/g,"\\'"); return '<div class="pc"><img src="'+p.src+'" loading="lazy" style="cursor:zoom-in;height:130px" onclick="openPromoLightbox(\''+src+'\')"></div>'; }).join("");
 }
 function openPromoLightbox(src){
   var lb=document.getElementById("promoLightbox"), img=document.getElementById("promoLightboxImg");
@@ -169,15 +195,12 @@ async function load(){
         +(e.description?'<div class="ds">'+esc(e.description)+'</div>':'')
         +'<div class="meta"><span class="price">'+money(e.price)+' <span style="font-weight:600;color:var(--slate);font-size:.85rem">per ticket'+(e.siblingPrice?' · '+money(e.siblingPrice)+' each sibling':'')+'</span></span>'
         +'<span class="left '+lc+'">'+lt+'</span></div>'
-        +'<div style="margin-top:12px">'+(e.regClosed?'<button class="btn" disabled>Registration closed</button>':(e.soldOut?'<button class="btn" disabled>Sold out</button>':'<button class="btn" onclick="openModal(\''+e.id+'\')">Get tickets</button>'))+'</div>'
+        +'<div style="margin-top:12px">'+(e.regClosed?'<button class="btn" disabled>Registration closed</button>':(e.soldOut?'<div style="background:#fdf1ec;border:1px solid #ecdcc9;border-radius:10px;padding:10px 12px;margin-bottom:8px;font-size:.9rem;color:#a85f59;font-weight:600">Event sold out? Get on our waitlist and if a space opens up, we\'ll let you know!</div><button class="btn" onclick="openWait(\''+e.id+'\')">Join the waitlist</button>':'<button class="btn" onclick="openModal(\''+e.id+'\')">Get tickets</button>'))+'</div>'
         +'</div></div>';
     }).join("");
   }
-  // past
-  if(d.past.length){
-    $("#pastWrap").style.display="block";
-    $("#past").innerHTML=d.past.map(e=>'<div class="pc">'+(e.hasPoster?'<img src="/api/event-poster?id='+e.id+'">':'')+'<div class="pt">'+esc(e.title)+'</div><div class="pw">'+esc(new Date(e.dateTime).toLocaleDateString())+'</div></div>').join("");
-  }
+  // Past ticketed events are NOT shown publicly (they stay archived on the staff side).
+  // The "Memories" gallery below is a separate, manually-curated set of photos.
 }
 
 async function initSquare(){
@@ -199,6 +222,27 @@ window.openModal=(id)=>{
   $("#modal").classList.add("open");
 };
 window.closeModal=()=>$("#modal").classList.remove("open");
+let curWait=null;
+window.openWait=(id)=>{
+  curWait=EV[id]; if(!curWait) return;
+  $("#wTitle").textContent=curWait.title;
+  let o=""; for(let i=1;i<=20;i++) o+='<option value="'+i+'">'+i+'</option>'; $("#wCount").innerHTML=o;
+  $("#wName").value=""; $("#wEmail").value=""; if($("#wPhone"))$("#wPhone").value=""; $("#wMsg").className="msg"; $("#wMsg").textContent=""; $("#wJoin").disabled=false;
+  $("#wmodal").classList.add("open");
+};
+window.closeWait=()=>$("#wmodal").classList.remove("open");
+$("#wJoin").onclick=async()=>{
+  const m=$("#wMsg"); m.className="msg";
+  const name=$("#wName").value.trim(), email=$("#wEmail").value.trim(), phone=($("#wPhone")||{}).value||"", count=parseInt($("#wCount").value,10)||1;
+  if(!name){ m.className="msg err"; m.textContent="Please enter your name."; return; }
+  if(!/^\S+@\S+\.\S+$/.test(email)){ m.className="msg err"; m.textContent="Please enter a valid email."; return; }
+  $("#wJoin").disabled=true; m.className="msg ok"; m.textContent="Adding you…";
+  try{
+    const r=await (await fetch("/api/event-waitlist",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({action:"join",eventId:curWait.id,name,email,phone,count})})).json();
+    if(r.ok){ m.className="msg ok"; m.textContent=r.message||"You're on the waitlist!"; setTimeout(()=>{closeWait();},1800); }
+    else { m.className="msg err"; m.textContent=r.error||"Couldn't add you."; $("#wJoin").disabled=false; }
+  }catch(e){ m.className="msg err"; m.textContent="Network error — please try again."; $("#wJoin").disabled=false; }
+};
 function updTotal(){ const q=parseInt($("#mQty").value,10)||1; const sub=(cur.siblingPrice&&q>1)?(cur.price+(q-1)*cur.siblingPrice):(cur.price*q); $("#mTotal").textContent=money(sub); renderAtt(); }
 function renderAtt(){
   const q=parseInt($("#mQty").value,10)||1, host=$("#mAttWrap");

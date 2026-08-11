@@ -6,7 +6,7 @@ import { getStore } from "@netlify/blobs";
 export const CAPACITY = parseInt(process.env.CAPACITY || "13", 10);
 
 // How many days ahead open play can be booked (rolling window). Default 2 weeks.
-export const BOOKING_WINDOW_DAYS = parseInt(process.env.BOOKING_WINDOW_DAYS || "14", 10);
+export const BOOKING_WINDOW_DAYS = parseInt(process.env.BOOKING_WINDOW_DAYS || "7", 10);
 
 // ---- Scheduled price change ----
 // New prices take effect at 12:00 AM Pacific on this date (based on checkout date).
@@ -453,6 +453,31 @@ export const WAIVER_URL = "https://waivermaster.com/sign.html?q=DU3F7C23VNX8D";
 
 export function isPartyDay(date) {
   return PARTY_DAYS.includes(new Date(date + "T00:00:00Z").getUTCDay());
+}
+
+// ---- "Open play only — no parties" control ----
+// Owner/staff can turn OFF party bookings & deposits for specific dates (ranges)
+// and/or as a standing weekday rule, while open play stays fully bookable. Stored
+// in the "site" store under "partyOff": { weekdays:[0-6], ranges:[{id,from,to,note}] }.
+export async function loadPartyOff() {
+  try {
+    const c = await getStore("site").get("partyOff", { type: "json" });
+    return {
+      weekdays: (c && Array.isArray(c.weekdays)) ? c.weekdays : [],
+      ranges:   (c && Array.isArray(c.ranges))   ? c.ranges   : [],
+    };
+  } catch { return { weekdays: [], ranges: [] }; }
+}
+export function isPartyOff(date, cfg) {
+  if (!cfg) return false;
+  const wd = new Date(date + "T00:00:00Z").getUTCDay();
+  if (Array.isArray(cfg.weekdays) && cfg.weekdays.includes(wd)) return true;
+  if (Array.isArray(cfg.ranges)) {
+    for (const r of cfg.ranges) {
+      if (r && r.from && r.to && date >= r.from && date <= r.to) return true;
+    }
+  }
+  return false;
 }
 
 // Party-priority windows: on party days, prime party time-blocks stay party-only

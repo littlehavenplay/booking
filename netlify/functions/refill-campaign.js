@@ -1,5 +1,6 @@
-// Scheduled weekly: emails customers whose punch cards are completely used up,
-// reminding them to refill. Stops automatically once they buy another card or unsubscribe.
+// Runs weekly only to catch any legacy punch-card holder whose card has just run out,
+// and send them a ONE-TIME grandfather note (each holder emailed once, ever). Stops for
+// anyone who refills or unsubscribes. It never re-emails someone who already got the note.
 import { runRefillCampaign } from "./lib-refill.js";
 
 export default async () => {

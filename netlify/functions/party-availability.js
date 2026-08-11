@@ -2,7 +2,7 @@
 // Returns the 4 party slots for a Fri/Sat/Sun date with whether each is taken.
 
 import { getStore } from "@netlify/blobs";
-import { PARTY_SLOTS, PARTY_SLOT_IDS, isPartyDay, PARTY_BOOKING_MIN_DAYS, slotKey, PARTY_PACKAGES } from "./lib-settings.js";
+import { PARTY_SLOTS, PARTY_SLOT_IDS, isPartyDay, PARTY_BOOKING_MIN_DAYS, slotKey, PARTY_PACKAGES, loadPartyOff, isPartyOff } from "./lib-settings.js";
 
 export default async (req) => {
   const url = new URL(req.url);
@@ -12,17 +12,18 @@ export default async (req) => {
   const partyDay = isPartyDay(date);
   const minStr = new Date(Date.now() + PARTY_BOOKING_MIN_DAYS * 86400000).toISOString().slice(0, 10);
   const tooSoon = date < minStr;
+  const partiesOff = isPartyOff(date, await loadPartyOff());   // owner turned parties off this day (open play still runs)
 
   const parties = getStore("parties");
   const slots = [];
   for (const s of PARTY_SLOTS) {
     let taken = false;
     try { taken = !!(await parties.get(slotKey(date, s.id), { type: "json" })); } catch { taken = false; }
-    slots.push({ id: s.id, label: s.label, available: partyDay && !tooSoon && !taken, taken });
+    slots.push({ id: s.id, label: s.label, available: partyDay && !tooSoon && !taken && !partiesOff, taken });
   }
 
   const packages = Object.entries(PARTY_PACKAGES).map(([id, p]) => ({ id, label: p.label, deposit: p.deposit }));
-  return json({ date, partyDay, tooSoon, minDate: minStr, slots, packages });
+  return json({ date, partyDay, tooSoon, partiesOff, minDate: minStr, slots, packages });
 };
 
 function json(obj, status = 200) {

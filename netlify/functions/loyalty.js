@@ -54,7 +54,7 @@ export default async (req) => {
         if (r && !r.used) birthday = { code: rec.activeBirthdayCode, expiry: rec.activeBirthdayExpiry };
       }
     }
-    return json({ found: true, code, childName: rec.childName || "", hasDob: !!rec.dob, birthday, militaryVerified: !!rec.militaryVerified });
+    return json({ found: true, code, childName: rec.childName || "", hasDob: !!rec.dob, birthday, militaryVerified: !!rec.militaryVerified, punches: rec.punches || 0, needed: PUNCHES_FOR_REWARD });
   }
 
   const adminKey = process.env.ADMIN_KEY || "";

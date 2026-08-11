@@ -6,6 +6,7 @@
 //   action "release" -> { id, count }   (free up tickets after a refund)
 //   action "roster"  -> { id }          (who bought)
 import { getStore } from "@netlify/blobs";
+import { rebuildEventHolds } from "./lib-closures.js";
 
 export default async (req) => {
   if (req.method !== "POST") return json({ error: "Use POST." }, 405);
@@ -71,6 +72,7 @@ export default async (req) => {
     }
     try { await store.setJSON("event:" + id, rec); }
     catch { return json({ error: "Couldn't save the event. Try again." }, 502); }
+    try { await rebuildEventHolds(); } catch {}   // auto-hold open play 2.5h before the event
     return json({ ok: true, id, message: "Event saved." });
   }
 
@@ -78,6 +80,7 @@ export default async (req) => {
     const id = (b.id || "").toString();
     try { await store.delete("event:" + id); } catch {}
     try { await store.delete("poster:" + id); } catch {}
+    try { await rebuildEventHolds(); } catch {}   // release the auto-hold if no events remain that day
     return json({ ok: true, message: "Event deleted." });
   }
 

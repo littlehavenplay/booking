@@ -36,6 +36,7 @@ export default async (req) => {
     admission: rec.admission,             // "regular" or "infant"
     label: rec.label,
     visitsRemaining: rec.visitsRemaining,
+    visits: rec.visits || null,
     expiry: rec.expiry,
     childName: rec.childName || "",
   });

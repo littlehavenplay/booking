@@ -54,6 +54,13 @@
     #sideNav{display:none}
     #secBar{display:block;position:sticky;top:0;z-index:60;margin:0 -16px 18px;padding:10px 16px;background:rgba(250,247,243,.96);border-bottom:1px solid rgba(0,0,0,.06)}
   }
+
+  /* --- compact one-tool-at-a-time navigation --- */
+  html.compact .card[id^="sec-"]{display:none!important}
+  html.compact .card[id^="sec-"].sec-active{display:block!important}
+  #sideNav .snav-title{margin-top:12px}
+  #sideNav .snav-title:first-child{margin-top:0}
+  #secMenu .snav-title{font-size:.62rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--taupe);padding:9px 12px 3px}
 </style>
 <link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#7a6253"><link rel="apple-touch-icon" href="/assets/icons/apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="Little Haven"><link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32.png"></head>
 <body>
@@ -70,8 +77,8 @@
   </div>
 
   <div id="app" class="hidden">
-<div id="secBar"><button id="secToggle" type="button">Sections ▾</button><div id="secMenu"><a href="#sec-schedule">Daily schedule</a><a href="#sec-walkin">Walk-in check-in</a><a href="#sec-punch">Punch-card check-in</a><a href="/loyalty.html">Loyalty &amp; Punch Cards</a><a href="#sec-reschedule">Reschedule &amp; cancel</a><a href="#sec-party">Session capacity &amp; blocking</a><a href="#sec-deposit">Record a party deposit</a><a href="#sec-redeem">Redeem a credit</a><a href="#sec-credit-backfill">Backfill credit emails</a><a href="#sec-issue">Issue a credit</a><a href="#sec-code">Manage a code</a><a href="#sec-punchissue">Legacy card tools</a><a href="#sec-closures">Closures &amp; hours</a><a href="#sec-passes">Legacy prepaid holders</a><a href="#sec-parties">Party bookings</a><a href="/headcount.html">Head count</a><a href="#sec-prices">Manage prices</a><a href="#sec-weekly">Weekly hours</a><a href="#sec-seasonal">Seasonal hours</a><a href="#sec-weekday-special">Weekday special</a><a href="#sec-discount">Discount codes</a><a href="#sec-news">News banner</a></div></div>
-<nav id="sideNav" aria-label="Sections"><div class="snav-title">Sections</div><a href="#sec-schedule">Daily schedule</a><a href="#sec-walkin">Walk-in check-in</a><a href="#sec-punch">Punch-card check-in</a><a href="/loyalty.html">Loyalty &amp; Punch Cards</a><a href="#sec-reschedule">Reschedule &amp; cancel</a><a href="#sec-party">Session capacity &amp; blocking</a><a href="#sec-deposit">Record a party deposit</a><a href="#sec-redeem">Redeem a credit</a><a href="#sec-credit-backfill">Backfill credit emails</a><a href="#sec-issue">Issue a credit</a><a href="#sec-code">Manage a code</a><a href="#sec-punchissue">Legacy card tools</a><a href="#sec-closures">Closures &amp; hours</a><a href="#sec-passes">Legacy prepaid holders</a><a href="#sec-parties">Party bookings</a><a href="/headcount.html">Head count</a><a href="#sec-prices">Manage prices</a><a href="#sec-weekly">Weekly hours</a><a href="#sec-seasonal">Seasonal hours</a><a href="#sec-weekday-special">Weekday special</a><a href="#sec-discount">Discount codes</a><a href="#sec-news">News banner</a><a href="#sec-rating">Reviews rating</a><a href="#sec-photos">Site photos</a><a href="#sec-promos">Promotions &amp; Flyers</a><a href="#sec-events">Upcoming events</a><a href="#sec-newsletter">📧 Newsletter</a><a href="#sec-partners">Partners page</a><a href="#sec-birthdays">Birthday club</a></nav>
+<div id="secBar"><button id="secToggle" type="button">Sections ▾</button><div id="secMenu"><a href="#sec-schedule">Daily schedule</a><a href="#sec-walkin">Walk-in check-in</a><a href="#sec-punch">Punch-card check-in</a><a href="/loyalty.html">Loyalty &amp; Punch Cards</a><a href="#sec-reschedule">Reschedule &amp; cancel</a><a href="#sec-party">Session capacity &amp; blocking</a><a href="#sec-deposit">Record a party deposit</a><a href="#sec-partyoff">Open play only (no parties)</a><a href="#sec-redeem">Redeem a credit</a><a href="#sec-credit-backfill">Backfill credit emails</a><a href="#sec-issue">Issue a credit</a><a href="#sec-code">Manage a code</a><a href="#sec-punchissue">Legacy card tools</a><a href="#sec-closures">Closures &amp; hours</a><a href="#sec-passes">Legacy prepaid holders</a><a href="#sec-parties">Party bookings</a><a href="/headcount.html">Head count</a><a href="#sec-prices">Manage prices</a><a href="#sec-weekly">Weekly hours</a><a href="#sec-seasonal">Seasonal hours</a><a href="#sec-weekday-special">Weekday special</a><a href="#sec-discount">Discount codes</a><a href="#sec-news">News banner</a></div></div>
+<nav id="sideNav" aria-label="Sections"><div class="snav-title">Sections</div><a href="#sec-schedule">Daily schedule</a><a href="#sec-walkin">Walk-in check-in</a><a href="#sec-punch">Punch-card check-in</a><a href="/loyalty.html">Loyalty &amp; Punch Cards</a><a href="#sec-reschedule">Reschedule &amp; cancel</a><a href="#sec-party">Session capacity &amp; blocking</a><a href="#sec-deposit">Record a party deposit</a><a href="#sec-partyoff">Open play only (no parties)</a><a href="#sec-redeem">Redeem a credit</a><a href="#sec-credit-backfill">Backfill credit emails</a><a href="#sec-issue">Issue a credit</a><a href="#sec-code">Manage a code</a><a href="#sec-punchissue">Legacy card tools</a><a href="#sec-closures">Closures &amp; hours</a><a href="#sec-passes">Legacy prepaid holders</a><a href="#sec-parties">Party bookings</a><a href="/headcount.html">Head count</a><a href="#sec-prices">Manage prices</a><a href="#sec-weekly">Weekly hours</a><a href="#sec-seasonal">Seasonal hours</a><a href="#sec-weekday-special">Weekday special</a><a href="#sec-discount">Discount codes</a><a href="#sec-news">News banner</a><a href="#sec-rating">Reviews rating</a><a href="#sec-photos">Site photos</a><a href="#sec-promos">Promotions &amp; Flyers</a><a href="#sec-events">Upcoming events</a><a href="#sec-newsletter">📧 Newsletter</a><a href="#sec-partners">Partners page</a><a href="#sec-birthdays">Birthday club</a></nav>
     <h1>Daily schedule</h1>
     <div class="card" id="sec-schedule">
       <label>Date</label>
@@ -333,6 +340,30 @@
       <div class="out" id="ovOut"></div>
       <div class="note">Block hides a session from online booking (shows Unavailable). Set capacity caps how many kids can book it (shows FULL when reached). Walk-ins you log in person still work either way. Release restores normal capacity.</div>
     </div>
+
+  <div class="card" id="sec-partyoff">
+    <h2>Open play only — no parties</h2>
+    <p class="note" style="margin-top:-4px">Turn OFF party bookings &amp; deposits for certain days, while open play stays open. Existing booked parties aren't affected.</p>
+    <label>Block parties on a date (or range)</label>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <input type="date" id="poFrom" style="width:160px">
+      <span class="note" style="margin:0">to</span>
+      <input type="date" id="poTo" style="width:160px">
+    </div>
+    <input type="text" id="poNote" placeholder="Note (optional) — e.g. holiday weekend">
+    <button id="poAdd">🚫 No parties these days</button>
+    <div class="out" id="poOut"></div>
+    <div style="border-top:1px dashed #e2d9cc;margin-top:12px;padding-top:12px">
+      <label>Standing weekly rule — no parties on these weekdays</label>
+      <div id="poWk" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+      <button id="poWkSave" style="margin-top:8px">Save weekly rule</button>
+      <p class="note" style="margin-top:6px">Parties normally run Fri/Sat/Sun. Check a day to keep it open-play-only every week.</p>
+    </div>
+    <div style="border-top:1px dashed #e2d9cc;margin-top:12px;padding-top:12px">
+      <label>Currently blocked</label>
+      <div id="poList" class="note">Loading…</div>
+    </div>
+  </div>
 
   <div class="card" id="sec-deposit">
       <h2>Record an in-store party deposit</h2>
@@ -677,6 +708,7 @@
       <button type="button" class="phTab alt" data-set="facebook">🔷 Facebook reviews</button>
         <button type="button" class="phTab alt" data-set="interior">🏠 Interior photos</button>
         <button type="button" class="phTab alt" data-set="customer">📸 Customer photos</button>
+      <button type="button" class="phTab alt" data-set="pastevents">🎉 Past events</button>
       </div>
       <label>Add a photo (JPG or PNG, under ~5MB)</label>
       <input type="file" id="phFile" accept="image/png,image/jpeg,image/webp" multiple>
@@ -705,7 +737,7 @@ function esc(s){return (s||"").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
   const t=new Date(); t.setMinutes(t.getMinutes()-t.getTimezoneOffset());
   $("#date").value=t.toISOString().slice(0,10);
   { const od=$("#ovDate"); if(od) od.value=t.toISOString().slice(0,10); }
-  if(PIN){ $("#gate").classList.add("hidden"); $("#app").classList.remove("hidden"); loadDay(); clLoad(); loadEvents(); pnLoad(); nlLoad(); }
+  if(PIN){ $("#gate").classList.add("hidden"); $("#app").classList.remove("hidden"); loadDay(); clLoad(); loadEvents(); pnLoad(); nlLoad(); try{window.__poLoad&&window.__poLoad();}catch(e){} }
 })();
 
 $("#enter").onclick=async()=>{
@@ -714,7 +746,7 @@ $("#enter").onclick=async()=>{
   if(!PIN){ out.className="out err"; out.textContent="Enter the staff PIN."; return; }
   // validate by attempting a load
   const ok=await loadDay(true);
-  if(ok){ sessionStorage.setItem("lh_staff_pin",PIN); $("#gate").classList.add("hidden"); $("#app").classList.remove("hidden"); clLoad(); loadEvents(); pnLoad(); nlLoad(); }
+  if(ok){ sessionStorage.setItem("lh_staff_pin",PIN); $("#gate").classList.add("hidden"); $("#app").classList.remove("hidden"); clLoad(); loadEvents(); pnLoad(); nlLoad(); try{window.__poLoad&&window.__poLoad();}catch(e){} }
   else { out.className="out err"; out.textContent="Wrong staff PIN."; }
 };
 $("#load").onclick=()=>loadDay();
@@ -1397,6 +1429,7 @@ async function loadEvents(){
         +'<div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap">'
         +'<button onclick="editEvent(\''+e.id+'\')" style="margin:0">Edit</button>'
         +'<button class="alt" onclick="rosterEvent(\''+e.id+'\')" style="margin:0">Roster</button>'
+        +'<button class="alt" onclick="waitEvent(\''+e.id+'\')" style="margin:0">Waitlist</button>'
         +'<button class="ghost" style="margin:0;background:#eee;color:#2a2622" onclick="releaseEvent(\''+e.id+'\')">Release tickets</button>'
         +'<button class="ghost" style="margin:0;background:#f7e3df;color:#b8524a" onclick="deleteEvent(\''+e.id+'\')">Delete</button>'
         +'</div><div class="out" id="evrow-'+e.id+'"></div></div>';
@@ -1481,6 +1514,29 @@ window.rosterEvent=async(id)=>{
     return '<div style="padding:7px 0;border-bottom:1px solid #eee4d6"><b>'+esc(x.name)+'</b> — '+x.quantity+' ticket'+(x.quantity===1?"":"s")+'<br><span style="color:var(--slate);font-size:.85rem">'+esc(x.email)+(x.phone?" · "+esc(x.phone):"")+'</span><br><span style="font-size:.9rem">🧒 '+kids+'</span></div>';
   }).join(""):"No tickets sold yet.")+'<br><b>'+r.sold+'/'+r.capacity+' sold</b>'+(r.buyers.length?' &nbsp; <button class="alt" style="margin-top:8px" onclick="printCheckin(\''+id+'\')">🖨️ Print check-in sheet</button> <button class="alt" style="margin-top:8px" onclick="printNametags(\''+id+'\')">🏷️ Print name tags</button>':''); }
   window.__ros=window.__ros||{}; window.__ros[id]={title:r.title,dateTime:r.dateTime,buyers:r.buyers};
+};
+window.waitEvent=async(id)=>{
+  const key=PIN; const out=$("#evrow-"+id);
+  const r=await (await fetch("/api/event-waitlist",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key,action:"list",eventId:id})})).json();
+  if(!r.ok){ if(out){out.className="out err";out.textContent=r.error||"Couldn't load waitlist.";} return; }
+  const list=r.waitlist||[];
+  let h=list.length?list.map(function(w){
+    return '<div style="padding:7px 0;border-bottom:1px solid #eee4d6"><b>'+esc(w.name)+'</b> \u2014 '+(w.count||1)+' ticket'+((w.count||1)===1?"":"s")+(w.notified?' <span style="color:#3f7d5c;font-size:.8rem">\u2713 notified</span>':'')+'<br><span style="color:var(--slate);font-size:.85rem">'+esc(w.email)+(w.phone?" \u00b7 "+esc(w.phone):"")+'</span> <button class="alt" style="margin:0;padding:3px 8px;font-size:.78rem" onclick="waitRemove(\''+id+'\',\''+w.id+'\')">Remove</button></div>';
+  }).join(""):'<span class="note">No one on the waitlist yet.</span>';
+  h+='<div style="margin-top:8px">'+(list.length?'<button class="alt" style="margin:0" onclick="waitNotify(\''+id+'\')">\uD83D\uDCE3 Notify waitlist (a spot opened)</button>':'')+'</div>';
+  if(out){ out.className="out ok"; out.innerHTML=h; }
+};
+window.waitNotify=async(id)=>{
+  if(!confirm("Email everyone on the waitlist that a spot has opened?")) return;
+  const key=PIN; const out=$("#evrow-"+id);
+  const r=await (await fetch("/api/event-waitlist",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key,action:"notify",eventId:id})})).json();
+  if(r.ok){ waitEvent(id); if(out){ var t=document.createElement("div"); t.className="note"; t.style.marginTop="6px"; t.textContent=r.message; out.appendChild(t); } }
+  else if(out){ out.className="out err"; out.textContent=r.error||"Couldn't notify."; }
+};
+window.waitRemove=async(id,wid)=>{
+  const key=PIN;
+  const r=await (await fetch("/api/event-waitlist",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key,action:"remove",eventId:id,id:wid})})).json();
+  if(r.ok) waitEvent(id); else alert(r.error||"Couldn't remove.");
 };
 $("#evReset").onclick=()=>{ ["evId","evTitle","evDesc","evReq","evWaiver","evWaiver2","evWhen","evRegDate","evRegTime","evPrice","evSibPrice","evCap"].forEach(i=>$("#"+i).value=""); $("#evPoster").value=""; $("#evOut").className="out"; };
 $("#evSave").onclick=async()=>{
@@ -2280,5 +2336,103 @@ if($("#wsSave")) $("#wsSave").onclick=async function(){
 </script>
 
 <script src="/assets/phone-format.js" defer></script>
+<script>
+(function(){
+  var $=function(s){return document.querySelector(s);};
+  var PO_WD=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+  function poKey(){return (typeof PIN!=="undefined"&&PIN)||"";}
+  function poRenderWk(active){active=active||[];
+    var el=$("#poWk"); if(!el)return;
+    el.innerHTML=[0,1,2,3,4,5,6].map(function(d){var on=active.indexOf(d)>=0;
+      return '<label style="display:inline-flex;align-items:center;gap:5px;margin:0;font-weight:700;text-transform:none;letter-spacing:0;color:var(--charcoal);background:#f3ebe0;border-radius:8px;padding:5px 9px"><input type="checkbox" class="poWk" value="'+d+'"'+(on?' checked':'')+'> '+PO_WD[d]+'</label>';}).join("");
+  }
+  function poRenderList(ranges){ranges=ranges||[];var list=$("#poList");if(!list)return;
+    if(!ranges.length){list.innerHTML='<span class="note">No specific dates blocked.</span>';return;}
+    list.innerHTML=ranges.map(function(r){var lbl=r.from===r.to?r.from:(r.from+' → '+r.to);
+      return '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #eee"><span><b>'+lbl+'</b>'+(r.note?' — '+esc(r.note):'')+'</span><button class="alt poDel" data-id="'+r.id+'" style="margin:0;padding:5px 10px;white-space:nowrap">Remove</button></div>';}).join("");
+    Array.prototype.forEach.call(document.querySelectorAll(".poDel"),function(btn){btn.onclick=function(){poPost({action:"removeRange",id:btn.getAttribute("data-id")});};});
+  }
+  function poApply(r){poRenderWk(r.weekdays);poRenderList(r.ranges);}
+  async function poLoad(){var key=poKey();var list=$("#poList");if(!list)return;
+    if(!key){list.textContent="Please log in.";return;}
+    try{var r=await (await fetch("/api/party-off?key="+encodeURIComponent(key))).json();
+      if(r.error){list.textContent=r.error;return;}poApply(r);}catch(e){list.textContent="Network error.";}
+  }
+  async function poPost(payload){var out=$("#poOut");var key=poKey();
+    if(!key){out.className="out err";out.textContent="Please log in.";return;}
+    payload.key=key;
+    try{var r=await (await fetch("/api/party-off",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(payload)})).json();
+      if(r.ok){out.className="out ok";out.textContent=r.message||"Saved.";poApply(r);}
+      else{out.className="out err";out.textContent=r.error||"Couldn't save.";}}catch(e){out.className="out err";out.textContent="Network error.";}
+  }
+  if($("#poAdd"))$("#poAdd").onclick=function(){var from=$("#poFrom").value,to=$("#poTo").value||from,out=$("#poOut");
+    if(!from){out.className="out err";out.textContent="Pick a date.";return;}
+    poPost({action:"addRange",from:from,to:to,note:$("#poNote").value.trim()});};
+  if($("#poWkSave"))$("#poWkSave").onclick=function(){var wd=Array.prototype.map.call(document.querySelectorAll(".poWk:checked"),function(c){return parseInt(c.value,10);});poPost({action:"setWeekdays",weekdays:wd});};
+  poRenderWk([]);
+  
+  window.__poLoad=poLoad; try{if(poKey())poLoad();}catch(e){}
+})();
+</script>
+
+<script>
+/* Compact dashboard nav: pick a tool from the grouped sidebar and the page flips to
+   just that tool. Every tool card is untouched — only navigation changes. If anything
+   throws, the compact mode is removed so all tools remain visible (graceful fallback). */
+(function(){
+  try{
+    var NAV = [["Today & check-in", [{"id": "sec-schedule", "label": "Daily schedule"}, {"id": "sec-walkin"}, {"id": "sec-punch"}, {"id": "sec-reschedule"}, {"href": "/headcount.html", "label": "Head count ↗"}]], ["Loyalty & credits", [{"href": "/loyalty.html", "label": "Loyalty & Punch Cards ↗"}, {"id": "sec-loyalty-list", "label": "Loyalty card page"}, {"id": "sec-redeem"}, {"id": "sec-issue"}, {"id": "sec-credit-backfill"}, {"id": "sec-birthdaycode"}, {"id": "sec-code"}, {"id": "sec-failed"}]], ["Legacy passes", [{"id": "sec-punchissue"}, {"id": "sec-passes"}]], ["Open play setup", [{"id": "sec-party"}, {"id": "sec-partyoff"}, {"id": "sec-weekday-special"}, {"id": "sec-discount"}]], ["Parties", [{"id": "sec-parties"}, {"id": "sec-deposit"}]], ["Hours & prices", [{"id": "sec-prices"}, {"id": "sec-weekly"}, {"id": "sec-seasonal"}, {"id": "sec-closures"}]], ["Events", [{"id": "sec-events"}]], ["Site & marketing", [{"id": "sec-news"}, {"id": "sec-promos"}, {"id": "sec-photos"}, {"id": "sec-rating"}, {"id": "sec-newsletter"}, {"id": "sec-partners"}, {"id": "sec-birthdays"}]]];
+    var sideNav=document.getElementById('sideNav');
+    var secMenu=document.getElementById('secMenu');
+    var seen={};
+    function labelFor(item){
+      if(item.label) return item.label;
+      var el=document.getElementById(item.id);
+      if(el){ var h=el.querySelector('h2'); if(h && h.textContent.trim()) return h.textContent.trim(); }
+      return item.id;
+    }
+    function esc(t){ return (t||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+    function buildHTML(){
+      var html='';
+      NAV.forEach(function(cat){
+        var links='';
+        cat[1].forEach(function(item){
+          if(item.href){ links+='<a href="'+item.href+'">'+esc(labelFor(item))+'</a>'; }
+          else if(document.getElementById(item.id)){ seen[item.id]=1; links+='<a href="#'+item.id+'" data-sec="'+item.id+'">'+esc(labelFor(item))+'</a>'; }
+        });
+        if(links) html+='<div class="snav-title">'+esc(cat[0])+'</div>'+links;
+      });
+      var extra='';
+      Array.prototype.forEach.call(document.querySelectorAll('.card[id^="sec-"]'),function(c){
+        if(!seen[c.id]){ var h=c.querySelector('h2'); extra+='<a href="#'+c.id+'" data-sec="'+c.id+'">'+esc(h&&h.textContent.trim()?h.textContent.trim():c.id)+'</a>'; }
+      });
+      if(extra) html+='<div class="snav-title">More</div>'+extra;
+      return html;
+    }
+    var navHTML=buildHTML();
+    if(sideNav) sideNav.innerHTML=navHTML;
+    if(secMenu) secMenu.innerHTML=navHTML;
+    function showSec(id){
+      var target=document.getElementById(id); if(!target) return;
+      Array.prototype.forEach.call(document.querySelectorAll('.card[id^="sec-"]'),function(c){ c.classList.toggle('sec-active', c.id===id); });
+      Array.prototype.forEach.call(document.querySelectorAll('#sideNav a, #secMenu a'),function(a){ a.classList.toggle('active', a.getAttribute('data-sec')===id); });
+      if(secMenu) secMenu.classList.remove('open');
+      window.scrollTo(0,0);
+      try{ history.replaceState(null,'','#'+id); }catch(e){}
+    }
+    window.showSec=showSec;
+    function onNavClick(e){ var a=e.target.closest && e.target.closest('a[data-sec]'); if(!a) return; e.preventDefault(); showSec(a.getAttribute('data-sec')); }
+    if(sideNav) sideNav.addEventListener('click',onNavClick);
+    if(secMenu) secMenu.addEventListener('click',onNavClick);
+    document.documentElement.classList.add('compact');
+    var initial=(location.hash||'').replace('#','');
+    if(!initial || initial.indexOf('sec-')!==0 || !document.getElementById(initial)){
+      initial='';
+      for(var i=0;i<NAV.length && !initial;i++){ for(var j=0;j<NAV[i][1].length;j++){ var it=NAV[i][1][j]; if(it.id && document.getElementById(it.id)){ initial=it.id; break; } } }
+    }
+    if(initial) showSec(initial);
+  }catch(err){ try{ document.documentElement.classList.remove('compact'); }catch(e){} if(window.console) console.error('compact-nav', err); }
+})();
+</script>
 </body>
 </html>

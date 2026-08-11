@@ -342,7 +342,7 @@ async function init(){
     slots:[{id:"arr09",label:"9:00 AM"},{id:"arr10",label:"10:00 AM"},{id:"arr11",label:"11:00 AM"},{id:"arr12",label:"12:00 PM"},{id:"arr13",label:"1:00 PM"}]}; }
 
   $("#date").min=todayStr();   // no booking in the past
-  const _win=(CFG && CFG.bookingWindowDays) ? CFG.bookingWindowDays : 14;
+  const _win=(CFG && CFG.bookingWindowDays) ? CFG.bookingWindowDays : 7;
   const _mx=new Date(); _mx.setMinutes(_mx.getMinutes()-_mx.getTimezoneOffset()); _mx.setDate(_mx.getDate()+_win);
   $("#date").max=_mx.toISOString().slice(0,10);   // open play only up to the window
 
@@ -414,7 +414,7 @@ async function checkPass(n){
     if(r.ok){
       state.vp[idx]={code,admission:r.admission,visits:r.visitsRemaining,ok:true};
       const type=r.admission==="infant"?"Baby/Infant":"Regular";
-      el.className="gc-bal ok"; el.textContent=`${type} pass · ${r.visitsRemaining} visit${r.visitsRemaining===1?"":"s"} left`;
+      el.className="gc-bal ok"; el.textContent=r.visits?(`${type} pass · ${r.visitsRemaining} of ${r.visits} visits left`):(`${type} pass · ${r.visitsRemaining} visit${r.visitsRemaining===1?"":"s"} left`);
     }else{
       el.className="gc-bal bad"; el.textContent=r.error||"Not valid.";
     }
@@ -482,6 +482,12 @@ async function loadAvailability(){
     n.className="note"; n.style.cssText="background:#fdf1ec;color:#a85f59;border-radius:11px;padding:10px 13px;font-weight:700;margin-bottom:10px";
     n.textContent="⏰ "+data.notice;
     host.appendChild(n);
+  }
+  if(data.specialEvent && data.specialEvent.message){
+    const se=document.createElement("div");
+    se.style.cssText="background:#efe6f5;color:#6d4b86;border:1px solid #d9c7e6;border-radius:11px;padding:11px 14px;font-weight:700;margin-bottom:10px;line-height:1.4";
+    se.innerHTML='\u2728 '+data.specialEvent.message.replace('Events/Promotions tab','<a href="/events.html" style="color:#6d4b86;text-decoration:underline">Events/Promotions tab</a>');
+    host.appendChild(se);
   }
   const daySlots=data.slots||CFG.slots;
   daySlots.forEach(s=>{
@@ -601,13 +607,14 @@ async function cnLookupCode(row, code){
       row.querySelector(".cn-f").value=parts[0]||""; row.querySelector(".cn-l").value=parts.slice(1).join(" ")||"";
       cnSetReadonly(row,true,r.hasDob);
       row.dataset.military=r.militaryVerified?"1":"0";
+      const _prog=(typeof r.punches==="number")?(" \u00b7 "+r.punches+"/"+r.needed+" visits \u2014 your 8th is free! \ud83c\udf88"):"";
       const dInp=row.querySelector(".cn-d");
       if(r.hasDob){
         dInp.value=""; dInp.style.borderColor=""; dInp.placeholder="🔒 Birthday on file";
-        msg.style.color="#3f7d54"; msg.textContent="✓ Found: "+(r.childName||"")+" — birthday on file"+(r.militaryVerified?" · 🎖️ Military discount eligible":"");
+        msg.style.color="#3f7d54"; msg.textContent="✓ Found: "+(r.childName||"")+" — birthday on file"+(r.militaryVerified?" · 🎖️ Military discount eligible":"")+_prog;
       } else {
         dInp.value=""; dInp.style.borderColor=""; dInp.placeholder="Add their birthday mm/dd/yyyy (optional)";
-        msg.style.color="#3f7d54"; msg.textContent="✓ Found: "+(r.childName||"")+" — no birthday on file yet, add one below if you'd like 🎂"+(r.militaryVerified?" · 🎖️ Military discount eligible":"");
+        msg.style.color="#3f7d54"; msg.textContent="✓ Found: "+(r.childName||"")+" — no birthday on file yet, add one below if you'd like 🎂"+(r.militaryVerified?" · 🎖️ Military discount eligible":"")+_prog;
       }
       updateTotals();
     } else {
