@@ -11,6 +11,11 @@ const HERO_IMG = "https://littlehavenplay.com/assets/punch-card-hero.jpg";
 export function cleanName(first, last) {
   return [String(first || "").trim(), String(last || "").trim()].filter(Boolean).join(" ");
 }
+// Normalizes a name for MATCHING ONLY (never for display): lowercases and treats any
+// run of non-alphanumeric characters — dashes, apostrophes, periods, extra spaces —
+// as a single space. So "Henry-Mitchell" and "Henry Mitchell" (or "O'Brien"/"O Brien")
+// resolve to the SAME existing card instead of creating a duplicate.
+export function nameKey(s) { return String(s || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").replace(/\s+/g, " ").trim(); }
 export function last4(phone) {
   const d = String(phone || "").replace(/\D/g, "");
   return d.length >= 4 ? d.slice(-4) : "";
@@ -50,7 +55,7 @@ function pacificToday() { return new Date().toLocaleDateString("en-CA", { timeZo
 export async function resolveCard(loyalty, first, last, phone4, findOnly = false) {
   const li = (String(last).trim()[0] || "X").toUpperCase();
   const fn = String(first).trim();
-  const target = cleanName(first, last).toLowerCase().replace(/\s+/g, " ").trim();
+  const target = nameKey(cleanName(first, last));
   const maxLen = Math.min(Math.max(fn.length, 1), 8);
 
   // Every read here uses strong consistency deliberately — this function decides
@@ -71,7 +76,7 @@ export async function resolveCard(loyalty, first, last, phone4, findOnly = false
     let rec = null;
     try { rec = await loyalty.get("card:" + code, { type: "json", consistency: "strong" }); } catch { rec = null; }
     if (!rec) { if (firstEmpty === null) firstEmpty = code; continue; }
-    const onFile = (rec.childName || "").toLowerCase().replace(/\s+/g, " ").trim();
+    const onFile = nameKey(rec.childName);
     if (onFile === target) return { code, rec };
   }
 
@@ -83,7 +88,7 @@ export async function resolveCard(loyalty, first, last, phone4, findOnly = false
     let rec = null;
     try { rec = await loyalty.get("card:" + code, { type: "json", consistency: "strong" }); } catch { rec = null; }
     if (!rec) { if (firstEmptySuffix === null) firstEmptySuffix = code; continue; }
-    const onFile = (rec.childName || "").toLowerCase().replace(/\s+/g, " ").trim();
+    const onFile = nameKey(rec.childName);
     if (onFile === target) return { code, rec };
   }
 
@@ -146,7 +151,7 @@ export async function issueCode(loyalty, { first, last, phone4, email, dob, supp
 
 // Add ONE punch to a child's card. Creates the card if new (welcome email), and
 // on the 7th punch issues a free-visit reward code (reward email). Returns details.
-export async function addPunch(loyalty, { first, last, phone4, email, code: directCode, suppressEmail, waiverSigned, adultNames, militaryVerified, visitMeta }) {
+export async function addPunch(loyalty, { first, last, phone4, email, code: directCode, suppressEmail, waiverSigned, adultNames, militaryVerified, dob, visitMeta }) {
   let code, existing;
   if (directCode) {
     code = normalizeCode(directCode);
@@ -172,6 +177,7 @@ export async function addPunch(loyalty, { first, last, phone4, email, code: dire
     rec = { code, childName: cleanName(first, last), phone4, punches: 0, rewardsEarned: 0, totalVisits: 0,
       createdAt: new Date().toISOString(), history: [], buyerEmail: (email || "").trim() };
   } else if (email && !rec.buyerEmail) { rec.buyerEmail = email; }
+  if (dob && /^\d{4}-\d{2}-\d{2}$/.test(dob) && !rec.dob) rec.dob = dob;
 
   // Saved on the SAME record write as the punch, whether the card is brand new or
   // already existed — avoids the old two-step flow where a separate waiver save

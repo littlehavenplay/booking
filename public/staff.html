@@ -61,6 +61,11 @@
   #sideNav .snav-title{margin-top:12px}
   #sideNav .snav-title:first-child{margin-top:0}
   #secMenu .snav-title{font-size:.62rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--taupe);padding:9px 12px 3px}
+
+  /* --- walk-in + loyalty side-by-side panel --- */
+  .wi-cols{display:flex;gap:22px;flex-wrap:wrap;align-items:flex-start}
+  .wi-cols>.wi-col{flex:1 1 320px;min-width:290px}
+  .wi-loyalty{background:#faf6f0;border:1px solid #eadfce;border-radius:14px;padding:14px 16px}
 </style>
 <link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#7a6253"><link rel="apple-touch-icon" href="/assets/icons/apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="Little Haven"><link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32.png"></head>
 <body>
@@ -88,6 +93,7 @@
 
   <div class="card" id="sec-walkin">
       <h2>Walk-in check-in</h2>
+      <div class="wi-cols"><div class="wi-col">
       <label>Arrival time</label>
       <select id="wiSlot">
         <option value="">Auto — nearest to now</option>
@@ -106,11 +112,38 @@
         <label style="display:flex;align-items:flex-start;gap:8px;text-transform:none;letter-spacing:0;color:var(--charcoal);font-weight:700;font-size:.82rem;margin:0;cursor:pointer"><input type="checkbox" id="wiWaiver" style="width:auto;margin-top:2px"> 📋 I confirmed <b>every adult AND child</b> entering is signed on the WaiverMaster list.</label>
       </div>
       <div style="border-top:1px dashed #e2d9cc;margin:2px 0 8px;padding-top:10px">
-        <p class="note" style="margin:0">🎈 Need to punch a loyalty card for this walk-in? <a href="/loyalty.html" target="_blank">Open Loyalty &amp; Punch Cards →</a> — safer than retyping their name/phone here, since it finds their real existing card instead of guessing.</p>
+        <p class="note" style="margin:0">🎈 Punch or create their loyalty card on the right → their visit is recorded automatically.</p>
       </div>
       <button id="wiAdd">Log walk-in</button>
       <div class="out" id="wiOut"></div>
       <p class="note">Pick the arrival time (or leave on Auto for the time right now). Children and adults both count toward that time's totals, and the website's "spots left" updates instantly.</p>
+      </div>
+      <div class="wi-col">
+      <div class="wi-loyalty">
+        <h3 style="font-family:'Cormorant Garamond',serif;font-weight:600;font-size:1.3rem;color:var(--rose-deep);margin:0 0 4px">🎈 Loyalty card — find or punch</h3>
+        <p class="note" style="margin-top:0">Enter their phone to pull up the family (use it to check WaiverMaster too). Punch a returning child, or create a new card below.</p>
+        <label>Parent phone</label>
+        <div class="row"><div><input type="tel" id="lwPhone" placeholder="e.g. 760-555-1234"></div><div style="flex:0 0 auto"><button id="lwFind" style="margin-top:0">Find</button></div></div>
+        <div id="lwResults" style="margin:8px 0"></div>
+        <details id="lwNewWrap" style="border-top:1px dashed #e2d9cc;padding-top:10px">
+          <summary style="cursor:pointer;font-weight:800;color:var(--rose-deep);font-size:.9rem">➕ New card / add a child</summary>
+          <div style="margin-top:10px">
+            <div id="lwKids"><div class="lw-kid" style="border-bottom:1px dashed #eee;padding-bottom:8px;margin-bottom:8px"><div class="row"><div><label>Child first</label><input type="text" class="lwF"></div><div><label>Child last</label><input type="text" class="lwL"></div></div><label>Birthday (optional)</label><input type="date" class="lwD"></div></div>
+            <button type="button" id="lwAddKid" class="alt" style="margin:0 0 10px;padding:8px 14px;font-size:.82rem">➕ Add sibling</button>
+            <label>Email (optional)</label><input type="email" id="lwEmail" placeholder="parent@email.com">
+            <div style="background:#fdf1ec;border:1px solid #f0dcd2;border-radius:10px;padding:10px 12px;margin:8px 0">
+              <label style="display:block;font-weight:700;font-size:.8rem;color:var(--charcoal);margin-bottom:5px">📋 Waiver signed date (optional)</label>
+              <input type="date" id="lwWaiver">
+              <label style="display:block;font-weight:700;font-size:.8rem;color:var(--charcoal);margin:8px 0 5px">👥 Adult(s) who signed (comma-separate)</label>
+              <input type="text" id="lwAdults" placeholder="e.g. Maria Gomez, John Gomez">
+              <label style="display:flex;align-items:center;gap:8px;font-weight:700;font-size:.8rem;color:var(--charcoal);margin:12px 0 0;cursor:pointer;text-transform:none;letter-spacing:0"><input type="checkbox" id="lwMilitary" style="width:auto"> 🎖️ Verified military family (10% off)</label>
+            </div>
+            <button id="lwCreate">Create &amp; punch</button>
+            <div class="out" id="lwOut"></div>
+          </div>
+        </details>
+      </div>
+      </div></div>
     </div>
 
   <div class="card" id="sec-punch">
@@ -2434,5 +2467,64 @@ if($("#wsSave")) $("#wsSave").onclick=async function(){
   }catch(err){ try{ document.documentElement.classList.remove('compact'); }catch(e){} if(window.console) console.error('compact-nav', err); }
 })();
 </script>
-</body>
+
+<script>
+(function(){
+  var $=function(s){return document.querySelector(s);};
+  function KEY(){ return (typeof PIN!=="undefined"&&PIN)||""; }
+  var KLABEL="staff PIN";
+  function esc(t){return (t||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+  function todayISO(){ return new Date().toLocaleDateString('en-CA',{timeZone:'America/Los_Angeles'}); }
+  function kidRow(){ return '<div class="lw-kid" style="border-bottom:1px dashed #eee;padding-bottom:8px;margin-bottom:8px"><div class="row"><div><label>Child first</label><input type="text" class="lwF"></div><div><label>Child last</label><input type="text" class="lwL"></div></div><label>Birthday (optional)</label><input type="date" class="lwD"></div>'; }
+  function waiverBadge(c){ var t=todayISO(); if(c.waiverExpiry && c.waiverExpiry>=t) return '<span style="color:#3f7d5c;font-weight:700">\u2713 Waiver on file (exp '+esc(c.waiverExpiry)+')</span>'; return '<span style="color:#b5622f;font-weight:700">\u26a0\ufe0f No current waiver \u2014 check WaiverMaster</span>'; }
+  function renderCards(cards){
+    var box=$('#lwResults');
+    if(!cards.length){ box.innerHTML='<div class="note" style="color:var(--rose-deep)">No card on this number yet \u2014 create one below \U0001F447</div>'; if($('#lwNewWrap'))$('#lwNewWrap').open=true; return; }
+    box.innerHTML=cards.map(function(c){
+      var adults=(c.waiverAdults&&c.waiverAdults.length)?'<div class="note" style="margin:2px 0 0">Adults on file: '+c.waiverAdults.map(esc).join(', ')+'</div>':'<div class="note" style="margin:2px 0 0;color:#b5622f">No adult names on file \u2014 add today\u2019s adult on WaiverMaster</div>';
+      return '<div style="border:1px solid #eadfce;border-radius:10px;padding:10px 12px;margin-bottom:8px;background:#fff">'
+        +'<div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><div><b>'+esc(c.childName)+'</b> <span style="font-family:monospace;color:var(--rose-deep)">'+esc(c.code)+'</span><br><span class="note">'+c.punches+'/'+c.needed+' visits'+(c.dob?' \u00b7 \U0001F382 '+esc(c.dob):'')+'</span></div>'
+        +'<button class="lwPunch" data-code="'+esc(c.code)+'" style="margin:0;padding:8px 14px;white-space:nowrap">\u2795 Punch visit</button></div>'
+        +'<div style="margin-top:6px">'+waiverBadge(c)+'</div>'+adults+'</div>';
+    }).join('');
+    Array.prototype.forEach.call(document.querySelectorAll('.lwPunch'),function(b){ b.onclick=function(){ punchExisting(b.getAttribute('data-code'), b); }; });
+  }
+  async function lwFind(){
+    var key=KEY(); var box=$('#lwResults'); var phone=($('#lwPhone').value||'').trim();
+    if(!key){ box.innerHTML='<div class="out err" style="display:block">Enter your '+KLABEL+' first.</div>'; return; }
+    if(phone.replace(/\D/g,'').length<4){ box.innerHTML='<div class="note">Enter at least the last 4 digits.</div>'; return; }
+    box.innerHTML='<div class="note">Searching\u2026</div>';
+    try{ var r=await (await fetch('/api/loyalty',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({key:key,action:'by-phone',phone:phone})})).json();
+      if(!r.ok){ box.innerHTML='<div class="out err" style="display:block">'+esc(r.error||'Search failed.')+'</div>'; return; }
+      renderCards(r.cards||[]);
+    }catch(e){ box.innerHTML='<div class="out err" style="display:block">Network error.</div>'; }
+  }
+  async function punchExisting(code, btn){
+    var key=KEY(); if(!key){ alert('Enter your '+KLABEL+' first.'); return; }
+    btn.disabled=true; btn.textContent='Punching\u2026';
+    try{ var r=await (await fetch('/api/loyalty',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({key:key,action:'punch',code:code})})).json();
+      if(r.ok){ btn.textContent=r.rewardIssued?'\U0001F389 FREE VISIT!':('\u2713 '+r.punches+'/'+r.needed); btn.style.background='#3f7d5c'; }
+      else { btn.disabled=false; btn.textContent='\u2795 Punch visit'; alert(r.error||'Could not punch.'); }
+    }catch(e){ btn.disabled=false; btn.textContent='\u2795 Punch visit'; alert('Network error.'); }
+  }
+  if($('#lwFind')) $('#lwFind').onclick=lwFind;
+  if($('#lwPhone')) $('#lwPhone').addEventListener('keydown',function(e){ if(e.key==='Enter'){ e.preventDefault(); lwFind(); } });
+  if($('#lwAddKid')) $('#lwAddKid').onclick=function(){ var d=document.createElement('div'); d.innerHTML=kidRow(); $('#lwKids').appendChild(d.firstChild); };
+  if($('#lwCreate')) $('#lwCreate').onclick=async function(){
+    var key=KEY(); var out=$('#lwOut');
+    if(!key){ out.className='out err'; out.style.display='block'; out.textContent='Enter your '+KLABEL+' first.'; return; }
+    var phone=($('#lwPhone').value||'').trim();
+    var kids=[].map.call(document.querySelectorAll('#lwKids .lw-kid'),function(r){return {first:r.querySelector('.lwF').value.trim(),last:r.querySelector('.lwL').value.trim(),dob:r.querySelector('.lwD').value};}).filter(function(c){return c.first&&c.last;});
+    if(phone.replace(/\D/g,'').length<4){ out.className='out err'; out.style.display='block'; out.textContent='Enter the parent phone.'; return; }
+    if(!kids.length){ out.className='out err'; out.style.display='block'; out.textContent='Enter at least one child first + last name.'; return; }
+    var email=($('#lwEmail').value||'').trim(), waiverSigned=$('#lwWaiver').value||'', adultNames=($('#lwAdults').value||'').split(',').map(function(s){return s.trim();}).filter(Boolean), military=$('#lwMilitary').checked;
+    $('#lwCreate').disabled=true; $('#lwCreate').textContent='Creating\u2026';
+    try{ var r=await (await fetch('/api/loyalty',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({key:key,action:'family-punch',children:kids,phone:phone,email:email,waiverSigned:waiverSigned,adultNames:adultNames,militaryVerified:military})})).json();
+      if(r.ok){ out.className='out ok'; out.style.display='block'; out.textContent='\u2713 '+r.message; $('#lwKids').innerHTML=kidRow(); $('#lwEmail').value='';$('#lwWaiver').value='';$('#lwAdults').value='';$('#lwMilitary').checked=false; lwFind(); }
+      else { out.className='out err'; out.style.display='block'; out.textContent=r.error||'Could not create.'; }
+    }catch(e){ out.className='out err'; out.style.display='block'; out.textContent='Network error.'; }
+    $('#lwCreate').disabled=false; $('#lwCreate').textContent='Create & punch';
+  };
+})();
+</script></body>
 </html>

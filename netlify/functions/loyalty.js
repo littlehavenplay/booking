@@ -89,6 +89,29 @@ export default async (req) => {
     return json({ ok: true, count: out.length, customers: out });
   }
 
+  // Find every card on file for a phone number (the family) — used by the walk-in
+  // "find or create" panel so staff can pull a returning family up by phone.
+  if (action === "by-phone") {
+    const p4 = last4(b.phone);
+    if (!p4) return json({ error: "Enter at least the last 4 digits of the phone." }, 400);
+    const out = [];
+    try {
+      const keys = await listAllKeys(loyalty, { prefix: "card:" });
+      for (const k of keys) {
+        let rec = null; try { rec = await loyalty.get(k, { type: "json" }); } catch { rec = null; }
+        if (!rec || rec.phone4 !== p4) continue;
+        out.push({ code: rec.code, childName: rec.childName || "", dob: rec.dob || "",
+          punches: rec.punches || 0, needed: PUNCHES_FOR_REWARD, rewardsEarned: rec.rewardsEarned || 0,
+          email: rec.buyerEmail || "", militaryVerified: !!rec.militaryVerified,
+          waiverSigned: rec.waiverSigned || "", waiverExpiry: rec.waiverExpiry || "",
+          waiverAdults: Array.isArray(rec.waiverAdults) ? rec.waiverAdults.map(a => a.name || a).filter(Boolean) : [],
+          lastVisit: rec.lastVisit ? rec.lastVisit.slice(0, 10) : "" });
+      }
+    } catch { return json({ error: "Couldn't search right now." }, 502); }
+    out.sort((a, c) => (a.childName || "").localeCompare(c.childName || ""));
+    return json({ ok: true, count: out.length, cards: out });
+  }
+
   // Explicit, staff-triggered send — covers EVERY currently-verified sibling under
   // one family in a single email, with each child's own loyalty code included.
   // Call this once, after verifying all of a family's kids, not per child — see
@@ -250,7 +273,8 @@ export default async (req) => {
     if (!phone4)        return json({ error: "Enter the parent's phone (at least the last 4 digits)." }, 400);
     const email = (b.email || "").toString().slice(0, 160).trim();
     const militaryVerified = !!b.militaryVerified;
-    const r = await addPunch(loyalty, { first, last, phone4, email, waiverSigned, adultNames, militaryVerified, visitMeta: { date: todayPacific(), source: "manual" } });
+    const dob = (b.dob || "").toString().trim();
+    const r = await addPunch(loyalty, { first, last, phone4, email, waiverSigned, adultNames, militaryVerified, dob, visitMeta: { date: todayPacific(), source: "manual" } });
     if (r.error) return json({ error: r.message || "Couldn't save the punch. Try again." }, 502);
     return json({ ok: true, ...r,
       message: r.rewardIssued
@@ -284,14 +308,14 @@ export default async (req) => {
     const adultNames = Array.isArray(b.adultNames) ? b.adultNames : [];
     if (!phone4) return json({ error: "Enter the parent's phone (at least the last 4 digits)." }, 400);
     const kids = (Array.isArray(b.children) ? b.children : [])
-      .map(c => ({ first: (c && c.first || "").toString().trim(), last: (c && c.last || "").toString().trim() }))
+      .map(c => ({ first: (c && c.first || "").toString().trim(), last: (c && c.last || "").toString().trim(), dob: (c && c.dob || "").toString().trim() }))
       .filter(c => c.first && c.last)
       .slice(0, 4);
     if (!kids.length) return json({ error: "Enter at least one child's first and last name." }, 400);
     const militaryVerified = !!b.militaryVerified;
     const results = [];
     for (const c of kids) {
-      const r = await addPunch(loyalty, { first: c.first, last: c.last, phone4, email, suppressEmail: true, waiverSigned, adultNames, militaryVerified, visitMeta: { date: todayPacific(), source: "manual" } });
+      const r = await addPunch(loyalty, { first: c.first, last: c.last, phone4, email, suppressEmail: true, waiverSigned, adultNames, militaryVerified, dob: c.dob, visitMeta: { date: todayPacific(), source: "manual" } });
       if (!r.error) results.push(r);
     }
     if (!results.length) return json({ error: "Couldn't save the punches. Try again." }, 502);
