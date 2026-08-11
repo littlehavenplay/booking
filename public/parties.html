@@ -171,6 +171,7 @@ async function loadSlots(){
   if(d && d.error){ host.innerHTML='<div class="msg err" style="display:block">'+d.error+'</div>'; check(); return; }
   if(!d.partyDay){ host.innerHTML='<div class="msg err" style="display:block">Parties are available Friday, Saturday & Sunday only.</div>'; check(); return; }
   if(d.tooSoon){ host.innerHTML='<div class="msg err" style="display:block">Please choose a date at least 2 weeks away.</div>'; check(); return; }
+  if(d.partiesOff){ host.innerHTML='<div class="msg" style="display:block;background:#eef5ee;color:#2f6a4a;border:1px solid #cfe5d3;line-height:1.5">✨ <b>Open play session only on this day!</b><br>We\u2019re not hosting private parties on this date \u2014 but we\u2019d love for you to come join us for an <a href="/book.html" style="color:#2f6a4a;text-decoration:underline;font-weight:800">open play session</a> instead! And if it\u2019s your little one\u2019s birthday, ask us about a birthday admission. 🎂🎈</div>'; check(); return; }
   host.innerHTML="";
   d.slots.forEach(s=>{
     const el=document.createElement("div");
