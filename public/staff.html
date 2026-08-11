@@ -280,6 +280,29 @@
     <div id="bdTableWrap" style="overflow-x:auto;margin-top:10px"></div>
   </div>
 
+    <div class="card" id="sec-addbooking">
+    <h2>➕ Manually add a booking</h2>
+    <p class="note" style="margin-top:-4px">For a phone reservation or to restore a booking. Adds them to the schedule with <b>no charge</b> and doesn't email the customer. Pick the date + arrival time and enter their info.</p>
+    <div class="row">
+      <div><label>Date</label><input type="date" id="mbDate"></div>
+      <div><label>Arrival time</label><select id="mbSlot">
+        <option value="arr09">9:00 AM</option><option value="arr0930">9:30 AM</option>
+        <option value="arr10">10:00 AM</option><option value="arr1030">10:30 AM</option>
+        <option value="arr11">11:00 AM</option><option value="arr1130">11:30 AM</option>
+        <option value="arr12">12:00 PM</option><option value="arr1230">12:30 PM</option>
+        <option value="arr13">1:00 PM</option><option value="arr1330">1:30 PM</option>
+        <option value="arr14">2:00 PM</option><option value="arr1430">2:30 PM</option><option value="arr15">3:00 PM (Fri/Sat)</option>
+      </select></div>
+    </div>
+    <div class="row"><div><label>Parent/guardian name</label><input type="text" id="mbName" placeholder="e.g. Adrian Navarro"></div><div><label>Email (optional)</label><input type="email" id="mbEmail" placeholder="parent@email.com"></div></div>
+    <div class="row"><div><label>Phone (optional)</label><input type="tel" id="mbPhone" placeholder="e.g. 760-555-1234"></div></div>
+    <div class="row"><div><label>Regular (ages 1–6)</label><input type="number" id="mbReg" min="0" value="0"></div><div><label>Infants (under 1)</label><input type="number" id="mbInf" min="0" value="0"></div></div>
+    <div class="row"><div><label>Siblings</label><input type="number" id="mbSib" min="0" value="0"></div><div><label>Adults</label><input type="number" id="mbAd" min="0" value="0"></div></div>
+    <label>Children's names (comma-separated, optional)</label><input type="text" id="mbKids" placeholder="e.g. Evan Navarro">
+    <button id="mbAdd">Add to schedule</button>
+    <div class="out" id="mbOut"></div>
+  </div>
+
   <div class="card" id="sec-reschedule">
       <h2>Reschedule or cancel a booking</h2>
       <label>Original date</label>
@@ -2414,7 +2437,7 @@ if($("#wsSave")) $("#wsSave").onclick=async function(){
    throws, the compact mode is removed so all tools remain visible (graceful fallback). */
 (function(){
   try{
-    var NAV = [["Today & check-in", [{"id": "sec-schedule", "label": "Daily schedule"}, {"id": "sec-walkin"}, {"id": "sec-punch"}, {"id": "sec-reschedule"}, {"href": "/headcount.html", "label": "Head count ↗"}]], ["Loyalty & credits", [{"href": "/loyalty.html", "label": "Loyalty & Punch Cards ↗"}, {"id": "sec-loyalty-list", "label": "Loyalty card page"}, {"id": "sec-redeem"}, {"id": "sec-issue"}, {"id": "sec-credit-backfill"}, {"id": "sec-birthdaycode"}, {"id": "sec-code"}, {"id": "sec-failed"}]], ["Legacy passes", [{"id": "sec-punchissue"}, {"id": "sec-passes"}]], ["Open play setup", [{"id": "sec-party"}, {"id": "sec-partyoff"}, {"id": "sec-weekday-special"}, {"id": "sec-discount"}]], ["Parties", [{"id": "sec-parties"}, {"id": "sec-deposit"}]], ["Hours & prices", [{"id": "sec-prices"}, {"id": "sec-weekly"}, {"id": "sec-seasonal"}, {"id": "sec-closures"}]], ["Events", [{"id": "sec-events"}]], ["Site & marketing", [{"id": "sec-news"}, {"id": "sec-promos"}, {"id": "sec-photos"}, {"id": "sec-rating"}, {"id": "sec-newsletter"}, {"id": "sec-partners"}, {"id": "sec-birthdays"}]]];
+    var NAV = [["Today & check-in", [{"id": "sec-schedule", "label": "Daily schedule"}, {"id": "sec-walkin"}, {"id": "sec-punch"}, {"id": "sec-reschedule"}, {"id": "sec-addbooking"}, {"href": "/headcount.html", "label": "Head count ↗"}]], ["Loyalty & credits", [{"href": "/loyalty.html", "label": "Loyalty & Punch Cards ↗"}, {"id": "sec-loyalty-list", "label": "Loyalty card page"}, {"id": "sec-redeem"}, {"id": "sec-issue"}, {"id": "sec-credit-backfill"}, {"id": "sec-birthdaycode"}, {"id": "sec-code"}, {"id": "sec-failed"}]], ["Legacy passes", [{"id": "sec-punchissue"}, {"id": "sec-passes"}]], ["Open play setup", [{"id": "sec-party"}, {"id": "sec-partyoff"}, {"id": "sec-weekday-special"}, {"id": "sec-discount"}]], ["Parties", [{"id": "sec-parties"}, {"id": "sec-deposit"}]], ["Hours & prices", [{"id": "sec-prices"}, {"id": "sec-weekly"}, {"id": "sec-seasonal"}, {"id": "sec-closures"}]], ["Events", [{"id": "sec-events"}]], ["Site & marketing", [{"id": "sec-news"}, {"id": "sec-promos"}, {"id": "sec-photos"}, {"id": "sec-rating"}, {"id": "sec-newsletter"}, {"id": "sec-partners"}, {"id": "sec-birthdays"}]]];
     var sideNav=document.getElementById('sideNav');
     var secMenu=document.getElementById('secMenu');
     var seen={};
@@ -2525,6 +2548,30 @@ if($("#wsSave")) $("#wsSave").onclick=async function(){
     }catch(e){ out.className='out err'; out.style.display='block'; out.textContent='Network error.'; }
     $('#lwCreate').disabled=false; $('#lwCreate').textContent='Create & punch';
   };
+})();
+</script><script>
+(function(){
+  var $=function(s){return document.querySelector(s);};
+  function KEY(){ return (typeof PIN!=="undefined"&&PIN)||""; }
+  if($("#mbAdd")) $("#mbAdd").onclick=async function(){
+    var key=KEY(); var out=$("#mbOut"); out.style.display="block";
+    if(!key){ out.className="out err"; out.textContent="Enter your staff PIN first."; return; }
+    var date=$("#mbDate").value, slot=$("#mbSlot").value, name=$("#mbName").value.trim();
+    var regular=parseInt($("#mbReg").value,10)||0, infant=parseInt($("#mbInf").value,10)||0, sibling=parseInt($("#mbSib").value,10)||0, adults=parseInt($("#mbAd").value,10)||0;
+    if(!date){ out.className="out err"; out.textContent="Pick a date."; return; }
+    if(!name){ out.className="out err"; out.textContent="Enter the parent/guardian name."; return; }
+    if(regular+infant+sibling<1){ out.className="out err"; out.textContent="Add at least one child."; return; }
+    var childNames=($("#mbKids").value||"").split(",").map(function(s){return s.trim();}).filter(Boolean);
+    var email=$("#mbEmail").value.trim(), phone=$("#mbPhone").value.trim();
+    $("#mbAdd").disabled=true; $("#mbAdd").textContent="Adding\u2026";
+    try{
+      var r=await (await fetch("/api/booking-add",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key:key,date:date,slot:slot,name:name,email:email,phone:phone,regular:regular,infant:infant,sibling:sibling,adults:adults,childNames:childNames})})).json();
+      if(r.ok){ out.className="out ok"; out.textContent="\u2713 "+r.message+" Refresh the schedule to see them."; $("#mbName").value="";$("#mbEmail").value="";$("#mbPhone").value="";$("#mbReg").value="0";$("#mbInf").value="0";$("#mbSib").value="0";$("#mbAd").value="0";$("#mbKids").value=""; }
+      else { out.className="out err"; out.textContent=r.error||"Couldn't add."; }
+    }catch(e){ out.className="out err"; out.textContent="Network error."; }
+    $("#mbAdd").disabled=false; $("#mbAdd").textContent="Add to schedule";
+  };
+  try{ var d=$("#mbDate"); if(d && !d.value) d.value=new Date().toLocaleDateString("en-CA",{timeZone:"America/Los_Angeles"}); }catch(e){}
 })();
 </script></body>
 </html>

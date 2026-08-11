@@ -537,11 +537,23 @@ function waiverBadge(expiry){
 }
 window.adjustPunch=async function(code,delta){
   var c=LOYALTY.find(function(x){return x.code===code;}); if(!c)return;
-  var nv=Math.max(0,Math.min(c.needed||7,(c.punches||0)+delta));
   var key=KEY; if(!key){alert("Enter your admin key (top of page).");return;}
   try{
-    var r=await (await fetch("/api/loyalty",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key,action:"adjust",code,setPunches:nv})})).json();
-    if(r.ok){c.punches=r.punches;renderLoyaltyList();}else alert(r.error||"Couldn't adjust.");
+    var r;
+    if(delta>0){
+      // "+" is a REAL visit → punch it (records today's date & time in visit history, like a check-in)
+      r=await (await fetch("/api/loyalty",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key,action:"punch",code:code})})).json();
+    } else {
+      // "−" is a count correction only — it does not add or remove a visit record
+      var nv=Math.max(0,Math.min(c.needed||7,(c.punches||0)+delta));
+      r=await (await fetch("/api/loyalty",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key,action:"adjust",code:code,setPunches:nv})})).json();
+    }
+    if(r.ok){
+      c.punches=r.punches;
+      if(delta>0){ c.totalVisits=(c.totalVisits||0)+1; if(r.rewardIssued)c.rewardsEarned=(c.rewardsEarned||0)+1; }
+      renderLoyaltyList();
+      if(delta>0 && r.rewardIssued) alert("🎉 "+(r.childName||"")+" earned a FREE visit! Reward code "+r.rewardCode+" emailed.");
+    } else alert(r.error||"Couldn't update.");
   }catch(e){alert("Network error.");}
 };
 window.setWaiver=async function(phone4,code,dateVal){
