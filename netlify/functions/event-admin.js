@@ -6,7 +6,7 @@
 //   action "release" -> { id, count }   (free up tickets after a refund)
 //   action "roster"  -> { id }          (who bought)
 import { getStore } from "@netlify/blobs";
-import { rebuildEventHolds } from "./lib-closures.js";
+import { rebuildEventHolds, eventIsPast } from "./lib-closures.js";
 
 export default async (req) => {
   if (req.method !== "POST") return json({ error: "Use POST." }, 405);
@@ -28,7 +28,7 @@ export default async (req) => {
     const events = [];
     for (const k of keys) {
       let e = null; try { e = await store.get(k, { type: "json" }); } catch {}
-      if (e) events.push({ id: e.id, title: e.title, description: e.description || "", requirements: e.requirements || "", regClose: e.regClose || "", waiverLink: e.waiverLink || "", regularWaiverLink: e.regularWaiverLink || "", dateTime: e.dateTime, price: e.price, siblingPrice: e.siblingPrice || 0, capacity: e.capacity, sold: e.sold || 0, hasPoster: !!e.posterMime, hidden: !!e.hidden, past: new Date(e.dateTime).getTime() < Date.now() });
+      if (e) events.push({ id: e.id, title: e.title, description: e.description || "", requirements: e.requirements || "", regClose: e.regClose || "", waiverLink: e.waiverLink || "", regularWaiverLink: e.regularWaiverLink || "", dateTime: e.dateTime, price: e.price, siblingPrice: e.siblingPrice || 0, capacity: e.capacity, sold: e.sold || 0, hasPoster: !!e.posterMime, hidden: !!e.hidden, past: eventIsPast(e.dateTime) });
     }
     events.sort((a, b) => new Date(b.dateTime) - new Date(a.dateTime));
     return json({ ok: true, events });

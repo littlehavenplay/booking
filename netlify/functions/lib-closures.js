@@ -61,9 +61,26 @@ export function eventPacificParts(dateTime) {
   if (!m) return null;
   const date = `${m[1]}-${m[2]}-${m[3]}`;
   const startMin = parseInt(m[4], 10) * 60 + parseInt(m[5], 10);
-  let weekday = "";
-  try { weekday = new Date(date + "T12:00:00Z").toLocaleDateString("en-US", { weekday: "long", timeZone: "UTC" }); } catch {}
-  return { date, startMin, timeLabel: minutesToLabel(startMin), weekday };
+  let weekday = "", dateLabel = "";
+  try {
+    const d = new Date(date + "T12:00:00Z");
+    weekday = d.toLocaleDateString("en-US", { weekday: "long", timeZone: "UTC" });
+    dateLabel = d.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", timeZone: "UTC" });
+  } catch {}
+  return { date, startMin, timeLabel: minutesToLabel(startMin), weekday, dateLabel };
+}
+
+// True if the event's Pacific start time is already in the past (compares Pacific-to-Pacific,
+// so a 5 PM event isn't wrongly treated as "past" at 10 AM by the server's UTC clock).
+export function eventIsPast(dateTime) {
+  const p = eventPacificParts(dateTime);
+  if (!p) return false;
+  const now = new Date();
+  const nowDate = now.toLocaleDateString("en-CA", { timeZone: "America/Los_Angeles" });
+  if (p.date < nowDate) return true;
+  if (p.date > nowDate) return false;
+  const hm = now.toLocaleTimeString("en-GB", { hour12: false, timeZone: "America/Los_Angeles" }).slice(0, 5).split(":").map(Number);
+  return p.startMin < (hm[0] * 60 + hm[1]);
 }
 
 export async function getEventHolds() {

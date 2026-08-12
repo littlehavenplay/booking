@@ -5,6 +5,9 @@ import { WAIVER_URL } from "./lib-settings.js";
 import { eventPacificParts } from "./lib-closures.js";
 
 export default async () => {
+  // Only run at 10 AM Pacific — hourly cron + this gate keeps it at 10 AM year-round (DST-proof).
+  const _hrPT = parseInt(new Date().toLocaleTimeString("en-GB", { hour12: false, timeZone: "America/Los_Angeles" }).slice(0, 2), 10);
+  if (_hrPT !== 10) return new Response(JSON.stringify({ ok: true, skipped: "not 10 AM Pacific" }), { headers: { "content-type": "application/json" } });
   const key = process.env.RESEND_API_KEY, from = process.env.EMAIL_FROM || "onboarding@resend.dev", studioEmail = process.env.STUDIO_EMAIL;
   const studio = "Little Haven Play Studio";
   if (!key) return new Response("No email configured.", { status: 200 });
@@ -96,4 +99,4 @@ export default async () => {
   return new Response("Reminders sent: " + sent, { status: 200 });
 };
 // 10am Pacific (17:00 UTC during PDT). Runs daily.
-export const config = { schedule: "0 17 * * *" };
+export const config = { schedule: "0 * * * *" };   // hourly; the handler only proceeds at 10 AM Pacific

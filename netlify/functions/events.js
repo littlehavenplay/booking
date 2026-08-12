@@ -1,3 +1,4 @@
+import { eventIsPast } from "./lib-closures.js";
 // GET /api/events — public. Upcoming events (with live ticket counts) + past events (gallery).
 import { getStore } from "@netlify/blobs";
 
@@ -12,7 +13,7 @@ export default async () => {
     let e = null;
     try { e = await store.get(k, { type: "json" }); } catch { e = null; }
     if (!e || e.hidden) continue;
-    const isPast = new Date(e.dateTime).getTime() < now;
+    const isPast = eventIsPast(e.dateTime);
     if (isPast) {
       past.push({ id: e.id, title: e.title, dateTime: e.dateTime, hasPoster: !!e.posterMime });
     } else {

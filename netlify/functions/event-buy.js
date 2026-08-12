@@ -3,6 +3,7 @@
 import { getStore } from "@netlify/blobs";
 import { SIGNATURE_HTML } from "./lib-email.js";
 import { squareApiBase, SQUARE_VERSION, STUDIO_NAME } from "./lib-settings.js";
+import { eventPacificParts, eventIsPast } from "./lib-closures.js";
 
 export default async (req) => {
   if (req.method !== "POST") return json({ error: "Use POST." }, 405);
@@ -30,7 +31,7 @@ export default async (req) => {
   let e = null;
   try { e = await store.get("event:" + eventId, { type: "json" }); } catch { e = null; }
   if (!e || e.hidden)                 return json({ error: "That event isn't available." }, 404);
-  if (new Date(e.dateTime).getTime() < Date.now()) return json({ error: "This event has already passed." }, 400);
+  if (eventIsPast(e.dateTime)) return json({ error: "This event has already passed." }, 400);
 
   const sold = e.sold || 0;
   const remaining = Math.max(0, e.capacity - sold);
@@ -112,7 +113,7 @@ async function sendConfirmation({ email, name, event, quantity, amount }) {
   const bcc = process.env.STUDIO_EMAIL || null;
   if (!key) return;
   const money = c => "$" + (c / 100).toFixed(2);
-  const when = new Date(event.dateTime).toLocaleString("en-US", { weekday: "long", month: "long", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: "America/Los_Angeles" });
+  const _ep = eventPacificParts(event.dateTime); const when = _ep ? `${_ep.dateLabel} at ${_ep.timeLabel}` : "";
   const esc = s => (s || "").toString().replace(/</g, "&lt;").replace(/>/g, "&gt;");
   const html = `
   <div style="font-family:Arial,Helvetica,sans-serif;color:#2a2622;max-width:560px;line-height:1.6">
