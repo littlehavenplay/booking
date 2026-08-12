@@ -53,13 +53,50 @@ export function minutesToLabel(min) {
 // booking page (capacity.js / book.js) only does one cheap read.
 const EVENT_HOLD_LEAD_MIN = 150;   // 2.5 hours
 
+// Parse an event's naive wall-clock dateTime ("2026-08-22T17:00") as Pacific — the zone
+// the owner enters and sees it in. Reading the components avoids the server's own UTC
+// clock shifting "5:00 PM" to "10:00 AM". Returns { date, startMin, timeLabel, weekday } or null.
+export function eventPacificParts(dateTime) {
+  const m = String(dateTime || "").match(/^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})/);
+  if (!m) return null;
+  const date = `${m[1]}-${m[2]}-${m[3]}`;
+  const startMin = parseInt(m[4], 10) * 60 + parseInt(m[5], 10);
+  let weekday = "";
+  try { weekday = new Date(date + "T12:00:00Z").toLocaleDateString("en-US", { weekday: "long", timeZone: "UTC" }); } catch {}
+  return { date, startMin, timeLabel: minutesToLabel(startMin), weekday };
+}
+
 export async function getEventHolds() {
   try { return (await getStore("site").get("eventHolds", { type: "json" })) || {}; }
   catch { return {}; }
 }
 export async function getEventHold(date) {
-  const all = await getEventHolds();
-  return all[date] || null;   // { cutoff, startLabel, lastAdmitLabel, title, count }
+  // Compute LIVE from the events store so ANY event holds open play — including events
+  // created before this feature existed, with no re-save needed. The earliest event on
+  // the day sets the cutoff (last admission = event start − 2.5h).
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date || "")) return null;
+  const store = getStore("events");
+  let keys = [];
+  try { const r = await store.list({ prefix: "event:" }); keys = (r.blobs || []).map(b => b.key); } catch { return null; }
+  const todayPT = new Date().toLocaleDateString("en-CA", { timeZone: "America/Los_Angeles" });
+  let bestStart = null, bestTitle = "our event";
+  for (const k of keys) {
+    let e = null; try { e = await store.get(k, { type: "json" }); } catch {}
+    if (!e || !e.dateTime || e.hidden) continue;
+    // The event time is a naive wall-clock string ("2026-08-22T17:00") entered by the
+    // owner in Pacific — read its components directly so the server doesn't shift it by
+    // its own UTC clock (which turned "5:00 PM" into "10:00 AM").
+    const m = String(e.dateTime).match(/^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})/);
+    if (!m) continue;
+    const evDate = `${m[1]}-${m[2]}-${m[3]}`;
+    if (evDate !== date) continue;
+    if (evDate < todayPT) continue;                            // a past day never holds
+    const startMin = parseInt(m[4], 10) * 60 + parseInt(m[5], 10);
+    if (bestStart === null || startMin < bestStart) { bestStart = startMin; bestTitle = e.title || "our event"; }
+  }
+  if (bestStart === null) return null;
+  const cutoff = bestStart - EVENT_HOLD_LEAD_MIN;              // last admission = 2.5h before the event
+  return { cutoff, startLabel: minutesToLabel(bestStart), lastAdmitLabel: minutesToLabel(cutoff), title: bestTitle, count: 1 };
 }
 
 // Rebuild the date -> hold map from all current (upcoming, visible) events.

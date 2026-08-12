@@ -2,6 +2,7 @@
 import { getStore } from "@netlify/blobs";
 import { SIGNATURE_HTML } from "./lib-email.js";
 import { WAIVER_URL } from "./lib-settings.js";
+import { eventPacificParts } from "./lib-closures.js";
 
 export default async () => {
   const key = process.env.RESEND_API_KEY, from = process.env.EMAIL_FROM || "onboarding@resend.dev", studioEmail = process.env.STUDIO_EMAIL;
@@ -68,9 +69,9 @@ export default async () => {
       try {
         const ev = await eStore.get(k, { type: "json" });
         if (!ev || !ev.dateTime) continue;
-        const evDate = new Date(ev.dateTime).toLocaleDateString("en-CA", { timeZone: "America/Los_Angeles" });
-        if (evDate !== tomorrow) continue;
-        const when = new Date(ev.dateTime).toLocaleString("en-US", { weekday: "long", hour: "numeric", minute: "2-digit", timeZone: "America/Los_Angeles" });
+        const parts = eventPacificParts(ev.dateTime);   // read the event's time as Pacific
+        if (!parts || parts.date !== tomorrow) continue;
+        const when = `${parts.weekday} at ${parts.timeLabel}`;   // e.g. "Saturday at 5:00 PM"
         for (const buyer of (ev.buyers || [])) {
           if (!buyer.email) continue;
           const esc = s => (s || "").toString().replace(/</g, "&lt;").replace(/>/g, "&gt;");

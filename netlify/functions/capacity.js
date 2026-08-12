@@ -38,16 +38,16 @@ export default async (req) => {
 
   // Apply any closure / early-close / late-open set from the admin/staff page.
   const closure = await getClosure(date);
-  const applied = applyClosure(closure, daySlots);
-  daySlots = applied.slots;
-  if (applied.closedAllDay) {
-    return json({ date, capacity: CAPACITY, slots: [], availability: {}, closed: true, closedMessage: applied.message || "Closed this day." });
+  // A full-day closure always wins, even on an event day.
+  if (closure && closure.type === "full") {
+    return json({ date, capacity: CAPACITY, slots: [], availability: {}, closed: true, closedMessage: (closure.note || CLOSED_MESSAGE || "Closed this day.") });
   }
-  const notice = (closure && applied.partial) ? (closure.note || "") : "";
 
   // Automatic event hold: on event days, open-play last admission is 2.5h before the
-  // earliest event that day. Late slots are hidden and a banner points to the events tab.
+  // earliest event that day. This is AUTHORITATIVE — it takes precedence over any manual
+  // "early close" cutoff for the day, so an accidental early-close can't shorten it.
   const eventHold = await getEventHold(date);
+  let notice = "";
   let specialEvent = null;
   if (eventHold) {
     daySlots = daySlots.filter(s => { const st = arrivalStartMin(s.id); return st == null || st <= eventHold.cutoff; });
@@ -56,6 +56,14 @@ export default async (req) => {
     if (daySlots.length === 0) {
       return json({ date, capacity: CAPACITY, slots: [], availability: {}, closed: true, closedMessage: specialEvent.message });
     }
+  } else {
+    // No event that day — apply any manual early-close normally.
+    const applied = applyClosure(closure, daySlots);
+    daySlots = applied.slots;
+    if (applied.closedAllDay) {
+      return json({ date, capacity: CAPACITY, slots: [], availability: {}, closed: true, closedMessage: applied.message || "Closed this day." });
+    }
+    notice = (closure && applied.partial) ? (closure.note || "") : "";
   }
 
   const result = {};

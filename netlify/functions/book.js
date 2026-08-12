@@ -99,15 +99,18 @@ export default async (req) => {
   if (isClosedWeekday(date, _seasonal, _weekly)) return json({ error: "closed", message: "We're closed that day. Please pick another day." }, 409);
   // Dynamic closure / early-close / late-open set from the admin/staff page.
   const _closure = await getClosure(date);
-  if (slotBlockedByClosure(_closure, slot))
-    return json({ error: "closed", message: (_closure && _closure.note) || "We're closed for that time." }, 409);
+  if (_closure && _closure.type === "full")
+    return json({ error: "closed", message: (_closure.note) || "We're closed that day." }, 409);
 
-  // Automatic event hold: block open-play arrivals after last admission on event days.
+  // Event day: last admission = 2.5h before the event, and it OVERRIDES a manual early-close
+  // (so an accidental early-close can't reject a slot the event actually allows).
   const _eventHold = await getEventHold(date);
   if (_eventHold) {
     const _st = arrivalStartMin(slot);
     if (_st != null && _st > _eventHold.cutoff)
       return json({ error: "closed", message: `Last admission is ${_eventHold.lastAdmitLabel} this day for a special event. Please choose an earlier time.` }, 409);
+  } else if (slotBlockedByClosure(_closure, slot)) {
+    return json({ error: "closed", message: (_closure && _closure.note) || "We're closed for that time." }, 409);
   }
   if (!SLOT_IDS.includes(slot))         return json({ error: "Invalid time slot." }, 400);
   // Open play can only be booked within the rolling window (default 2 weeks).
