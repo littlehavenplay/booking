@@ -1,13 +1,14 @@
-// Daily scheduled job: emails each child's birthday gift code ONE WEEK before
-// their birthday, then a short reminder email ON the birthday itself.
-// The code itself is valid on the birthday only (single-use).
+// Daily scheduled job: emails each child's birthday gift code ONE WEEK before their
+// birthday (so they have it in hand), plus a short happy-birthday reminder on the day.
+// The code is valid the child's whole birthday WEEK (Sunday–Saturday), OPEN PLAY only,
+// single-use — so a birthday on a closed day is fine; they can come any open day that week.
 //
 // Source of truth: the loyalty card record itself (card.dob). One card = one
 // child, one code, one place with their birthday, punches, and gift-code history.
 //
 // Runs every day at 15:00 UTC (~8am Pacific). Netlify handles the schedule.
 import { getStore } from "@netlify/blobs";
-import { issueBirthdayCode, sendBirthdayDayOfEmail } from "./lib-birthday.js";
+import { issueBirthdayCode, sendBirthdayDayOfEmail, birthdayWeek } from "./lib-birthday.js";
 
 function splitName(childName) {
   const parts = (childName || "").trim().split(/\s+/);
@@ -47,7 +48,7 @@ export default async () => {
       checked++;
       if (card.lastSentYear !== year && card.buyerEmail) {
         const { first, last } = splitName(card.childName);
-        const result = await issueBirthdayCode({ first, last, email: card.buyerEmail, dob: card.dob, code: loyaltyCode }, when, loyaltyCode);
+        const result = await issueBirthdayCode({ first, last, email: card.buyerEmail, dob: card.dob, code: loyaltyCode }, birthdayWeek(when), loyaltyCode);
         if (result.ok) {
           card.lastSentYear = year;
           card.lastCode = result.code;
@@ -66,7 +67,7 @@ export default async () => {
         let code = card.lastSentYear === todayYear ? card.lastCode : "";
         if (!code) {
           const { first, last } = splitName(card.childName);
-          const result = await issueBirthdayCode({ first, last, email: card.buyerEmail, dob: card.dob, code: loyaltyCode }, todayISO, loyaltyCode);
+          const result = await issueBirthdayCode({ first, last, email: card.buyerEmail, dob: card.dob, code: loyaltyCode }, birthdayWeek(todayISO), loyaltyCode);
           if (result.ok) {
             code = result.code;
             card.lastSentYear = todayYear;
@@ -76,7 +77,7 @@ export default async () => {
         }
         if (code) {
           const { first } = splitName(card.childName);
-          const emailed = await sendBirthdayDayOfEmail({ first, email: card.buyerEmail }, code, todayISO).catch(() => false);
+          const emailed = await sendBirthdayDayOfEmail({ first, email: card.buyerEmail }, code, todayISO, birthdayWeek(todayISO).validUntil).catch(() => false);
           card.dayOfSentYear = todayYear;
           touched = true;
           if (emailed) daySent++; else dayFailed++;

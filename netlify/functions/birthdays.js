@@ -13,7 +13,7 @@
 // free-visit reward mechanism (one free child admission). They are valid on the
 // birthday ONLY (validFrom === expiry === the birthday) and single-use.
 import { getStore } from "@netlify/blobs";
-import { nextOccurrence, ageOn, issueBirthdayCode } from "./lib-birthday.js";
+import { nextOccurrence, ageOn, issueBirthdayCode, birthdayWeek } from "./lib-birthday.js";
 import { normalizeCode } from "./lib-loyalty.js";
 
 export default async (req) => {
@@ -79,7 +79,8 @@ export default async (req) => {
     const parts = (card.childName || "").trim().split(/\s+/);
     const first = parts[0] || "", last = parts.slice(1).join(" ") || "";
     const when = nextOccurrence(card.dob);
-    const result = await issueBirthdayCode({ first, last, email: card.buyerEmail, dob: card.dob, code }, when, code);
+    const week = birthdayWeek(when);
+    const result = await issueBirthdayCode({ first, last, email: card.buyerEmail, dob: card.dob, code }, week, code);
     if (!result.ok) return json({ error: result.error }, 502);
 
     card.lastSentYear = when.slice(0, 4);
@@ -88,7 +89,7 @@ export default async (req) => {
     try { await loyalty.setJSON("card:" + code, card); } catch {}
 
     return json({ ok: true, code: result.code, when, emailed: result.emailed,
-      message: `Birthday gift ${result.code} for ${first} — good on ${when}.` +
+      message: `Birthday gift ${result.code} for ${first} — valid their birthday week (${result.validFrom} to ${result.validUntil}).` +
                (result.emailed ? " Emailed to the family." : " (Email didn't send — share the code directly.)") });
   }
 

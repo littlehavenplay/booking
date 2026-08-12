@@ -1,6 +1,8 @@
 // Shared birthday-gift helpers, used by /api/birthdays and the daily scheduled sender.
-// A birthday gift code reuses the free-visit reward mechanism (one free child admission),
-// but is locked to a single day: validFrom === expiry === the birthday. Single-use.
+// A birthday gift code reuses the free-visit reward mechanism (one free child admission,
+// OPEN PLAY only). It's valid the child's whole birthday WEEK (Sunday–Saturday), so a
+// birthday landing on a closed day is no problem — they can come any open day that week.
+// Single-use. `when` may be a single "YYYY-MM-DD" or a { validFrom, validUntil } range.
 import { getStore } from "@netlify/blobs";
 
 const ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no I/O/0/1
@@ -16,6 +18,17 @@ export function nextOccurrence(dob, todayISO) {
 
 export function ageOn(dob, onDate) {
   return Number(onDate.slice(0, 4)) - Number(dob.slice(0, 4));
+}
+
+// The calendar week (Sunday–Saturday) containing a date. The birthday gift is valid this
+// whole week, so families can come any open-play day — even if the birthday itself lands
+// on a day we're closed.
+export function birthdayWeek(dateISO) {
+  const d = new Date(dateISO + "T12:00:00Z");
+  const dow = d.getUTCDay(); // 0 = Sunday
+  const sun = new Date(d.getTime() - dow * 86400000);
+  const sat = new Date(sun.getTime() + 6 * 86400000);
+  return { validFrom: sun.toISOString().slice(0, 10), validUntil: sat.toISOString().slice(0, 10) };
 }
 
 // `when` can be a single "YYYY-MM-DD" string (the existing automatic birthday
@@ -79,11 +92,11 @@ export async function sendBirthdayEmail(rec, code, when) {
   const pretty = prettyDate(singleDay);
   const turning = ageOn(rec.dob, singleDay);
   const validityLine = isRange
-    ? `Good between <b>${esc(prettyDate(when.validFrom))}</b> and <b>${esc(prettyDate(when.validUntil))}</b> 🎈`
-    : `Good on ${esc(pretty)} — birthday day only 🎈`;
+    ? `Valid all birthday week: <b>${esc(prettyDate(when.validFrom))}</b> – <b>${esc(prettyDate(when.validUntil))}</b> 🎈`
+    : `Good on ${esc(pretty)} 🎈`;
   const bodyLine = isRange
-    ? `Enter this code in the <b>"Free-visit reward code"</b> box when you book online. It's valid for one child admission any day between <b>${esc(prettyDate(when.validFrom))}</b> and <b>${esc(prettyDate(when.validUntil))}</b>, and can be used once.`
-    : `Enter this code in the <b>"Free-visit reward code"</b> box when you book online. It's valid on ${esc(pretty)} only, for one child admission, and can be used once.`;
+    ? `Enter this code in the <b>"Free-visit reward code"</b> box when you book an <b>Open Play</b> session online. It's good for <b>one free child admission any open day that week (Sunday–Saturday)</b> — so even if their birthday lands on a day we're closed, just come another day that week! Use it once.`
+    : `Enter this code in the <b>"Free-visit reward code"</b> box when you book an <b>Open Play</b> session online. It's valid on ${esc(pretty)}, for one child admission, and can be used once.`;
 
   const html = `
 <div style="font-family:Arial,Helvetica,sans-serif;background:#fdf1ec;padding:26px 14px">
@@ -96,7 +109,7 @@ export async function sendBirthdayEmail(rec, code, when) {
     <div style="padding:24px">
       <p style="margin:0 0 14px;font-size:15px;color:#2a2622;line-height:1.6">
         We can't wait to celebrate with you! Here's a little gift from all of us at ${esc(studio)} —
-        <b>one FREE admission</b> for ${name}.
+        <b>one FREE open-play admission</b> for ${name}, good all birthday week.
       </p>
       <div style="background:#ecf1e8;border:2px dashed #7ba676;border-radius:16px;padding:18px;text-align:center;margin:18px 0">
         <div style="font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#4d7848;font-weight:800">Your birthday gift code</div>
@@ -125,13 +138,14 @@ export async function sendBirthdayEmail(rec, code, when) {
   return res.ok;
 }
 
-export async function sendBirthdayDayOfEmail(rec, code, when) {
+export async function sendBirthdayDayOfEmail(rec, code, when, validUntil) {
   const key = process.env.RESEND_API_KEY;
   if (!key || !rec.email) return false;
   const from = process.env.EMAIL_FROM || "onboarding@resend.dev";
   const bcc = process.env.STUDIO_EMAIL || undefined;
   const studio = process.env.STUDIO_NAME || "Little Haven Play Studio";
   const name = esc(rec.first || "your little one");
+  const throughLine = validUntil ? `Good all week — through ${esc(prettyDate(validUntil))} 🎈` : `Good all birthday week 🎈`;
 
   const html = `
 <div style="font-family:Arial,Helvetica,sans-serif;background:#fdf1ec;padding:26px 14px">
@@ -142,15 +156,18 @@ export async function sendBirthdayDayOfEmail(rec, code, when) {
     </div>
     <div style="padding:24px">
       <p style="margin:0 0 14px;font-size:15px;color:#2a2622;line-height:1.6">
-        Just a reminder — today's the day! Your free admission code is still waiting:
+        Happy birthday! 🎂 Your free open-play admission is good <b>all this week</b>, so come play any open day that works for you:
       </p>
       <div style="background:#ecf1e8;border:2px dashed #7ba676;border-radius:16px;padding:18px;text-align:center;margin:18px 0">
         <div style="font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#4d7848;font-weight:800">Your birthday gift code</div>
         <div style="font-size:30px;font-weight:800;letter-spacing:3px;color:#2a2622;margin:8px 0">${esc(code)}</div>
-        <div style="font-size:13px;color:#4d7848;font-weight:700">Good today only 🎈</div>
+        <div style="font-size:13px;color:#4d7848;font-weight:700">${throughLine}</div>
       </div>
+      <p style="margin:0 0 14px;font-size:14px;color:#5c6470;line-height:1.6">
+        Enter it in the <b>"Free-visit reward code"</b> box when you book an <b>Open Play</b> session online — one free child admission, any open day this week.
+      </p>
       <div style="text-align:center;margin:22px 0 6px">
-        <a href="https://littlehavenplay.com/book.html" style="display:inline-block;background:#c97d76;color:#ffffff;text-decoration:none;font-weight:800;font-size:16px;padding:14px 34px;border-radius:40px">Book today's visit →</a>
+        <a href="https://littlehavenplay.com/book.html" style="display:inline-block;background:#c97d76;color:#ffffff;text-decoration:none;font-weight:800;font-size:16px;padding:14px 34px;border-radius:40px">Book an open-play visit →</a>
       </div>
       <p style="margin:16px 0 0;font-size:13px;color:#aea298;text-align:center">Happy birthday from all of us — ${esc(studio)} 💛</p>
     </div>
@@ -162,7 +179,7 @@ export async function sendBirthdayDayOfEmail(rec, code, when) {
     headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
     body: JSON.stringify({
       from: `${studio} <${from}>`, to: [rec.email], bcc: bcc ? [bcc] : undefined,
-      subject: `🎉 Happy Birthday ${rec.first}! Today's the day`, html,
+      subject: `🎉 Happy Birthday ${rec.first}! Your free visit is good all week`, html,
     }),
   });
   return res.ok;
