@@ -768,7 +768,7 @@
       </div>
       <label>Add a photo (JPG or PNG, under ~5MB)</label>
       <input type="file" id="phFile" accept="image/png,image/jpeg,image/webp" multiple>
-      <button id="phUpload">⬆️ Upload photo</button>
+      <button id="phUpload">⬆️ Upload photo(s)</button>
       <div class="out" id="phOut"></div>
       <div id="phGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px;margin-top:14px"></div>
     </div>
@@ -1100,7 +1100,7 @@ function phRender(list){
       +'<img src="'+thumb+'" data-fallback="'+full+'" onerror="if(this.src!==this.dataset.fallback&&this.dataset.fallback){this.src=this.dataset.fallback;}else{this.style.display=\'none\';this.nextElementSibling&&this.nextElementSibling.classList.contains(\'ph-broke\')&&(this.nextElementSibling.style.display=\'flex\');}" style="width:100%;height:92px;object-fit:cover;display:block;background:#f2ede7">'
       +'<div class="ph-broke" style="display:none;width:100%;height:92px;align-items:center;justify-content:center;font-size:.65rem;color:#a89a89;text-align:center;padding:4px;background:#f2ede7">Couldn\u2019t load</div>'
       +(isStatic?'<span style="position:absolute;top:3px;left:3px;background:rgba(61,46,35,.78);color:#fff;font-size:.58rem;font-weight:800;letter-spacing:.04em;padding:2px 6px;border-radius:6px">BUILT-IN</span>':'')
-      +'<button onclick="phDelete(\''+pp.id+'\')" title="'+(isStatic?"Hide from site":"Delete photo")+'" style="position:absolute;top:3px;right:3px;background:rgba(181,56,47,.92);color:#fff;border:none;border-radius:6px;width:24px;height:24px;cursor:pointer;font-size:.8rem">'+(isStatic?"\uD83D\uDEAB":"\uD83D\uDDD1\uFE0F")+'</button>'
+      +'<button onclick="phDelete(\''+pp.id+'\')" title="'+(isStatic?"Hide from site":"Delete photo")+'" style="position:absolute;top:3px;right:3px;background:rgba(181,56,47,.92);color:#fff;border:none;border-radius:6px;width:24px;height:24px;cursor:pointer;font-size:.8rem">'+"\u2715"+'</button>'
       +'<div style="display:flex;gap:4px;padding:4px;background:#faf5ef">'
         +'<button type="button" onclick="phMove(\''+pp.id+'\',-1)" '+(i===0?"disabled":"")+' style="flex:1;margin:0;padding:4px 0;font-size:.72rem;border-radius:7px;background:#e7ddd0;color:#5b4636;width:auto">\u2191</button>'
         +'<button type="button" onclick="phMove(\''+pp.id+'\',1)" '+(i===phList.length-1?"disabled":"")+' style="flex:1;margin:0;padding:4px 0;font-size:.72rem;border-radius:7px;background:#e7ddd0;color:#5b4636;width:auto">\u2193</button>'
@@ -2470,23 +2470,17 @@ if($("#wsSave")) $("#wsSave").onclick=async function(){
     if(secMenu) secMenu.innerHTML=navHTML;
     function showSec(id){
       var target=document.getElementById(id); if(!target) return;
-      Array.prototype.forEach.call(document.querySelectorAll('.card[id^="sec-"]'),function(c){ c.classList.toggle('sec-active', c.id===id); });
+      var g=target.closest && target.closest('details.secgroup'); if(g) g.open=true;
       Array.prototype.forEach.call(document.querySelectorAll('#sideNav a, #secMenu a'),function(a){ a.classList.toggle('active', a.getAttribute('data-sec')===id); });
       if(secMenu) secMenu.classList.remove('open');
-      window.scrollTo(0,0);
+      try{ target.scrollIntoView({behavior:'smooth',block:'start'}); }catch(e){ window.scrollTo(0,0); }
       try{ history.replaceState(null,'','#'+id); }catch(e){}
     }
     window.showSec=showSec;
     function onNavClick(e){ var a=e.target.closest && e.target.closest('a[data-sec]'); if(!a) return; e.preventDefault(); showSec(a.getAttribute('data-sec')); }
     if(sideNav) sideNav.addEventListener('click',onNavClick);
     if(secMenu) secMenu.addEventListener('click',onNavClick);
-    document.documentElement.classList.add('compact');
-    var initial=(location.hash||'').replace('#','');
-    if(!initial || initial.indexOf('sec-')!==0 || !document.getElementById(initial)){
-      initial='';
-      for(var i=0;i<NAV.length && !initial;i++){ for(var j=0;j<NAV[i][1].length;j++){ var it=NAV[i][1][j]; if(it.id && document.getElementById(it.id)){ initial=it.id; break; } } }
-    }
-    if(initial) showSec(initial);
+    // Accordion mode: groups organize; sidebar opens a group and jumps. No one-at-a-time hiding.
   }catch(err){ try{ document.documentElement.classList.remove('compact'); }catch(e){} if(window.console) console.error('compact-nav', err); }
 })();
 </script>

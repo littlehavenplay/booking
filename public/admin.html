@@ -56,6 +56,7 @@
   .wi-cols{display:flex;gap:22px;flex-wrap:wrap;align-items:flex-start}
   .wi-cols>.wi-col{flex:1 1 320px;min-width:290px}
   .wi-loyalty{background:#faf6f0;border:1px solid #eadfce;border-radius:14px;padding:14px 16px}
+  #sec-punch,#sec-punchissue,#sec-passes{display:none!important}
 </style>
 <link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#7a6253"><link rel="apple-touch-icon" href="/assets/icons/apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="Little Haven"><link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32.png"></head>
 <body>
@@ -148,6 +149,15 @@
     <button id="acUse">Use visit(s)</button>
     <div class="out" id="acOut"></div>
     <p class="note">Decrements the pass and counts the child toward the current session's capacity. Each visit includes 2 adults, no charge.</p>
+  </div>
+
+  <div class="card" id="sec-legacy">
+    <h2>🎟️ Legacy punch card tool</h2>
+    <p class="note" style="margin-top:-2px">For customers still holding a prepaid <b>legacy</b> card. Search by child, parent, phone, email, or code — then <b>use a visit</b> at check-in or <b>fix</b> the card's remaining visits. (We no longer sell these; new families are on the free Loyalty Punch Card.)</p>
+    <div class="row"><div style="flex:1"><input type="text" id="lgSearch" placeholder="Search child, parent, phone, email, or code…"></div><div style="flex:0 0 auto"><button id="lgLoad" style="margin-top:0">Search</button></div></div>
+    <label style="display:flex;align-items:center;gap:8px;font-size:.82rem;text-transform:none;letter-spacing:0;font-weight:700;margin-top:6px"><input type="checkbox" id="lgWaiver" style="width:auto"> 📋 Everyone entering is signed on WaiverMaster (required to use a visit)</label>
+    <div id="lgList" style="margin-top:8px"><div class="note">Search above, or leave blank and press Search to see everyone.</div></div>
+    <div class="out" id="lgOut"></div>
   </div>
 
   <div class="card" id="sec-loyalty-list">
@@ -649,7 +659,7 @@
     </div>
     <label>Add a photo (JPG or PNG, under ~5MB)</label>
     <input type="file" id="phFile" accept="image/png,image/jpeg,image/webp" multiple>
-    <button id="phUpload">⬆️ Upload photo</button>
+    <button id="phUpload">⬆️ Upload photo(s)</button>
     <div class="out" id="phOut"></div>
     <div id="phGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px;margin-top:14px"></div>
   </div>
@@ -1325,7 +1335,7 @@ function phRender(list){
       +'<img src="'+thumb+'" data-fallback="'+full+'" onerror="if(this.src!==this.dataset.fallback&&this.dataset.fallback){this.src=this.dataset.fallback;}else{this.style.display=\'none\';this.nextElementSibling&&this.nextElementSibling.classList.contains(\'ph-broke\')&&(this.nextElementSibling.style.display=\'flex\');}" style="width:100%;height:92px;object-fit:cover;display:block;background:#f2ede7">'
       +'<div class="ph-broke" style="display:none;width:100%;height:92px;align-items:center;justify-content:center;font-size:.65rem;color:#a89a89;text-align:center;padding:4px;background:#f2ede7">Couldn\u2019t load</div>'
       +(isStatic?'<span style="position:absolute;top:3px;left:3px;background:rgba(61,46,35,.78);color:#fff;font-size:.58rem;font-weight:800;letter-spacing:.04em;padding:2px 6px;border-radius:6px">BUILT-IN</span>':'')
-      +'<button onclick="phDelete(\''+pp.id+'\')" title="'+(isStatic?"Hide from site":"Delete photo")+'" style="position:absolute;top:3px;right:3px;background:rgba(181,56,47,.92);color:#fff;border:none;border-radius:6px;width:24px;height:24px;cursor:pointer;font-size:.8rem">'+(isStatic?"\uD83D\uDEAB":"\uD83D\uDDD1\uFE0F")+'</button>'
+      +'<button onclick="phDelete(\''+pp.id+'\')" title="'+(isStatic?"Hide from site":"Delete photo")+'" style="position:absolute;top:3px;right:3px;background:rgba(181,56,47,.92);color:#fff;border:none;border-radius:6px;width:24px;height:24px;cursor:pointer;font-size:.8rem">'+"\u2715"+'</button>'
       +'<div style="display:flex;gap:4px;padding:4px;background:#faf5ef">'
         +'<button type="button" onclick="phMove(\''+pp.id+'\',-1)" '+(i===0?"disabled":"")+' style="flex:1;margin:0;padding:4px 0;font-size:.72rem;border-radius:7px;background:#e7ddd0;color:#5b4636;width:auto">\u2191</button>'
         +'<button type="button" onclick="phMove(\''+pp.id+'\',1)" '+(i===phList.length-1?"disabled":"")+' style="flex:1;margin:0;padding:4px 0;font-size:.72rem;border-radius:7px;background:#e7ddd0;color:#5b4636;width:auto">\u2193</button>'
@@ -2169,11 +2179,13 @@ if($("#wsSave")) $("#wsSave").onclick=async function(){
 <script>
 (function(){
   var GROUPS=[
-    {t:"\u2600\uFE0F Today \u2014 Check-in & Walk-ins", open:true, c:"#7ba676", bg:"#eef4e8", ids:["sec-bookings","sec-schedule","sec-walkin","sec-punch"]},
-    {t:"\uD83C\uDF88 Loyalty & Punch Cards", c:"#c97d76", bg:"#fdf1ec", ids:["sec-loyalty-list","sec-birthdays","sec-punchissue","sec-passes"]},
-    {t:"\uD83D\uDCB3 Credits, Codes & Bookings", c:"#8a94c9", bg:"#eef0f9", ids:["sec-issue","sec-birthdaycode","sec-redeem","sec-credit-backfill","sec-code","sec-weekday-special","sec-discount","sec-reschedule","sec-deposit"]},
-    {t:"\uD83C\uDF89 Parties & Events", c:"#d9a441", bg:"#fbf3e1", ids:["sec-party","sec-parties","sec-deposit","sec-promos","sec-events","sec-partners"]},
-    {t:"\u2699\uFE0F Hours & Settings", c:"#a89a89", bg:"#f2ede7", ids:["sec-prices","sec-rating","sec-photos","sec-closures","sec-weekly","sec-seasonal","sec-news"]}
+    {t:"\u2600\uFE0F Today \u2014 Check-in & Walk-ins", open:true, c:"#7ba676", bg:"#eef4e8", ids:["sec-bookings","sec-schedule","sec-walkin","sec-legacy","sec-addbooking","sec-loyalty-list"]},
+    {t:"\uD83C\uDF82 Birthday Club", c:"#c97d76", bg:"#fdf1ec", ids:["sec-birthdays","sec-birthdaycode"]},
+    {t:"\uD83C\uDF9B\uFE0F Capacity Control", c:"#8a94c9", bg:"#eef0f9", ids:["sec-party","sec-reschedule","sec-partyoff"]},
+    {t:"\uD83D\uDCB3 Credits, Codes & Bookings", c:"#7ba6a0", bg:"#e9f3f1", ids:["sec-issue","sec-redeem","sec-credit-backfill","sec-code","sec-failed","sec-discount","sec-deposit","sec-grandfather"]},
+    {t:"\uD83C\uDF89 Parties & Events", c:"#d9a441", bg:"#fbf3e1", ids:["sec-parties","sec-events","sec-promos","sec-partners"]},
+    {t:"\uD83D\uDCF8 Website Photos", c:"#b48ec2", bg:"#f4eef7", ids:["sec-photos","sec-rating"]},
+    {t:"\u2699\uFE0F Hours & Settings", c:"#a89a89", bg:"#f2ede7", ids:["sec-prices","sec-closures","sec-weekly","sec-seasonal","sec-weekday-special","sec-news","sec-newsletter"]}
   ];
   var TABSETS=[
     {ids:["sec-issue","sec-redeem"], labels:["Issue a credit","Redeem a credit"]},
@@ -2194,7 +2206,8 @@ if($("#wsSave")) $("#wsSave").onclick=async function(){
       g.ids.forEach(function(id){ var el=document.getElementById(id); if(el && el.classList.contains('card')){ body.appendChild(el); used[id]=1; any=true; } });
       if(any) parent.insertBefore(d, ph);
     });
-    var left=cards.filter(function(c){return !used[c.id];});
+    var RETIRED={"sec-punch":1,"sec-punchissue":1,"sec-passes":1};
+    var left=cards.filter(function(c){return !used[c.id] && !RETIRED[c.id];});
     if(left.length){
       var d=document.createElement('details'); d.className='secgroup';
       var sum=document.createElement('summary'); sum.textContent="\uD83D\uDD27 More tools"; d.appendChild(sum);
@@ -2339,7 +2352,7 @@ if($("#wsSave")) $("#wsSave").onclick=async function(){
    throws, the compact mode is removed so all tools remain visible (graceful fallback). */
 (function(){
   try{
-    var NAV = [["Today & check-in", [{"id": "sec-bookings"}, {"id": "sec-walkin"}, {"id": "sec-punch"}, {"id": "sec-reschedule"}, {"id": "sec-addbooking"}, {"href": "/headcount.html", "label": "Head count ↗"}]], ["Loyalty & credits", [{"href": "/loyalty.html", "label": "Loyalty & Punch Cards ↗"}, {"id": "sec-loyalty-list", "label": "Loyalty card page"}, {"id": "sec-redeem"}, {"id": "sec-issue"}, {"id": "sec-credit-backfill"}, {"id": "sec-birthdaycode"}, {"id": "sec-code"}, {"id": "sec-failed"}]], ["Legacy passes", [{"id": "sec-punchissue"}, {"id": "sec-passes"}, {"id": "sec-grandfather"}]], ["Open play setup", [{"id": "sec-party"}, {"id": "sec-partyoff"}, {"id": "sec-weekday-special"}, {"id": "sec-discount"}]], ["Parties", [{"id": "sec-parties"}, {"id": "sec-deposit"}]], ["Hours & prices", [{"id": "sec-prices"}, {"id": "sec-weekly"}, {"id": "sec-seasonal"}, {"id": "sec-closures"}]], ["Events", [{"id": "sec-events"}]], ["Site & marketing", [{"id": "sec-news"}, {"id": "sec-promos"}, {"id": "sec-photos"}, {"id": "sec-rating"}, {"id": "sec-partners"}, {"id": "sec-birthdays"}]]];
+    var NAV = [["Today \u2014 Check-in & Walk-ins",[{"href":"/loyalty.html","label":"Loyalty & Punch Cards \u2197"},{"id":"sec-bookings"},{"id":"sec-schedule"},{"id":"sec-walkin"},{"id":"sec-legacy"},{"id":"sec-addbooking"},{"id":"sec-loyalty-list"},{"href":"/headcount.html","label":"Head count \u2197"}]],["Birthday Club",[{"id":"sec-birthdays"},{"id":"sec-birthdaycode"}]],["Capacity Control",[{"id":"sec-party"},{"id":"sec-reschedule"},{"id":"sec-partyoff"}]],["Credits, Codes & Bookings",[{"id":"sec-issue"},{"id":"sec-redeem"},{"id":"sec-credit-backfill"},{"id":"sec-code"},{"id":"sec-failed"},{"id":"sec-discount"},{"id":"sec-deposit"},{"id":"sec-grandfather"}]],["Parties & Events",[{"id":"sec-parties"},{"id":"sec-events"},{"id":"sec-promos"},{"id":"sec-partners"}]],["Website Photos",[{"id":"sec-photos"},{"id":"sec-rating"}]],["Hours & Settings",[{"id":"sec-prices"},{"id":"sec-closures"},{"id":"sec-weekly"},{"id":"sec-seasonal"},{"id":"sec-weekday-special"},{"id":"sec-news"},{"id":"sec-newsletter"}]]];
     var sideNav=document.getElementById('sideNav');
     var secMenu=document.getElementById('secMenu');
     var seen={};
@@ -2362,7 +2375,7 @@ if($("#wsSave")) $("#wsSave").onclick=async function(){
       });
       var extra='';
       Array.prototype.forEach.call(document.querySelectorAll('.card[id^="sec-"]'),function(c){
-        if(!seen[c.id]){ var h=c.querySelector('h2'); extra+='<a href="#'+c.id+'" data-sec="'+c.id+'">'+esc(h&&h.textContent.trim()?h.textContent.trim():c.id)+'</a>'; }
+        if(!seen[c.id] && getComputedStyle(c).display!=="none"){ var h=c.querySelector('h2'); extra+='<a href="#'+c.id+'" data-sec="'+c.id+'">'+esc(h&&h.textContent.trim()?h.textContent.trim():c.id)+'</a>'; }
       });
       if(extra) html+='<div class="snav-title">More</div>'+extra;
       return html;
@@ -2372,23 +2385,18 @@ if($("#wsSave")) $("#wsSave").onclick=async function(){
     if(secMenu) secMenu.innerHTML=navHTML;
     function showSec(id){
       var target=document.getElementById(id); if(!target) return;
-      Array.prototype.forEach.call(document.querySelectorAll('.card[id^="sec-"]'),function(c){ c.classList.toggle('sec-active', c.id===id); });
+      var g=target.closest && target.closest('details.secgroup'); if(g) g.open=true;   // open its category
       Array.prototype.forEach.call(document.querySelectorAll('#sideNav a, #secMenu a'),function(a){ a.classList.toggle('active', a.getAttribute('data-sec')===id); });
       if(secMenu) secMenu.classList.remove('open');
-      window.scrollTo(0,0);
+      try{ target.scrollIntoView({behavior:'smooth',block:'start'}); }catch(e){ window.scrollTo(0,0); }
       try{ history.replaceState(null,'','#'+id); }catch(e){}
     }
     window.showSec=showSec;
     function onNavClick(e){ var a=e.target.closest && e.target.closest('a[data-sec]'); if(!a) return; e.preventDefault(); showSec(a.getAttribute('data-sec')); }
     if(sideNav) sideNav.addEventListener('click',onNavClick);
     if(secMenu) secMenu.addEventListener('click',onNavClick);
-    document.documentElement.classList.add('compact');
-    var initial=(location.hash||'').replace('#','');
-    if(!initial || initial.indexOf('sec-')!==0 || !document.getElementById(initial)){
-      initial='';
-      for(var i=0;i<NAV.length && !initial;i++){ for(var j=0;j<NAV[i][1].length;j++){ var it=NAV[i][1][j]; if(it.id && document.getElementById(it.id)){ initial=it.id; break; } } }
-    }
-    if(initial) showSec(initial);
+    // Accordion mode: the category groups do the organizing; the sidebar just opens a
+    // group and jumps to a tool. No one-at-a-time hiding (that conflicted with the groups).
   }catch(err){ try{ document.documentElement.classList.remove('compact'); }catch(e){} if(window.console) console.error('compact-nav', err); }
 })();
 </script>
@@ -2474,6 +2482,65 @@ if($("#wsSave")) $("#wsSave").onclick=async function(){
     $("#mbAdd").disabled=false; $("#mbAdd").textContent="Add to schedule";
   };
   try{ var d=$("#mbDate"); if(d && !d.value) d.value=new Date().toLocaleDateString("en-CA",{timeZone:"America/Los_Angeles"}); }catch(e){}
+})();
+</script><script>
+(function(){
+  var $=function(sel){return document.querySelector(sel);};
+  function KEY(){ return ($("#key")&&$("#key").value.trim())||""; }
+  function esc(t){return (t||"").toString().replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
+  var LGDATA=[];
+  async function lgLoad(){
+    var key=KEY(); var out=$("#lgOut");
+    if(!key){ out.style.display="block"; out.className="out err"; out.textContent="Enter your admin key (top of page)."; return; }
+    $("#lgList").innerHTML='<div class="note">Loading\u2026</div>';
+    try{ var r=await (await fetch("/api/passes-list",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key:key})})).json();
+      if(!r.ok){ $("#lgList").innerHTML='<div class="out err" style="display:block">'+esc(r.error||"Couldn\u2019t load.")+'</div>'; return; }
+      LGDATA=r.passes||[]; lgRender();
+    }catch(e){ $("#lgList").innerHTML='<div class="out err" style="display:block">Network error.</div>'; }
+  }
+  function lgRender(){
+    var q=($("#lgSearch").value||"").trim().toLowerCase();
+    if(!LGDATA.length){ $("#lgList").innerHTML='<div class="note">No legacy cards on file.</div>'; return; }
+    var list=LGDATA.filter(function(p){ if(!q) return true; return [p.code,p.childName,p.name,p.email,p.phone].some(function(v){return (v||"").toString().toLowerCase().indexOf(q)>=0;}); });
+    if(!list.length){ $("#lgList").innerHTML='<div class="note">No match for \u201c'+esc(q)+'\u201d.</div>'; return; }
+    $("#lgList").innerHTML=list.slice(0,40).map(function(p){
+      var vr=(typeof p.visitsRemaining==="number")?p.visitsRemaining:"\u2014";
+      return '<div style="border:1px solid #eadfce;border-radius:10px;padding:10px 12px;margin-bottom:8px;background:#fff">'
+        +'<div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:center">'
+        +'<div><b>'+esc(p.name||p.childName||"\u2014")+'</b> <span style="font-family:monospace;color:var(--rose-deep)">'+esc(p.code)+'</span>'
+        +'<br><span class="note">'+esc(p.childName||"")+(p.childName?" \u00b7 ":"")+'<b>'+vr+'</b> visit'+(vr===1?"":"s")+' left'+(p.expiry?" \u00b7 exp "+esc(p.expiry):"")+(p.email?" \u00b7 "+esc(p.email):"")+(p.phone?" \u00b7 "+esc(p.phone):"")+'</span></div>'
+        +'<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">'
+        +'<input type="number" min="1" value="1" class="lgUseN" data-code="'+esc(p.code)+'" style="width:52px;margin:0;padding:7px">'
+        +'<button class="lgUse" data-code="'+esc(p.code)+'" style="margin:0;padding:8px 12px;white-space:nowrap">Use visit</button>'
+        +'<input type="number" min="0" placeholder="set" class="lgFixN" data-code="'+esc(p.code)+'" style="width:58px;margin:0;padding:7px">'
+        +'<button class="lgFix alt" data-code="'+esc(p.code)+'" style="margin:0;padding:8px 12px;white-space:nowrap">Fix</button>'
+        +'</div></div></div>';
+    }).join("");
+    Array.prototype.forEach.call(document.querySelectorAll(".lgUse"),function(b){ b.onclick=function(){ lgUse(b.getAttribute("data-code")); }; });
+    Array.prototype.forEach.call(document.querySelectorAll(".lgFix"),function(b){ b.onclick=function(){ lgFix(b.getAttribute("data-code")); }; });
+  }
+  function fieldVal(cls,code){ var el=document.querySelector(cls+'[data-code="'+code+'"]'); return el?el.value:""; }
+  async function lgUse(code){
+    var key=KEY(); var out=$("#lgOut"); out.style.display="block";
+    var n=parseInt(fieldVal(".lgUseN",code),10)||1;
+    if(!$("#lgWaiver").checked){ out.className="out err"; out.textContent="Confirm everyone is signed on WaiverMaster before using a visit."; return; }
+    try{ var r=await (await fetch("/api/checkin",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key:key,action:"pass",code:code,count:n,waiverConfirmed:true})})).json();
+      if(r.ok){ out.className="out ok"; out.textContent="\u2713 Used "+n+" visit"+(n===1?"":"s")+" on "+code+"."+((typeof r.visitsRemaining==="number")?(" "+r.visitsRemaining+" left."):""); lgLoad(); }
+      else { out.className="out err"; out.textContent=r.error||"Couldn\u2019t use the visit."; }
+    }catch(e){ out.className="out err"; out.textContent="Network error."; }
+  }
+  async function lgFix(code){
+    var key=KEY(); var out=$("#lgOut"); out.style.display="block";
+    var v=(fieldVal(".lgFixN",code)||"").trim();
+    if(v===""||isNaN(parseInt(v,10))){ out.className="out err"; out.textContent="Enter the exact number of visits to set for "+code+"."; return; }
+    try{ var r=await (await fetch("/api/pass-issue",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key:key,fixCode:code,setVisits:parseInt(v,10)})})).json();
+      if(r.ok){ out.className="out ok"; out.innerHTML="\u2705 Fixed <b>"+esc(r.code)+"</b> \u2192 set to <b>"+r.visitsRemaining+"</b> visits \u00b7 expires "+esc(r.expiry); lgLoad(); }
+      else { out.className="out err"; out.textContent=r.error||"Couldn\u2019t fix the card."; }
+    }catch(e){ out.className="out err"; out.textContent="Network error."; }
+  }
+  if($("#lgLoad")) $("#lgLoad").onclick=lgLoad;
+  if($("#lgSearch")) $("#lgSearch").addEventListener("input",function(){ if(LGDATA.length) lgRender(); });
+  if($("#lgSearch")) $("#lgSearch").addEventListener("keydown",function(e){ if(e.key==="Enter"){ e.preventDefault(); LGDATA.length?lgRender():lgLoad(); } });
 })();
 </script></body>
 </html>

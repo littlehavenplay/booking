@@ -191,7 +191,6 @@ export const PASS_POLICY_LINES = [
 export const POLICY_TITLE = "Open Play Booking Cancellation & Refund Policy";
 export const POLICY_LINES = [
   "Open Play bookings are prepaid. We understand things come up, especially with little ones!",
-  "If you're unable to attend your booked session, please email us at hello@littlehavenplay.com and we'll do our best to accommodate you and issue a store credit toward a future visit (typically valid for 30 days).",
   "Open play admission is valid only for the selected date and time booked.",
   "If you do not show up within one hour of your reserved time, we will automatically issue a courtesy store credit for the full amount paid to the email on file, valid for 14 days from issuance, so you can reschedule whenever works for you.",
   `If ${STUDIO_NAME} needs to cancel or close unexpectedly, guests will be offered the option to reschedule or receive store credit.`,
