@@ -95,7 +95,9 @@
   .banner{background:var(--blush-pale);color:var(--rose-deep);font-weight:700;font-size:.82rem;border-radius:12px;padding:11px 13px;margin-bottom:14px;}
   .hidden{display:none!important;}
 </style>
-<link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#7a6253"><link rel="apple-touch-icon" href="/assets/icons/apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="Little Haven"><link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32.png"></head>
+<link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#7a6253"><link rel="apple-touch-icon" href="/assets/icons/apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="Little Haven"><link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32.png"><script src="/assets/square-wallets.js"></script>
+<style>#apple-pay-button{-webkit-appearance:-apple-pay-button;appearance:-apple-pay-button;-apple-pay-button-type:pay;-apple-pay-button-style:black;height:48px;border-radius:12px;cursor:pointer;width:100%}#wallets .gpay-card-info-container,#wallets>div{border-radius:12px}</style>
+</head>
 <body>
 <div class="topbar"><a class="name" href="/index.html" style="text-decoration:none;color:inherit">Little <em>Haven</em> Play Studio</a><a href="/index.html">← Back to site</a></div>
 <div class="wrap">
@@ -297,12 +299,18 @@
     <div class="card">
       <p class="step"><span class="n">9</span> Payment</p>
       <div id="paySummary" class="pay-summary hidden"></div>
+      <div id="wallets" style="display:none;margin-bottom:6px">
+        <div id="apple-pay-button" style="display:none"></div>
+        <div id="google-pay-button" style="min-height:48px;margin-top:8px"></div>
+        <div id="cash-app-pay" style="min-height:48px;margin-top:8px"></div>
+        <div style="text-align:center;color:var(--taupe);font-size:.8rem;font-weight:700;margin:12px 0 2px">— or pay with a card —</div>
+      </div>
       <div id="card-wrap">
         <div id="card-container"></div>
       </div>
       <button class="pay" id="pay" disabled>Reserve &amp; Pay</button>
       <div class="msg" id="msg"></div>
-      <div class="note">Payments are processed securely by Square. Your card details never touch this site's server.</div>
+      <div class="note">💳 We accept <b>Apple Pay, Google Pay, Cash App Pay</b>, and all major cards. Payments are processed securely by Square — your card details never touch this site's server.</div>
     </div>
   </div>
 
@@ -749,6 +757,11 @@ function updateTotals(){
   $("#leftNote").style.color = ok ? "var(--ink-soft)" : "var(--red)";
   // Card only required when there's a remaining balance to charge.
   state.cardDue=cardDue;
+  if(window.__lhWallets){
+    const w=document.getElementById("wallets");
+    if(w) w.style.display=(cardDue>0 && window.__lhWallets.any)?"":"none";
+    if(cardDue!==window.__lhLastAmt){ window.__lhLastAmt=cardDue; window.__lhWallets.refresh(); }
+  }
   const cardOk = cardDue<=0 || !!card;
   $("#card-wrap").style.display = cardDue>0 ? "" : "none";
   $("#pay").disabled = !ok || !cardOk;
@@ -783,31 +796,27 @@ async function initSquare(){
     payments=window.Square.payments(CFG.applicationId, CFG.locationId);
     card=await payments.card();
     await card.attach("#card-container");
+    try{
+      window.__lhWallets = await window.initSquareWallets({
+        payments,
+        wrapEl: document.getElementById("wallets"),
+        applePayEl: document.getElementById("apple-pay-button"),
+        googlePayEl: document.getElementById("google-pay-button"),
+        cashAppEl: document.getElementById("cash-app-pay"),
+        getAmount: ()=> ((state.cardDue||0)).toFixed(2),
+        label: "Little Haven Play Studio",
+        referenceId: "open-play",
+        validate: ()=> !!collectBooking(),
+        onToken: (token)=>{ const pb=$("#pay"); if(pb)pb.disabled=true; submitBooking(token); },
+      });
+    }catch(e){}
     updateTotals();
   }catch(e){ showMsg("Couldn't load the card form. Check your Square keys.","err"); }
 }
 
 function showMsg(t,kind){const m=$("#msg");m.textContent=t;m.className="msg "+kind;}
 
-async function pay(){
-  const cardNeeded = (state.cardDue||0) > 0;
-  if(cardNeeded && !card){ showMsg("Card form not ready.","err"); return; }
-  $("#pay").disabled=true; showMsg("Processing…","ok");
-
-  let token="";
-  if(cardNeeded){
-    try{
-      const r=await card.tokenize();
-      if(r.status!=="OK"){ showMsg("Please check your card details.","err"); $("#pay").disabled=false; return; }
-      token=r.token;
-    }catch(e){ showMsg("Card error — try again.","err"); $("#pay").disabled=false; return; }
-  }
-
-  const giftCards=state.useGift ? state.gc.filter(g=>g.ok && g.gan).map(g=>g.gan) : [];
-  const visitPasses=state.useVP ? state.vp.filter(p=>p.ok && p.code).map(p=>p.code) : [];
-  const promoCode=state.usePromo && state.promo.ok ? state.promo.code : "";
-  const discountCode=(state.useDisc && state.disc.ok) ? state.disc.code : "";
-  const rewardCode=(($("#rewardCode")||{}).value||"").trim().toUpperCase();
+function collectBooking(){
   const childRows=[...document.querySelectorAll("#childNames .cn-row")]
     .map(r=>({
       first:r.querySelector(".cn-f").value.trim(), last:r.querySelector(".cn-l").value.trim(),
@@ -815,14 +824,24 @@ async function pay(){
       code:((r.querySelector(".cn-code")||{}).value||"").trim().toUpperCase(),
       admission:r.getAttribute("data-type")||"",
     }));
-  if(childRows.some(c=>!c.first||!c.last)){ showMsg("Please enter each child's first AND last name — the last name is required so we can set up their punch card.","err"); const pb=$("#pay"); if(pb)pb.disabled=false; return; }
-  if((($("#phone")||{}).value||"").replace(/\D/g,"").length<10){ showMsg("Please enter your phone number — it's how we set up and find your child's free Loyalty Punch Card, and how you're automatically punched in at check-in.","err"); const pb=$("#pay"); if(pb)pb.disabled=false; return; }
+  if(childRows.some(c=>!c.first||!c.last)){ showMsg("Please enter each child's first AND last name — the last name is required so we can set up their punch card.","err"); return null; }
+  if((($("#phone")||{}).value||"").replace(/\D/g,"").length<10){ showMsg("Please enter your phone number — it's how we set up and find your child's free Loyalty Punch Card, and how you're automatically punched in at check-in.","err"); return null; }
   const badDob=childRows.find(c=>c.dobRaw&&!isValidDob(c.dobRaw));
-  if(badDob){ showMsg("Please check the birthday for "+(badDob.first||"your child")+" — use mm/dd/yyyy (for example 04/09/2021), or leave it blank.","err"); const pb=$("#pay"); if(pb)pb.disabled=false; return; }
-  const childNames=childRows.filter(c=>c.first&&c.last).map(c=>({
+  if(badDob){ showMsg("Please check the birthday for "+(badDob.first||"your child")+" — use mm/dd/yyyy (for example 04/09/2021), or leave it blank.","err"); return null; }
+  return childRows.filter(c=>c.first&&c.last).map(c=>({
     first:c.first, last:c.last, dob:dobToISO(c.dobRaw), code:c.code, admission:c.admission,
   }));
+}
 
+async function submitBooking(token){
+  const childNames=collectBooking();
+  if(!childNames){ const pb=$("#pay"); if(pb)pb.disabled=false; return; }
+  showMsg("Processing…","ok");
+  const giftCards=state.useGift ? state.gc.filter(g=>g.ok && g.gan).map(g=>g.gan) : [];
+  const visitPasses=state.useVP ? state.vp.filter(p=>p.ok && p.code).map(p=>p.code) : [];
+  const promoCode=state.usePromo && state.promo.ok ? state.promo.code : "";
+  const discountCode=(state.useDisc && state.disc.ok) ? state.disc.code : "";
+  const rewardCode=(($("#rewardCode")||{}).value||"").trim().toUpperCase();
   try{
     const res=await fetch("/api/book",{method:"POST",headers:{"content-type":"application/json"},
       body:JSON.stringify({date:state.date,slot:state.slot,name:$("#name").value,email:$("#email").value,
@@ -853,6 +872,22 @@ async function pay(){
       showMsg(data.message||data.error||"Payment didn't go through.","err"); $("#pay").disabled=false;
     }
   }catch(e){ showMsg("Network error — please try again.","err"); $("#pay").disabled=false; }
+}
+
+async function pay(){
+  const cardNeeded = (state.cardDue||0) > 0;
+  if(cardNeeded && !card){ showMsg("Card form not ready.","err"); return; }
+  if(!collectBooking()) return;
+  $("#pay").disabled=true; showMsg("Processing…","ok");
+  let token="";
+  if(cardNeeded){
+    try{
+      const r=await card.tokenize();
+      if(r.status!=="OK"){ showMsg("Please check your card details.","err"); $("#pay").disabled=false; return; }
+      token=r.token;
+    }catch(e){ showMsg("Card error — try again.","err"); $("#pay").disabled=false; return; }
+  }
+  await submitBooking(token);
 }
 
 async function checkReward(){
