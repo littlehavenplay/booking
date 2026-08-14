@@ -24,3 +24,29 @@ export async function sendOwnerAlert(subject, bodyHtml) {
     return res.ok;
   } catch { return false; }
 }
+
+// Reliable Resend sender for transactional emails (confirmations, registrations).
+// POSTs the email and, if it fails with a rate-limit (429) or server error (5xx) or a
+// network hiccup, waits briefly and retries ONCE. This keeps confirmations from being
+// dropped or delayed during bursts of activity. Returns true on success; never throws.
+export async function resendEmail(payload) {
+  const key = process.env.RESEND_API_KEY;
+  if (!key) return false;
+  const body = JSON.stringify(payload);
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const res = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
+        body,
+      });
+      if (res.ok) return true;
+      if (attempt === 0 && (res.status === 429 || res.status >= 500)) { await new Promise(r => setTimeout(r, 700)); continue; }
+      return false;
+    } catch {
+      if (attempt === 0) { await new Promise(r => setTimeout(r, 700)); continue; }
+      return false;
+    }
+  }
+  return false;
+}

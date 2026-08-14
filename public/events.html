@@ -58,7 +58,9 @@
   .note{font-size:.78rem;color:var(--taupe);font-weight:700;margin-top:8px}
   .x{float:right;font-size:1.4rem;cursor:pointer;color:var(--taupe);line-height:1}
 </style>
-<link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#7a6253"><link rel="apple-touch-icon" href="/assets/icons/apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="Little Haven"><link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32.png"></head>
+<link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#7a6253"><link rel="apple-touch-icon" href="/assets/icons/apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="Little Haven"><link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32.png"><script src="/assets/square-wallets.js"></script>
+<style>#apple-pay-button{-webkit-appearance:-apple-pay-button;appearance:-apple-pay-button;-apple-pay-button-type:pay;-apple-pay-button-style:black;height:46px;border-radius:12px;cursor:pointer;width:100%}</style>
+</head>
 <body>
 <div class="topbar"><a class="name" href="/index.html" style="text-decoration:none;color:inherit">Little <em>Haven</em> Play Studio</a><a class="back" href="/index.html">← Back to site</a></div>
 <div class="wrap">
@@ -100,6 +102,12 @@
     <div id="mAttWrap" style="margin-top:6px"></div>
     <label>Store credit code <span style="font-weight:400;color:var(--slate);text-transform:none">(optional)</span></label>
     <input type="text" id="mCredit" placeholder="Enter a store credit code, if you have one" style="text-transform:uppercase">
+    <div id="wallets" style="display:none;margin-top:6px">
+      <div id="apple-pay-button" style="display:none"></div>
+      <div id="google-pay-button" style="min-height:46px;margin-top:8px"></div>
+      <div id="cash-app-pay" style="min-height:46px;margin-top:8px"></div>
+      <div style="text-align:center;color:var(--slate);font-size:.8rem;font-weight:700;margin:10px 0 2px">— or pay with a card —</div>
+    </div>
     <label>Card</label>
     <div id="card-container"></div>
     <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px">
@@ -107,7 +115,7 @@
       <button class="btn" id="mPay">Pay & register</button>
     </div>
     <div class="msg" id="mMsg"></div>
-    <div class="note" style="background:#fdf7f0;border:1px solid #ecdcc9;border-radius:10px;padding:9px 12px;color:var(--charcoal);margin-bottom:8px">🪪 <b>Pickup:</b> the adult who drops off must be the same person who picks up, and must show a valid photo ID. No child is released without a matching ID.</div><div class="note">Payments are processed securely by Square. You'll get an email confirmation — if you don't see it, check your junk/spam folder. Event tickets are non-refundable, but if you can't attend, email hello@littlehavenplay.com and we'll do our best to issue store credit.</div>
+    <div class="note" style="background:#fdf7f0;border:1px solid #ecdcc9;border-radius:10px;padding:9px 12px;color:var(--charcoal);margin-bottom:8px">🪪 <b>Pickup:</b> the adult who drops off must be the same person who picks up, and must show a valid photo ID. No child is released without a matching ID.</div><div class="note">💳 We accept <b>Apple Pay, Google Pay, Cash App Pay</b>, and all major cards. Payments are processed securely by Square. You'll get an email confirmation — if you don't see it, check your junk/spam folder. Event tickets are non-refundable, but if you can't attend, email hello@littlehavenplay.com and we'll do our best to issue store credit.</div>
   </div>
 </div>
 
@@ -207,7 +215,21 @@ async function initSquare(){
   if(!CFG.applicationId || !CFG.locationId) return;
   const url=(CFG.environment==="production")?"https://web.squarecdn.com/v1/square.js":"https://sandbox.web.squarecdn.com/v1/square.js";
   await new Promise((res,rej)=>{const s=document.createElement("script");s.src=url;s.onload=res;s.onerror=rej;document.head.appendChild(s);});
-  try{ payments=window.Square.payments(CFG.applicationId, CFG.locationId); card=await payments.card(); await card.attach("#card-container"); }catch(e){}
+  try{
+    payments=window.Square.payments(CFG.applicationId, CFG.locationId); card=await payments.card(); await card.attach("#card-container");
+    window.__lhWallets = await window.initSquareWallets({
+      payments,
+      wrapEl: document.getElementById("wallets"),
+      applePayEl: document.getElementById("apple-pay-button"),
+      googlePayEl: document.getElementById("google-pay-button"),
+      cashAppEl: document.getElementById("cash-app-pay"),
+      getAmount: ()=> (parseFloat((($("#mTotal")||{}).textContent||"").replace(/[^0-9.]/g,""))||0).toFixed(2),
+      label: "Little Haven Play Studio",
+      referenceId: "event",
+      validate: ()=> eventFormValid(),
+      onToken: (token)=>{ const pb=$("#mPay"); if(pb)pb.disabled=true; submitEvent(token); },
+    });
+  }catch(e){}
 }
 
 window.openModal=(id)=>{
@@ -243,7 +265,7 @@ $("#wJoin").onclick=async()=>{
     else { m.className="msg err"; m.textContent=r.error||"Couldn't add you."; $("#wJoin").disabled=false; }
   }catch(e){ m.className="msg err"; m.textContent="Network error — please try again."; $("#wJoin").disabled=false; }
 };
-function updTotal(){ const q=parseInt($("#mQty").value,10)||1; const sub=(cur.siblingPrice&&q>1)?(cur.price+(q-1)*cur.siblingPrice):(cur.price*q); $("#mTotal").textContent=money(sub); renderAtt(); }
+function updTotal(){ const q=parseInt($("#mQty").value,10)||1; const sub=(cur.siblingPrice&&q>1)?(cur.price+(q-1)*cur.siblingPrice):(cur.price*q); $("#mTotal").textContent=money(sub); renderAtt(); if(window.__lhWallets){ const w=document.getElementById("wallets"); if(w) w.style.display=(window.__lhWallets.any)?"":"none"; window.__lhWallets.refresh(); } }
 function renderAtt(){
   const q=parseInt($("#mQty").value,10)||1, host=$("#mAttWrap");
   if(!host) return;
@@ -255,25 +277,37 @@ function renderAtt(){
   host.innerHTML=h;
 }
 
-$("#mPay").onclick=async()=>{
+function eventFormValid(){
   const m=$("#mMsg"); m.className="msg";
+  const name=$("#mName").value.trim(), email=$("#mEmail").value.trim();
+  if(!name){ m.className="msg err"; m.textContent="Please enter your name."; return false; }
+  if(!/^\S+@\S+\.\S+$/.test(email)){ m.className="msg err"; m.textContent="Please enter a valid email."; return false; }
+  if(cur.requirements && cur.requirements.trim() && !$("#mAgree").checked){ m.className="msg err"; m.textContent="Please confirm you've read and understood the requirements for this event."; return false; }
+  const attendees=[...document.querySelectorAll("#mAttWrap .att-row")].map(r=>({name:r.querySelector(".att-n").value.trim()}));
+  if(attendees.some(a=>!a.name)){ m.className="msg err"; m.textContent="Please enter each child's full name."; return false; }
+  return true;
+}
+async function submitEvent(token){
+  const m=$("#mMsg");
   const name=$("#mName").value.trim(), email=$("#mEmail").value.trim(), qty=parseInt($("#mQty").value,10)||1;
-  if(!name){ m.className="msg err"; m.textContent="Please enter your name."; return; }
-  if(!/^\S+@\S+\.\S+$/.test(email)){ m.className="msg err"; m.textContent="Please enter a valid email."; return; }
-  if(cur.requirements && cur.requirements.trim() && !$("#mAgree").checked){ m.className="msg err"; m.textContent="Please confirm you've read and understood the requirements for this event."; return; }
   const attendees=[...document.querySelectorAll("#mAttWrap .att-row")].map(r=>({name:r.querySelector(".att-n").value.trim(),age:r.querySelector(".att-a").value.trim()}));
-  if(attendees.some(a=>!a.name)){ m.className="msg err"; m.textContent="Please enter each child's full name."; return; }
   const phone=($("#mPhone")||{}).value||"";
-  if(!card){ m.className="msg err"; m.textContent="Card form isn't ready — please refresh."; return; }
-  $("#mPay").disabled=true; m.className="msg ok"; m.textContent="Processing…";
-  let token="";
-  try{ const r=await card.tokenize(); if(r.status!=="OK"){ m.className="msg err"; m.textContent="Please check your card details."; $("#mPay").disabled=false; return; } token=r.token; }
-  catch(e){ m.className="msg err"; m.textContent="Card error — try again."; $("#mPay").disabled=false; return; }
+  m.className="msg ok"; m.textContent="Processing…";
   try{
     const r=await (await fetch("/api/event-buy",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({eventId:cur.id,quantity:qty,name,email,phone,attendees,creditCode:($("#mCredit")||{}).value||"",sourceId:token})})).json();
     if(r.ok){ m.className="msg ok"; m.textContent=r.message||"You're registered!"; setTimeout(()=>{closeModal();load();},1800); }
     else { m.className="msg err"; m.textContent=r.message||r.error||"Couldn't complete purchase."; $("#mPay").disabled=false; }
   }catch(e){ m.className="msg err"; m.textContent="Network error — please try again."; $("#mPay").disabled=false; }
+}
+$("#mPay").onclick=async()=>{
+  const m=$("#mMsg");
+  if(!eventFormValid()) return;
+  if(!card){ m.className="msg err"; m.textContent="Card form isn't ready — please refresh."; return; }
+  $("#mPay").disabled=true; m.className="msg ok"; m.textContent="Processing…";
+  let token="";
+  try{ const r=await card.tokenize(); if(r.status!=="OK"){ m.className="msg err"; m.textContent="Please check your card details."; $("#mPay").disabled=false; return; } token=r.token; }
+  catch(e){ m.className="msg err"; m.textContent="Card error — try again."; $("#mPay").disabled=false; return; }
+  await submitEvent(token);
 };
 
 function esc(s){return (s||"").replace(/</g,"&lt;").replace(/>/g,"&gt;");}

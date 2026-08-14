@@ -10,7 +10,7 @@
 //   5. On success, record the booking and increment the slot's child count.
 
 import { getStore } from "@netlify/blobs";
-import { SIGNATURE_HTML, sendOwnerAlert } from "./lib-email.js";
+import { SIGNATURE_HTML, sendOwnerAlert, resendEmail } from "./lib-email.js";
 import {
   CAPACITY, pricesFor, SLOTS, SLOT_IDS, openPlayForDate, effectivePartyBlocks, hoursFor, slotCap, slotKey, arrivalStartMin, squareApiBase, SQUARE_VERSION, BOOKING_WINDOW_DAYS,
   PARTY_SLOT_IDS, ARRIVAL_TO_LEGACY, countHourChildren, hourMatesFor,
@@ -845,16 +845,12 @@ async function sendConfirmation({ email, name, date, slotLabel, regular, sibling
     + `${POLICY_TITLE}\n` + POLICY_LINES.map(l => "- " + l).join("\n")
     + `\n\nWe can't wait to see you at ${STUDIO_NAME}!`;
 
-  await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      from: `${STUDIO_NAME} <${from}>`,
-      to: [email],
-      bcc: bcc ? [bcc] : undefined,
-      subject: `Your ${STUDIO_NAME} reservation is confirmed${loyaltyCards.length ? ` + punch card code${loyaltyCards.length > 1 ? "s" : ""}` : ""} 🎈 — ${date}`,
-      html, text,
-    }),
+  await resendEmail({
+    from: `${STUDIO_NAME} <${from}>`,
+    to: [email],
+    bcc: bcc ? [bcc] : undefined,
+    subject: `Your ${STUDIO_NAME} reservation is confirmed${loyaltyCards.length ? ` + punch card code${loyaltyCards.length > 1 ? "s" : ""}` : ""} 🎈 — ${date}`,
+    html, text,
   });
 }
 

@@ -1,7 +1,7 @@
 // POST /api/event-buy — public. Buy tickets for an upcoming event.
 // Body: { eventId, quantity, name, email, sourceId }  (sourceId = Square card token)
 import { getStore } from "@netlify/blobs";
-import { SIGNATURE_HTML } from "./lib-email.js";
+import { SIGNATURE_HTML, resendEmail } from "./lib-email.js";
 import { squareApiBase, SQUARE_VERSION, STUDIO_NAME } from "./lib-settings.js";
 import { eventPacificParts, eventIsPast } from "./lib-closures.js";
 
@@ -140,12 +140,8 @@ async function sendConfirmation({ email, name, event, quantity, amount }) {
   </div>`;
   const text = `You're registered for ${event.title}!\n\nWhen: ${when}\nTickets: ${quantity}\nTotal paid: ${money(amount)}\n\nIf you don't see this email, please check your junk/spam folder.\n\nSee you at ${STUDIO_NAME}!`;
   try {
-    await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ from: `${STUDIO_NAME} <${from}>`, to: [email], bcc: bcc ? [bcc] : undefined,
-        subject: `You're registered — ${event.title}`, html: html + SIGNATURE_HTML, text }),
-    });
+    await resendEmail({ from: `${STUDIO_NAME} <${from}>`, to: [email], bcc: bcc ? [bcc] : undefined,
+      subject: `You're registered — ${event.title}`, html: html + SIGNATURE_HTML, text });
   } catch {}
 }
 
