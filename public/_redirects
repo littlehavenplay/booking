@@ -1,0 +1,3 @@
+# Apple Pay domain association — INTERNAL 200 rewrite, not a browser redirect.
+# This avoids GitHub/Netlify problems with hidden .well-known folders.
+/.well-known/apple-developer-merchantid-domain-association /apple-developer-merchantid-domain-association 200!
