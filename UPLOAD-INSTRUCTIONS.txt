@@ -1,0 +1,21 @@
+LITTLE HAVEN PAYMENT FIX — GitHub/Netlify
+
+Upload/overwrite the files using the same paths shown in this package.
+There are only 8 files total (well below GitHub's 100-file web upload limit).
+
+IMPORTANT:
+- Keep public/book.html in public/
+- Keep public/events.html in public/
+- Keep public/assets/square-wallets.js in public/assets/
+- Keep public/_headers and public/_redirects in public/
+- The root public/apple-developer-merchantid-domain-association + _redirects are a fallback
+  for Apple's .well-known URL, so Apple Pay verification survives GitHub hidden-folder issues.
+- The .well-known file is also included correctly.
+
+Square Dashboard:
+Birthday-party deposits use Square Payment Links. In Square Dashboard:
+Payments & orders > Payment links > Settings > General > Payments
+Turn ON Apple Pay, Google Pay, and Cash App Pay.
+
+Gift-card sales use Square's hosted eGift-card checkout. Its checkout options are controlled by Square,
+not by the Little Haven custom JavaScript.
