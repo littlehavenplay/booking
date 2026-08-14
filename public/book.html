@@ -95,242 +95,7 @@
   .banner{background:var(--blush-pale);color:var(--rose-deep);font-weight:700;font-size:.82rem;border-radius:12px;padding:11px 13px;margin-bottom:14px;}
   .hidden{display:none!important;}
 </style>
-<link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#7a6253"><link rel="apple-touch-icon" href="/assets/icons/apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="Little Haven"><link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32.png"><script>
-/* Little Haven — Square Web Payments SDK wallets
- * Apple Pay + Google Pay + Cash App Pay
- *
- * Goals:
- * - use Square's official wallet objects/buttons
- * - never duplicate buttons during amount refreshes
- * - keep wallet PaymentRequest totals synchronized with the checkout total
- * - Apple Pay: call tokenize() immediately from the click handler (required by Square/Apple)
- * - fail safely back to the normal Square card form when a wallet is unavailable
- */
-(function () {
-  "use strict";
-
-  const money = (value) => {
-    const n = Number(value);
-    return Number.isFinite(n) && n > 0 ? n.toFixed(2) : "0.00";
-  };
-
-  window.initSquareWallets = async function initSquareWallets(opts) {
-    const payments = opts && opts.payments;
-    if (!payments) return { any: false, refresh: async () => {} };
-
-    const wrapEl = opts.wrapEl || null;
-    const appleEl = opts.applePayEl || null;
-    const googleEl = opts.googlePayEl || null;
-    const cashEl = opts.cashAppEl || null;
-    const getAmount = opts.getAmount || (() => "0.00");
-    const validate = opts.validate || (() => true);
-    const onToken = opts.onToken || (async () => {});
-    const label = opts.label || "Little Haven Play Studio";
-    const referenceId = opts.referenceId || "little-haven";
-
-    let applePay = null;
-    let googlePay = null;
-    let cashAppPay = null;
-    let lastAmount = null;
-    let refreshVersion = 0;
-    let busy = false;
-    let appleClickBound = false;
-    let googleClickBound = false;
-    let cashValidationBound = false;
-
-    const show = (el, yes) => { if (el) el.style.display = yes ? "" : "none"; };
-    const clear = (el) => { if (el) el.innerHTML = ""; };
-
-    function buildRequest(amount) {
-      return payments.paymentRequest({
-        countryCode: "US",
-        currencyCode: "USD",
-        total: { amount, label },
-      });
-    }
-
-    function updateWrap() {
-      const visible = [appleEl, googleEl, cashEl].some(
-        (el) => el && el.style.display !== "none"
-      );
-      if (wrapEl) wrapEl.style.display = visible ? "" : "none";
-      controller.any = visible;
-    }
-
-    async function sendToken(result) {
-      if (!result || result.status !== "OK" || !result.token) {
-        busy = false;
-        return;
-      }
-      try {
-        await onToken(result.token);
-      } finally {
-        busy = false;
-      }
-    }
-
-    function bindAppleClick() {
-      if (!appleEl || appleClickBound) return;
-      appleClickBound = true;
-      appleEl.addEventListener("click", async function (event) {
-        event.preventDefault();
-        if (busy || !applePay) return;
-        // Validation is synchronous. There must be NO awaited work between this
-        // user click and ApplePay.tokenize().
-        if (!validate()) return;
-        busy = true;
-        try {
-          const result = await applePay.tokenize();
-          await sendToken(result);
-        } catch (_) {
-          busy = false; // buyer cancellation / unsupported state
-        }
-      });
-    }
-
-    function bindGoogleClick() {
-      if (!googleEl || googleClickBound) return;
-      googleClickBound = true;
-      googleEl.addEventListener("click", async function (event) {
-        if (busy || !googlePay) return;
-        if (!validate()) {
-          event.preventDefault();
-          event.stopPropagation();
-          return;
-        }
-        busy = true;
-        try {
-          const result = await googlePay.tokenize();
-          await sendToken(result);
-        } catch (_) {
-          busy = false;
-        }
-      });
-    }
-
-    function bindCashValidation() {
-      if (!cashEl || cashValidationBound) return;
-      cashValidationBound = true;
-      // Capture phase blocks the Square/Cash App button before its payment sheet
-      // opens when required booking fields are incomplete.
-      cashEl.addEventListener("click", function (event) {
-        if (busy || !validate()) {
-          event.preventDefault();
-          event.stopImmediatePropagation();
-        }
-      }, true);
-    }
-
-    async function rebuildForAmount(amount) {
-      const myVersion = ++refreshVersion;
-
-      if (googlePay && typeof googlePay.destroy === "function") {
-        try { await googlePay.destroy(); } catch (_) {}
-      }
-      if (cashAppPay && typeof cashAppPay.destroy === "function") {
-        try { await cashAppPay.destroy(); } catch (_) {}
-      }
-      googlePay = null;
-      cashAppPay = null;
-      applePay = null;
-      clear(googleEl);
-      clear(cashEl);
-      show(appleEl, false);
-      show(googleEl, false);
-      show(cashEl, false);
-
-      if (Number(amount) <= 0 || myVersion !== refreshVersion) {
-        updateWrap();
-        return;
-      }
-
-      // Apple Pay — build BEFORE the click. Square requires tokenize() to be
-      // called immediately from the click handler, with no async setup in between.
-      if (appleEl) {
-        try {
-          const method = await payments.applePay(buildRequest(amount));
-          if (myVersion === refreshVersion) {
-            applePay = method;
-            bindAppleClick();
-            show(appleEl, true);
-          }
-        } catch (_) {
-          show(appleEl, false);
-        }
-      }
-
-      // Google Pay — Square renders the official Google Pay button.
-      if (googleEl && myVersion === refreshVersion) {
-        try {
-          const method = await payments.googlePay(buildRequest(amount));
-          await method.attach(googleEl, { buttonType: "pay", buttonSizeMode: "fill" });
-          if (myVersion === refreshVersion) {
-            googlePay = method;
-            bindGoogleClick();
-            show(googleEl, true);
-          } else if (typeof method.destroy === "function") {
-            try { await method.destroy(); } catch (_) {}
-          }
-        } catch (_) {
-          clear(googleEl);
-          show(googleEl, false);
-        }
-      }
-
-      // Cash App Pay — its PaymentRequest cannot be updated in place, so it is
-      // intentionally rebuilt when the checkout amount changes.
-      if (cashEl && myVersion === refreshVersion) {
-        try {
-          const method = await payments.cashAppPay(buildRequest(amount), {
-            redirectURL: window.location.origin + window.location.pathname + window.location.search,
-            referenceId: (referenceId + "-" + Date.now()).slice(0, 40),
-          });
-          method.addEventListener("ontokenization", async function (event) {
-            const detail = event && event.detail ? event.detail : {};
-            if (detail.error) { busy = false; return; }
-            const result = detail.tokenResult;
-            if (result && result.status === "OK") {
-              if (!validate()) { busy = false; return; }
-              busy = true;
-              await sendToken(result);
-            }
-          });
-          bindCashValidation();
-          await method.attach(cashEl, { shape: "semiround", width: "full" });
-          if (myVersion === refreshVersion) {
-            cashAppPay = method;
-            show(cashEl, true);
-          } else if (typeof method.destroy === "function") {
-            try { await method.destroy(); } catch (_) {}
-          }
-        } catch (_) {
-          clear(cashEl);
-          show(cashEl, false);
-        }
-      }
-
-      updateWrap();
-    }
-
-    const controller = {
-      any: false,
-      refresh: async function refresh(force) {
-        const amount = money(getAmount());
-        if (!force && amount === lastAmount) {
-          updateWrap();
-          return;
-        }
-        lastAmount = amount;
-        await rebuildForAmount(amount);
-      },
-    };
-
-    await controller.refresh(true);
-    return controller;
-  };
-})();
-
-</script>
+<link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#7a6253"><link rel="apple-touch-icon" href="/assets/icons/apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="Little Haven"><link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32.png"><script src="/assets/square-wallets.js"></script>
 <style>#apple-pay-button{-webkit-appearance:-apple-pay-button;appearance:-apple-pay-button;-apple-pay-button-type:pay;-apple-pay-button-style:black;height:48px;border-radius:12px;cursor:pointer;width:100%}#wallets .gpay-card-info-container,#wallets>div{border-radius:12px}</style>
 </head>
 <body>
@@ -535,7 +300,7 @@
       <p class="step"><span class="n">9</span> Payment</p>
       <div id="paySummary" class="pay-summary hidden"></div>
       <div id="wallets" style="display:none;margin-bottom:6px">
-        <button id="apple-pay-button" type="button" aria-label="Pay with Apple Pay" style="display:none"></button>
+        <button type="button" id="apple-pay-button" aria-label="Pay with Apple Pay" style="display:none"></button>
         <div id="google-pay-button" style="min-height:48px;margin-top:8px"></div>
         <div id="cash-app-pay" style="min-height:48px;margin-top:8px"></div>
         <div style="text-align:center;color:var(--taupe);font-size:.8rem;font-weight:700;margin:12px 0 2px">— or pay with a card —</div>
@@ -1017,7 +782,7 @@ function renderPaySummary(total,gcApplied,cardDue,cov){
   rows+=`<div class="r"><span>Amount to pay${(hasGift||hasCredit)?" (before credits)":""}</span><span>${money(total)}</span></div>`;
   gcApplied.forEach(g=>{ rows+=`<div class="r"><span>Gift card ${g.gan}</span><span>−${money(g.ap)}</span></div>`; });
   if(hasCredit) rows+=`<div class="r"><span>Store credit</span><span>−${money(cov.creditApplied)}</span></div>`;
-  rows+=`<div class="r due"><span>${cardDue>0?"Amount due":"Fully covered 🎉"}</span><span>${money(cardDue)}</span></div>`;
+  rows+=`<div class="r due"><span>${cardDue>0?"Due on card":"Fully covered 🎉"}</span><span>${money(cardDue)}</span></div>`;
   el.innerHTML=rows;
 }
 
@@ -1038,11 +803,11 @@ async function initSquare(){
         applePayEl: document.getElementById("apple-pay-button"),
         googlePayEl: document.getElementById("google-pay-button"),
         cashAppEl: document.getElementById("cash-app-pay"),
-        getAmount: ()=> ((state.cardDue||0)).toFixed(2),
+        getAmount: ()=> (((state.cardDue||0)/100)).toFixed(2),
         label: "Little Haven Play Studio",
         referenceId: "open-play",
-        validate: ()=> !!collectBooking(),
-        onToken: async (token)=>{ const pb=$("#pay"); if(pb)pb.disabled=true; await submitBooking(token); },
+        validate: ()=> checkoutFormValid(),
+        onToken: (token)=>{ const pb=$("#pay"); if(pb)pb.disabled=true; submitBooking(token); },
       });
     }catch(e){}
     updateTotals();
@@ -1050,6 +815,41 @@ async function initSquare(){
 }
 
 function showMsg(t,kind){const m=$("#msg");m.textContent=t;m.className="msg "+kind;}
+
+function checkoutFormValid(){
+  const kids=state.reg+state.sib+state.inf;
+  const a=state.slot?state.avail[state.slot]:null;
+  let note="";
+  if(state.closed) note=CFG.closedMessage||"Temporarily closed";
+  else if(!state.slot) note="Choose an arrival time above.";
+  else if(kids<1) note="Add at least one child.";
+  else if(state.sib>0 && state.reg<1) note="Sibling add-on requires at least one regular admission.";
+  else if(a && kids>a.remaining) note=`Only ${a.remaining} spot${a.remaining===1?"":"s"} left at that time.`;
+  else if(!$("#name").value.trim()) note="Please enter your full name.";
+  else if(!/^\S+@\S+\.\S+$/.test($("#email").value.trim())) note="Please enter a valid email.";
+  else if((($("#phone")||{}).value||"").replace(/\D/g,"").length<10) note="Please enter your phone number.";
+  else if(!$("#agree").checked) note="Please agree to the policy to continue.";
+  if(note){ showMsg(note,"err"); return false; }
+  return !!collectBooking();
+}
+
+function cardVerificationDetails(amountCents){
+  const full=$("#name").value.trim().split(/\s+/);
+  return {
+    amount:(Math.max(0,amountCents||0)/100).toFixed(2),
+    billingContact:{
+      givenName:full[0]||"",
+      familyName:full.slice(1).join(" ")||"",
+      email:$("#email").value.trim(),
+      phone:(($("#phone")||{}).value||"").trim(),
+      countryCode:"US"
+    },
+    currencyCode:"USD",
+    intent:"CHARGE",
+    customerInitiated:true,
+    sellerKeyedIn:false
+  };
+}
 
 function collectBooking(){
   const childRows=[...document.querySelectorAll("#childNames .cn-row")]
@@ -1087,7 +887,7 @@ async function submitBooking(token){
     if(res.ok && data.ok){
       const label=(CFG.slots.find(s=>s.id===state.slot)||{}).label||state.slot;
       let parts=[];
-      if(data.cardPaid>0) parts.push(`${money(data.cardPaid)} paid`);
+      if(data.cardPaid>0) parts.push(`${money(data.cardPaid)} on card`);
       if(data.giftTotal>0) parts.push(`${money(data.giftTotal)} gift card`);
       if(data.creditApplied>0) parts.push(`${money(data.creditApplied)} store credit`);
       if(data.discountAmount>0) parts.push(`${data.discountPct}% off`);
@@ -1112,28 +912,12 @@ async function submitBooking(token){
 async function pay(){
   const cardNeeded = (state.cardDue||0) > 0;
   if(cardNeeded && !card){ showMsg("Card form not ready.","err"); return; }
-  if(!collectBooking()) return;
+  if(!checkoutFormValid()) return;
   $("#pay").disabled=true; showMsg("Processing…","ok");
   let token="";
   if(cardNeeded){
     try{
-      const fullName=$("#name").value.trim();
-      const nameParts=fullName.split(/\s+/).filter(Boolean);
-      const verificationDetails={
-        amount:((state.cardDue||0)).toFixed(2),
-        billingContact:{
-          givenName:nameParts[0]||fullName,
-          familyName:nameParts.length>1?nameParts.slice(1).join(" "):"",
-          email:$("#email").value.trim(),
-          phone:((($("#phone")||{}).value)||"").trim(),
-          countryCode:"US"
-        },
-        currencyCode:"USD",
-        intent:"CHARGE",
-        customerInitiated:true,
-        sellerKeyedIn:false
-      };
-      const r=await card.tokenize(verificationDetails);
+      const r=await card.tokenize(cardVerificationDetails(state.cardDue||0));
       if(r.status!=="OK"){ showMsg("Please check your card details.","err"); $("#pay").disabled=false; return; }
       token=r.token;
     }catch(e){ showMsg("Card error — try again.","err"); $("#pay").disabled=false; return; }

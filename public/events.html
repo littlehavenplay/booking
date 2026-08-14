@@ -101,9 +101,9 @@
     <input type="tel" id="mPhone" placeholder="(760) 555-1234">
     <div id="mAttWrap" style="margin-top:6px"></div>
     <label>Store credit code <span style="font-weight:400;color:var(--slate);text-transform:none">(optional)</span></label>
-    <input type="text" id="mCredit" placeholder="Enter a store credit code, if you have one" style="text-transform:uppercase">
+    <input type="text" id="mCredit" placeholder="Enter a store credit code, if you have one" style="text-transform:uppercase"><div id="mCreditMsg" class="note"></div>
     <div id="wallets" style="display:none;margin-top:6px">
-      <div id="apple-pay-button" style="display:none"></div>
+      <button type="button" id="apple-pay-button" aria-label="Pay with Apple Pay" style="display:none"></button>
       <div id="google-pay-button" style="min-height:46px;margin-top:8px"></div>
       <div id="cash-app-pay" style="min-height:46px;margin-top:8px"></div>
       <div style="text-align:center;color:var(--slate);font-size:.8rem;font-weight:700;margin:10px 0 2px">— or pay with a card —</div>
@@ -139,7 +139,7 @@
 
 <script>
 const $=s=>document.querySelector(s);
-let CFG={}, EV={}, payments=null, card=null, cur=null;
+let CFG={}, EV={}, payments=null, card=null, cur=null, eventCredit={code:"",balance:0,ok:false}, creditTimer=null;
 function money(c){return "$"+(c/100).toFixed(2);}
 function whenStr(iso){return new Date(iso).toLocaleString("en-US",{weekday:"long",month:"long",day:"numeric",hour:"numeric",minute:"2-digit"});}
 
@@ -223,7 +223,7 @@ async function initSquare(){
       applePayEl: document.getElementById("apple-pay-button"),
       googlePayEl: document.getElementById("google-pay-button"),
       cashAppEl: document.getElementById("cash-app-pay"),
-      getAmount: ()=> (parseFloat((($("#mTotal")||{}).textContent||"").replace(/[^0-9.]/g,""))||0).toFixed(2),
+      getAmount: ()=> (eventDueCents()/100).toFixed(2),
       label: "Little Haven Play Studio",
       referenceId: "event",
       validate: ()=> eventFormValid(),
@@ -240,7 +240,7 @@ window.openModal=(id)=>{
   const max=Math.min(cur.remaining,20); let opts="";
   for(let i=1;i<=max;i++) opts+='<option value="'+i+'">'+i+'</option>';
   $("#mQty").innerHTML=opts; $("#mQty").onchange=updTotal; updTotal();
-  $("#mMsg").className="msg"; $("#mName").value=""; $("#mEmail").value=""; if($("#mPhone"))$("#mPhone").value="";
+  $("#mMsg").className="msg"; $("#mName").value=""; $("#mEmail").value=""; if($("#mPhone"))$("#mPhone").value=""; if($("#mCredit"))$("#mCredit").value=""; eventCredit={code:"",balance:0,ok:false}; if($("#mCreditMsg"))$("#mCreditMsg").textContent="";
   $("#modal").classList.add("open");
 };
 window.closeModal=()=>$("#modal").classList.remove("open");
@@ -265,7 +265,60 @@ $("#wJoin").onclick=async()=>{
     else { m.className="msg err"; m.textContent=r.error||"Couldn't add you."; $("#wJoin").disabled=false; }
   }catch(e){ m.className="msg err"; m.textContent="Network error — please try again."; $("#wJoin").disabled=false; }
 };
-function updTotal(){ const q=parseInt($("#mQty").value,10)||1; const sub=(cur.siblingPrice&&q>1)?(cur.price+(q-1)*cur.siblingPrice):(cur.price*q); $("#mTotal").textContent=money(sub); renderAtt(); if(window.__lhWallets){ const w=document.getElementById("wallets"); if(w) w.style.display=(window.__lhWallets.any)?"":"none"; window.__lhWallets.refresh(); } }
+function eventSubtotalCents(){
+  if(!cur) return 0;
+  const q=parseInt($("#mQty").value,10)||1;
+  return (cur.siblingPrice&&q>1)?(cur.price+(q-1)*cur.siblingPrice):(cur.price*q);
+}
+function eventDueCents(){
+  const sub=eventSubtotalCents();
+  const credit=(eventCredit.ok?Math.min(sub,eventCredit.balance||0):0);
+  return Math.max(0,sub-credit);
+}
+function updTotal(){
+  const sub=eventSubtotalCents(), due=eventDueCents();
+  $("#mTotal").textContent=money(due);
+  const cm=$("#mCreditMsg");
+  if(cm && eventCredit.ok){
+    const used=Math.min(sub,eventCredit.balance||0);
+    cm.textContent="Store credit applied: −"+money(used)+(eventCredit.balance>used?" · "+money(eventCredit.balance-used)+" remains":"");
+  }
+  renderAtt();
+  if(window.__lhWallets){
+    window.__lhWallets.refresh();
+  }
+}
+async function checkEventCredit(){
+  const input=$("#mCredit"), msg=$("#mCreditMsg");
+  const code=((input&&input.value)||"").trim().toUpperCase().replace(/[^A-Z0-9]/g,"");
+  if(input) input.value=code;
+  if(!code){ eventCredit={code:"",balance:0,ok:false}; if(msg)msg.textContent=""; updTotal(); return; }
+  if(msg) msg.textContent="Checking store credit…";
+  try{
+    const r=await fetch("/api/credit-balance?code="+encodeURIComponent(code));
+    const d=await r.json();
+    if(d.ok){
+      eventCredit={code,balance:d.balance||0,ok:true};
+      if(msg) msg.textContent="Store credit verified.";
+    }else{
+      eventCredit={code,balance:0,ok:false};
+      if(msg) msg.textContent=d.error||"That store credit could not be verified.";
+    }
+  }catch(_){
+    eventCredit={code,balance:0,ok:false};
+    if(msg) msg.textContent="Couldn't verify store credit right now.";
+  }
+  updTotal();
+}
+if($("#mCredit")){
+  $("#mCredit").addEventListener("input",()=>{
+    eventCredit={code:"",balance:0,ok:false};
+    clearTimeout(creditTimer);
+    creditTimer=setTimeout(checkEventCredit,450);
+    updTotal();
+  });
+  $("#mCredit").addEventListener("blur",()=>{ clearTimeout(creditTimer); checkEventCredit(); });
+}
 function renderAtt(){
   const q=parseInt($("#mQty").value,10)||1, host=$("#mAttWrap");
   if(!host) return;
@@ -282,10 +335,29 @@ function eventFormValid(){
   const name=$("#mName").value.trim(), email=$("#mEmail").value.trim();
   if(!name){ m.className="msg err"; m.textContent="Please enter your name."; return false; }
   if(!/^\S+@\S+\.\S+$/.test(email)){ m.className="msg err"; m.textContent="Please enter a valid email."; return false; }
+  const creditCode=(($("#mCredit")||{}).value||"").trim().toUpperCase().replace(/[^A-Z0-9]/g,"");
+  if(creditCode && (!eventCredit.ok || eventCredit.code!==creditCode)){ m.className="msg err"; m.textContent="Please wait for your store credit to be verified, then try again."; checkEventCredit(); return false; }
   if(cur.requirements && cur.requirements.trim() && !$("#mAgree").checked){ m.className="msg err"; m.textContent="Please confirm you've read and understood the requirements for this event."; return false; }
   const attendees=[...document.querySelectorAll("#mAttWrap .att-row")].map(r=>({name:r.querySelector(".att-n").value.trim()}));
   if(attendees.some(a=>!a.name)){ m.className="msg err"; m.textContent="Please enter each child's full name."; return false; }
   return true;
+}
+function eventCardVerificationDetails(){
+  const full=$("#mName").value.trim().split(/\s+/);
+  return {
+    amount:(eventDueCents()/100).toFixed(2),
+    billingContact:{
+      givenName:full[0]||"",
+      familyName:full.slice(1).join(" ")||"",
+      email:$("#mEmail").value.trim(),
+      phone:(($("#mPhone")||{}).value||"").trim(),
+      countryCode:"US"
+    },
+    currencyCode:"USD",
+    intent:"CHARGE",
+    customerInitiated:true,
+    sellerKeyedIn:false
+  };
 }
 async function submitEvent(token){
   const m=$("#mMsg");
@@ -302,11 +374,14 @@ async function submitEvent(token){
 $("#mPay").onclick=async()=>{
   const m=$("#mMsg");
   if(!eventFormValid()) return;
-  if(!card){ m.className="msg err"; m.textContent="Card form isn't ready — please refresh."; return; }
+  const due=eventDueCents();
+  if(due>0 && !card){ m.className="msg err"; m.textContent="Card form isn't ready — please refresh."; return; }
   $("#mPay").disabled=true; m.className="msg ok"; m.textContent="Processing…";
   let token="";
-  try{ const r=await card.tokenize(); if(r.status!=="OK"){ m.className="msg err"; m.textContent="Please check your card details."; $("#mPay").disabled=false; return; } token=r.token; }
-  catch(e){ m.className="msg err"; m.textContent="Card error — try again."; $("#mPay").disabled=false; return; }
+  if(due>0){
+    try{ const r=await card.tokenize(eventCardVerificationDetails()); if(r.status!=="OK"){ m.className="msg err"; m.textContent="Please check your card details."; $("#mPay").disabled=false; return; } token=r.token; }
+    catch(e){ m.className="msg err"; m.textContent="Card error — try again."; $("#mPay").disabled=false; return; }
+  }
   await submitEvent(token);
 };
 
