@@ -300,7 +300,7 @@
       <p class="step"><span class="n">9</span> Payment</p>
       <div id="paySummary" class="pay-summary hidden"></div>
       <div id="wallets" style="display:none;margin-bottom:6px">
-        <div id="apple-pay-button" style="display:none"></div>
+        <button id="apple-pay-button" type="button" aria-label="Pay with Apple Pay" style="display:none"></button>
         <div id="google-pay-button" style="min-height:48px;margin-top:8px"></div>
         <div id="cash-app-pay" style="min-height:48px;margin-top:8px"></div>
         <div style="text-align:center;color:var(--taupe);font-size:.8rem;font-weight:700;margin:12px 0 2px">— or pay with a card —</div>
@@ -759,7 +759,7 @@ function updateTotals(){
   state.cardDue=cardDue;
   if(window.__lhWallets){
     const w=document.getElementById("wallets");
-    if(w) w.style.display=(cardDue>0 && window.__lhWallets.any)?"":"none";
+    if(w) w.style.display=(cardDue>0 && ok && window.__lhWallets.any)?"":"none";
     if(cardDue!==window.__lhLastAmt){ window.__lhLastAmt=cardDue; window.__lhWallets.refresh(); }
   }
   const cardOk = cardDue<=0 || !!card;
@@ -803,10 +803,10 @@ async function initSquare(){
         applePayEl: document.getElementById("apple-pay-button"),
         googlePayEl: document.getElementById("google-pay-button"),
         cashAppEl: document.getElementById("cash-app-pay"),
-        getAmount: ()=> ((state.cardDue||0)).toFixed(2),
+        getAmount: ()=> ((state.cardDue||0)/100).toFixed(2),
         label: "Little Haven Play Studio",
         referenceId: "open-play",
-        validate: ()=> !!collectBooking(),
+        validate: ()=> { updateTotals(); if($("#pay").disabled){ showMsg($("#leftNote").textContent||"Please complete the booking details first.","err"); return false; } return !!collectBooking(); },
         onToken: (token)=>{ const pb=$("#pay"); if(pb)pb.disabled=true; submitBooking(token); },
       });
     }catch(e){}
@@ -882,8 +882,20 @@ async function pay(){
   let token="";
   if(cardNeeded){
     try{
-      const r=await card.tokenize();
-      if(r.status!=="OK"){ showMsg("Please check your card details.","err"); $("#pay").disabled=false; return; }
+      const fullName=($("#name").value||"").trim().split(/\s+/);
+      const verificationDetails={
+        amount: ((state.cardDue||0)/100).toFixed(2),
+        billingContact:{
+          givenName: fullName[0]||"",
+          familyName: fullName.slice(1).join(" ")||"",
+          email: ($("#email").value||"").trim(),
+          phone: (($("#phone")||{}).value||"").trim(),
+          countryCode: "US"
+        },
+        currencyCode:"USD", intent:"CHARGE", customerInitiated:true, sellerKeyedIn:false
+      };
+      const r=await card.tokenize(verificationDetails);
+      if(r.status!=="OK"){ showMsg("Please check your payment details and try again.","err"); $("#pay").disabled=false; return; }
       token=r.token;
     }catch(e){ showMsg("Card error — try again.","err"); $("#pay").disabled=false; return; }
   }
@@ -948,6 +960,9 @@ function lockOtherOffers(lock){
   const n=document.querySelector("#dcLockNote"); if(n) n.style.display=lock?"block":"none";
 }
 
+document.addEventListener("input",function(e){
+  if(e.target && e.target.matches && e.target.matches(".cn-f,.cn-l,.cn-d,.cn-code")) updateTotals();
+});
 init();
 </script>
 <script>if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("/sw.js").catch(function(){});});}</script><script>

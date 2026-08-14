@@ -1,0 +1,13 @@
+# Square Web Payments SDK security headers for the checkout page.
+# Netlify reads this file from the configured publish directory (/public).
+/book
+  Cross-Origin-Opener-Policy: same-origin-allow-popups
+  Content-Security-Policy: default-src 'self' https: data: blob:; script-src 'self' 'unsafe-inline' https:; frame-src 'self' https:; connect-src 'self' https: wss:; style-src 'self' 'unsafe-inline' https:; font-src 'self' data: https:; img-src 'self' data: blob: https:; object-src 'none'; base-uri 'self'; form-action 'self'
+
+/book.html
+  Cross-Origin-Opener-Policy: same-origin-allow-popups
+  Content-Security-Policy: default-src 'self' https: data: blob:; script-src 'self' 'unsafe-inline' https:; frame-src 'self' https:; connect-src 'self' https: wss:; style-src 'self' 'unsafe-inline' https:; font-src 'self' data: https:; img-src 'self' data: blob: https:; object-src 'none'; base-uri 'self'; form-action 'self'
+
+/.well-known/apple-developer-merchantid-domain-association
+  Content-Type: text/plain; charset=utf-8
+  Cache-Control: no-store

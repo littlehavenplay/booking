@@ -1,124 +1,195 @@
-/* Little Haven — Square digital wallets (Apple Pay, Google Pay, Cash App Pay)
- *
- * Adds one-tap wallet buttons to a Square Web Payments SDK checkout. It is fully
- * ADDITIVE and FAIL-SAFE: every wallet is wrapped in try/catch, and if a wallet is
- * unavailable or errors, its button is hidden and the normal card form keeps working.
- * The wallet token is processed by the SAME backend call as a card (Square doesn't
- * care whether a token came from a card or a wallet).
- *
- * Usage:
- *   const controls = await window.initSquareWallets({
- *     payments,                       // the Square.payments(appId, locationId) instance
- *     wrapEl, applePayEl, googlePayEl, cashAppEl,   // DOM elements (containers)
- *     getAmount: () => "25.00",       // current total as a string in dollars
- *     label: "Little Haven Play Studio",
- *     referenceId: "open-play",       // short id for Cash App Pay
- *     validate: () => true,           // run form validation before opening a wallet; return false to abort
- *     onToken: (token) => submit(token),  // called with a payment token on success
- *   });
- *   // when the total changes:  controls.refresh();
+/* Little Haven — Square Web Payments SDK wallets
+ * Apple Pay + Google Pay + Cash App Pay
+ * Uses cents->dollars from caller, updates Apple/Google PaymentRequest in place,
+ * and safely rebuilds Cash App Pay when the amount changes.
  */
 (function () {
-  function amt(v) { const n = Number(v); return (isNaN(n) ? 0 : n).toFixed(2); }
+  const money = (value) => {
+    const n = Number(value);
+    return (Number.isFinite(n) && n > 0 ? n : 0).toFixed(2);
+  };
 
-  window.initSquareWallets = async function (opts) {
-    const payments = opts.payments;
-    if (!payments) return { refresh() {}, any: false };
+  window.initSquareWallets = async function initSquareWallets(opts) {
+    const payments = opts && opts.payments;
+    if (!payments) return { any: false, refresh() {}, destroy() {} };
+
     const getAmount = opts.getAmount || (() => "0.00");
     const label = opts.label || "Little Haven Play Studio";
     const validate = opts.validate || (() => true);
-    const onToken = opts.onToken || function () {};
+    const onToken = opts.onToken || (async () => {});
+    const wrapEl = opts.wrapEl || null;
+    const appleEl = opts.applePayEl || null;
+    const googleEl = opts.googlePayEl || null;
+    const cashEl = opts.cashAppEl || null;
+
     let any = false;
-
-    function buildRequest() {
-      return payments.paymentRequest({
-        countryCode: "US",
-        currencyCode: "USD",
-        total: { amount: amt(getAmount()), label },
-      });
-    }
-
-    // ---- Apple Pay (Safari + supported browsers). No attach(); we use our own button. ----
     let applePay = null;
-    if (opts.applePayEl) {
-      try {
-        applePay = await payments.applePay(buildRequest());
-        opts.applePayEl.style.display = "";
-        any = true;
-        opts.applePayEl.addEventListener("click", async function () {
-          if (!validate()) return;
-          try {
-            // rebuild with the current amount right before charging
-            applePay = await payments.applePay(buildRequest());
-            const r = await applePay.tokenize();
-            if (r && r.status === "OK") onToken(r.token);
-          } catch (e) { /* buyer cancelled or error — card form still available */ }
-        });
-      } catch (e) { if (opts.applePayEl) opts.applePayEl.style.display = "none"; }
-    }
-
-    // ---- Google Pay ----
-    // Rebuild whenever the total changes so the Google Pay sheet always uses
-    // the same amount currently shown at checkout.
     let googlePay = null;
-    async function buildGooglePay() {
-      if (!opts.googlePayEl) return;
-      try {
-        if (googlePay) {
-          try { await googlePay.destroy(); } catch (e) {}
-          opts.googlePayEl.innerHTML = "";
-        }
-        googlePay = await payments.googlePay(buildRequest());
-        await googlePay.attach(opts.googlePayEl, { buttonType: "pay", buttonSizeMode: "fill" });
-        opts.googlePayEl.style.display = "";
-        any = true;
-        opts.googlePayEl.onclick = async function () {
-          if (!validate()) return;
-          try {
-            const r = await googlePay.tokenize();
-            if (r && r.status === "OK") onToken(r.token);
-          } catch (e) { /* cancelled or error */ }
-        };
-      } catch (e) {
-        opts.googlePayEl.style.display = "none";
-      }
-    }
-    await buildGooglePay();
-
-    // ---- Cash App Pay (event-based) ----
     let cashAppPay = null;
-    async function buildCashApp() {
-      if (!opts.cashAppEl) return;
+    let sharedRequest = null;
+    let cashBuildSerial = 0;
+    let lastAmount = money(getAmount());
+
+    const total = () => ({ amount: money(getAmount()), label, pending: false });
+    const makeRequest = () => payments.paymentRequest({
+      countryCode: "US",
+      currencyCode: "USD",
+      total: total(),
+    });
+
+    const showWrapIfNeeded = () => {
+      if (wrapEl) wrapEl.style.display = any ? "" : "none";
+    };
+
+    const deliverToken = async (token, method) => {
+      if (!token) return;
+      if (!validate()) return;
       try {
-        if (cashAppPay) { try { await cashAppPay.destroy(); } catch (e) {} opts.cashAppEl.innerHTML = ""; }
-        cashAppPay = await payments.cashAppPay(buildRequest(), {
-          redirectURL: window.location.href,
-          referenceId: (opts.referenceId || "lh") + "-" + Date.now(),
-        });
-        cashAppPay.addEventListener("ontokenization", function (ev) {
-          const tr = ev && ev.detail && ev.detail.tokenResult;
-          if (tr && tr.status === "OK") {
-            if (!validate()) return;
-            onToken(tr.token);
+        await onToken(token, method);
+      } catch (e) {
+        console.error("Square wallet payment submission failed", e);
+      }
+    };
+
+    // Apple Pay and Google Pay may share an updatable PaymentRequest.
+    // Cash App Pay cannot update its PaymentRequest, so it gets a separate one.
+    sharedRequest = makeRequest();
+
+    // Apple Pay: tokenize() must be called immediately from the click handler.
+    if (appleEl) {
+      try {
+        applePay = await payments.applePay(sharedRequest);
+        appleEl.style.display = "";
+        any = true;
+        appleEl.addEventListener("click", async (event) => {
+          event.preventDefault();
+          try {
+            const result = await applePay.tokenize();
+            if (result && result.status === "OK") {
+              await deliverToken(result.token, "APPLE_PAY");
+            } else if (result && result.status === "Error") {
+              console.error("Apple Pay tokenization error", result.errors || result);
+            }
+          } catch (e) {
+            console.error("Apple Pay failed", e);
           }
         });
-        await cashAppPay.attach(opts.cashAppEl, { shape: "semiround", width: "full" });
-        any = true;
-      } catch (e) { if (opts.cashAppEl) opts.cashAppEl.style.display = "none"; }
+      } catch (e) {
+        appleEl.style.display = "none";
+        console.info("Apple Pay unavailable", e && e.name ? e.name : e);
+      }
     }
-    await buildCashApp();
 
-    if (any && opts.wrapEl) opts.wrapEl.style.display = "";
+    // Google Pay
+    if (googleEl) {
+      try {
+        googlePay = await payments.googlePay(sharedRequest);
+        googleEl.innerHTML = "";
+        await googlePay.attach(googleEl, {
+          buttonColor: "black",
+          buttonType: "long",
+          buttonSizeMode: "fill",
+          buttonRadius: 12,
+          buttonBorderType: "no_border",
+        });
+        googleEl.style.display = "";
+        any = true;
+        googleEl.onclick = async (event) => {
+          event.preventDefault();
+          if (!validate()) return;
+          try {
+            const result = await googlePay.tokenize();
+            if (result && result.status === "OK") {
+              await deliverToken(result.token, "GOOGLE_PAY");
+            } else if (result && result.status === "Error") {
+              console.error("Google Pay tokenization error", result.errors || result);
+            }
+          } catch (e) {
+            console.error("Google Pay failed", e);
+          }
+        };
+      } catch (e) {
+        googleEl.style.display = "none";
+        console.info("Google Pay unavailable", e && e.name ? e.name : e);
+      }
+    }
+
+    async function rebuildCashApp() {
+      if (!cashEl) return;
+      const serial = ++cashBuildSerial;
+      try {
+        if (cashAppPay) {
+          try { await cashAppPay.destroy(); } catch (_) {}
+          cashAppPay = null;
+        }
+        if (serial !== cashBuildSerial) return;
+        cashEl.innerHTML = "";
+
+        const request = makeRequest();
+        const next = await payments.cashAppPay(request, {
+          redirectURL: window.location.origin + window.location.pathname + window.location.search,
+          referenceId: (opts.referenceId || "little-haven") + "-" + Date.now(),
+        });
+        if (serial !== cashBuildSerial) {
+          try { await next.destroy(); } catch (_) {}
+          return;
+        }
+
+        next.addEventListener("ontokenization", async (event) => {
+          const detail = event && event.detail ? event.detail : {};
+          if (detail.error) {
+            console.error("Cash App Pay tokenization error", detail.error);
+            return;
+          }
+          const result = detail.tokenResult;
+          if (result && result.status === "OK") {
+            await deliverToken(result.token, "CASH_APP_PAY");
+          }
+        });
+
+        cashAppPay = next;
+        await cashAppPay.attach(cashEl, {
+          shape: "semiround",
+          theme: "dark",
+          width: "full",
+        });
+        cashEl.style.display = "";
+        any = true;
+        showWrapIfNeeded();
+      } catch (e) {
+        if (serial === cashBuildSerial) {
+          cashEl.style.display = "none";
+          console.info("Cash App Pay unavailable", e && e.name ? e.name : e);
+        }
+      }
+    }
+
+    await rebuildCashApp();
+    showWrapIfNeeded();
 
     return {
-      any,
-      // Google Pay and Cash App Pay both depend on the current PaymentRequest amount,
-      // so rebuild those methods when the checkout total changes. Apple Pay rebuilds
-      // its request immediately before tokenization.
-      refresh: function () {
-        if (!any) return;
-        buildGooglePay();
-        buildCashApp();
+      get any() { return any; },
+      async refresh() {
+        const nextAmount = money(getAmount());
+        if (nextAmount === lastAmount) return;
+        lastAmount = nextAmount;
+
+        // Apple Pay + Google Pay support PaymentRequest.update while sheets are closed.
+        try {
+          if (sharedRequest && typeof sharedRequest.update === "function") {
+            sharedRequest.update({ total: total() });
+          }
+        } catch (e) {
+          console.warn("Could not update Apple/Google Pay amount", e);
+        }
+
+        // Cash App Pay explicitly does not support PaymentRequest.update.
+        await rebuildCashApp();
+      },
+      async destroy() {
+        cashBuildSerial++;
+        try { if (googlePay) await googlePay.destroy(); } catch (_) {}
+        try { if (cashAppPay) await cashAppPay.destroy(); } catch (_) {}
       },
     };
   };
