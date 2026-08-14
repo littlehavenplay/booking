@@ -1,0 +1,21 @@
+UPLOAD THIS PACKAGE TO GITHUB
+
+Keep the included paths exactly as they are and overwrite the existing files.
+
+Important files:
+public/assets/square-wallets.js
+public/_headers
+public/book.html
+public/events.html
+public/_redirects
+public/apple-developer-merchantid-domain-association
+public/.well-known/apple-developer-merchantid-domain-association
+
+Netlify should deploy automatically after the GitHub commit.
+
+Expected behavior:
+- Safari + eligible Apple device: Apple Pay is shown.
+- Google Pay is attempted independently and shown when Square says it is eligible.
+- Cash App Pay is attempted independently for the US Square seller.
+- A wallet that is unavailable on one buyer's device does not break the others.
+- All wallet tokens continue through the same existing Square Payments API backend.
