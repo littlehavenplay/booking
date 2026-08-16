@@ -10,6 +10,7 @@
 //   5. On success, record the booking and increment the slot's child count.
 
 import { getStore } from "@netlify/blobs";
+import { createHash } from "node:crypto";
 import { SIGNATURE_HTML, sendOwnerAlert, resendEmail } from "./lib-email.js";
 import {
   CAPACITY, pricesFor, SLOTS, SLOT_IDS, openPlayForDate, effectivePartyBlocks, hoursFor, slotCap, slotKey, arrivalStartMin, squareApiBase, SQUARE_VERSION, BOOKING_WINDOW_DAYS,
@@ -419,21 +420,39 @@ export default async (req) => {
     return json({ error: "card_required", message: "A card is needed for the remaining balance." }, 400);
   }
 
-  // Process payments: credit card first (the part most likely to fail), then redeem gift cards.
+  // Gift cards are redeemed FIRST because they're the only leg we can reverse
+  // cleanly; the card goes last, so a failure never leaves card money taken for
+  // a booking that was not created. If the card leg fails after gift cards were
+  // drawn down, every gift card redemption is refunded before returning.
   const payments = [];
+  const attemptId = (body.attemptId || "").toString().slice(0, 60);
+  const idemBase = [attemptId, email, date, slot, amount];
   try {
-    if (cardAmount > 0) {
-      const p = await chargeSquare(env, { source_id: sourceId, amount: cardAmount, note, email });
-      if (!p.ok) return json({ error: "payment_failed", message: p.detail }, 402);
-      payments.push(p.payment);
-    }
     for (const g of giftApplied) {
-      const p = await chargeSquare(env, { source_id: g.id, amount: g.applied, note, email });
-      if (!p.ok) return json({ error: "giftcard", message: `Couldn't redeem gift card ${g.gan}.` }, 402);
+      const p = await chargeSquare(env, {
+        source_id: g.id, amount: g.applied, note, email,
+        idem: idemKey([...idemBase, "gift", g.gan, g.applied]),
+      });
+      if (!p.ok) {
+        await refundAll(env, payments);
+        return json({ error: "giftcard", message: `Couldn't redeem gift card ${g.gan}.` }, 402);
+      }
       payments.push(p.payment);
       g.balanceAfter = p.giftCardBalance;
     }
+    if (cardAmount > 0) {
+      const p = await chargeSquare(env, {
+        source_id: sourceId, amount: cardAmount, note, email,
+        idem: idemKey([...idemBase, "card", cardAmount]),
+      });
+      if (!p.ok) {
+        await refundAll(env, payments);
+        return json({ error: "payment_failed", message: p.detail }, 402);
+      }
+      payments.unshift(p.payment);   // keep the card payment first, as before
+    }
   } catch (e) {
+    await refundAll(env, payments);
     return json({ error: "payment_error", message: "Could not reach the payment processor." }, 502);
   }
   const payment = payments[0] || null;
@@ -559,8 +578,24 @@ export default async (req) => {
   });
   base.children = (base.children || 0) + children;
 
+  // The customer has already paid, so we still report success to them — but a
+  // write failure here means the booking is NOT on the roster. Alert the studio
+  // immediately with everything needed to add it by hand.
   try { await store.setJSON(key, base); }
-  catch { /* payment already succeeded; surface success anyway */ }
+  catch (e) {
+    try {
+      const lbl = (SLOTS.find(s => s.id === slot) || {}).label || slot;
+      await sendOwnerAlert(
+        "🚨 PAID BOOKING NOT SAVED — please add by hand",
+        `<h3>A booking was paid for but could not be written to the roster</h3>
+         <p><b>${date} · ${lbl}</b><br>
+         <b>${name}</b> — ${email} — ${phone || "no phone given"}<br>
+         ${regular} regular · ${sibling} sibling · ${infant} infant<br>
+         Paid by card: <b>$${(cardAmount / 100).toFixed(2)}</b>${payment?.id ? ` · Square payment ${payment.id}` : ""}</p>
+         <p>The customer has been told they're booked. Please add them to the roster manually.</p>`
+      );
+    } catch {}
+  }
 
   // ---- Loyalty punch card: auto-issue each child's code + welcome email at booking.
   // Skipped entirely when a legacy prepaid card was used (legacy never joins loyalty
@@ -665,9 +700,54 @@ export default async (req) => {
 };
 
 // Charges a single payment source (a card token or a gift card id) via Square.
-async function chargeSquare(env, { source_id, amount, note, email }) {
+// A STABLE idempotency key per logical charge. Square de-duplicates on this key,
+// so a browser retry, a double-tap, or a function re-invocation after a timeout
+// returns the ORIGINAL payment instead of charging the customer twice. The old
+// random UUID defeated that completely. Anything real about the charge changing
+// (amount, date, slot, buyer) yields a different key, so a genuinely different
+// booking is never wrongly de-duplicated.
+function idemKey(parts) {
+  return createHash("sha256").update(parts.join("|")).digest("hex").slice(0, 45);
+}
+
+// Reverses payments already taken in this request when a later leg fails, so a
+// customer is never left charged for a booking that was not created. Best effort:
+// anything that can't be refunded automatically is emailed to the studio.
+async function refundAll(env, taken) {
+  for (const p of taken || []) {
+    if (!p || !p.id) continue;
+    try {
+      const res = await fetch(`${squareApiBase()}/v2/refunds`, {
+        method: "POST",
+        headers: {
+          "Square-Version": SQUARE_VERSION,
+          "Authorization": `Bearer ${env.SQUARE_ACCESS_TOKEN}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          idempotency_key: idemKey(["refund", p.id]),
+          payment_id: p.id,
+          amount_money: p.amount_money,
+          reason: "Booking could not be completed",
+        }),
+      });
+      if (!res.ok) throw new Error("refund rejected");
+    } catch (e) {
+      try {
+        await sendOwnerAlert(
+          "🚨 Refund needed — payment taken but booking failed",
+          `<h3>A payment went through but the booking did not</h3>
+           <p>Square payment <b>${p.id}</b> for <b>$${((p.amount_money?.amount || 0) / 100).toFixed(2)}</b>
+           could not be refunded automatically. Please refund it by hand in the Square dashboard.</p>`
+        );
+      } catch {}
+    }
+  }
+}
+
+async function chargeSquare(env, { source_id, amount, note, email, idem }) {
   const body = {
-    idempotency_key: crypto.randomUUID(),
+    idempotency_key: idem || crypto.randomUUID(),
     source_id,
     amount_money: { amount, currency: "USD" },
     location_id: env.SQUARE_LOCATION_ID,

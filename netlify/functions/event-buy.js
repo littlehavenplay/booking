@@ -1,6 +1,7 @@
 // POST /api/event-buy — public. Buy tickets for an upcoming event.
 // Body: { eventId, quantity, name, email, sourceId }  (sourceId = Square card token)
 import { getStore } from "@netlify/blobs";
+import { createHash } from "node:crypto";
 import { SIGNATURE_HTML, resendEmail } from "./lib-email.js";
 import { squareApiBase, SQUARE_VERSION, STUDIO_NAME } from "./lib-settings.js";
 import { eventPacificParts, eventIsPast } from "./lib-closures.js";
@@ -70,7 +71,11 @@ export default async (req) => {
       method: "POST",
       headers: { "Square-Version": SQUARE_VERSION, "Authorization": `Bearer ${process.env.SQUARE_ACCESS_TOKEN}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        idempotency_key: crypto.randomUUID(),
+        // Stable per logical purchase so a retry or double-tap returns the
+        // original payment instead of charging the buyer a second time.
+        idempotency_key: createHash("sha256")
+          .update([(b.attemptId || "").toString().slice(0, 60), eventId, email, quantity, amount].join("|"))
+          .digest("hex").slice(0, 45),
         source_id: sourceId,
         amount_money: { amount, currency: "USD" },
         location_id: process.env.SQUARE_LOCATION_ID,

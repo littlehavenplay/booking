@@ -1,8 +1,13 @@
 /* Little Haven Play Studio — Square wallet controller
-   Stable production integration for Apple Pay, Google Pay, and Cash App Pay.
-   Each method initializes independently; unsupported methods are hidden without
-   affecting the others. All successful tokens go through the existing Square
-   Payments API backend.
+   Apple Pay and Google Pay only. Cash App Pay was removed in August 2026.
+
+   Each method initializes independently: if one is unavailable on the buyer's
+   device, the other still shows. All successful tokens flow through the same
+   Square Payments API backend as the manual card form.
+
+   Apple and Google both require their own button appearance, so the buttons
+   themselves are rendered by Apple/Square. Everything around them (frame,
+   spacing, divider) is styled by the host page to match the site.
 */
 (function () {
   "use strict";
@@ -19,21 +24,18 @@
   window.initSquareWallets = async function initSquareWallets(options) {
     const o = options || {};
     const payments = o.payments;
-    if (!payments) return { any: false, refresh: async function () {} };
+    if (!payments) return { any: false, methods: {}, refresh: async function () {} };
 
     const wrap = o.wrapEl || null;
     const appleEl = o.applePayEl || null;
     const googleEl = o.googlePayEl || null;
-    const cashEl = o.cashAppEl || null;
     const getAmount = o.getAmount || function () { return "0.00"; };
     const validate = o.validate || function () { return true; };
     const onToken = o.onToken || async function () {};
     const label = o.label || "Little Haven Play Studio";
-    const referenceId = o.referenceId || "little-haven";
 
     let applePay = null;
     let googlePay = null;
-    let cashAppPay = null;
     let lastAmount = null;
     let refreshId = 0;
     let busy = false;
@@ -67,6 +69,8 @@
       }
     }
 
+    // busy is only released once onToken has fully settled, so a double-tap
+    // during submission cannot produce a second charge.
     async function sendToken(result) {
       if (!result || result.status !== "OK" || !result.token) {
         busy = false;
@@ -74,6 +78,8 @@
       }
       try {
         await onToken(result.token);
+      } catch (e) {
+        log("Payment submission", e);
       } finally {
         busy = false;
       }
@@ -81,7 +87,7 @@
 
     const controller = {
       any: false,
-      methods: { applePay: false, googlePay: false, cashAppPay: false },
+      methods: { applePay: false, googlePay: false },
       refresh: async function (force) {
         const amount = amountString(getAmount());
         if (!force && amount === lastAmount) {
@@ -92,49 +98,41 @@
         await rebuild(amount);
       },
       syncVisibility: function () {
-        controller.any = !!(
-          controller.methods.applePay ||
-          controller.methods.googlePay ||
-          controller.methods.cashAppPay
-        );
-        if (wrap) wrap.style.display = controller.any ? "" : "none";
+        controller.any = !!(controller.methods.applePay || controller.methods.googlePay);
+        if (wrap) {
+          wrap.style.display = controller.any ? "" : "none";
+          if (wrap.classList) wrap.classList.toggle("lh-wallets-ready", controller.any);
+        }
       }
     };
 
     async function rebuild(amount) {
       const myId = ++refreshId;
 
-      // Clean up old amount-specific wallet instances.
-      await Promise.all([
-        destroy(applePay),
-        destroy(googlePay),
-        destroy(cashAppPay)
-      ]);
+      await Promise.all([destroy(applePay), destroy(googlePay)]);
       applePay = null;
       googlePay = null;
-      cashAppPay = null;
-
       controller.methods.applePay = false;
       controller.methods.googlePay = false;
-      controller.methods.cashAppPay = false;
 
       if (appleEl) show(appleEl, false);
       if (googleEl) { empty(googleEl); show(googleEl, false); }
-      if (cashEl) { empty(cashEl); show(cashEl, false); }
 
       if (Number(amount) <= 0 || myId !== refreshId) {
         controller.syncVisibility();
         return;
       }
 
-      // Make the wallet area measurable while Square attaches official buttons.
-      // It is hidden again below only if none of the methods is eligible.
+      // Keep the wallet area measurable while Square attaches its buttons,
+      // then reveal (or re-hide) it once we know what is eligible.
       if (wrap) {
         wrap.style.display = "";
         wrap.style.visibility = "hidden";
       }
 
-      // APPLE PAY
+      // ---- APPLE PAY -----------------------------------------------------
+      // Square does not render an Apple Pay button; the page supplies one
+      // styled with -apple-pay-button per Apple's guidelines.
       if (appleEl && myId === refreshId) {
         try {
           const method = await payments.applePay(requestFor(amount));
@@ -148,7 +146,8 @@
               if (busy || !applePay || !validate()) return;
               busy = true;
               try {
-                // Apple/Square require tokenize() to start directly from the click.
+                // Apple requires tokenize() to begin inside the click itself,
+                // so nothing may be awaited before this line.
                 await sendToken(await applePay.tokenize());
               } catch (e) {
                 busy = false;
@@ -164,13 +163,12 @@
         }
       }
 
-      // GOOGLE PAY — selector-based attach matches Square's documented integration.
+      // ---- GOOGLE PAY ----------------------------------------------------
       if (googleEl && myId === refreshId) {
         try {
           show(googleEl, true);
           const method = await payments.googlePay(requestFor(amount));
-          const target = selectorFor(googleEl);
-          await method.attach(target, {
+          await method.attach(selectorFor(googleEl), {
             buttonColor: "black",
             buttonType: "pay",
             buttonSizeMode: "fill"
@@ -181,12 +179,9 @@
             controller.methods.googlePay = true;
 
             googleEl.onclick = async function (event) {
+              event.preventDefault();
               if (busy || !googlePay) return;
-              if (!validate()) {
-                event.preventDefault();
-                event.stopPropagation();
-                return;
-              }
+              if (!validate()) { event.stopPropagation(); return; }
               busy = true;
               try {
                 await sendToken(await googlePay.tokenize());
@@ -205,52 +200,7 @@
         }
       }
 
-      // CASH APP PAY — rebuilt when amount changes because Square documents
-      // PaymentRequest updates as unsupported for Cash App Pay.
-      if (cashEl && myId === refreshId) {
-        try {
-          show(cashEl, true);
-          const method = await payments.cashAppPay(requestFor(amount), {
-            redirectURL: window.location.origin + window.location.pathname + window.location.search,
-            referenceId: (referenceId + "-" + Date.now()).slice(0, 40)
-          });
-
-          method.addEventListener("ontokenization", async function (event) {
-            const detail = event && event.detail ? event.detail : {};
-            if (detail.error) {
-              busy = false;
-              log("Cash App Pay", detail.error);
-              return;
-            }
-            const result = detail.tokenResult;
-            if (!result || result.status !== "OK") {
-              busy = false;
-              return;
-            }
-            if (!validate()) {
-              busy = false;
-              return;
-            }
-            busy = true;
-            await sendToken(result);
-          });
-
-          // Use Square's documented default Cash App button attachment.
-          await method.attach(selectorFor(cashEl));
-
-          if (myId === refreshId) {
-            cashAppPay = method;
-            controller.methods.cashAppPay = true;
-          } else {
-            await destroy(method);
-          }
-        } catch (e) {
-          log("Cash App Pay", e);
-          empty(cashEl);
-          show(cashEl, false);
-        }
-      }
-
+      if (myId !== refreshId) return;   // a newer rebuild took over
       if (wrap) wrap.style.visibility = "";
       controller.syncVisibility();
     }

@@ -51,7 +51,20 @@
   .sheet{background:#fff;border-radius:20px;max-width:440px;width:100%;padding:22px;max-height:92vh;overflow:auto}
   label{display:block;font-size:.66rem;font-weight:800;color:var(--taupe);text-transform:uppercase;letter-spacing:.08em;margin:12px 0 5px}
   input,select{width:100%;border:1.5px solid #e7ddd0;border-radius:12px;padding:11px 13px;font-family:'Nunito';font-weight:600;font-size:.95rem;background:#fcfaf6;outline:none}
-  input:focus,select:focus{border-color:var(--rose)}
+  input:focus,select:focus{border-color:var(--rose);box-shadow:0 0 0 3px rgba(201,125,118,.13)}
+    .req{display:inline-block;margin-left:6px;font-size:.62rem;font-weight:900;letter-spacing:.04em;text-transform:uppercase;color:#a85f59;background:#fdf1ec;border:1px solid #efcfc4;border-radius:999px;padding:2px 7px;vertical-align:middle}
+    .opt{display:inline-block;margin-left:6px;font-size:.62rem;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--taupe);background:#f6f2ec;border:1px solid #ece3d6;border-radius:999px;padding:2px 7px;vertical-align:middle}
+    input.is-missing,select.is-missing{border-color:#b8524a!important;background:#fdf5f4!important}
+    input.is-missing:focus,select.is-missing:focus{box-shadow:0 0 0 3px rgba(184,82,74,.15)!important}
+    .fieldnote{display:none;margin:6px 0 0;font-size:.82rem;font-weight:700;color:#b8524a;line-height:1.45}
+    .fieldnote.on{display:block}
+    #wallets{border:1.5px solid #ece3d6;border-radius:16px;padding:13px;background:linear-gradient(180deg,#fffdfa,#fbf7f1);margin-top:12px}
+    .wallet-head{display:flex;align-items:center;gap:10px;margin:0 0 10px;font-size:.7rem;font-weight:900;letter-spacing:.09em;text-transform:uppercase;color:var(--taupe)}
+    .wallet-head::before,.wallet-head::after{content:"";flex:1;height:1px;background:#ece3d6}
+    #apple-pay-button{-webkit-appearance:-apple-pay-button;appearance:-apple-pay-button;-apple-pay-button-type:pay;-apple-pay-button-style:black;height:48px;border-radius:14px;cursor:pointer;width:100%;border:0;padding:0}
+    #google-pay-button{min-height:48px}
+    #google-pay-button>div,#wallets .gpay-card-info-container{border-radius:14px!important;overflow:hidden}
+    .wallet-or{text-align:center;color:var(--taupe);font-size:.76rem;font-weight:800;letter-spacing:.05em;margin:12px 0 2px}
   #card-container{border:1.5px solid #e7ddd0;border-radius:12px;padding:10px;background:#fcfaf6;margin-top:6px;min-height:46px}
   .msg{font-weight:700;font-size:.88rem;margin-top:12px;padding:11px 13px;border-radius:11px;display:none}
   .msg.err{display:block;background:#f7e3df;color:#b8524a}.msg.ok{display:block;background:#e3f0e6;color:#3f7d5c}
@@ -91,23 +104,25 @@
       <div id="mReq" style="font-size:.9rem;color:var(--charcoal);white-space:pre-wrap;line-height:1.5"></div>
       <label style="display:flex;gap:9px;align-items:flex-start;margin-top:10px;text-transform:none;letter-spacing:0;color:var(--charcoal);font-weight:700;font-size:.9rem;cursor:pointer"><input type="checkbox" id="mAgree" style="width:auto;margin-top:3px;transform:scale(1.2)"> I have read and understood the requirements and terms for this event.</label>
     </div>
-    <label>Number of tickets</label>
+    <label>Number of tickets <span class="req">Required</span></label>
     <select id="mQty"></select>
-    <label>Your name</label>
-    <input type="text" id="mName" placeholder="Full name">
-    <label>Email (for your confirmation)</label>
-    <input type="email" id="mEmail" placeholder="you@email.com">
+    <label>Your name <span class="req">Required</span></label>
+    <input type="text" id="mName" placeholder="Full name" autocomplete="name">
+    <p class="fieldnote" id="err-mName">Please enter your name.</p>
+    <label>Email (for your confirmation) <span class="req">Required</span></label>
+    <input type="email" id="mEmail" placeholder="you@email.com" autocomplete="email" inputmode="email">
+    <p class="fieldnote" id="err-mEmail">Please enter a valid email address.</p>
     <label>Phone number</label>
     <input type="tel" id="mPhone" placeholder="(760) 555-1234">
     <div id="mAttWrap" style="margin-top:6px"></div>
     <label>Store credit code <span style="font-weight:400;color:var(--slate);text-transform:none">(optional)</span></label>
     <input type="text" id="mCredit" placeholder="Enter a store credit code, if you have one" style="text-transform:uppercase"><div id="mCreditMsg" class="note"></div>
-    <div id="wallets" style="display:none;margin-top:6px">
+    <div id="wallets" style="display:none">
+      <p class="wallet-head">Express checkout</p>
       <button type="button" id="apple-pay-button" aria-label="Pay with Apple Pay" style="display:none"></button>
-      <div id="google-pay-button" style="min-height:46px;margin-top:8px"></div>
-      <div id="cash-app-pay" style="min-height:46px;margin-top:8px"></div>
-      <div style="text-align:center;color:var(--slate);font-size:.8rem;font-weight:700;margin:10px 0 2px">— or pay with a card —</div>
+      <div id="google-pay-button" style="min-height:48px;margin-top:9px"></div>
     </div>
+    <div class="wallet-or" id="walletOr" style="display:none">or pay with a card</div>
     <label>Card</label>
     <div id="card-container"></div>
     <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px">
@@ -115,7 +130,7 @@
       <button class="btn" id="mPay">Pay & register</button>
     </div>
     <div class="msg" id="mMsg"></div>
-    <div class="note" style="background:#fdf7f0;border:1px solid #ecdcc9;border-radius:10px;padding:9px 12px;color:var(--charcoal);margin-bottom:8px">🪪 <b>Pickup:</b> the adult who drops off must be the same person who picks up, and must show a valid photo ID. No child is released without a matching ID.</div><div class="note">💳 We accept <b>Apple Pay, Google Pay, Cash App Pay</b>, and all major cards. Payments are processed securely by Square. You'll get an email confirmation — if you don't see it, check your junk/spam folder. Event tickets are non-refundable, but if you can't attend, email hello@littlehavenplay.com and we'll do our best to issue store credit.</div>
+    <div class="note" style="background:#fdf7f0;border:1px solid #ecdcc9;border-radius:10px;padding:9px 12px;color:var(--charcoal);margin-bottom:8px">🪪 <b>Pickup:</b> the adult who drops off must be the same person who picks up, and must show a valid photo ID. No child is released without a matching ID.</div><div class="note">💳 We accept <b>Apple Pay</b>, <b>Google Pay</b>, and all major credit &amp; debit cards. Payments are processed securely by Square. You'll get an email confirmation — if you don't see it, check your junk/spam folder. Event tickets are non-refundable, but if you can't attend, email hello@littlehavenplay.com and we'll do our best to issue store credit.</div>
   </div>
 </div>
 
@@ -222,12 +237,11 @@ async function initSquare(){
       wrapEl: document.getElementById("wallets"),
       applePayEl: document.getElementById("apple-pay-button"),
       googlePayEl: document.getElementById("google-pay-button"),
-      cashAppEl: document.getElementById("cash-app-pay"),
       getAmount: ()=> (eventDueCents()/100).toFixed(2),
       label: "Little Haven Play Studio",
       referenceId: "event",
       validate: ()=> eventFormValid(),
-      onToken: (token)=>{ const pb=$("#mPay"); if(pb)pb.disabled=true; submitEvent(token); },
+      onToken: async (token)=>{ const pb=$("#mPay"); if(pb)pb.disabled=true; await submitEvent(token); },
     });
   }catch(e){}
 }
@@ -241,6 +255,7 @@ window.openModal=(id)=>{
   for(let i=1;i<=max;i++) opts+='<option value="'+i+'">'+i+'</option>';
   $("#mQty").innerHTML=opts; $("#mQty").onchange=updTotal; updTotal();
   $("#mMsg").className="msg"; $("#mName").value=""; $("#mEmail").value=""; if($("#mPhone"))$("#mPhone").value=""; if($("#mCredit"))$("#mCredit").value=""; eventCredit={code:"",balance:0,ok:false}; if($("#mCreditMsg"))$("#mCreditMsg").textContent="";
+  newEvAttempt();
   $("#modal").classList.add("open");
 };
 window.closeModal=()=>$("#modal").classList.remove("open");
@@ -285,7 +300,7 @@ function updTotal(){
   }
   renderAtt();
   if(window.__lhWallets){
-    window.__lhWallets.refresh();
+    Promise.resolve(window.__lhWallets.refresh()).then(syncWalletOr).catch(syncWalletOr);
   }
 }
 async function checkEventCredit(){
@@ -330,60 +345,127 @@ function renderAtt(){
   host.innerHTML=h;
 }
 
+function evClear(){
+  document.querySelectorAll("#mModal .is-missing,.is-missing").forEach(function(el){ el.classList.remove("is-missing"); });
+  document.querySelectorAll(".fieldnote.on").forEach(function(el){ el.classList.remove("on"); });
+}
+function evFlag(sel,msg){
+  const m=$("#mMsg"); if(m){ m.className="msg err"; m.textContent=msg; }
+  const el=sel?document.querySelector(sel):null;
+  if(el){
+    el.classList.add("is-missing");
+    const note=document.getElementById("err-"+el.id);
+    if(note){ note.textContent=msg; note.classList.add("on"); }
+    try{ el.scrollIntoView({behavior:"smooth",block:"center"}); }catch(_){ }
+    if(el.focus&&el.type!=="checkbox"){ try{ el.focus({preventScroll:true}); }catch(_){ } }
+  }
+  return false;
+}
 function eventFormValid(){
-  const m=$("#mMsg"); m.className="msg";
+  evClear();
+  const m=$("#mMsg"); if(m){ m.className="msg"; m.textContent=""; }
   const name=$("#mName").value.trim(), email=$("#mEmail").value.trim();
-  if(!name){ m.className="msg err"; m.textContent="Please enter your name."; return false; }
-  if(!/^\S+@\S+\.\S+$/.test(email)){ m.className="msg err"; m.textContent="Please enter a valid email."; return false; }
+  if(!name) return evFlag("#mName","Please enter your name.");
+  if(!/^\S+@\S+\.\S+$/.test(email)) return evFlag("#mEmail","Please enter a valid email address.");
   const creditCode=(($("#mCredit")||{}).value||"").trim().toUpperCase().replace(/[^A-Z0-9]/g,"");
-  if(creditCode && (!eventCredit.ok || eventCredit.code!==creditCode)){ m.className="msg err"; m.textContent="Please wait for your store credit to be verified, then try again."; checkEventCredit(); return false; }
-  if(cur.requirements && cur.requirements.trim() && !$("#mAgree").checked){ m.className="msg err"; m.textContent="Please confirm you've read and understood the requirements for this event."; return false; }
-  const attendees=[...document.querySelectorAll("#mAttWrap .att-row")].map(r=>({name:r.querySelector(".att-n").value.trim()}));
-  if(attendees.some(a=>!a.name)){ m.className="msg err"; m.textContent="Please enter each child's full name."; return false; }
+  if(creditCode && (!eventCredit.ok || eventCredit.code!==creditCode)){ checkEventCredit(); return evFlag("#mCredit","Please wait for your store credit to be verified, then try again."); }
+  if(cur.requirements && cur.requirements.trim() && !$("#mAgree").checked) return evFlag("#mAgree","Please confirm you've read and understood the requirements for this event.");
+  const rows=[...document.querySelectorAll("#mAttWrap .att-row")];
+  for(const r of rows){
+    const f=r.querySelector(".att-n");
+    if(f && !f.value.trim()){ f.classList.add("is-missing"); try{ f.scrollIntoView({behavior:"smooth",block:"center"}); f.focus({preventScroll:true}); }catch(_){ }
+      if(m){ m.className="msg err"; m.textContent="Please enter each child's full name."; } return false; }
+  }
   return true;
 }
-function eventCardVerificationDetails(){
-  const full=$("#mName").value.trim().split(/\s+/);
-  return {
-    amount:(eventDueCents()/100).toFixed(2),
-    billingContact:{
-      givenName:full[0]||"",
-      familyName:full.slice(1).join(" ")||"",
-      email:$("#mEmail").value.trim(),
-      phone:(($("#mPhone")||{}).value||"").trim(),
-      countryCode:"US"
-    },
-    currencyCode:"USD",
-    intent:"CHARGE",
-    customerInitiated:true,
-    sellerKeyedIn:false
-  };
+
+["input","change"].forEach(function(evt){
+  document.addEventListener(evt,function(e){
+    if(!e.target||!e.target.classList) return;
+    if(["mName","mEmail","mCredit","mAgree"].indexOf(e.target.id)>-1 || e.target.classList.contains("att-n")){
+      e.target.classList.remove("is-missing");
+      const n=document.getElementById("err-"+e.target.id); if(n) n.classList.remove("on");
+    }
+  });
+});
+
+// One stable id per open of the purchase modal. Sent with the charge so Square
+// de-duplicates retries instead of charging the buyer twice.
+let evAttemptId = "";
+function newEvAttempt(){
+  evAttemptId = (self.crypto && crypto.randomUUID) ? crypto.randomUUID()
+              : String(Date.now()) + Math.random().toString(36).slice(2);
 }
+
 async function submitEvent(token){
   const m=$("#mMsg");
-  const name=$("#mName").value.trim(), email=$("#mEmail").value.trim(), qty=parseInt($("#mQty").value,10)||1;
-  const attendees=[...document.querySelectorAll("#mAttWrap .att-row")].map(r=>({name:r.querySelector(".att-n").value.trim(),age:r.querySelector(".att-a").value.trim()}));
-  const phone=($("#mPhone")||{}).value||"";
-  m.className="msg ok"; m.textContent="Processing…";
+  const pb=$("#mPay"); if(pb) pb.disabled=true;
+  if(m){ m.className="msg"; m.textContent="Processing your payment…"; }
+  const attendees=[...document.querySelectorAll("#mAttWrap .att-row")].map(function(r){
+    return { name:(r.querySelector(".att-n")||{}).value||"", age:(r.querySelector(".att-a")||{}).value||"" };
+  }).filter(function(a){ return a.name.trim(); });
+  const creditCode=(($("#mCredit")||{}).value||"").trim().toUpperCase().replace(/[^A-Z0-9]/g,"");
   try{
-    const r=await (await fetch("/api/event-buy",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({eventId:cur.id,quantity:qty,name,email,phone,attendees,creditCode:($("#mCredit")||{}).value||"",sourceId:token})})).json();
-    if(r.ok){ m.className="msg ok"; m.textContent=r.message||"You're registered!"; setTimeout(()=>{closeModal();load();},1800); }
-    else { m.className="msg err"; m.textContent=r.message||r.error||"Couldn't complete purchase."; $("#mPay").disabled=false; }
-  }catch(e){ m.className="msg err"; m.textContent="Network error — please try again."; $("#mPay").disabled=false; }
+    const res=await fetch("/api/event-buy",{
+      method:"POST", headers:{"content-type":"application/json"},
+      body:JSON.stringify({
+        eventId:cur.id,
+        quantity:parseInt($("#mQty").value,10)||1,
+        name:$("#mName").value.trim(),
+        email:$("#mEmail").value.trim(),
+        phone:(($("#mPhone")||{}).value||"").trim(),
+        attendees,
+        creditCode:creditCode||undefined,
+        sourceId:token||undefined,
+        attemptId:evAttemptId,
+      })
+    });
+    const data=await res.json();
+    if(res.ok && data.ok){
+      if(m){ m.className="msg ok"; m.textContent=data.message||"You're all set! A confirmation email is on its way."; }
+      if($("#mPay")) $("#mPay").style.display="none";
+      if(document.getElementById("wallets")) document.getElementById("wallets").style.display="none";
+      if(document.getElementById("walletOr")) document.getElementById("walletOr").style.display="none";
+      setTimeout(function(){ location.reload(); }, 4000);
+      return true;
+    }
+    if(m){ m.className="msg err"; m.textContent=data.message||data.error||"That payment didn't go through."; }
+  }catch(err){
+    if(m){ m.className="msg err"; m.textContent="We couldn't reach the payment processor. Please try again."; }
+  }
+  if(pb) pb.disabled=false;
+  // A failed attempt gets a fresh id so a genuine retry isn't de-duplicated.
+  newEvAttempt();
+  return false;
 }
-$("#mPay").onclick=async()=>{
-  const m=$("#mMsg");
+
+// Manual card path — this button previously had no handler at all.
+document.addEventListener("click", async function(e){
+  if(!e.target || e.target.id!=="mPay") return;
+  e.preventDefault();
+  if(e.target.disabled) return;
   if(!eventFormValid()) return;
   const due=eventDueCents();
-  if(due>0 && !card){ m.className="msg err"; m.textContent="Card form isn't ready — please refresh."; return; }
-  $("#mPay").disabled=true; m.className="msg ok"; m.textContent="Processing…";
-  let token="";
+  let token;
   if(due>0){
-    try{ const r=await card.tokenize(eventCardVerificationDetails()); if(r.status!=="OK"){ m.className="msg err"; m.textContent="Please check your card details."; $("#mPay").disabled=false; return; } token=r.token; }
-    catch(e){ m.className="msg err"; m.textContent="Card error — try again."; $("#mPay").disabled=false; return; }
+    if(!card){ const m=$("#mMsg"); if(m){ m.className="msg err"; m.textContent="The card form is still loading — one moment."; } return; }
+    e.target.disabled=true;
+    try{
+      const r=await card.tokenize();
+      if(r.status!=="OK"){ throw new Error((r.errors&&r.errors[0]&&r.errors[0].message)||"Please check your card details."); }
+      token=r.token;
+    }catch(err){
+      const m=$("#mMsg"); if(m){ m.className="msg err"; m.textContent=err.message||"Please check your card details."; }
+      e.target.disabled=false; return;
+    }
   }
   await submitEvent(token);
-};
+});
+
+function syncWalletOr(){
+  const w=document.getElementById("wallets"), o=document.getElementById("walletOr");
+  if(w&&o) o.style.display=(w.style.display==="none")?"none":"";
+}
 
 function esc(s){return (s||"").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
 function escAttr(s){return (s||"").replace(/"/g,"&quot;");}
