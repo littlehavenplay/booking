@@ -46,7 +46,7 @@
   .past .pc .pt{padding:8px 10px;font-weight:700;font-size:.85rem}
   .past .pc .pw{padding:0 10px 10px;color:var(--taupe);font-size:.76rem;font-weight:700}
   .empty{background:#fff;border:1px dashed #e0d5c7;border-radius:18px;padding:28px;text-align:center;color:var(--slate);font-weight:600}
-  .modal{position:fixed;inset:0;background:rgba(42,38,34,.5);display:none;align-items:center;justify-content:center;z-index:50;padding:16px}
+  .modal{position:fixed;inset:0;background:rgba(42,38,34,.5);display:none;align-items:center;justify-content:center;z-index:10000;padding:16px}
   .modal.open{display:flex}
   .sheet{background:#fff;border-radius:20px;max-width:440px;width:100%;padding:22px;max-height:92vh;overflow:auto}
   label{display:block;font-size:.66rem;font-weight:800;color:var(--taupe);text-transform:uppercase;letter-spacing:.08em;margin:12px 0 5px}
@@ -471,5 +471,6 @@ function esc(s){return (s||"").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
 function escAttr(s){return (s||"").replace(/"/g,"&quot;");}
 </script>
 <script>if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("/sw.js").catch(function(){});});}</script><script src="/assets/phone-format.js" defer></script>
+<script src="/assets/chat.js" defer></script>
 </body>
 </html>

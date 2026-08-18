@@ -353,6 +353,7 @@ window.loEditFromList=function(code){
     +'<div><label style="font-size:.72rem">Punches (0\u20137)</label><input type="number" id="editPunches-'+code+'" min="0" max="7" value="'+(c.punches!=null?c.punches:0)+'"></div>'
     +'</div>'
     +'<div><label style="font-size:.72rem">Family phone (last 4) <span style="font-weight:400;color:var(--taupe);text-transform:none">\u2014 which family this card is grouped under</span></label><input type="text" id="editPhone4-'+code+'" maxlength="4" placeholder="e.g. 5911" value="'+esc(c.phone4||"")+'"></div>'
+    +'<div style="margin-top:8px"><label style="font-size:.72rem">Email for their code <span style="font-weight:400;color:var(--taupe);text-transform:none">\u2014 where the free-visit reward &amp; reminders are sent (e.g. a babysitter\u2019s email)</span></label><input type="email" id="editEmail-'+code+'" placeholder="parent-or-caregiver@email.com" value="'+esc(c.email||"")+'"></div>'
     +'<p class="note" style="margin-top:2px">Change this if a card ended up grouped with the wrong family. The card\'s code, punches, waiver, and history all stay exactly as they are \u2014 only which family it\'s linked to changes.</p>'
     +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">'
     +'<button type="button" onclick="loSaveEdit(\''+code+'\')" style="margin:0">\uD83D\uDCBE Save changes</button>'
@@ -367,6 +368,9 @@ window.loSaveEdit=async function(code){
   const editFirst=document.getElementById("editFirst-"+code).value.trim(), editLast=document.getElementById("editLast-"+code).value.trim();
   const dob=document.getElementById("editDob-"+code).value, punchesRaw=document.getElementById("editPunches-"+code).value;
   const phone4Raw=document.getElementById("editPhone4-"+code).value.trim();
+  const editEmail=(document.getElementById("editEmail-"+code)||{}).value;
+  const editEmailTrim=(editEmail||"").trim();
+  if(editEmailTrim && !/^\S+@\S+\.\S+$/.test(editEmailTrim)){ out.className="out err"; out.textContent="Enter a valid email (or leave it blank)."; return; }
   if(phone4Raw && !/^\d{4}$/.test(phone4Raw)){ out.className="out err"; out.textContent="Family phone must be exactly 4 digits."; return; }
   const body={key,action:"adjust",code};
   if(editFirst) body.editFirst=editFirst;
@@ -374,12 +378,13 @@ window.loSaveEdit=async function(code){
   if(dob) body.dob=dob;
   if(punchesRaw!=="") body.setPunches=parseInt(punchesRaw,10);
   if(phone4Raw) body.editPhone4=phone4Raw;
+  if(editEmail!==undefined) body.email=editEmailTrim;
   try{
     const r=await (await fetch("/api/loyalty",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)})).json();
     if(r.ok){
-      out.className="out ok"; out.innerHTML="\u2705 Saved \u2014 <b>"+esc(r.childName||code)+"</b>, <b>"+r.punches+"/"+r.needed+"</b> punches"+(r.dob?", birthday "+esc(r.dob):"")+(phone4Raw?", family phone \u2022\u2022\u2022"+esc(r.phone4):"")+".";
+      out.className="out ok"; out.innerHTML="\u2705 Saved \u2014 <b>"+esc(r.childName||code)+"</b>, <b>"+r.punches+"/"+r.needed+"</b> punches"+(r.dob?", birthday "+esc(r.dob):"")+(phone4Raw?", family phone \u2022\u2022\u2022"+esc(r.phone4):"")+(r.email?", email "+esc(r.email):"")+".";
       var c=LOYALTY.find(function(x){return x.code===code;});
-      if(c){ c.childName=r.childName; c.punches=r.punches; c.dob=r.dob; c.phone4=r.phone4; renderLoyaltyList(); }
+      if(c){ c.childName=r.childName; c.punches=r.punches; c.dob=r.dob; c.phone4=r.phone4; c.email=r.email; renderLoyaltyList(); }
     }
     else { out.className="out err"; out.textContent=r.error||"Couldn't save."; }
   }catch(e){ out.className="out err"; out.textContent="Network error."; }
@@ -532,11 +537,23 @@ function waiverBadge(expiry){
 }
 window.adjustPunch=async function(code,delta){
   var c=LOYALTY.find(function(x){return x.code===code;}); if(!c)return;
-  var nv=Math.max(0,Math.min(c.needed||7,(c.punches||0)+delta));
   var key=KEY; if(!key){alert("Enter your admin key (top of page).");return;}
   try{
-    var r=await (await fetch("/api/loyalty",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key,action:"adjust",code,setPunches:nv})})).json();
-    if(r.ok){c.punches=r.punches;renderLoyaltyList();}else alert(r.error||"Couldn't adjust.");
+    var r;
+    if(delta>0){
+      // "+" is a REAL visit → punch it (records today's date & time in visit history, like a check-in)
+      r=await (await fetch("/api/loyalty",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key,action:"punch",code:code})})).json();
+    } else {
+      // "−" is a count correction only — it does not add or remove a visit record
+      var nv=Math.max(0,Math.min(c.needed||7,(c.punches||0)+delta));
+      r=await (await fetch("/api/loyalty",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key,action:"adjust",code:code,setPunches:nv})})).json();
+    }
+    if(r.ok){
+      c.punches=r.punches;
+      if(delta>0){ c.totalVisits=(c.totalVisits||0)+1; if(r.rewardIssued)c.rewardsEarned=(c.rewardsEarned||0)+1; }
+      renderLoyaltyList();
+      if(delta>0 && r.rewardIssued) alert("🎉 "+(r.childName||"")+" earned a FREE visit! Reward code "+r.rewardCode+" emailed.");
+    } else alert(r.error||"Couldn't update.");
   }catch(e){alert("Network error.");}
 };
 window.setWaiver=async function(phone4,code,dateVal){
@@ -663,5 +680,6 @@ window.removeWaiverAdult=async function(phone4,code,idx){
 
 </script>
 <script src="/assets/phone-format.js" defer></script>
+<script src="/assets/chat.js" defer></script>
 </body>
 </html>

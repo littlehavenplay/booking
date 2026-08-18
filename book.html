@@ -39,9 +39,34 @@
   .step{font-family:'Cormorant Garamond',serif;font-weight:500;font-size:1.25rem;margin:0 0 14px;display:flex;align-items:center;gap:10px;color:var(--charcoal);}
   .step .n{width:26px;height:26px;border-radius:50%;background:var(--rose);color:#fff;display:grid;place-items:center;font-size:.8rem;font-family:'Nunito';font-weight:800;flex:none;}
   label.fld{display:block;font-size:.66rem;font-weight:800;color:var(--taupe);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;}
-  input[type=date],input[type=text],input[type=email]{width:100%;border:1.5px solid #e7ddd0;border-radius:12px;
+  input[type=date],input[type=text],input[type=email],input[type=tel],input[type=number],select,textarea{width:100%;border:1.5px solid #e7ddd0;border-radius:12px;
     padding:12px 13px;font-family:'Nunito';font-weight:600;font-size:.95rem;background:#fcfaf6;outline:none;color:var(--charcoal);}
-  input:focus{border-color:var(--rose);}
+  input:focus{border-color:var(--rose);box-shadow:0 0 0 3px rgba(201,125,118,.13);}
+  .req{display:inline-block;margin-left:6px;font-size:.66rem;font-weight:900;letter-spacing:.04em;
+    text-transform:uppercase;color:var(--rose-deep);background:var(--blush-pale);
+    border:1px solid var(--blush);border-radius:999px;padding:2px 8px;vertical-align:middle;}
+  .step .req{margin-left:8px;}
+  .opt{display:inline-block;margin-left:6px;font-size:.66rem;font-weight:800;letter-spacing:.04em;
+    text-transform:uppercase;color:var(--taupe);background:#f6f2ec;border:1px solid var(--line);
+    border-radius:999px;padding:2px 8px;vertical-align:middle;}
+  .is-missing input,.is-missing select,.is-missing textarea,input.is-missing,select.is-missing{
+    border-color:var(--red)!important;background:#fdf5f4!important;}
+  .is-missing input:focus,input.is-missing:focus{box-shadow:0 0 0 3px rgba(184,82,74,.15)!important;}
+  .card.is-missing{box-shadow:0 0 0 2px rgba(184,82,74,.35),var(--shadow);}
+  .fieldnote{display:none;margin:6px 0 0;font-size:.82rem;font-weight:700;color:var(--red);line-height:1.45;}
+  .fieldnote.on{display:block;}
+  #wallets{border:1.5px solid var(--line);border-radius:16px;padding:14px;
+    background:linear-gradient(180deg,#fffdfa,#fbf7f1);}
+  .wallet-head{display:flex;align-items:center;gap:10px;margin:0 0 11px;font-size:.72rem;font-weight:900;
+    letter-spacing:.09em;text-transform:uppercase;color:var(--taupe);}
+  .wallet-head::before,.wallet-head::after{content:"";flex:1;height:1px;background:var(--line);}
+  #apple-pay-button{-webkit-appearance:-apple-pay-button;appearance:-apple-pay-button;
+    -apple-pay-button-type:pay;-apple-pay-button-style:black;height:50px;border-radius:14px;
+    cursor:pointer;width:100%;border:0;padding:0;}
+  #google-pay-button{min-height:50px;}
+  #google-pay-button>div,#wallets .gpay-card-info-container{border-radius:14px!important;overflow:hidden;}
+  .wallet-or{text-align:center;color:var(--taupe);font-size:.78rem;font-weight:800;
+    letter-spacing:.05em;margin:13px 0 3px;}
   .row{display:flex;gap:12px;}.row>*{flex:1;}
   .slots{display:flex;flex-direction:column;gap:10px;}
   .slot{display:flex;align-items:center;justify-content:space-between;gap:10px;border:1.5px solid #e7ddd0;
@@ -95,7 +120,9 @@
   .banner{background:var(--blush-pale);color:var(--rose-deep);font-weight:700;font-size:.82rem;border-radius:12px;padding:11px 13px;margin-bottom:14px;}
   .hidden{display:none!important;}
 </style>
-<link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#7a6253"><link rel="apple-touch-icon" href="/assets/icons/apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="Little Haven"><link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32.png"></head>
+<link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#7a6253"><link rel="apple-touch-icon" href="/assets/icons/apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="Little Haven"><link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32.png"><script src="/assets/square-wallets.js"></script>
+<style>#apple-pay-button{-webkit-appearance:-apple-pay-button;appearance:-apple-pay-button;-apple-pay-button-type:pay;-apple-pay-button-style:black;height:48px;border-radius:12px;cursor:pointer;width:100%}#wallets .gpay-card-info-container,#wallets>div{border-radius:12px}</style>
+</head>
 <body>
 <div class="topbar"><a class="name" href="/index.html" style="text-decoration:none;color:inherit">Little <em>Haven</em> Play Studio</a><a href="/index.html">← Back to site</a></div>
 <div class="wrap">
@@ -103,7 +130,7 @@
     <div class="logo">🎈</div>
     <div><h1 id="studio">Little Haven Play Studio</h1></div>
   </div>
-  <div class="sub">Book Open Play · each arrival time holds up to <b id="capTxt">6</b> children.</div>
+  <div class="sub">Book Open Play · each hour holds up to <b id="capTxt">6</b> children.</div>
   <div style="background:#a85f59;color:#fff;text-align:center;padding:10px 16px;border-radius:12px;font-weight:800;font-size:.85rem;margin:10px 0 4px">🧦 Grip socks are required for all children and must cover most of the bottom surface of the foot to be accepted.</div>
 
   <div id="setupBanner" class="banner hidden">⚙️ Demo mode — Square keys aren't set yet, so payment won't complete until configured.</div>
@@ -115,19 +142,19 @@
 
   <div id="form">
     <div class="card">
-      <p class="step"><span class="n">1</span> Pick a date</p>
+      <p class="step"><span class="n">1</span> Pick a date <span class="req">Required</span></p>
       <input type="date" id="date">
     </div>
 
     <div class="card">
-      <p class="step"><span class="n">2</span> Choose your arrival time</p>
+      <p class="step"><span class="n">2</span> Choose your arrival time <span class="req">Required</span></p>
       <p style="margin:-4px 0 6px;font-size:.84rem;color:var(--ink-soft);font-weight:600">💛 Pick when you'll arrive — your 2 hours start then. A few minutes late is always okay; the times just help us keep the room comfy.</p>
       <p id="closeLine" style="margin:0 0 10px;font-size:.8rem;color:var(--rose-deep);font-weight:700">🕒 We close at 3:00 PM (4:00 PM Fri & Sat) · closed Mondays · last admission 1 hour before close.</p>
       <div class="slots" id="slots"><div class="note">Pick a date to see availability…</div></div>
     </div>
 
     <div class="card">
-      <p class="step"><span class="n">3</span> Who's coming?</p>
+      <p class="step"><span class="n">3</span> Who's coming? <span class="req">Required</span></p>
       <div style="background:#fdf5ee;border:1px solid #f0e2d2;border-radius:12px;padding:11px 14px;margin:0 0 14px;font-size:.85rem;color:#5c6470;line-height:1.6">✨ <b>Our play area is designed for children ages 0–6 or 48" tall</b> (whichever comes first). Only children within that range may play in the play area. Older children &amp; teens are welcome to hang out in the lobby with family, but can't play in the play area or act as the supervising adult. A parent/guardian 18+ must supervise at all times.</div>
       <div class="qty">
         <div><div class="lab">Regular admission <span style="color:var(--ink-soft);font-weight:700">(18 months+ · 2 adults included)</span></div><div class="pr" id="regPr">$25 each</div></div>
@@ -176,31 +203,34 @@
     </div>
 
     <div class="card">
-      <p class="step"><span class="n">4</span> Your details</p>
+      <p class="step"><span class="n">4</span> Your details <span class="req">Required</span></p>
       <div class="row" style="margin-bottom:12px">
-        <div><label class="fld">Name</label><input type="text" id="name" placeholder="Full name (required)"></div>
+        <div><label class="fld">Name <span class="req">Required</span></label><input type="text" id="name" placeholder="Full name" autocomplete="name"><p class="fieldnote" id="err-name">Please enter your full name.</p></div>
       </div>
-      <label class="fld">Email (for your receipt)</label>
-      <input type="email" id="email" placeholder="you@email.com">
-      <label class="fld" style="margin-top:12px">Phone number <span style="color:var(--ink-soft);font-weight:600">(required — sets up your child's free punch card 🎈)</span></label>
-      <input type="tel" id="phone" placeholder="(760) 555-1234" required>
+      <label class="fld">Email (for your receipt) <span class="req">Required</span></label>
+      <input type="email" id="email" placeholder="you@email.com" autocomplete="email" inputmode="email">
+      <p class="fieldnote" id="err-email">Please enter a valid email address.</p>
+      <label class="fld" style="margin-top:12px">Phone number <span class="req">Required</span><span style="color:var(--ink-soft);font-weight:600;display:block;margin-top:3px">Sets up your child's free punch card 🎈</span></label>
+      <input type="tel" id="phone" placeholder="(760) 555-1234" autocomplete="tel" inputmode="tel" required>
+      <p class="fieldnote" id="err-phone">Please enter a 10-digit phone number.</p>
       <div id="childNamesWrap" style="margin-top:14px;display:none">
         <label class="fld">Who's playing? <span style="color:var(--ink-soft);font-weight:600">(first &amp; last name of each child — this sets up their free Loyalty Punch Card 🎈)</span></label>
         <div id="childNames"></div>
-        <p style="margin:8px 0 0;font-size:.82rem;color:var(--ink-soft);font-weight:600;line-height:1.5">🎂 <b>Birthday (optional)</b> — get a free admission on their big day!</p>
+        <p style="margin:8px 0 0;font-size:.82rem;color:var(--ink-soft);font-weight:600;line-height:1.5">🎂 <b>Birthday (optional)</b> — we'll gift <b>one</b> free Open Play admission, good for a <b>single visit</b> on any one open day during their birthday week (Sun–Sat).</p>
       </div>
     </div>
 
     <div class="card">
-      <p class="step"><span class="n">5</span> Cancellation &amp; refund policy</p>
+      <p class="step"><span class="n">5</span> Cancellation &amp; refund policy <span class="req">Required</span></p>
       <div class="policy" id="policy"></div>
-      <label class="agree"><input type="checkbox" id="agree"> I have read and agree to the cancellation &amp; refund policy.</label>
+      <label class="agree"><input type="checkbox" id="agree"> I have read and agree to the cancellation &amp; refund policy. <span class="req">Required</span></label>
+      <p class="fieldnote" id="err-agree">Please tick the box to agree to the policy.</p>
     </div>
 
     <details class="code-collapse" style="margin:0 0 18px">
     <summary style="cursor:pointer;list-style:none;background:#fff;border-radius:16px;padding:16px 20px;font-weight:800;color:var(--ink);box-shadow:0 2px 10px rgba(0,0,0,.04)">🎟️ Have a code, gift card, or credit? <span style="font-weight:600;color:var(--ink-soft);font-size:.85rem">(tap to open)</span></summary>
     <div class="card">
-      <p class="step"><span class="n">6</span> Legacy prepaid punch card</p>
+      <p class="step"><span class="n">6</span> Legacy prepaid punch card <span class="opt">Optional</span></p>
       <div class="gc-toggle">
         <span style="font-weight:700">Using a legacy prepaid punch card?</span>
         <div class="seg">
@@ -288,21 +318,27 @@
 
     <div class="card">
       <p class="step"><span class="n">🎈</span> Free admission / reward code</p>
-      <div class="note" style="margin-bottom:8px">Earned your 8th visit, got a classroom code, or received a 🎂 birthday reward? Enter that code here — it makes one child's admission free. Birthday rewards are emailed to you about a week before your child's big day.</div>
+      <div class="note" style="margin-bottom:8px">Earned your 8th visit, got a classroom code, or received a 🎂 birthday reward? Enter that code here — it makes one child's admission free. A birthday reward is emailed about a week before your child's birthday and is good for <b>one single Open Play visit</b> on any one open day that birthday week (Sunday–Saturday).</div>
       <input type="text" id="rewardCode" placeholder="Reward code (e.g. FREE1234 or BDAYXXXX)" style="text-transform:uppercase;width:100%">
       <div id="rewardMsg" style="margin-top:6px;font-size:.85rem;display:none"></div>
       <div class="note" style="margin-top:6px">Applied automatically at checkout — you'll see it subtracted from your total below. One-time use · can't be combined with a % off discount code.</div>
     </div>
 
     <div class="card">
-      <p class="step"><span class="n">9</span> Payment</p>
+      <p class="step"><span class="n">9</span> Payment <span class="req">Required</span></p>
       <div id="paySummary" class="pay-summary hidden"></div>
+      <div id="wallets" style="display:none;margin-bottom:10px">
+        <p class="wallet-head">Express checkout</p>
+        <button type="button" id="apple-pay-button" aria-label="Pay with Apple Pay" style="display:none"></button>
+        <div id="google-pay-button" style="min-height:50px;margin-top:9px"></div>
+      </div>
+      <div class="wallet-or" id="walletOr" style="display:none">or pay with a card</div>
       <div id="card-wrap">
         <div id="card-container"></div>
       </div>
       <button class="pay" id="pay" disabled>Reserve &amp; Pay</button>
       <div class="msg" id="msg"></div>
-      <div class="note">Payments are processed securely by Square. Your card details never touch this site's server.</div>
+      <div class="note">💳 We accept <b>Apple Pay</b>, <b>Google Pay</b>, and all major credit &amp; debit cards. Payments are processed securely by Square — your card details never touch this site's server.</div>
     </div>
   </div>
 
@@ -338,11 +374,11 @@ async function init(){
     studioName:"Little Haven Play Studio",
     closedDates:[],closedMessage:"Temporarily closed for improvements",
     policyTitle:"Open Play Booking Cancellation & Refund Policy",
-    policyLines:["Open Play bookings are prepaid. If you're unable to attend, email hello@littlehavenplay.com and we'll do our best to issue a store credit toward a future visit (typically valid for 30 days).","If you do not show up within one hour of your reserved time, we will automatically issue a courtesy store credit for the full amount paid, valid for 14 days from issuance."],
+    policyLines:["Open Play bookings are prepaid.","If you do not show up within one hour of your reserved time, we will automatically issue a courtesy store credit for the full amount paid, valid for 14 days from issuance."],
     slots:[{id:"arr09",label:"9:00 AM"},{id:"arr10",label:"10:00 AM"},{id:"arr11",label:"11:00 AM"},{id:"arr12",label:"12:00 PM"},{id:"arr13",label:"1:00 PM"}]}; }
 
   $("#date").min=todayStr();   // no booking in the past
-  const _win=(CFG && CFG.bookingWindowDays) ? CFG.bookingWindowDays : 14;
+  const _win=(CFG && CFG.bookingWindowDays) ? CFG.bookingWindowDays : 7;
   const _mx=new Date(); _mx.setMinutes(_mx.getMinutes()-_mx.getTimezoneOffset()); _mx.setDate(_mx.getDate()+_win);
   $("#date").max=_mx.toISOString().slice(0,10);   // open play only up to the window
 
@@ -414,7 +450,7 @@ async function checkPass(n){
     if(r.ok){
       state.vp[idx]={code,admission:r.admission,visits:r.visitsRemaining,ok:true};
       const type=r.admission==="infant"?"Baby/Infant":"Regular";
-      el.className="gc-bal ok"; el.textContent=`${type} pass · ${r.visitsRemaining} visit${r.visitsRemaining===1?"":"s"} left`;
+      el.className="gc-bal ok"; el.textContent=r.visits?(`${type} pass · ${r.visitsRemaining} of ${r.visits} visits left`):(`${type} pass · ${r.visitsRemaining} visit${r.visitsRemaining===1?"":"s"} left`);
     }else{
       el.className="gc-bal bad"; el.textContent=r.error||"Not valid.";
     }
@@ -482,6 +518,12 @@ async function loadAvailability(){
     n.className="note"; n.style.cssText="background:#fdf1ec;color:#a85f59;border-radius:11px;padding:10px 13px;font-weight:700;margin-bottom:10px";
     n.textContent="⏰ "+data.notice;
     host.appendChild(n);
+  }
+  if(data.specialEvent && data.specialEvent.message){
+    const se=document.createElement("div");
+    se.style.cssText="background:#efe6f5;color:#6d4b86;border:1px solid #d9c7e6;border-radius:11px;padding:11px 14px;font-weight:700;margin-bottom:10px;line-height:1.4";
+    se.innerHTML='\u2728 '+data.specialEvent.message.replace('Events/Promotions tab','<a href="/events.html" style="color:#6d4b86;text-decoration:underline">Events/Promotions tab</a>');
+    host.appendChild(se);
   }
   const daySlots=data.slots||CFG.slots;
   daySlots.forEach(s=>{
@@ -601,13 +643,14 @@ async function cnLookupCode(row, code){
       row.querySelector(".cn-f").value=parts[0]||""; row.querySelector(".cn-l").value=parts.slice(1).join(" ")||"";
       cnSetReadonly(row,true,r.hasDob);
       row.dataset.military=r.militaryVerified?"1":"0";
+      const _prog=(typeof r.punches==="number")?(" \u00b7 "+r.punches+"/"+r.needed+" visits \u2014 your 8th is free! \ud83c\udf88"):"";
       const dInp=row.querySelector(".cn-d");
       if(r.hasDob){
         dInp.value=""; dInp.style.borderColor=""; dInp.placeholder="🔒 Birthday on file";
-        msg.style.color="#3f7d54"; msg.textContent="✓ Found: "+(r.childName||"")+" — birthday on file"+(r.militaryVerified?" · 🎖️ Military discount eligible":"");
+        msg.style.color="#3f7d54"; msg.textContent="✓ Found: "+(r.childName||"")+" — birthday on file"+(r.militaryVerified?" · 🎖️ Military discount eligible":"")+_prog;
       } else {
         dInp.value=""; dInp.style.borderColor=""; dInp.placeholder="Add their birthday mm/dd/yyyy (optional)";
-        msg.style.color="#3f7d54"; msg.textContent="✓ Found: "+(r.childName||"")+" — no birthday on file yet, add one below if you'd like 🎂"+(r.militaryVerified?" · 🎖️ Military discount eligible":"");
+        msg.style.color="#3f7d54"; msg.textContent="✓ Found: "+(r.childName||"")+" — no birthday on file yet, add one below if you'd like 🎂"+(r.militaryVerified?" · 🎖️ Military discount eligible":"")+_prog;
       }
       updateTotals();
     } else {
@@ -742,6 +785,11 @@ function updateTotals(){
   $("#leftNote").style.color = ok ? "var(--ink-soft)" : "var(--red)";
   // Card only required when there's a remaining balance to charge.
   state.cardDue=cardDue;
+  if(window.__lhWallets){
+    const w=document.getElementById("wallets");
+    if(w) w.style.display=(cardDue>0 && window.__lhWallets.any)?"":"none";
+    if(cardDue!==window.__lhLastAmt){ window.__lhLastAmt=cardDue; Promise.resolve(window.__lhWallets.refresh()).then(syncWalletOr).catch(syncWalletOr); }
+  }
   const cardOk = cardDue<=0 || !!card;
   $("#card-wrap").style.display = cardDue>0 ? "" : "none";
   $("#pay").disabled = !ok || !cardOk;
@@ -776,31 +824,115 @@ async function initSquare(){
     payments=window.Square.payments(CFG.applicationId, CFG.locationId);
     card=await payments.card();
     await card.attach("#card-container");
+    try{
+      window.__lhWallets = await window.initSquareWallets({
+        payments,
+        wrapEl: document.getElementById("wallets"),
+        applePayEl: document.getElementById("apple-pay-button"),
+        googlePayEl: document.getElementById("google-pay-button"),
+        getAmount: ()=> (((state.cardDue||0)/100)).toFixed(2),
+        label: "Little Haven Play Studio",
+        referenceId: "open-play",
+        validate: ()=> checkoutFormValid(),
+        onToken: async (token)=>{ const pb=$("#pay"); if(pb)pb.disabled=true; await submitBooking(token); },
+      });
+    }catch(e){}
     updateTotals();
   }catch(e){ showMsg("Couldn't load the card form. Check your Square keys.","err"); }
 }
 
-function showMsg(t,kind){const m=$("#msg");m.textContent=t;m.className="msg "+kind;}
+// One stable id per checkout attempt. Square de-duplicates on a key derived from
+// this, so a retry or double-tap returns the original payment instead of charging
+// twice. A failed attempt gets a fresh id so a real retry still goes through.
+let lhAttemptId = (self.crypto && crypto.randomUUID) ? crypto.randomUUID()
+                : String(Date.now()) + Math.random().toString(36).slice(2);
+function newAttempt(){
+  lhAttemptId = (self.crypto && crypto.randomUUID) ? crypto.randomUUID()
+              : String(Date.now()) + Math.random().toString(36).slice(2);
+}
 
-async function pay(){
-  const cardNeeded = (state.cardDue||0) > 0;
-  if(cardNeeded && !card){ showMsg("Card form not ready.","err"); return; }
-  $("#pay").disabled=true; showMsg("Processing…","ok");
+function showMsg(t,kind){const m=$("#msg");m.textContent=t||"";m.className="msg "+(kind||"");}
 
-  let token="";
-  if(cardNeeded){
-    try{
-      const r=await card.tokenize();
-      if(r.status!=="OK"){ showMsg("Please check your card details.","err"); $("#pay").disabled=false; return; }
-      token=r.token;
-    }catch(e){ showMsg("Card error — try again.","err"); $("#pay").disabled=false; return; }
+// Clear a highlight as soon as the visitor starts fixing that field.
+function lhClearOne(el){
+  if(!el) return;
+  el.classList.remove("is-missing");
+  var c=el.closest(".card"); if(c) c.classList.remove("is-missing");
+  var n=document.getElementById("err-"+el.id); if(n) n.classList.remove("on");
+}
+["input","change"].forEach(function(evt){
+  document.addEventListener(evt, function(e){
+    if(e.target && ["name","email","phone","agree","date"].indexOf(e.target.id)>-1) lhClearOne(e.target);
+  });
+});
+
+// Keep the "or pay with a card" divider in step with the wallet block.
+function syncWalletOr(){
+  var w=document.getElementById("wallets"), o=document.getElementById("walletOr");
+  if(w&&o) o.style.display=(w.style.display==="none")?"none":"";
+}
+
+function clearFieldErrors(){
+  document.querySelectorAll(".is-missing").forEach(function(el){ el.classList.remove("is-missing"); });
+  document.querySelectorAll(".fieldnote.on").forEach(function(el){ el.classList.remove("on"); });
+}
+
+// Highlight whatever is blocking checkout, show its inline note, outline the card
+// it lives in, and scroll to it so nobody has to hunt for the missing bit.
+function flagField(sel, msg){
+  var el = sel ? document.querySelector(sel) : null;
+  if(el){
+    el.classList.add("is-missing");
+    var card = el.closest(".card"); if(card) card.classList.add("is-missing");
+    var note = document.getElementById("err-" + el.id);
+    if(note){ if(msg) note.textContent = msg; note.classList.add("on"); }
+    try{ (card||el).scrollIntoView({behavior:"smooth", block:"center"}); }catch(_){ }
+    if(el.focus && el.type !== "checkbox"){ try{ el.focus({preventScroll:true}); }catch(_){ } }
   }
+  showMsg(msg, "err");
+}
 
-  const giftCards=state.useGift ? state.gc.filter(g=>g.ok && g.gan).map(g=>g.gan) : [];
-  const visitPasses=state.useVP ? state.vp.filter(p=>p.ok && p.code).map(p=>p.code) : [];
-  const promoCode=state.usePromo && state.promo.ok ? state.promo.code : "";
-  const discountCode=(state.useDisc && state.disc.ok) ? state.disc.code : "";
-  const rewardCode=(($("#rewardCode")||{}).value||"").trim().toUpperCase();
+function checkoutFormValid(){
+  clearFieldErrors();
+  const kids=state.reg+state.sib+state.inf;
+  const a=state.slot?state.avail[state.slot]:null;
+  const phoneDigits=(($("#phone")||{}).value||"").replace(/\D/g,"");
+
+  if(state.closed){ showMsg(CFG.closedMessage||"Temporarily closed","err"); return false; }
+  if(!state.date){ flagField("#date","Pick a date to get started."); return false; }
+  if(!state.slot){ flagField("#slots","Choose an arrival time above."); return false; }
+  if(kids<1){ flagField("#regPr","Add at least one child."); return false; }
+  if(state.sib>0 && state.reg<1){ flagField("#regPr","A sibling add-on needs at least one regular admission."); return false; }
+  if(a && kids>a.remaining){ flagField("#slots",`Only ${a.remaining} spot${a.remaining===1?"":"s"} left at that time.`); return false; }
+  if(!$("#name").value.trim()){ flagField("#name","Please enter your full name."); return false; }
+  if(!/^\S+@\S+\.\S+$/.test($("#email").value.trim())){ flagField("#email","Please enter a valid email address."); return false; }
+  if(phoneDigits.length<10){ flagField("#phone","Please enter a 10-digit phone number."); return false; }
+  if(!$("#agree").checked){ flagField("#agree","Please tick the box to agree to the policy."); return false; }
+
+  const ok=!!collectBooking();
+  if(ok) showMsg("","");
+  return ok;
+}
+
+function cardVerificationDetails(amountCents){
+  const full=$("#name").value.trim().split(/\s+/);
+  return {
+    amount:(Math.max(0,amountCents||0)/100).toFixed(2),
+    billingContact:{
+      givenName:full[0]||"",
+      familyName:full.slice(1).join(" ")||"",
+      email:$("#email").value.trim(),
+      phone:(($("#phone")||{}).value||"").trim(),
+      countryCode:"US"
+    },
+    currencyCode:"USD",
+    intent:"CHARGE",
+    customerInitiated:true,
+    sellerKeyedIn:false
+  };
+}
+
+function collectBooking(){
   const childRows=[...document.querySelectorAll("#childNames .cn-row")]
     .map(r=>({
       first:r.querySelector(".cn-f").value.trim(), last:r.querySelector(".cn-l").value.trim(),
@@ -808,20 +940,31 @@ async function pay(){
       code:((r.querySelector(".cn-code")||{}).value||"").trim().toUpperCase(),
       admission:r.getAttribute("data-type")||"",
     }));
-  if(childRows.some(c=>!c.first||!c.last)){ showMsg("Please enter each child's first AND last name — the last name is required so we can set up their punch card.","err"); const pb=$("#pay"); if(pb)pb.disabled=false; return; }
-  if((($("#phone")||{}).value||"").replace(/\D/g,"").length<10){ showMsg("Please enter your phone number — it's how we set up and find your child's free Loyalty Punch Card, and how you're automatically punched in at check-in.","err"); const pb=$("#pay"); if(pb)pb.disabled=false; return; }
+  if(childRows.some(c=>!c.first||!c.last)){ showMsg("Please enter each child's first AND last name — the last name is required so we can set up their punch card.","err"); return null; }
+  if((($("#phone")||{}).value||"").replace(/\D/g,"").length<10){ showMsg("Please enter your phone number — it's how we set up and find your child's free Loyalty Punch Card, and how you're automatically punched in at check-in.","err"); return null; }
   const badDob=childRows.find(c=>c.dobRaw&&!isValidDob(c.dobRaw));
-  if(badDob){ showMsg("Please check the birthday for "+(badDob.first||"your child")+" — use mm/dd/yyyy (for example 04/09/2021), or leave it blank.","err"); const pb=$("#pay"); if(pb)pb.disabled=false; return; }
-  const childNames=childRows.filter(c=>c.first&&c.last).map(c=>({
+  if(badDob){ showMsg("Please check the birthday for "+(badDob.first||"your child")+" — use mm/dd/yyyy (for example 04/09/2021), or leave it blank.","err"); return null; }
+  return childRows.filter(c=>c.first&&c.last).map(c=>({
     first:c.first, last:c.last, dob:dobToISO(c.dobRaw), code:c.code, admission:c.admission,
   }));
+}
 
+async function submitBooking(token){
+  const childNames=collectBooking();
+  if(!childNames){ const pb=$("#pay"); if(pb)pb.disabled=false; return; }
+  showMsg("Processing…","ok");
+  const giftCards=state.useGift ? state.gc.filter(g=>g.ok && g.gan).map(g=>g.gan) : [];
+  const visitPasses=state.useVP ? state.vp.filter(p=>p.ok && p.code).map(p=>p.code) : [];
+  const promoCode=state.usePromo && state.promo.ok ? state.promo.code : "";
+  const discountCode=(state.useDisc && state.disc.ok) ? state.disc.code : "";
+  const rewardCode=(($("#rewardCode")||{}).value||"").trim().toUpperCase();
   try{
     const res=await fetch("/api/book",{method:"POST",headers:{"content-type":"application/json"},
       body:JSON.stringify({date:state.date,slot:state.slot,name:$("#name").value,email:$("#email").value,
         phone:($("#phone")||{}).value||"",childNames,
         regular:state.reg,sibling:state.sib,infant:state.inf,totalAdults:state.ad,
-        sourceId:token,giftCards,visitPasses,promoCode,discountCode,rewardCode})});
+        sourceId:token,giftCards,visitPasses,promoCode,discountCode,rewardCode,
+        attemptId:lhAttemptId})});
     const data=await res.json();
     if(res.ok && data.ok){
       const label=(CFG.slots.find(s=>s.id===state.slot)||{}).label||state.slot;
@@ -841,11 +984,27 @@ async function pay(){
       window.scrollTo({top:0,behavior:"smooth"});
     } else if(res.status===409){
       showMsg(data.message||"That time just filled up.","err"); if(data.error==="full") loadAvailability();
-      $("#pay").disabled=false;
+      $("#pay").disabled=false; newAttempt();
     } else {
-      showMsg(data.message||data.error||"Payment didn't go through.","err"); $("#pay").disabled=false;
+      showMsg(data.message||data.error||"Payment didn't go through.","err"); $("#pay").disabled=false; newAttempt();
     }
-  }catch(e){ showMsg("Network error — please try again.","err"); $("#pay").disabled=false; }
+  }catch(e){ showMsg("Network error — please try again.","err"); $("#pay").disabled=false; }   // keep the same attemptId: the charge may have landed, so a retry must de-duplicate
+}
+
+async function pay(){
+  const cardNeeded = (state.cardDue||0) > 0;
+  if(cardNeeded && !card){ showMsg("Card form not ready.","err"); return; }
+  if(!checkoutFormValid()) return;
+  $("#pay").disabled=true; showMsg("Processing…","ok");
+  let token="";
+  if(cardNeeded){
+    try{
+      const r=await card.tokenize(cardVerificationDetails(state.cardDue||0));
+      if(r.status!=="OK"){ showMsg("Please check your card details.","err"); $("#pay").disabled=false; return; }
+      token=r.token;
+    }catch(e){ showMsg("Card error — try again.","err"); $("#pay").disabled=false; return; }
+  }
+  await submitBooking(token);
 }
 
 async function checkReward(){
@@ -925,5 +1084,6 @@ init();
 })();
 </script>
 <script src="/assets/phone-format.js" defer></script>
+<script src="/assets/chat.js" defer></script>
 </body>
 </html>

@@ -29,7 +29,7 @@
   .sub{text-align:center;color:var(--slate);font-weight:600;font-size:.9rem;margin:4px 0 22px}
   h2.sec{font-family:'Cormorant Garamond',serif;font-weight:500;font-size:1.5rem;margin:26px 0 10px}
   .ev{background:#fff;border:1px solid rgba(0,0,0,.05);border-radius:20px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.07);margin-bottom:18px}
-  .ev img{width:100%;max-height:340px;object-fit:cover;display:block;background:#f1eadf}
+  .ev img{width:100%;height:auto;object-fit:contain;display:block;background:#f1eadf}
   .ev .body{padding:18px}
   .ev .ti{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:1.5rem;color:var(--rose-deep)}
   .ev .wh{font-weight:700;color:var(--slate);font-size:.9rem;margin:2px 0 8px}
@@ -46,36 +46,51 @@
   .past .pc .pt{padding:8px 10px;font-weight:700;font-size:.85rem}
   .past .pc .pw{padding:0 10px 10px;color:var(--taupe);font-size:.76rem;font-weight:700}
   .empty{background:#fff;border:1px dashed #e0d5c7;border-radius:18px;padding:28px;text-align:center;color:var(--slate);font-weight:600}
-  .modal{position:fixed;inset:0;background:rgba(42,38,34,.5);display:none;align-items:center;justify-content:center;z-index:50;padding:16px}
+  .modal{position:fixed;inset:0;background:rgba(42,38,34,.5);display:none;align-items:center;justify-content:center;z-index:10000;padding:16px}
   .modal.open{display:flex}
   .sheet{background:#fff;border-radius:20px;max-width:440px;width:100%;padding:22px;max-height:92vh;overflow:auto}
   label{display:block;font-size:.66rem;font-weight:800;color:var(--taupe);text-transform:uppercase;letter-spacing:.08em;margin:12px 0 5px}
   input,select{width:100%;border:1.5px solid #e7ddd0;border-radius:12px;padding:11px 13px;font-family:'Nunito';font-weight:600;font-size:.95rem;background:#fcfaf6;outline:none}
-  input:focus,select:focus{border-color:var(--rose)}
+  input:focus,select:focus{border-color:var(--rose);box-shadow:0 0 0 3px rgba(201,125,118,.13)}
+    .req{display:inline-block;margin-left:6px;font-size:.62rem;font-weight:900;letter-spacing:.04em;text-transform:uppercase;color:#a85f59;background:#fdf1ec;border:1px solid #efcfc4;border-radius:999px;padding:2px 7px;vertical-align:middle}
+    .opt{display:inline-block;margin-left:6px;font-size:.62rem;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--taupe);background:#f6f2ec;border:1px solid #ece3d6;border-radius:999px;padding:2px 7px;vertical-align:middle}
+    input.is-missing,select.is-missing{border-color:#b8524a!important;background:#fdf5f4!important}
+    input.is-missing:focus,select.is-missing:focus{box-shadow:0 0 0 3px rgba(184,82,74,.15)!important}
+    .fieldnote{display:none;margin:6px 0 0;font-size:.82rem;font-weight:700;color:#b8524a;line-height:1.45}
+    .fieldnote.on{display:block}
+    #wallets{border:1.5px solid #ece3d6;border-radius:16px;padding:13px;background:linear-gradient(180deg,#fffdfa,#fbf7f1);margin-top:12px}
+    .wallet-head{display:flex;align-items:center;gap:10px;margin:0 0 10px;font-size:.7rem;font-weight:900;letter-spacing:.09em;text-transform:uppercase;color:var(--taupe)}
+    .wallet-head::before,.wallet-head::after{content:"";flex:1;height:1px;background:#ece3d6}
+    #apple-pay-button{-webkit-appearance:-apple-pay-button;appearance:-apple-pay-button;-apple-pay-button-type:pay;-apple-pay-button-style:black;height:48px;border-radius:14px;cursor:pointer;width:100%;border:0;padding:0}
+    #google-pay-button{min-height:48px}
+    #google-pay-button>div,#wallets .gpay-card-info-container{border-radius:14px!important;overflow:hidden}
+    .wallet-or{text-align:center;color:var(--taupe);font-size:.76rem;font-weight:800;letter-spacing:.05em;margin:12px 0 2px}
   #card-container{border:1.5px solid #e7ddd0;border-radius:12px;padding:10px;background:#fcfaf6;margin-top:6px;min-height:46px}
   .msg{font-weight:700;font-size:.88rem;margin-top:12px;padding:11px 13px;border-radius:11px;display:none}
   .msg.err{display:block;background:#f7e3df;color:#b8524a}.msg.ok{display:block;background:#e3f0e6;color:#3f7d5c}
   .note{font-size:.78rem;color:var(--taupe);font-weight:700;margin-top:8px}
   .x{float:right;font-size:1.4rem;cursor:pointer;color:var(--taupe);line-height:1}
 </style>
-<link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#7a6253"><link rel="apple-touch-icon" href="/assets/icons/apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="Little Haven"><link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32.png"></head>
+<link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#7a6253"><link rel="apple-touch-icon" href="/assets/icons/apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="Little Haven"><link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32.png"><script src="/assets/square-wallets.js"></script>
+<style>#apple-pay-button{-webkit-appearance:-apple-pay-button;appearance:-apple-pay-button;-apple-pay-button-type:pay;-apple-pay-button-style:black;height:46px;border-radius:12px;cursor:pointer;width:100%}</style>
+</head>
 <body>
 <div class="topbar"><a class="name" href="/index.html" style="text-decoration:none;color:inherit">Little <em>Haven</em> Play Studio</a><a class="back" href="/index.html">← Back to site</a></div>
 <div class="wrap">
   <div class="two-col">
+    <div class="col">
+      <h1>🎉 Upcoming Events</h1>
+      <div class="sub">Classes &amp; special events at Little Haven 🌟</div>
+      <div id="upcoming"><div class="note" style="text-align:center">Loading…</div></div>
+    </div>
     <div class="col" id="promoWrap" style="display:none">
       <h1>📌 Current Promotions</h1>
       <div class="sub">Ongoing specials and announcements</div>
       <div id="promoList"></div>
       <div class="promo-fine">Promotions shown here can end at any time — take advantage while they're still available! They can't be combined with any other promotion or discount; the larger discount always applies.</div>
     </div>
-    <div class="col">
-      <h1>🎉 Upcoming Events</h1>
-      <div class="sub">Classes &amp; special events at Little Haven 🌟</div>
-      <div id="upcoming"><div class="note" style="text-align:center">Loading…</div></div>
-    </div>
   </div>
-  <div id="pastWrap" style="display:none"><h2 class="sec">Past events</h2><div class="past" id="past"></div></div>
+  <div id="pastWrap" style="display:none"><h2 class="sec">📸 Memories from past events</h2><div class="past" id="past"></div></div>
 </div>
 <div id="promoLightbox" role="dialog" aria-modal="true" aria-label="Enlarged promo image"><img id="promoLightboxImg" src="" alt=""><button id="promoLightboxClose" aria-label="Close">×</button></div>
 
@@ -89,17 +104,25 @@
       <div id="mReq" style="font-size:.9rem;color:var(--charcoal);white-space:pre-wrap;line-height:1.5"></div>
       <label style="display:flex;gap:9px;align-items:flex-start;margin-top:10px;text-transform:none;letter-spacing:0;color:var(--charcoal);font-weight:700;font-size:.9rem;cursor:pointer"><input type="checkbox" id="mAgree" style="width:auto;margin-top:3px;transform:scale(1.2)"> I have read and understood the requirements and terms for this event.</label>
     </div>
-    <label>Number of tickets</label>
+    <label>Number of tickets <span class="req">Required</span></label>
     <select id="mQty"></select>
-    <label>Your name</label>
-    <input type="text" id="mName" placeholder="Full name">
-    <label>Email (for your confirmation)</label>
-    <input type="email" id="mEmail" placeholder="you@email.com">
+    <label>Your name <span class="req">Required</span></label>
+    <input type="text" id="mName" placeholder="Full name" autocomplete="name">
+    <p class="fieldnote" id="err-mName">Please enter your name.</p>
+    <label>Email (for your confirmation) <span class="req">Required</span></label>
+    <input type="email" id="mEmail" placeholder="you@email.com" autocomplete="email" inputmode="email">
+    <p class="fieldnote" id="err-mEmail">Please enter a valid email address.</p>
     <label>Phone number</label>
     <input type="tel" id="mPhone" placeholder="(760) 555-1234">
     <div id="mAttWrap" style="margin-top:6px"></div>
     <label>Store credit code <span style="font-weight:400;color:var(--slate);text-transform:none">(optional)</span></label>
-    <input type="text" id="mCredit" placeholder="Enter a store credit code, if you have one" style="text-transform:uppercase">
+    <input type="text" id="mCredit" placeholder="Enter a store credit code, if you have one" style="text-transform:uppercase"><div id="mCreditMsg" class="note"></div>
+    <div id="wallets" style="display:none">
+      <p class="wallet-head">Express checkout</p>
+      <button type="button" id="apple-pay-button" aria-label="Pay with Apple Pay" style="display:none"></button>
+      <div id="google-pay-button" style="min-height:48px;margin-top:9px"></div>
+    </div>
+    <div class="wallet-or" id="walletOr" style="display:none">or pay with a card</div>
     <label>Card</label>
     <div id="card-container"></div>
     <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px">
@@ -107,13 +130,31 @@
       <button class="btn" id="mPay">Pay & register</button>
     </div>
     <div class="msg" id="mMsg"></div>
-    <div class="note" style="background:#fdf7f0;border:1px solid #ecdcc9;border-radius:10px;padding:9px 12px;color:var(--charcoal);margin-bottom:8px">🪪 <b>Pickup:</b> the adult who drops off must be the same person who picks up, and must show a valid photo ID. No child is released without a matching ID.</div><div class="note">Payments are processed securely by Square. You'll get an email confirmation — if you don't see it, check your junk/spam folder. Event tickets are non-refundable, but if you can't attend, email hello@littlehavenplay.com and we'll do our best to issue store credit.</div>
+    <div class="note" style="background:#fdf7f0;border:1px solid #ecdcc9;border-radius:10px;padding:9px 12px;color:var(--charcoal);margin-bottom:8px">🪪 <b>Pickup:</b> the adult who drops off must be the same person who picks up, and must show a valid photo ID. No child is released without a matching ID.</div><div class="note">💳 We accept <b>Apple Pay</b>, <b>Google Pay</b>, and all major credit &amp; debit cards. Payments are processed securely by Square. You'll get an email confirmation — if you don't see it, check your junk/spam folder. Event tickets are non-refundable, but if you can't attend, email hello@littlehavenplay.com and we'll do our best to issue store credit.</div>
+  </div>
+</div>
+
+<div class="modal" id="wmodal">
+  <div class="sheet">
+    <span class="x" onclick="closeWait()">×</span>
+    <div id="wTitle" style="font-family:'Cormorant Garamond',serif;font-weight:600;font-size:1.4rem;color:var(--rose-deep)"></div>
+    <div class="note" style="margin-top:0">Join the waitlist — if a space opens up, we'll email you.</div>
+    <label>Your name</label>
+    <input type="text" id="wName" placeholder="Full name">
+    <label>Email</label>
+    <input type="email" id="wEmail" placeholder="you@email.com">
+    <label>Phone number</label>
+    <input type="tel" id="wPhone" placeholder="(760) 555-1234">
+    <label>How many tickets / children?</label>
+    <select id="wCount"></select>
+    <div style="margin-top:14px;text-align:right"><button class="btn" id="wJoin">Join the waitlist</button></div>
+    <div class="msg" id="wMsg"></div>
   </div>
 </div>
 
 <script>
 const $=s=>document.querySelector(s);
-let CFG={}, EV={}, payments=null, card=null, cur=null;
+let CFG={}, EV={}, payments=null, card=null, cur=null, eventCredit={code:"",balance:0,ok:false}, creditTimer=null;
 function money(c){return "$"+(c/100).toFixed(2);}
 function whenStr(iso){return new Date(iso).toLocaleString("en-US",{weekday:"long",month:"long",day:"numeric",hour:"numeric",minute:"2-digit"});}
 
@@ -122,6 +163,7 @@ function whenStr(iso){return new Date(iso).toLocaleString("en-US",{weekday:"long
   await initSquare();
   load();
   loadPromos();
+  loadPastPhotos();
 })();
 
 async function loadPromos(){
@@ -138,6 +180,13 @@ async function loadPromos(){
       +'</div>';
     }).join("");
   }catch(e){}
+}
+async function loadPastPhotos(){
+  let photos=[];
+  try{ const r=await (await fetch("/api/site-photos?set=pastevents")).json(); photos=(r&&r.photos)||[]; }catch(e){ photos=[]; }
+  if(!photos.length){ $("#pastWrap").style.display="none"; return; }
+  $("#pastWrap").style.display="block";
+  $("#past").innerHTML=photos.map(function(p){ var src=(p.src||"").replace(/'/g,"\\'"); return '<div class="pc"><img src="'+p.src+'" loading="lazy" style="cursor:zoom-in;height:130px" onclick="openPromoLightbox(\''+src+'\')"></div>'; }).join("");
 }
 function openPromoLightbox(src){
   var lb=document.getElementById("promoLightbox"), img=document.getElementById("promoLightboxImg");
@@ -169,22 +218,32 @@ async function load(){
         +(e.description?'<div class="ds">'+esc(e.description)+'</div>':'')
         +'<div class="meta"><span class="price">'+money(e.price)+' <span style="font-weight:600;color:var(--slate);font-size:.85rem">per ticket'+(e.siblingPrice?' · '+money(e.siblingPrice)+' each sibling':'')+'</span></span>'
         +'<span class="left '+lc+'">'+lt+'</span></div>'
-        +'<div style="margin-top:12px">'+(e.regClosed?'<button class="btn" disabled>Registration closed</button>':(e.soldOut?'<button class="btn" disabled>Sold out</button>':'<button class="btn" onclick="openModal(\''+e.id+'\')">Get tickets</button>'))+'</div>'
+        +'<div style="margin-top:12px">'+(e.regClosed?'<button class="btn" disabled>Registration closed</button>':(e.soldOut?'<div style="background:#fdf1ec;border:1px solid #ecdcc9;border-radius:10px;padding:10px 12px;margin-bottom:8px;font-size:.9rem;color:#a85f59;font-weight:600">Event sold out? Get on our waitlist and if a space opens up, we\'ll let you know!</div><button class="btn" onclick="openWait(\''+e.id+'\')">Join the waitlist</button>':'<button class="btn" onclick="openModal(\''+e.id+'\')">Get tickets</button>'))+'</div>'
         +'</div></div>';
     }).join("");
   }
-  // past
-  if(d.past.length){
-    $("#pastWrap").style.display="block";
-    $("#past").innerHTML=d.past.map(e=>'<div class="pc">'+(e.hasPoster?'<img src="/api/event-poster?id='+e.id+'">':'')+'<div class="pt">'+esc(e.title)+'</div><div class="pw">'+esc(new Date(e.dateTime).toLocaleDateString())+'</div></div>').join("");
-  }
+  // Past ticketed events are NOT shown publicly (they stay archived on the staff side).
+  // The "Memories" gallery below is a separate, manually-curated set of photos.
 }
 
 async function initSquare(){
   if(!CFG.applicationId || !CFG.locationId) return;
   const url=(CFG.environment==="production")?"https://web.squarecdn.com/v1/square.js":"https://sandbox.web.squarecdn.com/v1/square.js";
   await new Promise((res,rej)=>{const s=document.createElement("script");s.src=url;s.onload=res;s.onerror=rej;document.head.appendChild(s);});
-  try{ payments=window.Square.payments(CFG.applicationId, CFG.locationId); card=await payments.card(); await card.attach("#card-container"); }catch(e){}
+  try{
+    payments=window.Square.payments(CFG.applicationId, CFG.locationId); card=await payments.card(); await card.attach("#card-container");
+    window.__lhWallets = await window.initSquareWallets({
+      payments,
+      wrapEl: document.getElementById("wallets"),
+      applePayEl: document.getElementById("apple-pay-button"),
+      googlePayEl: document.getElementById("google-pay-button"),
+      getAmount: ()=> (eventDueCents()/100).toFixed(2),
+      label: "Little Haven Play Studio",
+      referenceId: "event",
+      validate: ()=> eventFormValid(),
+      onToken: async (token)=>{ const pb=$("#mPay"); if(pb)pb.disabled=true; await submitEvent(token); },
+    });
+  }catch(e){}
 }
 
 window.openModal=(id)=>{
@@ -195,11 +254,86 @@ window.openModal=(id)=>{
   const max=Math.min(cur.remaining,20); let opts="";
   for(let i=1;i<=max;i++) opts+='<option value="'+i+'">'+i+'</option>';
   $("#mQty").innerHTML=opts; $("#mQty").onchange=updTotal; updTotal();
-  $("#mMsg").className="msg"; $("#mName").value=""; $("#mEmail").value=""; if($("#mPhone"))$("#mPhone").value="";
+  $("#mMsg").className="msg"; $("#mName").value=""; $("#mEmail").value=""; if($("#mPhone"))$("#mPhone").value=""; if($("#mCredit"))$("#mCredit").value=""; eventCredit={code:"",balance:0,ok:false}; if($("#mCreditMsg"))$("#mCreditMsg").textContent="";
+  newEvAttempt();
   $("#modal").classList.add("open");
 };
 window.closeModal=()=>$("#modal").classList.remove("open");
-function updTotal(){ const q=parseInt($("#mQty").value,10)||1; const sub=(cur.siblingPrice&&q>1)?(cur.price+(q-1)*cur.siblingPrice):(cur.price*q); $("#mTotal").textContent=money(sub); renderAtt(); }
+let curWait=null;
+window.openWait=(id)=>{
+  curWait=EV[id]; if(!curWait) return;
+  $("#wTitle").textContent=curWait.title;
+  let o=""; for(let i=1;i<=20;i++) o+='<option value="'+i+'">'+i+'</option>'; $("#wCount").innerHTML=o;
+  $("#wName").value=""; $("#wEmail").value=""; if($("#wPhone"))$("#wPhone").value=""; $("#wMsg").className="msg"; $("#wMsg").textContent=""; $("#wJoin").disabled=false;
+  $("#wmodal").classList.add("open");
+};
+window.closeWait=()=>$("#wmodal").classList.remove("open");
+$("#wJoin").onclick=async()=>{
+  const m=$("#wMsg"); m.className="msg";
+  const name=$("#wName").value.trim(), email=$("#wEmail").value.trim(), phone=($("#wPhone")||{}).value||"", count=parseInt($("#wCount").value,10)||1;
+  if(!name){ m.className="msg err"; m.textContent="Please enter your name."; return; }
+  if(!/^\S+@\S+\.\S+$/.test(email)){ m.className="msg err"; m.textContent="Please enter a valid email."; return; }
+  $("#wJoin").disabled=true; m.className="msg ok"; m.textContent="Adding you…";
+  try{
+    const r=await (await fetch("/api/event-waitlist",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({action:"join",eventId:curWait.id,name,email,phone,count})})).json();
+    if(r.ok){ m.className="msg ok"; m.textContent=r.message||"You're on the waitlist!"; setTimeout(()=>{closeWait();},1800); }
+    else { m.className="msg err"; m.textContent=r.error||"Couldn't add you."; $("#wJoin").disabled=false; }
+  }catch(e){ m.className="msg err"; m.textContent="Network error — please try again."; $("#wJoin").disabled=false; }
+};
+function eventSubtotalCents(){
+  if(!cur) return 0;
+  const q=parseInt($("#mQty").value,10)||1;
+  return (cur.siblingPrice&&q>1)?(cur.price+(q-1)*cur.siblingPrice):(cur.price*q);
+}
+function eventDueCents(){
+  const sub=eventSubtotalCents();
+  const credit=(eventCredit.ok?Math.min(sub,eventCredit.balance||0):0);
+  return Math.max(0,sub-credit);
+}
+function updTotal(){
+  const sub=eventSubtotalCents(), due=eventDueCents();
+  $("#mTotal").textContent=money(due);
+  const cm=$("#mCreditMsg");
+  if(cm && eventCredit.ok){
+    const used=Math.min(sub,eventCredit.balance||0);
+    cm.textContent="Store credit applied: −"+money(used)+(eventCredit.balance>used?" · "+money(eventCredit.balance-used)+" remains":"");
+  }
+  renderAtt();
+  if(window.__lhWallets){
+    Promise.resolve(window.__lhWallets.refresh()).then(syncWalletOr).catch(syncWalletOr);
+  }
+}
+async function checkEventCredit(){
+  const input=$("#mCredit"), msg=$("#mCreditMsg");
+  const code=((input&&input.value)||"").trim().toUpperCase().replace(/[^A-Z0-9]/g,"");
+  if(input) input.value=code;
+  if(!code){ eventCredit={code:"",balance:0,ok:false}; if(msg)msg.textContent=""; updTotal(); return; }
+  if(msg) msg.textContent="Checking store credit…";
+  try{
+    const r=await fetch("/api/credit-balance?code="+encodeURIComponent(code));
+    const d=await r.json();
+    if(d.ok){
+      eventCredit={code,balance:d.balance||0,ok:true};
+      if(msg) msg.textContent="Store credit verified.";
+    }else{
+      eventCredit={code,balance:0,ok:false};
+      if(msg) msg.textContent=d.error||"That store credit could not be verified.";
+    }
+  }catch(_){
+    eventCredit={code,balance:0,ok:false};
+    if(msg) msg.textContent="Couldn't verify store credit right now.";
+  }
+  updTotal();
+}
+if($("#mCredit")){
+  $("#mCredit").addEventListener("input",()=>{
+    eventCredit={code:"",balance:0,ok:false};
+    clearTimeout(creditTimer);
+    creditTimer=setTimeout(checkEventCredit,450);
+    updTotal();
+  });
+  $("#mCredit").addEventListener("blur",()=>{ clearTimeout(creditTimer); checkEventCredit(); });
+}
 function renderAtt(){
   const q=parseInt($("#mQty").value,10)||1, host=$("#mAttWrap");
   if(!host) return;
@@ -211,30 +345,132 @@ function renderAtt(){
   host.innerHTML=h;
 }
 
-$("#mPay").onclick=async()=>{
-  const m=$("#mMsg"); m.className="msg";
-  const name=$("#mName").value.trim(), email=$("#mEmail").value.trim(), qty=parseInt($("#mQty").value,10)||1;
-  if(!name){ m.className="msg err"; m.textContent="Please enter your name."; return; }
-  if(!/^\S+@\S+\.\S+$/.test(email)){ m.className="msg err"; m.textContent="Please enter a valid email."; return; }
-  if(cur.requirements && cur.requirements.trim() && !$("#mAgree").checked){ m.className="msg err"; m.textContent="Please confirm you've read and understood the requirements for this event."; return; }
-  const attendees=[...document.querySelectorAll("#mAttWrap .att-row")].map(r=>({name:r.querySelector(".att-n").value.trim(),age:r.querySelector(".att-a").value.trim()}));
-  if(attendees.some(a=>!a.name)){ m.className="msg err"; m.textContent="Please enter each child's full name."; return; }
-  const phone=($("#mPhone")||{}).value||"";
-  if(!card){ m.className="msg err"; m.textContent="Card form isn't ready — please refresh."; return; }
-  $("#mPay").disabled=true; m.className="msg ok"; m.textContent="Processing…";
-  let token="";
-  try{ const r=await card.tokenize(); if(r.status!=="OK"){ m.className="msg err"; m.textContent="Please check your card details."; $("#mPay").disabled=false; return; } token=r.token; }
-  catch(e){ m.className="msg err"; m.textContent="Card error — try again."; $("#mPay").disabled=false; return; }
+function evClear(){
+  document.querySelectorAll("#mModal .is-missing,.is-missing").forEach(function(el){ el.classList.remove("is-missing"); });
+  document.querySelectorAll(".fieldnote.on").forEach(function(el){ el.classList.remove("on"); });
+}
+function evFlag(sel,msg){
+  const m=$("#mMsg"); if(m){ m.className="msg err"; m.textContent=msg; }
+  const el=sel?document.querySelector(sel):null;
+  if(el){
+    el.classList.add("is-missing");
+    const note=document.getElementById("err-"+el.id);
+    if(note){ note.textContent=msg; note.classList.add("on"); }
+    try{ el.scrollIntoView({behavior:"smooth",block:"center"}); }catch(_){ }
+    if(el.focus&&el.type!=="checkbox"){ try{ el.focus({preventScroll:true}); }catch(_){ } }
+  }
+  return false;
+}
+function eventFormValid(){
+  evClear();
+  const m=$("#mMsg"); if(m){ m.className="msg"; m.textContent=""; }
+  const name=$("#mName").value.trim(), email=$("#mEmail").value.trim();
+  if(!name) return evFlag("#mName","Please enter your name.");
+  if(!/^\S+@\S+\.\S+$/.test(email)) return evFlag("#mEmail","Please enter a valid email address.");
+  const creditCode=(($("#mCredit")||{}).value||"").trim().toUpperCase().replace(/[^A-Z0-9]/g,"");
+  if(creditCode && (!eventCredit.ok || eventCredit.code!==creditCode)){ checkEventCredit(); return evFlag("#mCredit","Please wait for your store credit to be verified, then try again."); }
+  if(cur.requirements && cur.requirements.trim() && !$("#mAgree").checked) return evFlag("#mAgree","Please confirm you've read and understood the requirements for this event.");
+  const rows=[...document.querySelectorAll("#mAttWrap .att-row")];
+  for(const r of rows){
+    const f=r.querySelector(".att-n");
+    if(f && !f.value.trim()){ f.classList.add("is-missing"); try{ f.scrollIntoView({behavior:"smooth",block:"center"}); f.focus({preventScroll:true}); }catch(_){ }
+      if(m){ m.className="msg err"; m.textContent="Please enter each child's full name."; } return false; }
+  }
+  return true;
+}
+
+["input","change"].forEach(function(evt){
+  document.addEventListener(evt,function(e){
+    if(!e.target||!e.target.classList) return;
+    if(["mName","mEmail","mCredit","mAgree"].indexOf(e.target.id)>-1 || e.target.classList.contains("att-n")){
+      e.target.classList.remove("is-missing");
+      const n=document.getElementById("err-"+e.target.id); if(n) n.classList.remove("on");
+    }
+  });
+});
+
+// One stable id per open of the purchase modal. Sent with the charge so Square
+// de-duplicates retries instead of charging the buyer twice.
+let evAttemptId = "";
+function newEvAttempt(){
+  evAttemptId = (self.crypto && crypto.randomUUID) ? crypto.randomUUID()
+              : String(Date.now()) + Math.random().toString(36).slice(2);
+}
+
+async function submitEvent(token){
+  const m=$("#mMsg");
+  const pb=$("#mPay"); if(pb) pb.disabled=true;
+  if(m){ m.className="msg"; m.textContent="Processing your payment…"; }
+  const attendees=[...document.querySelectorAll("#mAttWrap .att-row")].map(function(r){
+    return { name:(r.querySelector(".att-n")||{}).value||"", age:(r.querySelector(".att-a")||{}).value||"" };
+  }).filter(function(a){ return a.name.trim(); });
+  const creditCode=(($("#mCredit")||{}).value||"").trim().toUpperCase().replace(/[^A-Z0-9]/g,"");
   try{
-    const r=await (await fetch("/api/event-buy",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({eventId:cur.id,quantity:qty,name,email,phone,attendees,creditCode:($("#mCredit")||{}).value||"",sourceId:token})})).json();
-    if(r.ok){ m.className="msg ok"; m.textContent=r.message||"You're registered!"; setTimeout(()=>{closeModal();load();},1800); }
-    else { m.className="msg err"; m.textContent=r.message||r.error||"Couldn't complete purchase."; $("#mPay").disabled=false; }
-  }catch(e){ m.className="msg err"; m.textContent="Network error — please try again."; $("#mPay").disabled=false; }
-};
+    const res=await fetch("/api/event-buy",{
+      method:"POST", headers:{"content-type":"application/json"},
+      body:JSON.stringify({
+        eventId:cur.id,
+        quantity:parseInt($("#mQty").value,10)||1,
+        name:$("#mName").value.trim(),
+        email:$("#mEmail").value.trim(),
+        phone:(($("#mPhone")||{}).value||"").trim(),
+        attendees,
+        creditCode:creditCode||undefined,
+        sourceId:token||undefined,
+        attemptId:evAttemptId,
+      })
+    });
+    const data=await res.json();
+    if(res.ok && data.ok){
+      if(m){ m.className="msg ok"; m.textContent=data.message||"You're all set! A confirmation email is on its way."; }
+      if($("#mPay")) $("#mPay").style.display="none";
+      if(document.getElementById("wallets")) document.getElementById("wallets").style.display="none";
+      if(document.getElementById("walletOr")) document.getElementById("walletOr").style.display="none";
+      setTimeout(function(){ location.reload(); }, 4000);
+      return true;
+    }
+    if(m){ m.className="msg err"; m.textContent=data.message||data.error||"That payment didn't go through."; }
+  }catch(err){
+    if(m){ m.className="msg err"; m.textContent="We couldn't reach the payment processor. Please try again."; }
+  }
+  if(pb) pb.disabled=false;
+  // A failed attempt gets a fresh id so a genuine retry isn't de-duplicated.
+  newEvAttempt();
+  return false;
+}
+
+// Manual card path — this button previously had no handler at all.
+document.addEventListener("click", async function(e){
+  if(!e.target || e.target.id!=="mPay") return;
+  e.preventDefault();
+  if(e.target.disabled) return;
+  if(!eventFormValid()) return;
+  const due=eventDueCents();
+  let token;
+  if(due>0){
+    if(!card){ const m=$("#mMsg"); if(m){ m.className="msg err"; m.textContent="The card form is still loading — one moment."; } return; }
+    e.target.disabled=true;
+    try{
+      const r=await card.tokenize();
+      if(r.status!=="OK"){ throw new Error((r.errors&&r.errors[0]&&r.errors[0].message)||"Please check your card details."); }
+      token=r.token;
+    }catch(err){
+      const m=$("#mMsg"); if(m){ m.className="msg err"; m.textContent=err.message||"Please check your card details."; }
+      e.target.disabled=false; return;
+    }
+  }
+  await submitEvent(token);
+});
+
+function syncWalletOr(){
+  const w=document.getElementById("wallets"), o=document.getElementById("walletOr");
+  if(w&&o) o.style.display=(w.style.display==="none")?"none":"";
+}
 
 function esc(s){return (s||"").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
 function escAttr(s){return (s||"").replace(/"/g,"&quot;");}
 </script>
 <script>if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("/sw.js").catch(function(){});});}</script><script src="/assets/phone-format.js" defer></script>
+<script src="/assets/chat.js" defer></script>
 </body>
 </html>

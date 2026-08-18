@@ -10,16 +10,17 @@
 //   5. On success, record the booking and increment the slot's child count.
 
 import { getStore } from "@netlify/blobs";
-import { SIGNATURE_HTML, sendOwnerAlert } from "./lib-email.js";
+import { createHash } from "node:crypto";
+import { SIGNATURE_HTML, sendOwnerAlert, resendEmail } from "./lib-email.js";
 import {
   CAPACITY, pricesFor, SLOTS, SLOT_IDS, openPlayForDate, effectivePartyBlocks, hoursFor, slotCap, slotKey, arrivalStartMin, squareApiBase, SQUARE_VERSION, BOOKING_WINDOW_DAYS,
-  PARTY_SLOT_IDS, ARRIVAL_TO_LEGACY,
+  PARTY_SLOT_IDS, ARRIVAL_TO_LEGACY, countHourChildren, hourMatesFor,
   STUDIO_NAME, POLICY_TITLE, POLICY_LINES, CLOSED_DATES, CLOSED_MESSAGE, ADDITIONAL_ADULT, isClosedWeekday, weekdayOf,
   additionalAdultsFor, additionalAdultCentsFor,
 } from "./lib-settings.js";
 import { issueCode, sendWelcome, sendFamilyPunch, PUNCHES_FOR_REWARD, cleanName, last4 as loyaltyLast4, graduateLegacyCard } from "./lib-loyalty.js";
 import { loadSeasonal, loadWeekly } from "./lib-hours.js";
-import { getClosure, slotBlockedByClosure } from "./lib-closures.js";
+import { getClosure, slotBlockedByClosure, getEventHold } from "./lib-closures.js";
 import { getWeekdaySpecial } from "./lib-weekday.js";
 
 export default async (req) => {
@@ -99,11 +100,22 @@ export default async (req) => {
   if (isClosedWeekday(date, _seasonal, _weekly)) return json({ error: "closed", message: "We're closed that day. Please pick another day." }, 409);
   // Dynamic closure / early-close / late-open set from the admin/staff page.
   const _closure = await getClosure(date);
-  if (slotBlockedByClosure(_closure, slot))
+  if (_closure && _closure.type === "full")
+    return json({ error: "closed", message: (_closure.note) || "We're closed that day." }, 409);
+
+  // Event day: last admission = 2.5h before the event, and it OVERRIDES a manual early-close
+  // (so an accidental early-close can't reject a slot the event actually allows).
+  const _eventHold = await getEventHold(date);
+  if (_eventHold) {
+    const _st = arrivalStartMin(slot);
+    if (_st != null && _st > _eventHold.cutoff)
+      return json({ error: "closed", message: `Last admission is ${_eventHold.lastAdmitLabel} this day for a special event. Please choose an earlier time.` }, 409);
+  } else if (slotBlockedByClosure(_closure, slot)) {
     return json({ error: "closed", message: (_closure && _closure.note) || "We're closed for that time." }, 409);
+  }
   if (!SLOT_IDS.includes(slot))         return json({ error: "Invalid time slot." }, 400);
   // Open play can only be booked within the rolling window (default 2 weeks).
-  const maxStr = new Date(Date.now() + (BOOKING_WINDOW_DAYS + 1) * 86400000).toISOString().slice(0, 10);
+  const maxStr = new Date(Date.now() + BOOKING_WINDOW_DAYS * 86400000).toISOString().slice(0, 10);
   if (date > maxStr)                    return json({ error: "window", message: `Open play can only be booked up to ${BOOKING_WINDOW_DAYS} days ahead.` }, 400);
   // Parties take precedence — only allow sessions open for this date given booked parties.
   const _bookedParties = [];
@@ -342,24 +354,24 @@ export default async (req) => {
   const store = getStore("bookings");
   const key = slotKey(date, slot);
 
-  // Reserved for a private party?
+  // Reserved for a private party? A block on either the :00 or the :30 reserves the
+  // whole shared hour, so check every mate before allowing a booking into it.
   try {
-    const blocked = await getStore("blocks").get(key, { type: "json" });
-    if (blocked) return json({ error: "reserved", message: "That session is reserved for a private party." }, 409);
+    const blocksStore = getStore("blocks");
+    for (const mid of hourMatesFor(slot)) {
+      if (await blocksStore.get(slotKey(date, mid), { type: "json" }))
+        return json({ error: "reserved", message: "That session is reserved for a private party." }, 409);
+    }
   } catch {}
 
-  // Capacity check (read current count). Existing bookings under the OLD session
-  // that maps to this arrival time count too, so the room is never oversold.
-  let rec = null;
-  try { rec = await store.get(key, { type: "json" }); } catch { rec = null; }
-  let current = rec && typeof rec.children === "number" ? rec.children : 0;
-  for (const legacy of (ARRIVAL_TO_LEGACY[slot] || [])) {
-    try { const lr = await store.get(slotKey(date, legacy), { type: "json" }); if (lr && typeof lr.children === "number") current += lr.children; } catch {}
-  }
+  // Capacity check: this arrival shares one pool of `cap` children with its :00/:30
+  // partner (and any legacy session for the same hour), so a 1:00 and a 1:30 booking
+  // draw from the SAME 6 and the room is never oversold.
+  const current = await countHourChildren(store, date, slot);
   if (current + children > cap) {
     const remaining = Math.max(0, cap - current);
     return json({ error: "full", remaining,
-      message: `Only ${remaining} spot${remaining === 1 ? "" : "s"} left in that session.` }, 409);
+      message: `Only ${remaining} spot${remaining === 1 ? "" : "s"} left in that hour.` }, 409);
   }
 
   const note = `Open Play ${date} ${slot} - ${regular} reg + ${sibling} sib + ${infant} infant`;
@@ -408,21 +420,39 @@ export default async (req) => {
     return json({ error: "card_required", message: "A card is needed for the remaining balance." }, 400);
   }
 
-  // Process payments: credit card first (the part most likely to fail), then redeem gift cards.
+  // Gift cards are redeemed FIRST because they're the only leg we can reverse
+  // cleanly; the card goes last, so a failure never leaves card money taken for
+  // a booking that was not created. If the card leg fails after gift cards were
+  // drawn down, every gift card redemption is refunded before returning.
   const payments = [];
+  const attemptId = (body.attemptId || "").toString().slice(0, 60);
+  const idemBase = [attemptId, email, date, slot, amount];
   try {
-    if (cardAmount > 0) {
-      const p = await chargeSquare(env, { source_id: sourceId, amount: cardAmount, note, email });
-      if (!p.ok) return json({ error: "payment_failed", message: p.detail }, 402);
-      payments.push(p.payment);
-    }
     for (const g of giftApplied) {
-      const p = await chargeSquare(env, { source_id: g.id, amount: g.applied, note, email });
-      if (!p.ok) return json({ error: "giftcard", message: `Couldn't redeem gift card ${g.gan}.` }, 402);
+      const p = await chargeSquare(env, {
+        source_id: g.id, amount: g.applied, note, email,
+        idem: idemKey([...idemBase, "gift", g.gan, g.applied]),
+      });
+      if (!p.ok) {
+        await refundAll(env, payments);
+        return json({ error: "giftcard", message: `Couldn't redeem gift card ${g.gan}.` }, 402);
+      }
       payments.push(p.payment);
       g.balanceAfter = p.giftCardBalance;
     }
+    if (cardAmount > 0) {
+      const p = await chargeSquare(env, {
+        source_id: sourceId, amount: cardAmount, note, email,
+        idem: idemKey([...idemBase, "card", cardAmount]),
+      });
+      if (!p.ok) {
+        await refundAll(env, payments);
+        return json({ error: "payment_failed", message: p.detail }, 402);
+      }
+      payments.unshift(p.payment);   // keep the card payment first, as before
+    }
   } catch (e) {
+    await refundAll(env, payments);
     return json({ error: "payment_error", message: "Could not reach the payment processor." }, 502);
   }
   const payment = payments[0] || null;
@@ -471,7 +501,7 @@ export default async (req) => {
       }
     }
     try { await passStore.setJSON("pass:" + up.code, fresh); } catch {}
-    passesUsed.push({ code: up.code, admission: up.admission, visitsRemaining: after, freeVisit: after === 0 });
+    passesUsed.push({ code: up.code, admission: up.admission, visitsRemaining: after, total: (fresh.visits || (up.rec && up.rec.visits) || null), freeVisit: after === 0 });
   }
 
   // Burn the one-time discount code (payment already succeeded).
@@ -517,9 +547,12 @@ export default async (req) => {
     }
   }
 
-  // Record the booking (re-read to reduce the chance of a stale write)
+  // Record the booking. Strong-consistency re-read so two near-simultaneous bookings
+  // (or a booking landing on a slot another write just touched) can't stale-read an
+  // older copy and overwrite each other — the same class of bug that dropped a
+  // rescheduled family. Each write appends onto the truly-latest record.
   let latest = null;
-  try { latest = await store.get(key, { type: "json" }); } catch { latest = null; }
+  try { latest = await store.get(key, { type: "json", consistency: "strong" }); } catch { latest = null; }
   const base = latest && typeof latest.children === "number"
     ? latest : { children: 0, bookings: [] };
 
@@ -545,13 +578,30 @@ export default async (req) => {
   });
   base.children = (base.children || 0) + children;
 
+  // The customer has already paid, so we still report success to them — but a
+  // write failure here means the booking is NOT on the roster. Alert the studio
+  // immediately with everything needed to add it by hand.
   try { await store.setJSON(key, base); }
-  catch { /* payment already succeeded; surface success anyway */ }
+  catch (e) {
+    try {
+      const lbl = (SLOTS.find(s => s.id === slot) || {}).label || slot;
+      await sendOwnerAlert(
+        "🚨 PAID BOOKING NOT SAVED — please add by hand",
+        `<h3>A booking was paid for but could not be written to the roster</h3>
+         <p><b>${date} · ${lbl}</b><br>
+         <b>${name}</b> — ${email} — ${phone || "no phone given"}<br>
+         ${regular} regular · ${sibling} sibling · ${infant} infant<br>
+         Paid by card: <b>$${(cardAmount / 100).toFixed(2)}</b>${payment?.id ? ` · Square payment ${payment.id}` : ""}</p>
+         <p>The customer has been told they're booked. Please add them to the roster manually.</p>`
+      );
+    } catch {}
+  }
 
   // ---- Loyalty punch card: auto-issue each child's code + welcome email at booking.
   // Skipped entirely when a legacy prepaid card was used (legacy never joins loyalty
   // for that visit). The actual PUNCH happens later, at check-in (see arrivals.js).
   const phone4 = loyaltyLast4(phone);
+  let loyaltyCards = [];   // each child's punch card — folded into the ONE confirmation email
   if (!legacyUsed && phone4 && childNames.length) {
     const loyalty = getStore("loyalty");
     const issued = [];
@@ -587,13 +637,13 @@ export default async (req) => {
         if (r) issued.push(r);
       } catch {}
     }
-    // Send ONE combined welcome email for the whole family (never one per child).
-    const newCards = issued.filter(r => r && r.isNew);
-    if (email && newCards.length) {
-      try {
-        if (newCards.length === 1) { await sendWelcome(newCards[0].rec); }
-        else { await sendFamilyPunch(email, newCards.map(c => ({ childName: c.childName, code: c.code, punches: 0, needed: PUNCHES_FOR_REWARD, rewardIssued: false }))); }
-      } catch {}
+    // Fold each child's punch card into the ONE confirmation email below — no separate
+    // welcome email at booking. Read current punches so returning families see progress.
+    for (const r of issued) {
+      if (!r || !r.code) continue;
+      let punches = 0;
+      try { const card = await loyalty.get("card:" + r.code, { type: "json" }); if (card && typeof card.punches === "number") punches = card.punches; } catch {}
+      loyaltyCards.push({ childName: r.childName, code: r.code, isNew: !!r.isNew, punches, needed: PUNCHES_FOR_REWARD });
     }
     // Queue a punch job for this booking; check-in (arrivals) will punch each child once.
     try { await getStore("loyaltyjobs").setJSON("job:" + bookingId,
@@ -615,7 +665,7 @@ export default async (req) => {
   try {
     await sendConfirmation({ email, name, date, slotLabel, regular, sibling, infant, adults: totalAdults, additionalAdults,
       coveredRegular, coveredInfant, coveredSibling, paidRegular, paidInfant, paidSibling, subtotal, tax, amount,
-      giftApplied, giftTotal, creditApplied, creditRemaining, cardAmount, passesUsed, discountPct, discountAmount, weekdaySpecialAmount, weekdaySpecialLabel, militaryAmount, militaryChildren });
+      giftApplied, giftTotal, creditApplied, creditRemaining, cardAmount, passesUsed, discountPct, discountAmount, weekdaySpecialAmount, weekdaySpecialLabel, militaryAmount, militaryChildren, loyaltyCards });
   } catch (e) { /* ignore email errors */ }
 
   return json({
@@ -644,15 +694,60 @@ export default async (req) => {
     birthdayWarnings,
     adults: totalAdults,
     additionalAdults,
-    remaining: Math.max(0, cap - base.children),
+    remaining: Math.max(0, cap - (current + children)),
     paymentId: payment?.id || null,
   });
 };
 
 // Charges a single payment source (a card token or a gift card id) via Square.
-async function chargeSquare(env, { source_id, amount, note, email }) {
+// A STABLE idempotency key per logical charge. Square de-duplicates on this key,
+// so a browser retry, a double-tap, or a function re-invocation after a timeout
+// returns the ORIGINAL payment instead of charging the customer twice. The old
+// random UUID defeated that completely. Anything real about the charge changing
+// (amount, date, slot, buyer) yields a different key, so a genuinely different
+// booking is never wrongly de-duplicated.
+function idemKey(parts) {
+  return createHash("sha256").update(parts.join("|")).digest("hex").slice(0, 45);
+}
+
+// Reverses payments already taken in this request when a later leg fails, so a
+// customer is never left charged for a booking that was not created. Best effort:
+// anything that can't be refunded automatically is emailed to the studio.
+async function refundAll(env, taken) {
+  for (const p of taken || []) {
+    if (!p || !p.id) continue;
+    try {
+      const res = await fetch(`${squareApiBase()}/v2/refunds`, {
+        method: "POST",
+        headers: {
+          "Square-Version": SQUARE_VERSION,
+          "Authorization": `Bearer ${env.SQUARE_ACCESS_TOKEN}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          idempotency_key: idemKey(["refund", p.id]),
+          payment_id: p.id,
+          amount_money: p.amount_money,
+          reason: "Booking could not be completed",
+        }),
+      });
+      if (!res.ok) throw new Error("refund rejected");
+    } catch (e) {
+      try {
+        await sendOwnerAlert(
+          "🚨 Refund needed — payment taken but booking failed",
+          `<h3>A payment went through but the booking did not</h3>
+           <p>Square payment <b>${p.id}</b> for <b>$${((p.amount_money?.amount || 0) / 100).toFixed(2)}</b>
+           could not be refunded automatically. Please refund it by hand in the Square dashboard.</p>`
+        );
+      } catch {}
+    }
+  }
+}
+
+async function chargeSquare(env, { source_id, amount, note, email, idem }) {
   const body = {
-    idempotency_key: crypto.randomUUID(),
+    idempotency_key: idem || crypto.randomUUID(),
     source_id,
     amount_money: { amount, currency: "USD" },
     location_id: env.SQUARE_LOCATION_ID,
@@ -722,7 +817,7 @@ function validDob(s) {
 
 // Sends the customer a confirmation + policy email via Resend.
 // If RESEND_API_KEY isn't set, this quietly does nothing.
-async function sendConfirmation({ email, name, date, slotLabel, regular, sibling, infant, adults = 0, additionalAdults = 0, coveredRegular = 0, coveredInfant = 0, paidRegular = regular, paidInfant = infant, subtotal, tax, amount, giftApplied = [], giftTotal = 0, creditApplied = 0, creditRemaining = null, cardAmount = 0, passesUsed = [], discountPct = 0, discountAmount = 0, weekdaySpecialAmount = 0, weekdaySpecialLabel = "", militaryAmount = 0, militaryChildren = [] }) {
+async function sendConfirmation({ email, name, date, slotLabel, regular, sibling, infant, adults = 0, additionalAdults = 0, coveredRegular = 0, coveredInfant = 0, paidRegular = regular, paidInfant = infant, subtotal, tax, amount, giftApplied = [], giftTotal = 0, creditApplied = 0, creditRemaining = null, cardAmount = 0, passesUsed = [], discountPct = 0, discountAmount = 0, weekdaySpecialAmount = 0, weekdaySpecialLabel = "", militaryAmount = 0, militaryChildren = [], loyaltyCards = [] }) {
   const key = process.env.RESEND_API_KEY;
   if (!key || !email) return;
 
@@ -738,8 +833,29 @@ async function sendConfirmation({ email, name, date, slotLabel, regular, sibling
 
   // Punch card rows (visits remaining after this booking)
   const passLines = passesUsed.map(p =>
-    `<tr><td style="padding:2px 0;color:#5c6470">Pass ${p.code} used (1 visit)</td><td style="padding:2px 0;text-align:right;font-weight:bold">${p.visitsRemaining} left</td></tr>`
+    `<tr><td style="padding:2px 0;color:#5c6470">Prepaid pass ${p.code} used (1 visit)</td><td style="padding:2px 0;text-align:right;font-weight:bold">${p.total ? `${p.visitsRemaining} of ${p.total} left` : `${p.visitsRemaining} left`}</td></tr>`
   ).join("");
+
+  // Combined punch-card section — folds the old separate "welcome" email into this one.
+  const esc = s => (s || "").toString().replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const anyNew = loyaltyCards.some(c => c.isNew);
+  const cardRows = loyaltyCards.map(c =>
+    `<tr><td style="padding:6px 9px;border-top:1px solid #e6eee2"><b>${esc(c.childName)}</b></td>`
+    + `<td style="padding:6px 9px;border-top:1px solid #e6eee2;text-align:center;font-family:monospace;font-weight:bold;color:#a85f59;letter-spacing:1px">${esc(c.code)}</td>`
+    + `<td style="padding:6px 9px;border-top:1px solid #e6eee2;text-align:right;color:#5c6470">${c.punches}/${c.needed} visits</td></tr>`
+  ).join("");
+  const loyaltySection = loyaltyCards.length ? `
+    <div style="background:#f3f7f2;border-radius:14px;padding:16px 18px;margin:20px 0">
+      <h3 style="margin:0 0 6px;color:#5f8060;font-weight:bold;font-size:15px">Your punch card${loyaltyCards.length > 1 ? "s" : ""} 🎈</h3>
+      <p style="margin:0 0 10px;font-size:14px;color:#5c6470">${anyNew
+        ? `Here ${loyaltyCards.length > 1 ? "are your codes" : "is your code"} — next time, enter ${loyaltyCards.length > 1 ? "a code" : "it"} on the booking page to <b>auto-fill your child's information</b> and book faster.`
+        : `Enter your code on the booking page next time to <b>auto-fill your child's information</b> and book faster.`}</p>
+      <table style="width:100%;border-collapse:collapse;font-size:14px">
+        <tr><td style="padding:0 9px 4px;color:#8a8276;font-size:12px">Child</td><td style="padding:0 9px 4px;text-align:center;color:#8a8276;font-size:12px">Code</td><td style="padding:0 9px 4px;text-align:right;color:#8a8276;font-size:12px">Progress</td></tr>
+        ${cardRows}
+      </table>
+      <p style="margin:10px 0 0;font-size:13px;color:#5c6470">We keep track of your visits automatically — after 7 visits each, the 8th is free. Nothing else to do! 💛</p>
+    </div>` : "";
 
   // Payment breakdown rows (shown when a gift card or store credit was used)
   let payRows = `<tr><td style="padding:6px 0 0;color:#5c6470">Total paid</td><td style="padding:6px 0 0;text-align:right;font-weight:bold;font-size:18px;color:#7ba676">${dollars(amount)}</td></tr>`;
@@ -759,8 +875,8 @@ async function sendConfirmation({ email, name, date, slotLabel, regular, sibling
 
   const html = `
   <div style="font-family:Arial,Helvetica,sans-serif;color:#2a2622;max-width:560px;margin:0 auto;line-height:1.6">
-    <h2 style="color:#a85f59;font-weight:normal;margin:0 0 4px">Your booking is confirmed 🌿</h2>
-    <p style="margin:0 0 16px;color:#5c6470">Thank you${name ? ", " + name : ""} — we can't wait to welcome you to ${STUDIO_NAME}. Here are your details:</p>
+    <h2 style="color:#a85f59;font-weight:normal;margin:0 0 4px">Your reservation is confirmed 🌿</h2>
+    <p style="margin:0 0 16px;color:#5c6470">Thank you${name ? ", " + name : ""} — your reservation is confirmed and we can't wait to welcome you to ${STUDIO_NAME}. Here are your details:</p>
     <table style="width:100%;border-collapse:collapse;font-size:15px">
       <tr><td style="padding:6px 0;color:#5c6470">Date</td><td style="padding:6px 0;text-align:right;font-weight:bold">${date}</td></tr>
       <tr><td style="padding:6px 0;color:#5c6470">Session</td><td style="padding:6px 0;text-align:right;font-weight:bold">${slotLabel}</td></tr>
@@ -774,6 +890,7 @@ async function sendConfirmation({ email, name, date, slotLabel, regular, sibling
       ${militaryAmount > 0 ? `<tr><td style="padding:2px 0;color:#7ba676">🎖️ Military discount (10% off)</td><td style="padding:2px 0;text-align:right;font-weight:bold;color:#7ba676">−${dollars(militaryAmount)}</td></tr>` : ""}
       ${payRows}
     </table>
+    ${loyaltySection}
 
     <div style="background:#fdf1ec;border-radius:14px;padding:16px 18px;margin:20px 0">
       <h3 style="margin:0 0 8px;color:#a85f59;font-weight:bold;font-size:15px">One quick thing before you arrive — your waiver 💛</h3>
@@ -792,9 +909,15 @@ async function sendConfirmation({ email, name, date, slotLabel, regular, sibling
     <p style="margin:14px 0 0;background:#fcfaf6;border:1px solid #efe7da;border-radius:10px;padding:11px 13px;font-size:13px;color:#5c6470"><b>📩 Don't see this email?</b> Please check your junk/spam folder and mark it "not spam" so you receive future confirmations.</p>
   </div>`;
 
-  const text = `Your ${STUDIO_NAME} booking is confirmed!\n\n`
+  const cardText = loyaltyCards.length
+    ? `YOUR PUNCH CARD${loyaltyCards.length > 1 ? "S" : ""}\n`
+      + loyaltyCards.map(c => `- ${c.childName}: ${c.code} (${c.punches}/${c.needed} visits)`).join("\n")
+      + `\nEnter your code on the booking page next time to auto-fill your child's information and book faster. We track your visits automatically — after 7 visits each, the 8th is free.\n\n`
+    : "";
+  const text = `Your ${STUDIO_NAME} reservation is confirmed!\n\n`
     + `Date: ${date}\nSession: ${slotLabel}\nChildren: ${total}\n`
     + `Admissions: ${lines.join(", ")}\nSubtotal: ${dollars(subtotal)}\nTotal paid: ${dollars(amount)}\n\n`
+    + cardText
     + `YOUR WAIVER\nA signed waiver is required for every visit and stays valid for 365 days from the date it was first signed.\n`
     + `- If you're the parent/guardian who signed within the last year, you're all set.\n`
     + `- If you've never signed, or a different parent/guardian is bringing the child(ren) this time, please sign a fresh waiver.\n`
@@ -802,16 +925,12 @@ async function sendConfirmation({ email, name, date, slotLabel, regular, sibling
     + `${POLICY_TITLE}\n` + POLICY_LINES.map(l => "- " + l).join("\n")
     + `\n\nWe can't wait to see you at ${STUDIO_NAME}!`;
 
-  await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      from: `${STUDIO_NAME} <${from}>`,
-      to: [email],
-      bcc: bcc ? [bcc] : undefined,
-      subject: `Your ${STUDIO_NAME} booking is confirmed — ${date}`,
-      html, text,
-    }),
+  await resendEmail({
+    from: `${STUDIO_NAME} <${from}>`,
+    to: [email],
+    bcc: bcc ? [bcc] : undefined,
+    subject: `Your ${STUDIO_NAME} reservation is confirmed${loyaltyCards.length ? ` + punch card code${loyaltyCards.length > 1 ? "s" : ""}` : ""} 🎈 — ${date}`,
+    html, text,
   });
 }
 

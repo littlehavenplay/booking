@@ -98,7 +98,7 @@
       <div class="agree"><input type="checkbox" id="agree"><label for="agree" style="text-transform:none;letter-spacing:0;color:var(--charcoal);font-weight:700;font-size:.85rem;margin:0">I have read and agree to the deposit & cancellation policy. I understand my party is not confirmed until the deposit is paid, and the remaining balance is due the day of the party.</label></div>
       <button class="pay" id="pay" disabled>Continue to deposit</button>
       <div class="msg" id="msg"></div>
-      <div class="note">Paying the deposit holds your reservation. We'll follow up to finalize the details (including your color selections, due at least 1 week before your party).</div>
+      <div class="note">💳 At checkout you can pay with <b>Apple Pay</b>, <b>Google Pay</b>, or any major credit &amp; debit card. Paying the deposit holds your reservation. We'll follow up to finalize the details (including your color selections, due at least 1 week before your party).</div>
     </div>
   </div>
 
@@ -171,6 +171,7 @@ async function loadSlots(){
   if(d && d.error){ host.innerHTML='<div class="msg err" style="display:block">'+d.error+'</div>'; check(); return; }
   if(!d.partyDay){ host.innerHTML='<div class="msg err" style="display:block">Parties are available Friday, Saturday & Sunday only.</div>'; check(); return; }
   if(d.tooSoon){ host.innerHTML='<div class="msg err" style="display:block">Please choose a date at least 2 weeks away.</div>'; check(); return; }
+  if(d.partiesOff){ host.innerHTML='<div class="msg" style="display:block;background:#eef5ee;color:#2f6a4a;border:1px solid #cfe5d3;line-height:1.5">✨ <b>Open play session only on this day!</b><br>We\u2019re not hosting private parties on this date \u2014 but we\u2019d love for you to come join us for an <a href="/book.html" style="color:#2f6a4a;text-decoration:underline;font-weight:800">open play session</a> instead! And if it\u2019s your little one\u2019s birthday, ask us about a birthday admission. 🎂🎈</div>'; check(); return; }
   host.innerHTML="";
   d.slots.forEach(s=>{
     const el=document.createElement("div");
@@ -259,5 +260,6 @@ async function submitQuestionnaire(){
 }
 </script>
 <script>if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("/sw.js").catch(function(){});});}</script><script src="/assets/phone-format.js" defer></script>
+<script src="/assets/chat.js" defer></script>
 </body>
 </html>
