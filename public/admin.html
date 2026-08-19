@@ -111,13 +111,16 @@
       <div class="wi-col">
       <div class="wi-loyalty">
         <h3 style="font-family:'Cormorant Garamond',serif;font-weight:600;font-size:1.3rem;color:var(--rose-deep);margin:0 0 4px">🎈 Loyalty card — find or punch</h3>
-        <p class="note" style="margin-top:0">Enter their phone to pull up the family (use it to check WaiverMaster too). Punch a returning child, or create a new card below.</p>
-        <label>Parent phone</label>
-        <div class="row"><div><input type="tel" id="lwPhone" placeholder="e.g. 760-555-1234"></div><div style="flex:0 0 auto"><button id="lwFind" style="margin-top:0">Find</button></div></div>
+        <p class="note" style="margin-top:0">Search by phone, child name, or parent name to pull up the family (use it to check WaiverMaster too). Punch a returning child, or create a new card below.</p>
+        <label>Phone, child name, or parent name</label>
+        <div class="row"><div><input type="text" id="lwPhone" placeholder="760-555-1234  ·  Silas  ·  Ruiz" autocomplete="off"></div><div style="flex:0 0 auto"><button id="lwFind" style="margin-top:0">Find</button></div></div>
         <div id="lwResults" style="margin:8px 0"></div>
         <details id="lwNewWrap" style="border-top:1px dashed #e2d9cc;padding-top:10px">
           <summary style="cursor:pointer;font-weight:800;color:var(--rose-deep);font-size:.9rem">➕ New card / add a child</summary>
           <div style="margin-top:10px">
+            <label>Parent phone</label>
+            <input type="tel" id="lwNewPhone" placeholder="e.g. 760-555-1234" inputmode="tel">
+            <p class="note" style="margin:4px 0 10px">Needed to group siblings into one family. Leave blank to reuse whatever is in the search box above.</p>
             <div id="lwKids"><div class="lw-kid" style="border-bottom:1px dashed #eee;padding-bottom:8px;margin-bottom:8px"><div class="row"><div><label>Child first</label><input type="text" class="lwF"></div><div><label>Child last</label><input type="text" class="lwL"></div></div><label>Birthday (optional)</label><input type="date" class="lwD"></div></div>
             <button type="button" id="lwAddKid" class="alt" style="margin:0 0 10px;padding:8px 14px;font-size:.82rem">➕ Add sibling</button>
             <label>Email (optional)</label><input type="email" id="lwEmail" placeholder="parent@email.com">
@@ -2412,22 +2415,23 @@ if($("#wsSave")) $("#wsSave").onclick=async function(){
   function waiverBadge(c){ var t=todayISO(); if(c.waiverExpiry && c.waiverExpiry>=t) return '<span style="color:#3f7d5c;font-weight:700">\u2713 Waiver on file (exp '+esc(c.waiverExpiry)+')</span>'; return '<span style="color:#b5622f;font-weight:700">\u26a0\ufe0f No current waiver \u2014 check WaiverMaster</span>'; }
   function renderCards(cards){
     var box=$('#lwResults');
-    if(!cards.length){ box.innerHTML='<div class="note" style="color:var(--rose-deep)">No card on this number yet \u2014 create one below \U0001F447</div>'; if($('#lwNewWrap'))$('#lwNewWrap').open=true; return; }
+    if(!cards.length){ box.innerHTML='<div class="note" style="color:var(--rose-deep)">No match yet \u2014 create a card below \U0001F447</div>'; if($('#lwNewWrap'))$('#lwNewWrap').open=true; return; }
     box.innerHTML=cards.map(function(c){
       var adults=(c.waiverAdults&&c.waiverAdults.length)?'<div class="note" style="margin:2px 0 0">Adults on file: '+c.waiverAdults.map(esc).join(', ')+'</div>':'<div class="note" style="margin:2px 0 0;color:#b5622f">No adult names on file \u2014 add today\u2019s adult on WaiverMaster</div>';
       return '<div style="border:1px solid #eadfce;border-radius:10px;padding:10px 12px;margin-bottom:8px;background:#fff">'
-        +'<div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><div><b>'+esc(c.childName)+'</b> <span style="font-family:monospace;color:var(--rose-deep)">'+esc(c.code)+'</span><br><span class="note">'+c.punches+'/'+c.needed+' visits'+(c.dob?' \u00b7 \U0001F382 '+esc(c.dob):'')+'</span></div>'
+        +'<div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><div><b>'+esc(c.childName)+'</b> <span style="font-family:monospace;color:var(--rose-deep)">'+esc(c.code)+'</span><br><span class="note">'+c.punches+'/'+c.needed+' visits'+(c.dob?' \u00b7 \U0001F382 '+esc(c.dob):'')+(c.phone4?' \u00b7 \u260E \u2026'+esc(c.phone4):'')+(c.parentName?' \u00b7 '+esc(c.parentName):'')+'</span></div>'
         +'<button class="lwPunch" data-code="'+esc(c.code)+'" style="margin:0;padding:8px 14px;white-space:nowrap">\u2795 Punch visit</button></div>'
         +'<div style="margin-top:6px">'+waiverBadge(c)+'</div>'+adults+'</div>';
     }).join('');
     Array.prototype.forEach.call(document.querySelectorAll('.lwPunch'),function(b){ b.onclick=function(){ punchExisting(b.getAttribute('data-code'), b); }; });
   }
   async function lwFind(){
-    var key=KEY(); var box=$('#lwResults'); var phone=($('#lwPhone').value||'').trim();
+    var key=KEY(); var box=$('#lwResults'); var q=($('#lwPhone').value||'').trim();
     if(!key){ box.innerHTML='<div class="out err" style="display:block">Enter your '+KLABEL+' first.</div>'; return; }
-    if(phone.replace(/\D/g,'').length<4){ box.innerHTML='<div class="note">Enter at least the last 4 digits.</div>'; return; }
+    var digits=q.replace(/\D/g,'');
+    if(digits.length<4 && q.length<2){ box.innerHTML='<div class="note">Type a name, or at least the last 4 digits of the phone.</div>'; return; }
     box.innerHTML='<div class="note">Searching\u2026</div>';
-    try{ var r=await (await fetch('/api/loyalty',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({key:key,action:'by-phone',phone:phone})})).json();
+    try{ var r=await (await fetch('/api/loyalty',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({key:key,action:'by-phone',query:q,phone:q})})).json();
       if(!r.ok){ box.innerHTML='<div class="out err" style="display:block">'+esc(r.error||'Search failed.')+'</div>'; return; }
       renderCards(r.cards||[]);
     }catch(e){ box.innerHTML='<div class="out err" style="display:block">Network error.</div>'; }
@@ -2446,7 +2450,7 @@ if($("#wsSave")) $("#wsSave").onclick=async function(){
   if($('#lwCreate')) $('#lwCreate').onclick=async function(){
     var key=KEY(); var out=$('#lwOut');
     if(!key){ out.className='out err'; out.style.display='block'; out.textContent='Enter your '+KLABEL+' first.'; return; }
-    var phone=($('#lwPhone').value||'').trim();
+    var phone=(($('#lwNewPhone')&&$('#lwNewPhone').value)||$('#lwPhone').value||'').trim();
     var kids=[].map.call(document.querySelectorAll('#lwKids .lw-kid'),function(r){return {first:r.querySelector('.lwF').value.trim(),last:r.querySelector('.lwL').value.trim(),dob:r.querySelector('.lwD').value};}).filter(function(c){return c.first&&c.last;});
     if(phone.replace(/\D/g,'').length<4){ out.className='out err'; out.style.display='block'; out.textContent='Enter the parent phone.'; return; }
     if(!kids.length){ out.className='out err'; out.style.display='block'; out.textContent='Enter at least one child first + last name.'; return; }
