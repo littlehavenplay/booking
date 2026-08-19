@@ -91,16 +91,33 @@ export default async (req) => {
 
   // Find every card on file for a phone number (the family) — used by the walk-in
   // "find or create" panel so staff can pull a returning family up by phone.
-  if (action === "by-phone") {
-    const p4 = last4(b.phone);
-    if (!p4) return json({ error: "Enter at least the last 4 digits of the phone." }, 400);
+  // Walk-in lookup. Accepts a phone number OR a child's / parent's name, so staff
+  // can find a family at the desk without asking for a phone number first.
+  if (action === "by-phone" || action === "find") {
+    const raw = (b.query != null ? b.query : (b.phone || "")).toString().trim();
+    const digits = raw.replace(/\D/g, "");
+    const byPhone = digits.length >= 4;
+    const needle = raw.toLowerCase();
+    if (!byPhone && needle.length < 2) {
+      return json({ error: "Type a name, or at least the last 4 digits of the phone." }, 400);
+    }
+    const p4 = byPhone ? digits.slice(-4) : "";
+    const matches = (rec) => {
+      if (byPhone) return rec.phone4 === p4;
+      const child = (rec.childName || "").toLowerCase();
+      const parent = (rec.parentName || "").toLowerCase();
+      // "Ruiz Silas" should find "Silas Ruiz" too — staff type it either way round.
+      const flipped = child.split(/\s+/).reverse().join(" ");
+      return child.includes(needle) || parent.includes(needle) || flipped.includes(needle);
+    };
     const out = [];
     try {
       const keys = await listAllKeys(loyalty, { prefix: "card:" });
       for (const k of keys) {
         let rec = null; try { rec = await loyalty.get(k, { type: "json" }); } catch { rec = null; }
-        if (!rec || rec.phone4 !== p4) continue;
+        if (!rec || !matches(rec)) continue;
         out.push({ code: rec.code, childName: rec.childName || "", dob: rec.dob || "",
+          parentName: rec.parentName || "", phone4: rec.phone4 || "",
           punches: rec.punches || 0, needed: PUNCHES_FOR_REWARD, rewardsEarned: rec.rewardsEarned || 0,
           email: rec.buyerEmail || "", militaryVerified: !!rec.militaryVerified,
           waiverSigned: rec.waiverSigned || "", waiverExpiry: rec.waiverExpiry || "",

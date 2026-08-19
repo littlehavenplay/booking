@@ -80,13 +80,22 @@ export default async (req) => {
     const first = parts[0] || "", last = parts.slice(1).join(" ") || "";
     const when = nextOccurrence(card.dob);
     const week = birthdayWeek(when);
-    const result = await issueBirthdayCode({ first, last, email: card.buyerEmail, dob: card.dob, code }, week, code);
+    const result = await issueBirthdayCode({ first, last, email: card.buyerEmail, dob: card.dob, code }, week, code, { manual: true });
     if (!result.ok) return json({ error: result.error }, 502);
 
-    card.lastSentYear = when.slice(0, 4);
-    card.lastCode = result.code;
-    card.lastSentAt = new Date().toISOString();
-    try { await loyalty.setJSON("card:" + code, card); } catch {}
+    // issueBirthdayCode writes activeBirthdayCode onto the card, so re-read it here.
+    // Writing back the copy we loaded before that call would wipe those fields and
+    // the "it's their birthday!" badge would quietly vanish from the booking page.
+    let fresh = card;
+    try { fresh = (await loyalty.get("card:" + code, { type: "json" })) || card; } catch {}
+    fresh.lastSentYear = when.slice(0, 4);
+    fresh.lastCode = result.code;
+    fresh.lastSentAt = new Date().toISOString();
+    // Staff sent this by hand, so suppress the automatic day-of reminder for this
+    // birthday — the family has already been told.
+    fresh.dayOfSentYear = when.slice(0, 4);
+    fresh.manualIssuedAt = new Date().toISOString();
+    try { await loyalty.setJSON("card:" + code, fresh); } catch {}
 
     return json({ ok: true, code: result.code, when, emailed: result.emailed,
       message: `Birthday gift ${result.code} for ${first} — valid their birthday week (${result.validFrom} to ${result.validUntil}).` +
@@ -120,8 +129,27 @@ export default async (req) => {
       if (cardRec) dob = cardRec.dob || "";
     }
 
-    const result = await issueBirthdayCode({ first, last, email, dob }, { validFrom, validUntil }, loyaltyCode || null);
+    const result = await issueBirthdayCode({ first, last, email, dob }, { validFrom, validUntil }, loyaltyCode || null, { manual: true });
     if (!result.ok) return json({ error: result.error }, 502);
+
+    // Record the issue on the loyalty card when one is linked. Without this the
+    // daily cron has no idea a code already went out and mints a second one on the
+    // child's birthday — which is exactly what used to happen. Re-read first so we
+    // don't wipe the activeBirthdayCode that issueBirthdayCode just wrote.
+    if (loyaltyCode) {
+      try {
+        const fresh = await loyalty.get("card:" + loyaltyCode, { type: "json" });
+        if (fresh) {
+          const yr = validFrom.slice(0, 4);
+          fresh.lastSentYear = yr;
+          fresh.lastCode = result.code;
+          fresh.lastSentAt = new Date().toISOString();
+          fresh.dayOfSentYear = yr;          // no automatic day-of reminder either
+          fresh.manualIssuedAt = new Date().toISOString();
+          await loyalty.setJSON("card:" + loyaltyCode, fresh);
+        }
+      } catch {}
+    }
 
     return json({ ok: true, code: result.code, validFrom, validUntil, emailed: result.emailed,
       message: `Birthday gift ${result.code} for ${first} ${last} — good ${validFrom === validUntil ? "on " + validFrom : "between " + validFrom + " and " + validUntil}.` +

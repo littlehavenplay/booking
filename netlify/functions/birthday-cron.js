@@ -8,7 +8,7 @@
 //
 // Runs every day at 15:00 UTC (~8am Pacific). Netlify handles the schedule.
 import { getStore } from "@netlify/blobs";
-import { issueBirthdayCode, sendBirthdayDayOfEmail, birthdayWeek } from "./lib-birthday.js";
+import { issueBirthdayCode, sendBirthdayDayOfEmail, birthdayWeek, findExistingBirthdayReward } from "./lib-birthday.js";
 
 function splitName(childName) {
   const parts = (childName || "").trim().split(/\s+/);
@@ -47,15 +47,31 @@ export default async () => {
     if (cmm === mm && cdd === dd) {
       checked++;
       if (card.lastSentYear !== year && card.buyerEmail) {
-        const { first, last } = splitName(card.childName);
-        const result = await issueBirthdayCode({ first, last, email: card.buyerEmail, dob: card.dob, code: loyaltyCode }, birthdayWeek(when), loyaltyCode);
-        if (result.ok) {
+        const week = birthdayWeek(when);
+        // Never hand out a second code for a birthday that's already covered —
+        // most often because staff issued one by hand before the DOB was on file.
+        const existing = await findExistingBirthdayReward({
+          loyaltyCode, childName: card.childName, validFrom: week.validFrom, validUntil: week.validUntil,
+        });
+        if (existing) {
           card.lastSentYear = year;
-          card.lastCode = result.code;
-          card.lastSentAt = new Date().toISOString();
+          card.lastCode = existing.code;
+          // A hand-issued code means the family has already been told. Don't send
+          // the day-of reminder either.
+          if (existing.manual) card.dayOfSentYear = year;
           touched = true;
-          if (result.emailed) sent++; else failed++;
-        } else failed++;
+          skipped++;
+        } else {
+          const { first, last } = splitName(card.childName);
+          const result = await issueBirthdayCode({ first, last, email: card.buyerEmail, dob: card.dob, code: loyaltyCode }, week, loyaltyCode);
+          if (result.ok) {
+            card.lastSentYear = year;
+            card.lastCode = result.code;
+            card.lastSentAt = new Date().toISOString();
+            touched = true;
+            if (result.emailed) sent++; else failed++;
+          } else failed++;
+        }
       } else skipped++;
     }
 
@@ -64,10 +80,24 @@ export default async () => {
     if (cmm === todayMM && cdd === todayDD) {
       dayChecked++;
       if (card.dayOfSentYear !== todayYear && card.buyerEmail) {
-        let code = card.lastSentYear === todayYear ? card.lastCode : "";
+        const week = birthdayWeek(todayISO);
+        const existing = await findExistingBirthdayReward({
+          loyaltyCode, childName: card.childName, validFrom: week.validFrom, validUntil: week.validUntil,
+        });
+        // Hand-issued code: the family already has it. Mark the day as handled and
+        // send nothing at all.
+        if (existing && existing.manual) {
+          card.dayOfSentYear = todayYear;
+          touched = true;
+          daySkipped++;
+          if (touched) { try { await loyalty.setJSON(k, card); } catch {} }
+          continue;
+        }
+        // Otherwise reuse whatever code already exists rather than minting a new one.
+        let code = (card.lastSentYear === todayYear ? card.lastCode : "") || (existing ? existing.code : "");
         if (!code) {
           const { first, last } = splitName(card.childName);
-          const result = await issueBirthdayCode({ first, last, email: card.buyerEmail, dob: card.dob, code: loyaltyCode }, birthdayWeek(todayISO), loyaltyCode);
+          const result = await issueBirthdayCode({ first, last, email: card.buyerEmail, dob: card.dob, code: loyaltyCode }, week, loyaltyCode);
           if (result.ok) {
             code = result.code;
             card.lastSentYear = todayYear;

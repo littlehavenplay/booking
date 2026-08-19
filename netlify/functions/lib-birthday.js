@@ -4,6 +4,7 @@
 // birthday landing on a closed day is no problem — they can come any open day that week.
 // Single-use. `when` may be a single "YYYY-MM-DD" or a { validFrom, validUntil } range.
 import { getStore } from "@netlify/blobs";
+import { listAllKeys } from "./lib-blobs.js";
 
 const ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no I/O/0/1
 
@@ -35,7 +36,43 @@ export function birthdayWeek(dateISO) {
 // flow — validFrom and expiry both land on that one day, unchanged behavior),
 // or an object { validFrom, validUntil } for a custom multi-day window (the
 // manual staff tool, e.g. covering a birthday that falls on a closed Monday).
-export async function issueBirthdayCode(rec, when, loyaltyCode) {
+// Has this child ALREADY got a birthday code covering this window?
+//
+// This is the backstop that stops a family ever receiving two codes for one
+// birthday. It reads the rewards store directly instead of trusting a flag on the
+// loyalty card, so it still works when staff issued a code by hand for a child who
+// had no card yet, or whose birthday wasn't on file at the time.
+//
+// Matches on the loyalty code when there is one, otherwise on the child's name.
+// Name-only matching could in theory collide for two children with identical names;
+// the cost of that is one missed email, never a duplicate code — the right way round.
+export async function findExistingBirthdayReward({ loyaltyCode, childName, validFrom, validUntil }) {
+  const rewards = getStore("rewards");
+  const wantName = (childName || "").trim().toLowerCase();
+  const wantCode = (loyaltyCode || "").trim().toUpperCase();
+  let keys = [];
+  try { keys = await listAllKeys(rewards, { prefix: "reward:" }); } catch { return null; }
+
+  for (const k of keys) {
+    let r = null;
+    try { r = await rewards.get(k, { type: "json" }); } catch { continue; }
+    if (!r || r.kind !== "birthday") continue;
+
+    const sameChild =
+      (wantCode && (r.loyaltyCode || "").trim().toUpperCase() === wantCode) ||
+      (!wantCode && wantName && (r.childName || "").trim().toLowerCase() === wantName);
+    if (!sameChild) continue;
+
+    // Overlapping date windows means this birthday is already covered.
+    const rFrom = r.validFrom || "", rUntil = r.expiry || r.validFrom || "";
+    if (rFrom && validUntil && rFrom > validUntil) continue;
+    if (rUntil && validFrom && rUntil < validFrom) continue;
+    return r;
+  }
+  return null;
+}
+
+export async function issueBirthdayCode(rec, when, loyaltyCode, meta = {}) {
   const isRange = when && typeof when === "object";
   const validFrom = isRange ? when.validFrom : when;
   const validUntil = isRange ? (when.validUntil || when.validFrom) : when;
@@ -57,6 +94,10 @@ export async function issueBirthdayCode(rec, when, loyaltyCode) {
       loyaltyCode: loyaltyCode || rec.code || null,
       validFrom, expiry: validUntil, used: false,
       issuedAt: new Date().toISOString(),
+      // Set when staff issued this by hand. The daily cron treats a manual code as
+      // "this birthday is already handled" and stays out of the way entirely —
+      // no second code, no day-of reminder.
+      manual: !!meta.manual,
     });
   } catch { return { ok: false, error: "Couldn't save the gift code. Try again." }; }
 
