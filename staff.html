@@ -54,6 +54,18 @@
     #sideNav{display:none}
     #secBar{display:block;position:sticky;top:0;z-index:60;margin:0 -16px 18px;padding:10px 16px;background:rgba(250,247,243,.96);border-bottom:1px solid rgba(0,0,0,.06)}
   }
+
+  /* --- compact one-tool-at-a-time navigation --- */
+  html.compact .card[id^="sec-"]{display:none!important}
+  html.compact .card[id^="sec-"].sec-active{display:block!important}
+  #sideNav .snav-title{margin-top:12px}
+  #sideNav .snav-title:first-child{margin-top:0}
+  #secMenu .snav-title{font-size:.62rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--taupe);padding:9px 12px 3px}
+
+  /* --- walk-in + loyalty side-by-side panel --- */
+  .wi-cols{display:flex;gap:22px;flex-wrap:wrap;align-items:flex-start}
+  .wi-cols>.wi-col{flex:1 1 320px;min-width:290px}
+  .wi-loyalty{background:#faf6f0;border:1px solid #eadfce;border-radius:14px;padding:14px 16px}
 </style>
 <link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#7a6253"><link rel="apple-touch-icon" href="/assets/icons/apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="Little Haven"><link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32.png"></head>
 <body>
@@ -70,8 +82,8 @@
   </div>
 
   <div id="app" class="hidden">
-<div id="secBar"><button id="secToggle" type="button">Sections ▾</button><div id="secMenu"><a href="#sec-schedule">Daily schedule</a><a href="#sec-walkin">Walk-in check-in</a><a href="#sec-punch">Punch-card check-in</a><a href="/loyalty.html">Loyalty &amp; Punch Cards</a><a href="#sec-reschedule">Reschedule &amp; cancel</a><a href="#sec-party">Session capacity &amp; blocking</a><a href="#sec-deposit">Record a party deposit</a><a href="#sec-redeem">Redeem a credit</a><a href="#sec-credit-backfill">Backfill credit emails</a><a href="#sec-issue">Issue a credit</a><a href="#sec-code">Manage a code</a><a href="#sec-punchissue">Legacy card tools</a><a href="#sec-closures">Closures &amp; hours</a><a href="#sec-passes">Legacy prepaid holders</a><a href="#sec-parties">Party bookings</a><a href="/headcount.html">Head count</a><a href="#sec-prices">Manage prices</a><a href="#sec-weekly">Weekly hours</a><a href="#sec-seasonal">Seasonal hours</a><a href="#sec-weekday-special">Weekday special</a><a href="#sec-discount">Discount codes</a><a href="#sec-news">News banner</a></div></div>
-<nav id="sideNav" aria-label="Sections"><div class="snav-title">Sections</div><a href="#sec-schedule">Daily schedule</a><a href="#sec-walkin">Walk-in check-in</a><a href="#sec-punch">Punch-card check-in</a><a href="/loyalty.html">Loyalty &amp; Punch Cards</a><a href="#sec-reschedule">Reschedule &amp; cancel</a><a href="#sec-party">Session capacity &amp; blocking</a><a href="#sec-deposit">Record a party deposit</a><a href="#sec-redeem">Redeem a credit</a><a href="#sec-credit-backfill">Backfill credit emails</a><a href="#sec-issue">Issue a credit</a><a href="#sec-code">Manage a code</a><a href="#sec-punchissue">Legacy card tools</a><a href="#sec-closures">Closures &amp; hours</a><a href="#sec-passes">Legacy prepaid holders</a><a href="#sec-parties">Party bookings</a><a href="/headcount.html">Head count</a><a href="#sec-prices">Manage prices</a><a href="#sec-weekly">Weekly hours</a><a href="#sec-seasonal">Seasonal hours</a><a href="#sec-weekday-special">Weekday special</a><a href="#sec-discount">Discount codes</a><a href="#sec-news">News banner</a><a href="#sec-rating">Reviews rating</a><a href="#sec-photos">Site photos</a><a href="#sec-promos">Promotions &amp; Flyers</a><a href="#sec-events">Upcoming events</a><a href="#sec-newsletter">📧 Newsletter</a><a href="#sec-partners">Partners page</a><a href="#sec-birthdays">Birthday club</a></nav>
+<div id="secBar"><button id="secToggle" type="button">Sections ▾</button><div id="secMenu"><a href="#sec-schedule">Daily schedule</a><a href="#sec-walkin">Walk-in check-in</a><a href="#sec-punch">Punch-card check-in</a><a href="/loyalty.html">Loyalty &amp; Punch Cards</a><a href="#sec-reschedule">Reschedule &amp; cancel</a><a href="#sec-party">Session capacity &amp; blocking</a><a href="#sec-deposit">Record a party deposit</a><a href="#sec-partyoff">Open play only (no parties)</a><a href="#sec-redeem">Redeem a credit</a><a href="#sec-credit-backfill">Backfill credit emails</a><a href="#sec-issue">Issue a credit</a><a href="#sec-code">Manage a code</a><a href="#sec-punchissue">Legacy card tools</a><a href="#sec-closures">Closures &amp; hours</a><a href="#sec-passes">Legacy prepaid holders</a><a href="#sec-parties">Party bookings</a><a href="/headcount.html">Head count</a><a href="#sec-prices">Manage prices</a><a href="#sec-weekly">Weekly hours</a><a href="#sec-seasonal">Seasonal hours</a><a href="#sec-weekday-special">Weekday special</a><a href="#sec-discount">Discount codes</a><a href="#sec-news">News banner</a></div></div>
+<nav id="sideNav" aria-label="Sections"><div class="snav-title">Sections</div><a href="#sec-schedule">Daily schedule</a><a href="#sec-walkin">Walk-in check-in</a><a href="#sec-punch">Punch-card check-in</a><a href="/loyalty.html">Loyalty &amp; Punch Cards</a><a href="#sec-reschedule">Reschedule &amp; cancel</a><a href="#sec-party">Session capacity &amp; blocking</a><a href="#sec-deposit">Record a party deposit</a><a href="#sec-partyoff">Open play only (no parties)</a><a href="#sec-redeem">Redeem a credit</a><a href="#sec-credit-backfill">Backfill credit emails</a><a href="#sec-issue">Issue a credit</a><a href="#sec-code">Manage a code</a><a href="#sec-punchissue">Legacy card tools</a><a href="#sec-closures">Closures &amp; hours</a><a href="#sec-passes">Legacy prepaid holders</a><a href="#sec-parties">Party bookings</a><a href="/headcount.html">Head count</a><a href="#sec-prices">Manage prices</a><a href="#sec-weekly">Weekly hours</a><a href="#sec-seasonal">Seasonal hours</a><a href="#sec-weekday-special">Weekday special</a><a href="#sec-discount">Discount codes</a><a href="#sec-news">News banner</a><a href="#sec-rating">Reviews rating</a><a href="#sec-photos">Site photos</a><a href="#sec-promos">Promotions &amp; Flyers</a><a href="#sec-events">Upcoming events</a><a href="#sec-newsletter">📧 Newsletter</a><a href="#sec-partners">Partners page</a><a href="#sec-birthdays">Birthday club</a></nav>
     <h1>Daily schedule</h1>
     <div class="card" id="sec-schedule">
       <label>Date</label>
@@ -81,15 +93,16 @@
 
   <div class="card" id="sec-walkin">
       <h2>Walk-in check-in</h2>
+      <div class="wi-cols"><div class="wi-col">
       <label>Arrival time</label>
       <select id="wiSlot">
         <option value="">Auto — nearest to now</option>
-        <option value="arr09">9:00 AM</option>
-        <option value="arr10">10:00 AM</option>
-        <option value="arr11">11:00 AM</option>
-        <option value="arr12">12:00 PM</option>
-        <option value="arr13">1:00 PM</option>
-        <option value="arr14">2:00 PM</option><option value="arr15">3:00 PM (Fri/Sat)</option>
+        <option value="arr09">9:00 AM</option><option value="arr0930">9:30 AM</option>
+        <option value="arr10">10:00 AM</option><option value="arr1030">10:30 AM</option>
+        <option value="arr11">11:00 AM</option><option value="arr1130">11:30 AM</option>
+        <option value="arr12">12:00 PM</option><option value="arr1230">12:30 PM</option>
+        <option value="arr13">1:00 PM</option><option value="arr1330">1:30 PM</option>
+        <option value="arr14">2:00 PM</option><option value="arr1430">2:30 PM</option><option value="arr15">3:00 PM</option><option value="arr1530">3:30 PM</option><option value="arr16">4:00 PM</option><option value="arr1630">4:30 PM</option><option value="arr17">5:00 PM</option><option value="arr1730">5:30 PM</option><option value="arr18">6:00 PM</option>
       </select>
       <div class="row">
         <div><label>Children walking in</label><input type="number" id="wiCount" min="1" placeholder="e.g. 2"></div>
@@ -99,11 +112,41 @@
         <label style="display:flex;align-items:flex-start;gap:8px;text-transform:none;letter-spacing:0;color:var(--charcoal);font-weight:700;font-size:.82rem;margin:0;cursor:pointer"><input type="checkbox" id="wiWaiver" style="width:auto;margin-top:2px"> 📋 I confirmed <b>every adult AND child</b> entering is signed on the WaiverMaster list.</label>
       </div>
       <div style="border-top:1px dashed #e2d9cc;margin:2px 0 8px;padding-top:10px">
-        <p class="note" style="margin:0">🎈 Need to punch a loyalty card for this walk-in? <a href="/loyalty.html" target="_blank">Open Loyalty &amp; Punch Cards →</a> — safer than retyping their name/phone here, since it finds their real existing card instead of guessing.</p>
+        <p class="note" style="margin:0">🎈 Punch or create their loyalty card on the right → their visit is recorded automatically.</p>
       </div>
       <button id="wiAdd">Log walk-in</button>
       <div class="out" id="wiOut"></div>
       <p class="note">Pick the arrival time (or leave on Auto for the time right now). Children and adults both count toward that time's totals, and the website's "spots left" updates instantly.</p>
+      </div>
+      <div class="wi-col">
+      <div class="wi-loyalty">
+        <h3 style="font-family:'Cormorant Garamond',serif;font-weight:600;font-size:1.3rem;color:var(--rose-deep);margin:0 0 4px">🎈 Loyalty card — find or punch</h3>
+        <p class="note" style="margin-top:0">Search by phone, child name, or parent name to pull up the family (use it to check WaiverMaster too). Punch a returning child, or create a new card below.</p>
+        <label>Phone, child name, or parent name</label>
+        <div class="row"><div><input type="text" id="lwPhone" placeholder="760-555-1234  ·  Silas  ·  Ruiz" autocomplete="off"></div><div style="flex:0 0 auto"><button id="lwFind" style="margin-top:0">Find</button></div></div>
+        <div id="lwResults" style="margin:8px 0"></div>
+        <details id="lwNewWrap" style="border-top:1px dashed #e2d9cc;padding-top:10px">
+          <summary style="cursor:pointer;font-weight:800;color:var(--rose-deep);font-size:.9rem">➕ New card / add a child</summary>
+          <div style="margin-top:10px">
+            <label>Parent phone</label>
+            <input type="tel" id="lwNewPhone" placeholder="e.g. 760-555-1234" inputmode="tel">
+            <p class="note" style="margin:4px 0 10px">Needed to group siblings into one family. Leave blank to reuse whatever is in the search box above.</p>
+            <div id="lwKids"><div class="lw-kid" style="border-bottom:1px dashed #eee;padding-bottom:8px;margin-bottom:8px"><div class="row"><div><label>Child first</label><input type="text" class="lwF"></div><div><label>Child last</label><input type="text" class="lwL"></div></div><label>Birthday (optional)</label><input type="date" class="lwD"></div></div>
+            <button type="button" id="lwAddKid" class="alt" style="margin:0 0 10px;padding:8px 14px;font-size:.82rem">➕ Add sibling</button>
+            <label>Email (optional)</label><input type="email" id="lwEmail" placeholder="parent@email.com">
+            <div style="background:#fdf1ec;border:1px solid #f0dcd2;border-radius:10px;padding:10px 12px;margin:8px 0">
+              <label style="display:block;font-weight:700;font-size:.8rem;color:var(--charcoal);margin-bottom:5px">📋 Waiver signed date (optional)</label>
+              <input type="date" id="lwWaiver">
+              <label style="display:block;font-weight:700;font-size:.8rem;color:var(--charcoal);margin:8px 0 5px">👥 Adult(s) who signed (comma-separate)</label>
+              <input type="text" id="lwAdults" placeholder="e.g. Maria Gomez, John Gomez">
+              <label style="display:flex;align-items:center;gap:8px;font-weight:700;font-size:.8rem;color:var(--charcoal);margin:12px 0 0;cursor:pointer;text-transform:none;letter-spacing:0"><input type="checkbox" id="lwMilitary" style="width:auto"> 🎖️ Verified military family (10% off)</label>
+            </div>
+            <button id="lwCreate">Create &amp; punch</button>
+            <div class="out" id="lwOut"></div>
+          </div>
+        </details>
+      </div>
+      </div></div>
     </div>
 
   <div class="card" id="sec-punch">
@@ -240,6 +283,29 @@
     <div id="bdTableWrap" style="overflow-x:auto;margin-top:10px"></div>
   </div>
 
+    <div class="card" id="sec-addbooking">
+    <h2>➕ Manually add a booking</h2>
+    <p class="note" style="margin-top:-4px">For a phone reservation or to restore a booking. Adds them to the schedule with <b>no charge</b> and doesn't email the customer. Pick the date + arrival time and enter their info.</p>
+    <div class="row">
+      <div><label>Date</label><input type="date" id="mbDate"></div>
+      <div><label>Arrival time</label><select id="mbSlot">
+        <option value="arr09">9:00 AM</option><option value="arr0930">9:30 AM</option>
+        <option value="arr10">10:00 AM</option><option value="arr1030">10:30 AM</option>
+        <option value="arr11">11:00 AM</option><option value="arr1130">11:30 AM</option>
+        <option value="arr12">12:00 PM</option><option value="arr1230">12:30 PM</option>
+        <option value="arr13">1:00 PM</option><option value="arr1330">1:30 PM</option>
+        <option value="arr14">2:00 PM</option><option value="arr1430">2:30 PM</option><option value="arr15">3:00 PM</option><option value="arr1530">3:30 PM</option><option value="arr16">4:00 PM</option><option value="arr1630">4:30 PM</option><option value="arr17">5:00 PM</option><option value="arr1730">5:30 PM</option><option value="arr18">6:00 PM</option>
+      </select></div>
+    </div>
+    <div class="row"><div><label>Parent/guardian name</label><input type="text" id="mbName" placeholder="e.g. Adrian Navarro"></div><div><label>Email (optional)</label><input type="email" id="mbEmail" placeholder="parent@email.com"></div></div>
+    <div class="row"><div><label>Phone (optional)</label><input type="tel" id="mbPhone" placeholder="e.g. 760-555-1234"></div></div>
+    <div class="row"><div><label>Regular (ages 1–6)</label><input type="number" id="mbReg" min="0" value="0"></div><div><label>Infants (under 1)</label><input type="number" id="mbInf" min="0" value="0"></div></div>
+    <div class="row"><div><label>Siblings</label><input type="number" id="mbSib" min="0" value="0"></div><div><label>Adults</label><input type="number" id="mbAd" min="0" value="0"></div></div>
+    <label>Children's names (comma-separated, optional)</label><input type="text" id="mbKids" placeholder="e.g. Evan Navarro">
+    <button id="mbAdd">Add to schedule</button>
+    <div class="out" id="mbOut"></div>
+  </div>
+
   <div class="card" id="sec-reschedule">
       <h2>Reschedule or cancel a booking</h2>
       <label>Original date</label>
@@ -251,12 +317,12 @@
       <label>New time slot</label>
       <select id="rsToSlot">
         <optgroup label="Open play arrival times">
-          <option value="arr09">9:00 AM</option>
-          <option value="arr10">10:00 AM</option>
-          <option value="arr11">11:00 AM</option>
-          <option value="arr12">12:00 PM</option>
-          <option value="arr13">1:00 PM</option>
-          <option value="arr14">2:00 PM</option><option value="arr15">3:00 PM (Fri/Sat)</option>
+          <option value="arr09">9:00 AM</option><option value="arr0930">9:30 AM</option>
+          <option value="arr10">10:00 AM</option><option value="arr1030">10:30 AM</option>
+          <option value="arr11">11:00 AM</option><option value="arr1130">11:30 AM</option>
+          <option value="arr12">12:00 PM</option><option value="arr1230">12:30 PM</option>
+          <option value="arr13">1:00 PM</option><option value="arr1330">1:30 PM</option>
+          <option value="arr14">2:00 PM</option><option value="arr1430">2:30 PM</option><option value="arr15">3:00 PM</option><option value="arr1530">3:30 PM</option><option value="arr16">4:00 PM</option><option value="arr1630">4:30 PM</option><option value="arr17">5:00 PM</option><option value="arr1730">5:30 PM</option><option value="arr18">6:00 PM</option>
         </optgroup>
         <optgroup label="Private party times (Fri–Sun)">
           <option value="p0930">9:30 - 11:30 AM (party)</option>
@@ -306,12 +372,12 @@
       <label>Time slot</label>
       <select id="ovSlot">
         <optgroup label="Open play arrival times">
-          <option value="arr09">9:00 AM</option>
-          <option value="arr10">10:00 AM</option>
-          <option value="arr11">11:00 AM</option>
-          <option value="arr12">12:00 PM</option>
-          <option value="arr13">1:00 PM</option>
-          <option value="arr14">2:00 PM</option><option value="arr15">3:00 PM (Fri/Sat)</option>
+          <option value="arr09">9:00 AM</option><option value="arr0930">9:30 AM</option>
+          <option value="arr10">10:00 AM</option><option value="arr1030">10:30 AM</option>
+          <option value="arr11">11:00 AM</option><option value="arr1130">11:30 AM</option>
+          <option value="arr12">12:00 PM</option><option value="arr1230">12:30 PM</option>
+          <option value="arr13">1:00 PM</option><option value="arr1330">1:30 PM</option>
+          <option value="arr14">2:00 PM</option><option value="arr1430">2:30 PM</option><option value="arr15">3:00 PM</option><option value="arr1530">3:30 PM</option><option value="arr16">4:00 PM</option><option value="arr1630">4:30 PM</option><option value="arr17">5:00 PM</option><option value="arr1730">5:30 PM</option><option value="arr18">6:00 PM</option>
         </optgroup>
         <optgroup label="Private party times (Fri–Sun)">
           <option value="p0930">9:30 - 11:30 AM (party)</option>
@@ -329,10 +395,47 @@
         </div>
         <p class="note" style="margin-top:6px">Limits how many children can book this session online — the website shows the reduced spots, then FULL. Set 0 to accept none.</p>
       </div>
-      <button id="ovRelease" class="alt" style="margin-top:10px;width:100%">↩️ Release — back to normal capacity</button>
+      <div style="border-top:1px dashed #e2d9cc;margin-top:12px;padding-top:12px">
+        <label>Or block a whole time range (e.g. saving 2:30&ndash;4:30 for your own kids)</label>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <input type="time" id="ovFrom" step="1800" style="width:130px">
+          <span class="note" style="margin:0">to</span>
+          <input type="time" id="ovTo" step="1800" style="width:130px">
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+          <button id="ovRangeBlock" style="margin:0;flex:1;min-width:150px">🚫 Block this range</button>
+          <button id="ovRangeFree" class="alt" style="margin:0;flex:1;min-width:150px">↩️ Reopen this range</button>
+        </div>
+        <p class="note" style="margin-top:6px">Uses the date above. Closes every open-play arrival time that starts inside the window — 2:30 to 4:30 blocks the 2:30, 3:00, 3:30 and 4:00 arrivals. Walk-ins you log in person still work.</p>
+      </div>
+            <button id="ovRelease" class="alt" style="margin-top:10px;width:100%">↩️ Release — back to normal capacity</button>
       <div class="out" id="ovOut"></div>
       <div class="note">Block hides a session from online booking (shows Unavailable). Set capacity caps how many kids can book it (shows FULL when reached). Walk-ins you log in person still work either way. Release restores normal capacity.</div>
     </div>
+
+  <div class="card" id="sec-partyoff">
+    <h2>Open play only — no parties</h2>
+    <p class="note" style="margin-top:-4px">Turn OFF party bookings &amp; deposits for certain days, while open play stays open. Existing booked parties aren't affected.</p>
+    <label>Block parties on a date (or range)</label>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <input type="date" id="poFrom" style="width:160px">
+      <span class="note" style="margin:0">to</span>
+      <input type="date" id="poTo" style="width:160px">
+    </div>
+    <input type="text" id="poNote" placeholder="Note (optional) — e.g. holiday weekend">
+    <button id="poAdd">🚫 No parties these days</button>
+    <div class="out" id="poOut"></div>
+    <div style="border-top:1px dashed #e2d9cc;margin-top:12px;padding-top:12px">
+      <label>Standing weekly rule — no parties on these weekdays</label>
+      <div id="poWk" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+      <button id="poWkSave" style="margin-top:8px">Save weekly rule</button>
+      <p class="note" style="margin-top:6px">Parties normally run Fri/Sat/Sun. Check a day to keep it open-play-only every week.</p>
+    </div>
+    <div style="border-top:1px dashed #e2d9cc;margin-top:12px;padding-top:12px">
+      <label>Currently blocked</label>
+      <div id="poList" class="note">Loading…</div>
+    </div>
+  </div>
 
   <div class="card" id="sec-deposit">
       <h2>Record an in-store party deposit</h2>
@@ -677,10 +780,11 @@
       <button type="button" class="phTab alt" data-set="facebook">🔷 Facebook reviews</button>
         <button type="button" class="phTab alt" data-set="interior">🏠 Interior photos</button>
         <button type="button" class="phTab alt" data-set="customer">📸 Customer photos</button>
+      <button type="button" class="phTab alt" data-set="pastevents">🎉 Past events</button>
       </div>
       <label>Add a photo (JPG or PNG, under ~5MB)</label>
       <input type="file" id="phFile" accept="image/png,image/jpeg,image/webp" multiple>
-      <button id="phUpload">⬆️ Upload photo</button>
+      <button id="phUpload">⬆️ Upload photo(s)</button>
       <div class="out" id="phOut"></div>
       <div id="phGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px;margin-top:14px"></div>
     </div>
@@ -705,7 +809,7 @@ function esc(s){return (s||"").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
   const t=new Date(); t.setMinutes(t.getMinutes()-t.getTimezoneOffset());
   $("#date").value=t.toISOString().slice(0,10);
   { const od=$("#ovDate"); if(od) od.value=t.toISOString().slice(0,10); }
-  if(PIN){ $("#gate").classList.add("hidden"); $("#app").classList.remove("hidden"); loadDay(); clLoad(); loadEvents(); pnLoad(); nlLoad(); }
+  if(PIN){ $("#gate").classList.add("hidden"); $("#app").classList.remove("hidden"); loadDay(); clLoad(); loadEvents(); pnLoad(); nlLoad(); try{window.__poLoad&&window.__poLoad();}catch(e){} }
 })();
 
 $("#enter").onclick=async()=>{
@@ -714,7 +818,7 @@ $("#enter").onclick=async()=>{
   if(!PIN){ out.className="out err"; out.textContent="Enter the staff PIN."; return; }
   // validate by attempting a load
   const ok=await loadDay(true);
-  if(ok){ sessionStorage.setItem("lh_staff_pin",PIN); $("#gate").classList.add("hidden"); $("#app").classList.remove("hidden"); clLoad(); loadEvents(); pnLoad(); nlLoad(); }
+  if(ok){ sessionStorage.setItem("lh_staff_pin",PIN); $("#gate").classList.add("hidden"); $("#app").classList.remove("hidden"); clLoad(); loadEvents(); pnLoad(); nlLoad(); try{window.__poLoad&&window.__poLoad();}catch(e){} }
   else { out.className="out err"; out.textContent="Wrong staff PIN."; }
 };
 $("#load").onclick=()=>loadDay();
@@ -755,7 +859,7 @@ async function loadDay(silent){
         html+='<table>';
         s.people.forEach(p=>{ const a=[]; if(p.regular)a.push(p.regular+' reg'); if(p.sibling)a.push(p.sibling+' sib'); if(p.infant)a.push(p.infant+' inf');
           const arrived=p.id&&arr[p.id];
-          html+='<tr'+(arrived?' style="background:#eaf3e4"':'')+'><td style="width:30px;text-align:center">'+(p.id?'<input type="checkbox" data-id="'+p.id+'" data-email="'+(p.email||'')+'" '+(arrived?'checked':'')+' onchange="markArrived(this)" title="Mark arrived" style="width:auto;transform:scale(1.35);cursor:pointer">':'')+'</td><td style="font-weight:700">'+(arrived?'\u2705 ':'')+esc(p.name)+(p.legacy?' <span style="font-size:.7rem;color:var(--taupe)">(2-hr session)</span>':'')+(p.childNames&&p.childNames.length?'<div style="font-size:.75rem;font-weight:600;color:var(--sage-dark);margin-top:3px">\uD83E\uDDD2 '+p.childNames.map(function(c){return esc(((c.first||'')+' '+(c.last||'')).trim())}).filter(Boolean).join(', ')+'</div>':'')+'</td><td style="color:var(--slate)">'+a.join(", ")+' · '+p.adults+' adult'+(p.adults===1?'':'s')+'</td><td style="color:var(--taupe);font-size:.78rem">'+esc(p.email)+(p.at?' <button type="button" onclick="showPayRec(this)" data-at="'+esc(p.at)+'" data-last4="'+esc(p.cardLast4||'')+'" data-paid="'+esc(p.paid||'')+'" style="border:none;background:#eef3ea;color:#4f6b43;border-radius:7px;cursor:pointer;font-weight:800;font-size:.68rem;padding:3px 8px;margin-left:6px;white-space:nowrap">💳 Payment record</button>':'')+'</td></tr>';
+          html+='<tr'+(arrived?' style="background:#eaf3e4"':'')+'><td style="width:30px;text-align:center">'+(p.id?'<input type="checkbox" data-id="'+p.id+'" data-email="'+(p.email||'')+'" '+(arrived?'checked':'')+' onchange="markArrived(this)" title="Mark arrived" style="width:auto;transform:scale(1.35);cursor:pointer">':'')+'</td><td style="font-weight:700">'+(arrived?'\u2705 ':'')+esc(p.name)+(p.arrivalLabel?' <span style="font-size:.68rem;font-weight:800;color:#7a6f95;background:#efeaf3;border-radius:6px;padding:1px 6px;white-space:nowrap">\u23F1 '+esc(p.arrivalLabel)+'</span>':'')+(p.legacy?' <span style="font-size:.7rem;color:var(--taupe)">(2-hr session)</span>':'')+(p.childNames&&p.childNames.length?'<div style="font-size:.75rem;font-weight:600;color:var(--sage-dark);margin-top:3px">\uD83E\uDDD2 '+p.childNames.map(function(c){return esc(((c.first||'')+' '+(c.last||'')).trim())}).filter(Boolean).join(', ')+'</div>':'')+'</td><td style="color:var(--slate)">'+a.join(", ")+' · '+p.adults+' adult'+(p.adults===1?'':'s')+'</td><td style="color:var(--taupe);font-size:.78rem">'+esc(p.email)+(p.at?' <button type="button" onclick="showPayRec(this)" data-at="'+esc(p.at)+'" data-last4="'+esc(p.cardLast4||'')+'" data-paid="'+esc(p.paid||'')+'" style="border:none;background:#eef3ea;color:#4f6b43;border-radius:7px;cursor:pointer;font-weight:800;font-size:.68rem;padding:3px 8px;margin-left:6px;white-space:nowrap">💳 Payment record</button>':'')+'</td></tr>';
         });
         html+='</table>';
       } else { html+='<div class="note">No online bookings yet.</div>'; }
@@ -865,9 +969,21 @@ function renderParties(){
       +'<div style="color:var(--taupe);font-size:.8rem">'+esc(p.phone||"")+(p.email?' · '+esc(p.email):"")+'</div>'
       +'<div style="margin-top:8px">'+(p.depositPaid
           ?'<button onclick="markPaid(\''+p.date+'\',\''+p.partySlot+'\',false)" style="margin:0;background:#9aa0a6;font-size:.8rem;padding:6px 12px">Undo deposit paid</button>'
-          :'<button onclick="markPaid(\''+p.date+'\',\''+p.partySlot+'\',true)" style="margin:0;font-size:.8rem;padding:6px 12px">Mark deposit paid</button>')+'</div>'
+          :'<button onclick="markPaid(\''+p.date+'\',\''+p.partySlot+'\',true)" style="margin:0;font-size:.8rem;padding:6px 12px">Mark deposit paid</button>')
+        +'<button onclick="releaseParty(\''+p.date+'\',\''+p.partySlot+'\')" class="alt" style="margin:0;background:#fbe6e2;color:#b5382f;font-size:.8rem;padding:6px 12px">Cancel &amp; release slot</button>'+'</div>'
       +'</div>';});
   $("#ptList").innerHTML=h;
+}
+// Cancels the party and frees the slot, which also reopens any open-play
+// sessions that were closed off underneath it.
+async function releaseParty(date,slot){
+  if(!confirm("Cancel this party and release the slot?\n\nThis frees the time for other bookings and reopens overlapping open play. It can't be undone \u2014 you'd have to re-enter the party.")) return;
+  var key=_pkey(); if(!key) return;
+  try{
+    var r=await (await fetch("/api/party-status",{method:"POST",headers:{"content-type":"application/json"},
+      body:JSON.stringify({pin:key,date:date,partySlot:slot,action:"release"})})).json();
+    if(r.ok) loadParties(); else alert(r.error||"Couldn't release the slot.");
+  }catch(e){ alert("Network error."); }
 }
 async function markPaid(date,slot,paid){
   var key=_pkey();if(!key)return;
@@ -876,7 +992,7 @@ async function markPaid(date,slot,paid){
 }
 if($("#pcLoad"))$("#pcLoad").onclick=loadPasses;
 if($("#ptLoad"))$("#ptLoad").onclick=loadParties;
-window.renderPasses=renderPasses;window.markPaid=markPaid;
+window.renderPasses=renderPasses;window.markPaid=markPaid;window.releaseParty=releaseParty;
 function coffeePopup(msg,sub,icon){var m=document.getElementById("coffeePopMsg");if(m&&msg)m.textContent=msg;var s=document.getElementById("coffeePopSub");if(s)s.textContent=(sub!==undefined?sub:"Punch-card holders get a free coffee for the grown-up.");var ic=document.getElementById("coffeePopIcon");if(ic)ic.textContent=(icon!==undefined?icon:"☕");var p=document.getElementById("coffeePop");if(p)p.style.display="flex";}
 window.markArrived=async(el)=>{
   const id=el.dataset.id, email=el.dataset.email||"", arrived=el.checked, date=$("#date").value;
@@ -957,6 +1073,23 @@ $("#ovReserve").onclick=()=>ov("reserve");
 $("#ovRelease").onclick=()=>ov("release");
 $("#ovCapBtn").onclick=()=>ov("cap");
 
+async function ovRange(action){
+  const out=$("#ovOut"); out.className="out"; out.style.display="";
+  if(!$("#ovDate").value){ out.className="out err"; out.textContent="Pick a date first."; return; }
+  const fromTime=$("#ovFrom").value, toTime=$("#ovTo").value;
+  if(!fromTime||!toTime){ out.className="out err"; out.textContent="Pick both a start and an end time."; return; }
+  if(toTime<=fromTime){ out.className="out err"; out.textContent="The end time has to be after the start time."; return; }
+  try{
+    const r=await (await fetch("/api/slot-block",{method:"POST",headers:{"content-type":"application/json"},
+      body:JSON.stringify({key:PIN,date:$("#ovDate").value,fromTime,toTime,action})})).json();
+    if(r.ok){ out.className="out ok"; out.textContent=r.message||"Done."; loadDay(); }
+    else { out.className="out err"; out.textContent=r.error||"Couldn't update those slots."; }
+  }catch(e){ out.className="out err"; out.textContent="Network error."; }
+}
+$("#ovRangeBlock").onclick=()=>ovRange("blockRange");
+$("#ovRangeFree").onclick=()=>ovRange("releaseRange");
+
+
 $("#isSave").onclick=async()=>{
   const out=$("#isOut"); out.className="out";
   const body={ staffPin:PIN, date:$("#isDate").value, partySlot:$("#isSlot").value, package:$("#isPkg").value, wholeDay:$("#isWholeDay").checked,
@@ -1012,7 +1145,7 @@ function phRender(list){
       +'<img src="'+thumb+'" data-fallback="'+full+'" onerror="if(this.src!==this.dataset.fallback&&this.dataset.fallback){this.src=this.dataset.fallback;}else{this.style.display=\'none\';this.nextElementSibling&&this.nextElementSibling.classList.contains(\'ph-broke\')&&(this.nextElementSibling.style.display=\'flex\');}" style="width:100%;height:92px;object-fit:cover;display:block;background:#f2ede7">'
       +'<div class="ph-broke" style="display:none;width:100%;height:92px;align-items:center;justify-content:center;font-size:.65rem;color:#a89a89;text-align:center;padding:4px;background:#f2ede7">Couldn\u2019t load</div>'
       +(isStatic?'<span style="position:absolute;top:3px;left:3px;background:rgba(61,46,35,.78);color:#fff;font-size:.58rem;font-weight:800;letter-spacing:.04em;padding:2px 6px;border-radius:6px">BUILT-IN</span>':'')
-      +'<button onclick="phDelete(\''+pp.id+'\')" title="'+(isStatic?"Hide from site":"Delete photo")+'" style="position:absolute;top:3px;right:3px;background:rgba(181,56,47,.92);color:#fff;border:none;border-radius:6px;width:24px;height:24px;cursor:pointer;font-size:.8rem">'+(isStatic?"\uD83D\uDEAB":"\uD83D\uDDD1\uFE0F")+'</button>'
+      +'<button onclick="phDelete(\''+pp.id+'\')" title="'+(isStatic?"Hide from site":"Delete photo")+'" style="position:absolute;top:3px;right:3px;background:rgba(181,56,47,.92);color:#fff;border:none;border-radius:6px;width:24px;height:24px;cursor:pointer;font-size:.8rem">'+"\u2715"+'</button>'
       +'<div style="display:flex;gap:4px;padding:4px;background:#faf5ef">'
         +'<button type="button" onclick="phMove(\''+pp.id+'\',-1)" '+(i===0?"disabled":"")+' style="flex:1;margin:0;padding:4px 0;font-size:.72rem;border-radius:7px;background:#e7ddd0;color:#5b4636;width:auto">\u2191</button>'
         +'<button type="button" onclick="phMove(\''+pp.id+'\',1)" '+(i===phList.length-1?"disabled":"")+' style="flex:1;margin:0;padding:4px 0;font-size:.72rem;border-radius:7px;background:#e7ddd0;color:#5b4636;width:auto">\u2193</button>'
@@ -1397,6 +1530,7 @@ async function loadEvents(){
         +'<div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap">'
         +'<button onclick="editEvent(\''+e.id+'\')" style="margin:0">Edit</button>'
         +'<button class="alt" onclick="rosterEvent(\''+e.id+'\')" style="margin:0">Roster</button>'
+        +'<button class="alt" onclick="waitEvent(\''+e.id+'\')" style="margin:0">Waitlist</button>'
         +'<button class="ghost" style="margin:0;background:#eee;color:#2a2622" onclick="releaseEvent(\''+e.id+'\')">Release tickets</button>'
         +'<button class="ghost" style="margin:0;background:#f7e3df;color:#b8524a" onclick="deleteEvent(\''+e.id+'\')">Delete</button>'
         +'</div><div class="out" id="evrow-'+e.id+'"></div></div>';
@@ -1481,6 +1615,29 @@ window.rosterEvent=async(id)=>{
     return '<div style="padding:7px 0;border-bottom:1px solid #eee4d6"><b>'+esc(x.name)+'</b> — '+x.quantity+' ticket'+(x.quantity===1?"":"s")+'<br><span style="color:var(--slate);font-size:.85rem">'+esc(x.email)+(x.phone?" · "+esc(x.phone):"")+'</span><br><span style="font-size:.9rem">🧒 '+kids+'</span></div>';
   }).join(""):"No tickets sold yet.")+'<br><b>'+r.sold+'/'+r.capacity+' sold</b>'+(r.buyers.length?' &nbsp; <button class="alt" style="margin-top:8px" onclick="printCheckin(\''+id+'\')">🖨️ Print check-in sheet</button> <button class="alt" style="margin-top:8px" onclick="printNametags(\''+id+'\')">🏷️ Print name tags</button>':''); }
   window.__ros=window.__ros||{}; window.__ros[id]={title:r.title,dateTime:r.dateTime,buyers:r.buyers};
+};
+window.waitEvent=async(id)=>{
+  const key=PIN; const out=$("#evrow-"+id);
+  const r=await (await fetch("/api/event-waitlist",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key,action:"list",eventId:id})})).json();
+  if(!r.ok){ if(out){out.className="out err";out.textContent=r.error||"Couldn't load waitlist.";} return; }
+  const list=r.waitlist||[];
+  let h=list.length?list.map(function(w){
+    return '<div style="padding:7px 0;border-bottom:1px solid #eee4d6"><b>'+esc(w.name)+'</b> \u2014 '+(w.count||1)+' ticket'+((w.count||1)===1?"":"s")+(w.notified?' <span style="color:#3f7d5c;font-size:.8rem">\u2713 notified</span>':'')+'<br><span style="color:var(--slate);font-size:.85rem">'+esc(w.email)+(w.phone?" \u00b7 "+esc(w.phone):"")+'</span> <button class="alt" style="margin:0;padding:3px 8px;font-size:.78rem" onclick="waitRemove(\''+id+'\',\''+w.id+'\')">Remove</button></div>';
+  }).join(""):'<span class="note">No one on the waitlist yet.</span>';
+  h+='<div style="margin-top:8px">'+(list.length?'<button class="alt" style="margin:0" onclick="waitNotify(\''+id+'\')">\uD83D\uDCE3 Notify waitlist (a spot opened)</button>':'')+'</div>';
+  if(out){ out.className="out ok"; out.innerHTML=h; }
+};
+window.waitNotify=async(id)=>{
+  if(!confirm("Email everyone on the waitlist that a spot has opened?")) return;
+  const key=PIN; const out=$("#evrow-"+id);
+  const r=await (await fetch("/api/event-waitlist",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key,action:"notify",eventId:id})})).json();
+  if(r.ok){ waitEvent(id); if(out){ var t=document.createElement("div"); t.className="note"; t.style.marginTop="6px"; t.textContent=r.message; out.appendChild(t); } }
+  else if(out){ out.className="out err"; out.textContent=r.error||"Couldn't notify."; }
+};
+window.waitRemove=async(id,wid)=>{
+  const key=PIN;
+  const r=await (await fetch("/api/event-waitlist",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key,action:"remove",eventId:id,id:wid})})).json();
+  if(r.ok) waitEvent(id); else alert(r.error||"Couldn't remove.");
 };
 $("#evReset").onclick=()=>{ ["evId","evTitle","evDesc","evReq","evWaiver","evWaiver2","evWhen","evRegDate","evRegTime","evPrice","evSibPrice","evCap"].forEach(i=>$("#"+i).value=""); $("#evPoster").value=""; $("#evOut").className="out"; };
 $("#evSave").onclick=async()=>{
@@ -1570,15 +1727,16 @@ function bdRender(){
   if(!bdRows.length){ wrap.innerHTML='<div class="note">No birthdays on file yet. Families add them (optionally) when booking online.</div>'; return; }
   var html='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:.82rem;min-width:660px">'
     +'<thead><tr style="text-align:left;color:#8a8276;font-size:.7rem;text-transform:uppercase;letter-spacing:.05em">'
-    +'<th style="padding:6px 8px">Day</th><th style="padding:6px 8px">Child</th><th style="padding:6px 8px">Turning</th>'
+    +'<th style="padding:6px 8px">Day</th><th style="padding:6px 8px">Child</th><th style="padding:6px 8px">Age / DOB</th>'
     +'<th style="padding:6px 8px">Email</th><th style="padding:6px 8px">Phone</th>'
     +'<th style="padding:6px 8px">Gift sent</th><th style="padding:6px 8px">Actions</th></tr></thead><tbody>';
   bdRows.forEach(function(r){
     var sentTxt=r.lastSentYear?('✅ '+esc(r.lastSentYear)+(r.lastCode?'<br><span style="font-family:monospace;font-size:.75rem">'+esc(r.lastCode)+'</span>':'')):'<span style="color:#a89a89">—</span>';
+    if(r.birthdayUsedYear) sentTxt+='<br><span style="font-size:.7rem;color:#3f7d54;font-weight:800">🎂 used '+esc(r.birthdayUsedYear)+'</span>';
     html+='<tr style="border-top:1px solid #efe7da">'
       +'<td style="padding:7px 8px;font-weight:800;white-space:nowrap">'+bdDayLabel(r)+'</td>'
       +'<td style="padding:7px 8px;font-weight:700">'+esc(r.first+" "+r.last)+'<br><span style="font-family:monospace;font-size:.72rem;color:#a89a89">'+esc(r.code)+'</span></td>'
-      +'<td style="padding:7px 8px;white-space:nowrap">'+(r.turning>0&&r.turning<19?esc(String(r.turning)):"—")+'</td>'
+      +'<td style="padding:7px 8px;white-space:nowrap">'+(typeof r.ageNow==="number"?'<b>'+esc(String(r.ageNow))+'</b> yr':(r.turning>0&&r.turning<19?'turning '+esc(String(r.turning)):"—"))+(r.dob?'<br><span style="font-size:.72rem;color:#a89a89">'+esc(r.dob)+'</span>':'')+'</td>'
       +'<td style="padding:7px 8px">'+(r.email?'<a href="mailto:'+esc(r.email)+'">'+esc(r.email)+'</a>':'<span style="color:#b5382f">no email</span>')+'</td>'
       +'<td style="padding:7px 8px;white-space:nowrap">'+(r.phone?'<a href="sms:'+esc(r.phone)+'">'+esc(r.phone)+'</a>':'—')+'</td>'
       +'<td style="padding:7px 8px;white-space:nowrap">'+sentTxt+'</td>'
@@ -2280,5 +2438,194 @@ if($("#wsSave")) $("#wsSave").onclick=async function(){
 </script>
 
 <script src="/assets/phone-format.js" defer></script>
-</body>
+<script>
+(function(){
+  var $=function(s){return document.querySelector(s);};
+  var PO_WD=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+  function poKey(){return (typeof PIN!=="undefined"&&PIN)||"";}
+  function poRenderWk(active){active=active||[];
+    var el=$("#poWk"); if(!el)return;
+    el.innerHTML=[0,1,2,3,4,5,6].map(function(d){var on=active.indexOf(d)>=0;
+      return '<label style="display:inline-flex;align-items:center;gap:5px;margin:0;font-weight:700;text-transform:none;letter-spacing:0;color:var(--charcoal);background:#f3ebe0;border-radius:8px;padding:5px 9px"><input type="checkbox" class="poWk" value="'+d+'"'+(on?' checked':'')+'> '+PO_WD[d]+'</label>';}).join("");
+  }
+  function poRenderList(ranges){ranges=ranges||[];var list=$("#poList");if(!list)return;
+    if(!ranges.length){list.innerHTML='<span class="note">No specific dates blocked.</span>';return;}
+    list.innerHTML=ranges.map(function(r){var lbl=r.from===r.to?r.from:(r.from+' → '+r.to);
+      return '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #eee"><span><b>'+lbl+'</b>'+(r.note?' — '+esc(r.note):'')+'</span><button class="alt poDel" data-id="'+r.id+'" style="margin:0;padding:5px 10px;white-space:nowrap">Remove</button></div>';}).join("");
+    Array.prototype.forEach.call(document.querySelectorAll(".poDel"),function(btn){btn.onclick=function(){poPost({action:"removeRange",id:btn.getAttribute("data-id")});};});
+  }
+  function poApply(r){poRenderWk(r.weekdays);poRenderList(r.ranges);}
+  async function poLoad(){var key=poKey();var list=$("#poList");if(!list)return;
+    if(!key){list.textContent="Please log in.";return;}
+    try{var r=await (await fetch("/api/party-off?key="+encodeURIComponent(key))).json();
+      if(r.error){list.textContent=r.error;return;}poApply(r);}catch(e){list.textContent="Network error.";}
+  }
+  async function poPost(payload){var out=$("#poOut");var key=poKey();
+    if(!key){out.className="out err";out.textContent="Please log in.";return;}
+    payload.key=key;
+    try{var r=await (await fetch("/api/party-off",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(payload)})).json();
+      if(r.ok){out.className="out ok";out.textContent=r.message||"Saved.";poApply(r);}
+      else{out.className="out err";out.textContent=r.error||"Couldn't save.";}}catch(e){out.className="out err";out.textContent="Network error.";}
+  }
+  if($("#poAdd"))$("#poAdd").onclick=function(){var from=$("#poFrom").value,to=$("#poTo").value||from,out=$("#poOut");
+    if(!from){out.className="out err";out.textContent="Pick a date.";return;}
+    poPost({action:"addRange",from:from,to:to,note:$("#poNote").value.trim()});};
+  if($("#poWkSave"))$("#poWkSave").onclick=function(){var wd=Array.prototype.map.call(document.querySelectorAll(".poWk:checked"),function(c){return parseInt(c.value,10);});poPost({action:"setWeekdays",weekdays:wd});};
+  poRenderWk([]);
+  
+  window.__poLoad=poLoad; try{if(poKey())poLoad();}catch(e){}
+})();
+</script>
+
+<script>
+/* Compact dashboard nav: pick a tool from the grouped sidebar and the page flips to
+   just that tool. Every tool card is untouched — only navigation changes. If anything
+   throws, the compact mode is removed so all tools remain visible (graceful fallback). */
+(function(){
+  try{
+    var NAV = [["Today & check-in", [{"id": "sec-schedule", "label": "Daily schedule"}, {"id": "sec-walkin"}, {"id": "sec-punch"}, {"id": "sec-reschedule"}, {"id": "sec-addbooking"}, {"href": "/headcount.html", "label": "Head count ↗"}]], ["Loyalty & credits", [{"href": "/loyalty.html", "label": "Loyalty & Punch Cards ↗"}, {"id": "sec-loyalty-list", "label": "Loyalty card page"}, {"id": "sec-redeem"}, {"id": "sec-issue"}, {"id": "sec-credit-backfill"}, {"id": "sec-birthdaycode"}, {"id": "sec-code"}, {"id": "sec-failed"}]], ["Legacy passes", [{"id": "sec-punchissue"}, {"id": "sec-passes"}]], ["Open play setup", [{"id": "sec-party"}, {"id": "sec-partyoff"}, {"id": "sec-weekday-special"}, {"id": "sec-discount"}]], ["Parties", [{"id": "sec-parties"}, {"id": "sec-deposit"}]], ["Hours & prices", [{"id": "sec-prices"}, {"id": "sec-weekly"}, {"id": "sec-seasonal"}, {"id": "sec-closures"}]], ["Events", [{"id": "sec-events"}]], ["Site & marketing", [{"id": "sec-news"}, {"id": "sec-promos"}, {"id": "sec-photos"}, {"id": "sec-rating"}, {"id": "sec-newsletter"}, {"id": "sec-partners"}, {"id": "sec-birthdays"}]]];
+    var sideNav=document.getElementById('sideNav');
+    var secMenu=document.getElementById('secMenu');
+    var seen={};
+    function labelFor(item){
+      if(item.label) return item.label;
+      var el=document.getElementById(item.id);
+      if(el){ var h=el.querySelector('h2'); if(h && h.textContent.trim()) return h.textContent.trim(); }
+      return item.id;
+    }
+    function esc(t){ return (t||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+    function buildHTML(){
+      var html='';
+      NAV.forEach(function(cat){
+        var links='';
+        cat[1].forEach(function(item){
+          if(item.href){ links+='<a href="'+item.href+'">'+esc(labelFor(item))+'</a>'; }
+          else if(document.getElementById(item.id)){ seen[item.id]=1; links+='<a href="#'+item.id+'" data-sec="'+item.id+'">'+esc(labelFor(item))+'</a>'; }
+        });
+        if(links) html+='<div class="snav-title">'+esc(cat[0])+'</div>'+links;
+      });
+      var extra='';
+      Array.prototype.forEach.call(document.querySelectorAll('.card[id^="sec-"]'),function(c){
+        if(!seen[c.id]){ var h=c.querySelector('h2'); extra+='<a href="#'+c.id+'" data-sec="'+c.id+'">'+esc(h&&h.textContent.trim()?h.textContent.trim():c.id)+'</a>'; }
+      });
+      if(extra) html+='<div class="snav-title">More</div>'+extra;
+      return html;
+    }
+    var navHTML=buildHTML();
+    if(sideNav) sideNav.innerHTML=navHTML;
+    if(secMenu) secMenu.innerHTML=navHTML;
+    function showSec(id){
+      var target=document.getElementById(id); if(!target) return;
+      var g=target.closest && target.closest('details.secgroup'); if(g) g.open=true;
+      Array.prototype.forEach.call(document.querySelectorAll('#sideNav a, #secMenu a'),function(a){ a.classList.toggle('active', a.getAttribute('data-sec')===id); });
+      if(secMenu) secMenu.classList.remove('open');
+      try{ target.scrollIntoView({behavior:'smooth',block:'start'}); }catch(e){ window.scrollTo(0,0); }
+      try{ history.replaceState(null,'','#'+id); }catch(e){}
+    }
+    window.showSec=showSec;
+    function onNavClick(e){ var a=e.target.closest && e.target.closest('a[data-sec]'); if(!a) return; e.preventDefault(); showSec(a.getAttribute('data-sec')); }
+    if(sideNav) sideNav.addEventListener('click',onNavClick);
+    if(secMenu) secMenu.addEventListener('click',onNavClick);
+    // Accordion mode: groups organize; sidebar opens a group and jumps. No one-at-a-time hiding.
+  }catch(err){ try{ document.documentElement.classList.remove('compact'); }catch(e){} if(window.console) console.error('compact-nav', err); }
+})();
+</script>
+
+<script>
+(function(){
+  var $=function(s){return document.querySelector(s);};
+  function KEY(){ return (typeof PIN!=="undefined"&&PIN)||""; }
+  var KLABEL="staff PIN";
+  function esc(t){return (t||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+  function todayISO(){ return new Date().toLocaleDateString('en-CA',{timeZone:'America/Los_Angeles'}); }
+  function kidRow(){ return '<div class="lw-kid" style="border-bottom:1px dashed #eee;padding-bottom:8px;margin-bottom:8px"><div class="row"><div><label>Child first</label><input type="text" class="lwF"></div><div><label>Child last</label><input type="text" class="lwL"></div></div><label>Birthday (optional)</label><input type="date" class="lwD"></div>'; }
+  function waiverBadge(c){ var t=todayISO(); if(c.waiverExpiry && c.waiverExpiry>=t) return '<span style="color:#3f7d5c;font-weight:700">\u2713 Waiver on file (exp '+esc(c.waiverExpiry)+')</span>'; return '<span style="color:#b5622f;font-weight:700">\u26a0\ufe0f No current waiver \u2014 check WaiverMaster</span>'; }
+  function renderCards(cards){
+    var box=$('#lwResults');
+    if(!cards.length){ box.innerHTML='<div class="note" style="color:var(--rose-deep)">No match yet \u2014 create a card below \U0001F447</div>'; if($('#lwNewWrap'))$('#lwNewWrap').open=true; return; }
+    box.innerHTML=cards.map(function(c){
+      var adults=(c.waiverAdults&&c.waiverAdults.length)?'<div class="note" style="margin:2px 0 0">Adults on file: '+c.waiverAdults.map(esc).join(', ')+'</div>':'<div class="note" style="margin:2px 0 0;color:#b5622f">No adult names on file \u2014 add today\u2019s adult on WaiverMaster</div>';
+      return '<div style="border:1px solid #eadfce;border-radius:10px;padding:10px 12px;margin-bottom:8px;background:#fff">'
+        +'<div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><div><b>'+esc(c.childName)+'</b> <span style="font-family:monospace;color:var(--rose-deep)">'+esc(c.code)+'</span><br><span class="note">'+c.punches+'/'+c.needed+' visits'+(c.dob?' \u00b7 \U0001F382 '+esc(c.dob):'')+(c.phone4?' \u00b7 \u260E \u2026'+esc(c.phone4):'')+(c.parentName?' \u00b7 '+esc(c.parentName):'')+'</span></div>'
+        +'<button class="lwPunch" data-code="'+esc(c.code)+'" style="margin:0;padding:8px 14px;white-space:nowrap">\u2795 Punch visit</button>'
+        +'<button class="lwBday" data-code="'+esc(c.code)+'" data-name="'+esc(c.childName||"")+'" title="Free birthday admission \u2014 visit recorded, no punch" style="margin:0 0 0 6px;padding:8px 12px;white-space:nowrap;background:#fdeee9;color:#a85f59">\uD83C\uDF82 Birthday visit</button></div>'
+        +'<div style="margin-top:6px">'+waiverBadge(c)+'</div>'+adults+'</div>';
+    }).join('');
+    Array.prototype.forEach.call(document.querySelectorAll('.lwPunch'),function(b){ b.onclick=function(){ punchExisting(b.getAttribute('data-code'), b); }; });
+    Array.prototype.forEach.call(document.querySelectorAll('.lwBday'),function(b){ b.onclick=function(){ birthdayVisit(b.getAttribute('data-code'), b.getAttribute('data-name'), b); }; });
+  }
+  async function lwFind(){
+    var key=KEY(); var box=$('#lwResults'); var q=($('#lwPhone').value||'').trim();
+    if(!key){ box.innerHTML='<div class="out err" style="display:block">Enter your '+KLABEL+' first.</div>'; return; }
+    var digits=q.replace(/\D/g,'');
+    if(digits.length<4 && q.length<2){ box.innerHTML='<div class="note">Type a name, or at least the last 4 digits of the phone.</div>'; return; }
+    box.innerHTML='<div class="note">Searching\u2026</div>';
+    try{ var r=await (await fetch('/api/loyalty',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({key:key,action:'by-phone',query:q,phone:q})})).json();
+      if(!r.ok){ box.innerHTML='<div class="out err" style="display:block">'+esc(r.error||'Search failed.')+'</div>'; return; }
+      renderCards(r.cards||[]);
+    }catch(e){ box.innerHTML='<div class="out err" style="display:block">Network error.</div>'; }
+  }
+  // Free birthday admission: logs the visit, adds NO punch, and marks the
+  // birthday used for this year so no further code gets emailed.
+  async function birthdayVisit(code, name, btn){
+    if(!confirm('Record a FREE BIRTHDAY ADMISSION for '+(name||code)+'?\n\n\u2022 Counts as a visit in their history\n\u2022 Does NOT add a loyalty punch\n\u2022 No further birthday code will be emailed this year')) return;
+    var key=KEY(); if(!key){ alert('Enter your '+KLABEL+' first.'); return; }
+    btn.disabled=true; btn.textContent='Recording\u2026';
+    try{ var r=await (await fetch('/api/loyalty',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({key:key,action:'punch',code:code,birthday:true})})).json();
+      if(r.ok){ btn.textContent='\uD83C\uDF82 Birthday visit logged'; btn.style.background='#e7f0df'; btn.style.color='#3f7d5c'; }
+      else { btn.disabled=false; btn.textContent='\uD83C\uDF82 Birthday visit'; alert(r.error||'Could not record it.'); }
+    }catch(e){ btn.disabled=false; btn.textContent='\uD83C\uDF82 Birthday visit'; alert('Network error.'); }
+  }
+  async function punchExisting(code, btn){
+    var key=KEY(); if(!key){ alert('Enter your '+KLABEL+' first.'); return; }
+    btn.disabled=true; btn.textContent='Punching\u2026';
+    try{ var r=await (await fetch('/api/loyalty',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({key:key,action:'punch',code:code})})).json();
+      if(r.ok){ btn.textContent=r.rewardIssued?'\U0001F389 FREE VISIT!':('\u2713 '+r.punches+'/'+r.needed); btn.style.background='#3f7d5c'; }
+      else { btn.disabled=false; btn.textContent='\u2795 Punch visit'; alert(r.error||'Could not punch.'); }
+    }catch(e){ btn.disabled=false; btn.textContent='\u2795 Punch visit'; alert('Network error.'); }
+  }
+  if($('#lwFind')) $('#lwFind').onclick=lwFind;
+  if($('#lwPhone')) $('#lwPhone').addEventListener('keydown',function(e){ if(e.key==='Enter'){ e.preventDefault(); lwFind(); } });
+  if($('#lwAddKid')) $('#lwAddKid').onclick=function(){ var d=document.createElement('div'); d.innerHTML=kidRow(); $('#lwKids').appendChild(d.firstChild); };
+  if($('#lwCreate')) $('#lwCreate').onclick=async function(){
+    var key=KEY(); var out=$('#lwOut');
+    if(!key){ out.className='out err'; out.style.display='block'; out.textContent='Enter your '+KLABEL+' first.'; return; }
+    var phone=(($('#lwNewPhone')&&$('#lwNewPhone').value)||$('#lwPhone').value||'').trim();
+    var kids=[].map.call(document.querySelectorAll('#lwKids .lw-kid'),function(r){return {first:r.querySelector('.lwF').value.trim(),last:r.querySelector('.lwL').value.trim(),dob:r.querySelector('.lwD').value};}).filter(function(c){return c.first&&c.last;});
+    if(phone.replace(/\D/g,'').length<4){ out.className='out err'; out.style.display='block'; out.textContent='Enter the parent phone.'; return; }
+    if(!kids.length){ out.className='out err'; out.style.display='block'; out.textContent='Enter at least one child first + last name.'; return; }
+    var email=($('#lwEmail').value||'').trim(), waiverSigned=$('#lwWaiver').value||'', adultNames=($('#lwAdults').value||'').split(',').map(function(s){return s.trim();}).filter(Boolean), military=$('#lwMilitary').checked;
+    $('#lwCreate').disabled=true; $('#lwCreate').textContent='Creating\u2026';
+    try{ var r=await (await fetch('/api/loyalty',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({key:key,action:'family-punch',children:kids,phone:phone,email:email,waiverSigned:waiverSigned,adultNames:adultNames,militaryVerified:military})})).json();
+      if(r.ok){ out.className='out ok'; out.style.display='block'; out.textContent='\u2713 '+r.message; $('#lwKids').innerHTML=kidRow(); $('#lwEmail').value='';$('#lwWaiver').value='';$('#lwAdults').value='';$('#lwMilitary').checked=false; lwFind(); }
+      else { out.className='out err'; out.style.display='block'; out.textContent=r.error||'Could not create.'; }
+    }catch(e){ out.className='out err'; out.style.display='block'; out.textContent='Network error.'; }
+    $('#lwCreate').disabled=false; $('#lwCreate').textContent='Create & punch';
+  };
+})();
+</script><script>
+(function(){
+  var $=function(s){return document.querySelector(s);};
+  function KEY(){ return (typeof PIN!=="undefined"&&PIN)||""; }
+  if($("#mbAdd")) $("#mbAdd").onclick=async function(){
+    var key=KEY(); var out=$("#mbOut"); out.style.display="block";
+    if(!key){ out.className="out err"; out.textContent="Enter your staff PIN first."; return; }
+    var date=$("#mbDate").value, slot=$("#mbSlot").value, name=$("#mbName").value.trim();
+    var regular=parseInt($("#mbReg").value,10)||0, infant=parseInt($("#mbInf").value,10)||0, sibling=parseInt($("#mbSib").value,10)||0, adults=parseInt($("#mbAd").value,10)||0;
+    if(!date){ out.className="out err"; out.textContent="Pick a date."; return; }
+    if(!name){ out.className="out err"; out.textContent="Enter the parent/guardian name."; return; }
+    if(regular+infant+sibling<1){ out.className="out err"; out.textContent="Add at least one child."; return; }
+    var childNames=($("#mbKids").value||"").split(",").map(function(s){return s.trim();}).filter(Boolean);
+    var email=$("#mbEmail").value.trim(), phone=$("#mbPhone").value.trim();
+    $("#mbAdd").disabled=true; $("#mbAdd").textContent="Adding\u2026";
+    try{
+      var r=await (await fetch("/api/booking-add",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key:key,date:date,slot:slot,name:name,email:email,phone:phone,regular:regular,infant:infant,sibling:sibling,adults:adults,childNames:childNames})})).json();
+      if(r.ok){ out.className="out ok"; out.textContent="\u2713 "+r.message+" Refresh the schedule to see them."; $("#mbName").value="";$("#mbEmail").value="";$("#mbPhone").value="";$("#mbReg").value="0";$("#mbInf").value="0";$("#mbSib").value="0";$("#mbAd").value="0";$("#mbKids").value=""; }
+      else { out.className="out err"; out.textContent=r.error||"Couldn't add."; }
+    }catch(e){ out.className="out err"; out.textContent="Network error."; }
+    $("#mbAdd").disabled=false; $("#mbAdd").textContent="Add to schedule";
+  };
+  try{ var d=$("#mbDate"); if(d && !d.value) d.value=new Date().toLocaleDateString("en-CA",{timeZone:"America/Los_Angeles"}); }catch(e){}
+})();
+</script></body>
 </html>

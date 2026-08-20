@@ -1,0 +1,13 @@
+# Never commit build artifacts or archives to this repo
+*.zip
+*.tar
+*.tar.gz
+
+# Never commit secrets — all keys live in Netlify env vars
+.env
+.env.*
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+node_modules/
