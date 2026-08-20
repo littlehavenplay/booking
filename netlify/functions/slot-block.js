@@ -1,5 +1,10 @@
 // POST /api/slot-block   (protected by ADMIN_KEY)
-// Body: { key, date, slot, action: "reserve" | "release", note }
+// Body: { key, date, slot, action: "reserve" | "release" | "cap", note }
+//   or: { key, date, fromTime: "14:30", toTime: "16:30",
+//         action: "blockRange" | "releaseRange", note }
+//
+// blockRange closes every open-play arrival time inside the window, so
+// "nobody books 2:30-4:30" is one action instead of hunting slot by slot.
 // Reserves (or releases) a specific date + time slot for a private party so it
 // is no longer bookable for open play. Use once a party deposit is paid.
 
@@ -20,10 +25,47 @@ export default async (req) => {
 
   const date = (b.date || "").trim();
   const slot = (b.slot || "").trim();
+  const rangeAction = (b.action === "blockRange" || b.action === "releaseRange");
   const action = (b.action || "reserve").trim();
   const note = (b.note || "").toString().slice(0, 200).trim();
 
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return json({ error: "Pick a valid date." }, 400);
+
+  // ---- Block or reopen a whole window of open-play arrivals in one go ----
+  if (rangeAction) {
+    const fromMin = hhmmToMinutes(b.fromTime);
+    const toMin = hhmmToMinutes(b.toTime);
+    if (fromMin == null || toMin == null) return json({ error: "Pick a start and an end time." }, 400);
+    if (toMin <= fromMin) return json({ error: "The end time has to be after the start time." }, 400);
+
+    // Arrival times are start times, so an arrival is inside the window when its
+    // start falls at or after the beginning and strictly before the end.
+    const hit = SLOT_IDS.filter((id) => {
+      const s = ARRIVAL[id] && ARRIVAL[id].start;
+      return typeof s === "number" && s >= fromMin && s < toMin;
+    });
+    if (!hit.length) return json({ error: "No open-play arrival times fall inside that window." }, 400);
+
+    const blocks = getStore("blocks");
+    const done = [];
+    for (const id of hit) {
+      const k = slotKey(date, id);
+      try {
+        if (b.action === "releaseRange") await blocks.delete(k);
+        else await blocks.setJSON(k, { reserved: true, note, at: new Date().toISOString() });
+        done.push(slotLabel(id));
+      } catch {}
+    }
+    if (!done.length) return json({ error: "Couldn't save. Try again." }, 502);
+    const win = `${minutesToLabel(fromMin)}\u2013${minutesToLabel(toMin)}`;
+    return json({
+      ok: true, date, slots: hit, count: done.length,
+      action: b.action === "releaseRange" ? "range-released" : "range-blocked",
+      message: b.action === "releaseRange"
+        ? `Reopened ${done.length} arrival time${done.length === 1 ? "" : "s"} (${win}) on ${date}.`
+        : `Blocked ${done.length} arrival time${done.length === 1 ? "" : "s"} (${win}) on ${date}: ${done.join(", ")}. Open play can't be booked in that window.`,
+    });
+  }
 
   const isParty = PARTY_SLOT_IDS.includes(slot);
   if (!isParty && !SLOT_IDS.includes(slot)) return json({ error: "Pick a valid time slot." }, 400);
@@ -67,6 +109,20 @@ export default async (req) => {
   return json({ ok: true, action: "reserved", date, slot, message: "Slot blocked. Open play can no longer book it (shows as unavailable)." });
 };
 
+// "14:30" -> 870. Accepts H:MM or HH:MM.
+function hhmmToMinutes(v) {
+  const m = /^(\d{1,2}):(\d{2})$/.exec((v || "").toString().trim());
+  if (!m) return null;
+  const hh = parseInt(m[1], 10), mm = parseInt(m[2], 10);
+  if (hh < 0 || hh > 23 || mm < 0 || mm > 59) return null;
+  return hh * 60 + mm;
+}
+function minutesToLabel(min) {
+  const hh = Math.floor(min / 60), mm = min % 60;
+  const ampm = hh >= 12 ? "PM" : "AM";
+  const h12 = hh % 12 === 0 ? 12 : hh % 12;
+  return `${h12}:${String(mm).padStart(2, "0")} ${ampm}`;
+}
 function json(obj, status = 200) {
   return new Response(JSON.stringify(obj), { status, headers: { "content-type": "application/json", "cache-control": "no-store" } });
 }
