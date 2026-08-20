@@ -57,12 +57,70 @@
   .wi-cols>.wi-col{flex:1 1 320px;min-width:290px}
   .wi-loyalty{background:#faf6f0;border:1px solid #eadfce;border-radius:14px;padding:14px 16px}
   #sec-punch,#sec-punchissue,#sec-passes{display:none!important}
+
+/* ===== Compressed tool shell: search, quick tiles, focus mode ===== */
+#toolbar{position:sticky;top:0;z-index:80;background:rgba(250,247,243,.97);backdrop-filter:blur(8px);
+  border-bottom:1px solid #ece3d6;padding:10px 14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+#toolbar .tb-brand{font-family:'Cormorant Garamond',Georgia,serif;font-size:1.12rem;font-weight:700;color:#2a2622;white-space:nowrap}
+#toolSearchWrap{position:relative;flex:1 1 260px;min-width:200px}
+#toolSearch{width:100%;border:1.5px solid #e7ddd0;border-radius:999px;padding:10px 14px 10px 38px;
+  font-family:'Nunito',sans-serif;font-weight:700;font-size:.95rem;background:#fff;outline:none;color:#2a2622}
+#toolSearch:focus{border-color:#c97d76;box-shadow:0 0 0 3px rgba(201,125,118,.13)}
+#toolSearchWrap::before{content:"\1F50D";position:absolute;left:13px;top:50%;transform:translateY(-50%);font-size:.9rem;opacity:.55;pointer-events:none}
+#toolResults{position:absolute;left:0;right:0;top:calc(100% + 6px);background:#fff;border:1.5px solid #e7ddd0;
+  border-radius:14px;box-shadow:0 14px 44px rgba(0,0,0,.12);max-height:60vh;overflow:auto;display:none;z-index:90}
+#toolResults.open{display:block}
+#toolResults button{display:block;width:100%;text-align:left;margin:0;border:0;background:none;border-radius:0;
+  padding:11px 14px;font-family:'Nunito',sans-serif;font-weight:800;font-size:.9rem;color:#2a2622;cursor:pointer;border-bottom:1px solid #f4ece1}
+#toolResults button:last-child{border-bottom:0}
+#toolResults button:hover,#toolResults button.sel{background:#fdf1ec;color:#a85f59}
+#toolResults .tr-grp{font-size:.7rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#aea298;display:block;margin-top:2px}
+#toolResults .tr-none{padding:14px;color:#aea298;font-weight:700;font-size:.88rem}
+
+#quickBar{padding:14px 14px 4px;max-width:1100px;margin:0 auto}
+#quickBar h3{font-family:'Cormorant Garamond',Georgia,serif;font-size:1.25rem;margin:0 0 10px;color:#2a2622;font-weight:700}
+.qgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:10px}
+.qtile{display:flex;flex-direction:column;align-items:flex-start;gap:6px;background:#fff;border:1.5px solid #ece3d6;
+  border-radius:16px;padding:13px 14px;cursor:pointer;font-family:'Nunito',sans-serif;text-align:left;
+  box-shadow:0 4px 24px rgba(0,0,0,.05);transition:transform .12s,border-color .12s;margin:0}
+.qtile:hover{transform:translateY(-2px);border-color:#c2d7bd}
+.qtile .qi{font-size:1.4rem;line-height:1}
+.qtile .ql{font-weight:800;font-size:.86rem;color:#2a2622;line-height:1.25}
+.qtile .qs{font-weight:700;font-size:.72rem;color:#aea298}
+
+#focusBar{display:none;position:sticky;top:56px;z-index:70;max-width:1100px;margin:0 auto;padding:8px 14px}
+body.focusing #focusBar{display:block}
+#focusBar button{margin:0;background:#f4ece1;color:#5c6470;font-size:.82rem;padding:7px 14px;border-radius:999px}
+body.focusing #quickBar{display:none}
+body.focusing .card[id^="sec-"]{display:none}
+body.focusing .card[id^="sec-"].focus-on{display:block}
+body.focusing details.secgroup:not(.has-focus){display:none}
+body.focusing details.secgroup.has-focus > summary{display:none}
+@media (max-width:640px){
+  #toolbar{padding:8px 10px;gap:8px}
+  #toolbar .tb-brand{font-size:1rem}
+  .qgrid{grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:8px}
+  .qtile{padding:11px 12px;border-radius:14px}
+}
 </style>
 <link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#7a6253"><link rel="apple-touch-icon" href="/assets/icons/apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="Little Haven"><link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32.png"></head>
 <body>
+<div id="toolbar">
+  <span class="tb-brand">Little <i>Haven</i> · Tools</span>
+  <div id="toolSearchWrap">
+    <input id="toolSearch" type="search" autocomplete="off" placeholder="Search tools — try &quot;slot&quot;, &quot;credit&quot;, &quot;birthday&quot;">
+    <div id="toolResults"></div>
+  </div>
+</div>
+<div id="focusBar"><button type="button" id="focusBack">&larr; All tools</button></div>
+<div id="quickBar">
+  <h3>Most used</h3>
+  <div class="qgrid" id="qgrid"></div>
+</div>
+
 <div class="wrap">
-<div id="secBar"><button id="secToggle" type="button">Sections ▾</button><div id="secMenu"><a href="#sec-bookings">Bookings by date</a><a href="#sec-walkin">Walk-in check-in</a><a href="#sec-punch">Punch-card check-in</a><a href="/loyalty.html">Loyalty &amp; Punch Cards</a><a href="#sec-reschedule">Reschedule &amp; cancel</a><a href="#sec-redeem">Redeem a credit</a><a href="#sec-credit-backfill">Backfill credit emails</a><a href="#sec-party">Session capacity &amp; blocking</a><a href="#sec-issue">Issue a credit</a><a href="#sec-punchissue">Legacy card tools</a><a href="#sec-code">Manage a code</a><a href="#sec-closures">Closures &amp; hours</a><a href="#sec-passes">Legacy prepaid holders</a><a href="#sec-grandfather">Grandfather note</a><a href="#sec-parties">Party bookings</a><a href="#sec-deposit">Record a party deposit</a><a href="#sec-partyoff">Open play only (no parties)</a><a href="/headcount.html">Head count</a><a href="#sec-prices">Manage prices</a><a href="#sec-weekly">Weekly hours</a><a href="#sec-seasonal">Seasonal hours</a><a href="#sec-weekday-special">Weekday special</a><a href="#sec-discount">Discount codes</a><a href="#sec-news">News update</a><a href="#sec-promos">Promotions &amp; Flyers</a><a href="#sec-events">Upcoming events</a><a href="#sec-partners">Partners page</a><a href="#sec-birthdays">Birthday club</a></div></div>
-<nav id="sideNav" aria-label="Sections"><div class="snav-title">Sections</div><a href="#sec-bookings">Bookings by date</a><a href="#sec-walkin">Walk-in check-in</a><a href="#sec-punch">Punch-card check-in</a><a href="/loyalty.html">Loyalty &amp; Punch Cards</a><a href="#sec-reschedule">Reschedule &amp; cancel</a><a href="#sec-redeem">Redeem a credit</a><a href="#sec-credit-backfill">Backfill credit emails</a><a href="#sec-party">Session capacity &amp; blocking</a><a href="#sec-issue">Issue a credit</a><a href="#sec-punchissue">Legacy card tools</a><a href="#sec-code">Manage a code</a><a href="#sec-closures">Closures &amp; hours</a><a href="#sec-passes">Legacy prepaid holders</a><a href="#sec-grandfather">Grandfather note</a><a href="#sec-parties">Party bookings</a><a href="#sec-deposit">Record a party deposit</a><a href="#sec-partyoff">Open play only (no parties)</a><a href="/headcount.html">Head count</a><a href="#sec-prices">Manage prices</a><a href="#sec-weekly">Weekly hours</a><a href="#sec-seasonal">Seasonal hours</a><a href="#sec-weekday-special">Weekday special</a><a href="#sec-discount">Discount codes</a><a href="#sec-news">News update</a><a href="#sec-rating">Reviews rating</a><a href="#sec-photos">Site photos</a><a href="#sec-promos">Promotions &amp; Flyers</a><a href="#sec-events">Upcoming events</a><a href="#sec-partners">Partners page</a><a href="#sec-birthdays">Birthday club</a></nav>
+<div id="secBar"><button id="secToggle" type="button">Sections ▾</button><div id="secMenu"><a href="#sec-schedule">Daily schedule</a><a href="#sec-bookings">Bookings by date</a><a href="#sec-walkin">Walk-in check-in</a><a href="#sec-punch">Punch-card check-in</a><a href="/loyalty.html">Loyalty &amp; Punch Cards</a><a href="#sec-reschedule">Reschedule &amp; cancel</a><a href="#sec-redeem">Redeem a credit</a><a href="#sec-credit-backfill">Backfill credit emails</a><a href="#sec-party">Session capacity &amp; blocking</a><a href="#sec-issue">Issue a credit</a><a href="#sec-punchissue">Legacy card tools</a><a href="#sec-code">Manage a code</a><a href="#sec-closures">Closures &amp; hours</a><a href="#sec-passes">Legacy prepaid holders</a><a href="#sec-grandfather">Grandfather note</a><a href="#sec-parties">Party bookings</a><a href="#sec-deposit">Record a party deposit</a><a href="#sec-partyoff">Open play only (no parties)</a><a href="/headcount.html">Head count</a><a href="#sec-prices">Manage prices</a><a href="#sec-weekly">Weekly hours</a><a href="#sec-seasonal">Seasonal hours</a><a href="#sec-weekday-special">Weekday special</a><a href="#sec-discount">Discount codes</a><a href="#sec-news">News update</a><a href="#sec-promos">Promotions &amp; Flyers</a><a href="#sec-events">Upcoming events</a><a href="#sec-partners">Partners page</a><a href="#sec-newsletter">Newsletter</a><a href="#sec-birthdays">Birthday club</a></div></div>
+<nav id="sideNav" aria-label="Sections"><div class="snav-title">Sections</div><a href="#sec-schedule">Daily schedule</a><a href="#sec-bookings">Bookings by date</a><a href="#sec-walkin">Walk-in check-in</a><a href="#sec-punch">Punch-card check-in</a><a href="/loyalty.html">Loyalty &amp; Punch Cards</a><a href="#sec-reschedule">Reschedule &amp; cancel</a><a href="#sec-redeem">Redeem a credit</a><a href="#sec-credit-backfill">Backfill credit emails</a><a href="#sec-party">Session capacity &amp; blocking</a><a href="#sec-issue">Issue a credit</a><a href="#sec-punchissue">Legacy card tools</a><a href="#sec-code">Manage a code</a><a href="#sec-closures">Closures &amp; hours</a><a href="#sec-passes">Legacy prepaid holders</a><a href="#sec-grandfather">Grandfather note</a><a href="#sec-parties">Party bookings</a><a href="#sec-deposit">Record a party deposit</a><a href="#sec-partyoff">Open play only (no parties)</a><a href="/headcount.html">Head count</a><a href="#sec-prices">Manage prices</a><a href="#sec-weekly">Weekly hours</a><a href="#sec-seasonal">Seasonal hours</a><a href="#sec-weekday-special">Weekday special</a><a href="#sec-discount">Discount codes</a><a href="#sec-news">News update</a><a href="#sec-rating">Reviews rating</a><a href="#sec-photos">Site photos</a><a href="#sec-promos">Promotions &amp; Flyers</a><a href="#sec-events">Upcoming events</a><a href="#sec-partners">Partners page</a><a href="#sec-newsletter">Newsletter</a><a href="#sec-birthdays">Birthday club</a></nav>
   <h1>Store Credit</h1>
   <div class="sub">Issue and look up Little Haven store credit codes</div>
 
@@ -80,6 +138,13 @@
     <div id="rosOut" style="margin-top:14px"></div>
     <p class="note">Shows everyone booked per session — name, party size, and how they paid — to match against signed waivers.</p>
   </div>
+
+  <div class="card" id="sec-schedule">
+      <h2>Daily schedule</h2>
+      <label>Date</label>
+      <div class="row"><div><input type="date" id="date"></div><div style="flex:0 0 auto"><button id="load" style="margin-top:0">Load day</button></div></div>
+      <div id="dayOut" style="margin-top:14px"><div class="note">Pick a date and load the day.</div></div>
+    </div>
 
   <div class="card" id="sec-walkin">
     <h2>Walk-in check-in</h2>
@@ -747,6 +812,43 @@
     <button id="pnAdd" class="ghost" style="background:#eee;color:var(--charcoal);margin-top:6px">➕ Add a partner</button>
     <div style="margin-top:10px"><button id="pnSave">Save partners page</button></div>
     <div class="out" id="pnOut"></div>
+  </div>
+
+  <div class="card" id="sec-newsletter">
+    <h2>📧 Newsletter</h2>
+    <p class="note" style="margin-top:-2px">Send a promotion, event or closure update to everyone who opted in through the pop-up on your website. Write your message, add a photo if you like, then <b>send it now</b> or <b>schedule</b> it for later. Every email has a one-click <b>unsubscribe</b> at the bottom — anyone who unsubscribes is removed from your list <b>automatically</b>, and you'll get an email letting you know.</p>
+
+    <label>Subject line</label>
+    <input type="text" id="nlSubject" placeholder="e.g. This weekend only — 25% off open play! 🎉">
+    <label>Message</label>
+    <textarea id="nlMessage" rows="6" style="width:100%;border:1.5px solid #e7ddd0;border-radius:11px;padding:10px 12px;font-family:'Nunito';font-weight:600;background:#f3ebe0" placeholder="Hi friends! Here's what's happening at Little Haven this week…&#10;&#10;Leave a blank line between paragraphs."></textarea>
+    <div class="row">
+      <div><label>Photo of the promo/event <span style="font-weight:400;color:var(--slate);text-transform:none">(optional)</span></label><input type="file" id="nlImage" accept="image/*"></div>
+    </div>
+    <label style="display:flex;gap:8px;align-items:center;text-transform:none;letter-spacing:0;font-weight:700;color:var(--charcoal);margin-top:10px;cursor:pointer"><input type="checkbox" id="nlBook" checked style="width:auto;transform:scale(1.15)"> Include a “Book your visit” button that links to open play</label>
+    <div id="nlBookLinkWrap"><label>Button link</label><input type="text" id="nlBookLink" value="https://littlehavenplay.com/book.html"></div>
+
+    <label>When to send</label>
+    <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center;margin-bottom:6px">
+      <label style="text-transform:none;letter-spacing:0;font-weight:700;color:var(--charcoal);margin:0;cursor:pointer"><input type="radio" name="nlWhen" value="now" checked style="width:auto"> Send now</label>
+      <label style="text-transform:none;letter-spacing:0;font-weight:700;color:var(--charcoal);margin:0;cursor:pointer"><input type="radio" name="nlWhen" value="sched" style="width:auto"> Schedule for later</label>
+      <input type="datetime-local" id="nlSchedAt" disabled style="width:auto">
+    </div>
+    <button id="nlSend">📨 Send / Schedule</button>
+    <div class="out" id="nlOut"></div>
+
+    <div style="margin-top:18px;border-top:1px solid #efe4d5;padding-top:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+        <b id="nlCount">Subscribers</b>
+        <span><button id="nlRefresh" class="ghost" style="background:#eee;color:var(--charcoal);margin:0">🔄 Refresh</button> <button id="nlExport" class="alt" style="margin:0">📤 Export CSV</button></span>
+      </div>
+      <div id="nlSubs" style="margin-top:10px;max-height:280px;overflow:auto"></div>
+    </div>
+
+    <div style="margin-top:16px;border-top:1px solid #efe4d5;padding-top:12px">
+      <b>Recent &amp; scheduled sends</b>
+      <div id="nlCampaigns" style="margin-top:10px"></div>
+    </div>
   </div>
 
   <div class="card" id="sec-birthdays">
@@ -2591,5 +2693,278 @@ if($("#wsSave")) $("#wsSave").onclick=async function(){
   if($("#lgSearch")) $("#lgSearch").addEventListener("input",function(){ if(LGDATA.length) lgRender(); });
   if($("#lgSearch")) $("#lgSearch").addEventListener("keydown",function(e){ if(e.key==="Enter"){ e.preventDefault(); LGDATA.length?lgRender():lgLoad(); } });
 })();
-</script></body>
+
+
+/* ---- merged in from the old staff page ---- */
+function money(c){return "$"+(c/100).toFixed(2);}
+
+async function loadDay(silent){
+  const date=$("#date").value; if(!date) return false;
+  const host=$("#dayOut"); if(!silent) host.innerHTML='<div class="note">Loading…</div>';
+  try{
+    const r=await (await fetch("/api/staff-data?pin="+encodeURIComponent(KEY())+"&date="+encodeURIComponent(date))).json();
+    if(r.error){ if(!silent){ host.innerHTML='<div class="out err" style="display:block">'+r.error+'</div>'; } return false; }
+    const arr=r.arrivals||{};
+    let html="";
+    if(r.parties.length){
+      html+='<h2 style="font-size:1.1rem;margin-bottom:2px">Parties</h2>';
+      r.parties.forEach(p=>{
+        const confirmed=(p.status==="confirmed"||p.status==="confirmed-instore");
+        html+='<div class="pty"><div class="h">'+esc(p.slotLabel)+' · '+esc(p.packageLabel)+' <span class="badge '+(confirmed?'ok':'')+'">'+esc(p.status)+'</span></div>';
+        html+='<div style="font-size:.85rem;margin-top:4px">🎂 '+esc(p.childName)+' · '+esc(p.name)+' · '+esc(p.phone)+'<br>'+esc(p.email)+' · est. '+esc(p.kids||'?')+' kids / '+esc(p.adults||'?')+' adults</div>';
+        if(p.comment) html+='<div style="font-size:.82rem;color:var(--slate);margin-top:4px">"'+esc(p.comment)+'"</div>';
+        html+='<div style="margin-top:6px">';
+        if(!confirmed) html+='<button onclick="partyAction(\''+p.partySlot+'\',\'confirm\')" style="margin-top:0">Confirm (deposit paid)</button> ';
+        html+='<button class="ghost" onclick="partyAction(\''+p.partySlot+'\',\'release\')" style="margin-top:0">Release</button></div>';
+        html+='</div>';
+      });
+    }
+    html+='<h2 style="font-size:1.1rem;margin:14px 0 2px">Open play</h2>';
+    if(!r.sessions.length){ html+='<div class="note">No open play sessions this day.</div>'; }
+    r.sessions.forEach(s=>{
+      const ci=(s.checkins||[]).reduce((n,c)=>n+(c.children||0),0);
+      const adults=(s.adultsTotal!=null)?s.adultsTotal:0;
+      const ppl=(s.peopleTotal!=null)?s.peopleTotal:s.children;
+      const crowd=ppl>=16;
+      html+='<div class="sess"><div class="h">'+esc(s.label)+(s.reserved?' — RESERVED':'')+' · '+s.children+'/'+s.cap+' kids</div>';
+      html+='<div style="font-size:.86rem;margin-top:3px"><b>'+s.children+'</b> kids · <b>'+adults+'</b> adults · <b'+(crowd?' style="color:#b4524b"':'')+'>'+ppl+' people'+(crowd?' ⚠ getting full':'')+'</b></div>';
+      if(s.people.length){
+        const idp=s.people.filter(p=>p.id); const arrn=idp.filter(p=>arr[p.id]).length;
+        if(idp.length) html+='<div style="font-size:.82rem;font-weight:800;color:#4f6b43;margin-top:6px">\u2705 '+arrn+' of '+idp.length+' arrived</div>';
+        html+='<table>';
+        s.people.forEach(p=>{ const a=[]; if(p.regular)a.push(p.regular+' reg'); if(p.sibling)a.push(p.sibling+' sib'); if(p.infant)a.push(p.infant+' inf');
+          const arrived=p.id&&arr[p.id];
+          html+='<tr'+(arrived?' style="background:#eaf3e4"':'')+'><td style="width:30px;text-align:center">'+(p.id?'<input type="checkbox" data-id="'+p.id+'" data-email="'+(p.email||'')+'" '+(arrived?'checked':'')+' onchange="markArrived(this)" title="Mark arrived" style="width:auto;transform:scale(1.35);cursor:pointer">':'')+'</td><td style="font-weight:700">'+(arrived?'\u2705 ':'')+esc(p.name)+(p.arrivalLabel?' <span style="font-size:.68rem;font-weight:800;color:#7a6f95;background:#efeaf3;border-radius:6px;padding:1px 6px;white-space:nowrap">\u23F1 '+esc(p.arrivalLabel)+'</span>':'')+(p.legacy?' <span style="font-size:.7rem;color:var(--taupe)">(2-hr session)</span>':'')+(p.childNames&&p.childNames.length?'<div style="font-size:.75rem;font-weight:600;color:var(--sage-dark);margin-top:3px">\uD83E\uDDD2 '+p.childNames.map(function(c){return esc(((c.first||'')+' '+(c.last||'')).trim())}).filter(Boolean).join(', ')+'</div>':'')+'</td><td style="color:var(--slate)">'+a.join(", ")+' · '+p.adults+' adult'+(p.adults===1?'':'s')+'</td><td style="color:var(--taupe);font-size:.78rem">'+esc(p.email)+(p.at?' <button type="button" onclick="showPayRec(this)" data-at="'+esc(p.at)+'" data-last4="'+esc(p.cardLast4||'')+'" data-paid="'+esc(p.paid||'')+'" style="border:none;background:#eef3ea;color:#4f6b43;border-radius:7px;cursor:pointer;font-weight:800;font-size:.68rem;padding:3px 8px;margin-left:6px;white-space:nowrap">💳 Payment record</button>':'')+'</td></tr>';
+        });
+        html+='</table>';
+      } else { html+='<div class="note">No online bookings yet.</div>'; }
+      if(s.checkins && s.checkins.length){
+        html+='<div style="font-weight:800;color:var(--rose-deep);font-size:.82rem;margin-top:8px">Walk-ins & pass check-ins</div><table>';
+        s.checkins.forEach(c=>{
+          const tag=c.type==="pass"?('Pass '+esc(c.code||'')+(c.childName?' ('+esc(c.childName)+')':'')):'Walk-in';
+          const det=c.children+' child'+(c.children===1?'':'ren')+(c.adults?(' + '+c.adults+' adult'+(c.adults===1?'':'s')):'');
+          html+='<tr><td style="font-weight:700">'+c.atLabel+'</td><td>'+tag+'</td><td>'+det+'</td><td style="text-align:right"><button class="alt" style="padding:4px 10px;margin:0;font-size:.7rem" onclick="removeCheckin(\''+$("#date").value+'\',\''+c.slot+'\',\''+c.id+'\')">Remove</button></td></tr>';
+        });
+        html+='</table>';
+      }
+      html+='</div>';
+    });
+    host.innerHTML=html;
+    return true;
+  }catch(e){ if(!silent){ host.innerHTML='<div class="out err" style="display:block">Network error.</div>'; } return false; }
+}
+
+function renderLookup(r){
+  if(!r.ok) return r.error||"Not found.";
+  const m=c=>"$"+((c||0)/100).toFixed(2);
+  if(r.kind==="pass") return '<b>Punch card</b> — '+esc(r.label)+'<br>Status: <b>'+r.status+'</b> · <b>'+r.visitsRemaining+'</b> of '+r.totalVisits+' visits left'+(r.expiry?' · expires '+r.expiry:'')+(r.childName?'<br>Child: '+esc(r.childName):'');
+  if(r.kind==="credit") return '<b>Store credit</b> ('+(r.creditType||"standard")+')<br>Status: <b>'+r.status+'</b> · Balance: <b>'+m(r.balance)+'</b>'+(r.expiry?' · expires '+r.expiry:'')+(r.history&&r.history.length?'<div style="margin-top:6px;font-size:.8rem">History:<br>'+r.history.map(function(x){return '• '+(x.at?x.at.slice(0,10):'')+' — '+x.action+(x.amount?' '+m(x.amount):'');}).join('<br>')+'</div>':'');
+  if(r.kind==="giftcard") return '<b>Gift card</b><br>Status: <b>'+r.status+'</b> · Balance: <b>'+m(r.balance)+'</b>';
+  return "Found.";
+}
+
+async function nlLoad(){
+  var key=KEY(); if(!key) return;
+  try{
+    var r=await (await fetch("/api/newsletter-admin",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key,action:"list"})})).json();
+    if(!r.ok){ return; }
+    var c=r.counts||{active:0,unsubscribed:0};
+    var cnt=$("#nlCount"); if(cnt) cnt.textContent="Subscribers — "+c.active+" active"+(c.unsubscribed?(" · "+c.unsubscribed+" unsubscribed"):"");
+    var subs=r.subscribers||[];
+    $("#nlSubs").innerHTML = subs.length ? subs.map(function(s){
+      var when=s.subscribedAt?(new Date(s.subscribedAt)).toLocaleDateString():"";
+      return '<div style="display:flex;align-items:center;gap:8px;background:#faf7f2;border:1px solid #efe4d5;border-radius:9px;padding:6px 10px;margin-bottom:5px;font-size:.82rem">'
+        +'<div style="flex:1;min-width:0"><b>'+(s.name?esc(s.name):'<span class="note" style="margin:0">(no name)</span>')+'</b> <span style="color:var(--slate)">'+esc(s.email)+'</span></div>'
+        +'<span class="note" style="margin:0;font-size:.72rem">'+esc(when)+'</span>'
+        +'<button type="button" onclick="nlRemoveSub(\''+esc(s.email).replace(/'/g,"\\'")+'\')" title="Remove" style="border:none;background:#fbe6e2;color:#b5382f;border-radius:6px;cursor:pointer;font-weight:900;padding:3px 8px">\u2715</button>'
+      +'</div>';
+    }).join("") : '<div class="note">No subscribers yet — they\'ll appear here as people opt in on your website.</div>';
+
+    var camps=r.campaigns||[];
+    $("#nlCampaigns").innerHTML = camps.length ? camps.map(function(m){
+      var st=m.status, badge="", when="";
+      if(st==="scheduled"){ badge='<span style="color:#b9831a;font-weight:800">⏳ Scheduled</span>'; when=m.scheduledAt?(" for "+new Date(m.scheduledAt).toLocaleString()):""; }
+      else if(st==="sending"){ badge='<span style="color:#4d7848;font-weight:800">📤 Sending…</span>'; when=" ("+(m.stats.sent||0)+"/"+(m.stats.total||0)+")"; }
+      else if(st==="sent"){ badge='<span style="color:#4d7848;font-weight:800">✅ Sent</span>'; when=" to "+(m.stats.sent||0)+(m.sentAt?(" · "+new Date(m.sentAt).toLocaleDateString()):""); }
+      else { badge='<span class="note" style="margin:0">'+esc(st)+'</span>'; }
+      var canCancel=(st==="scheduled");
+      return '<div style="display:flex;align-items:center;gap:8px;background:#faf7f2;border:1px solid #efe4d5;border-radius:9px;padding:7px 10px;margin-bottom:6px;font-size:.82rem">'
+        +'<div style="flex:1;min-width:0"><b>'+esc(m.subject||"(no subject)")+'</b><br>'+badge+'<span style="color:var(--slate)">'+esc(when)+'</span></div>'
+        +'<button type="button" onclick="nlDeleteCampaign(\''+esc(m.id)+'\','+(canCancel?"true":"false")+')" style="border:none;background:'+(canCancel?'#fbe6e2;color:#b5382f':'#eee;color:#777')+';border-radius:6px;cursor:pointer;font-weight:800;font-size:.72rem;padding:5px 9px">'+(canCancel?"Cancel":"Delete")+'</button>'
+      +'</div>';
+    }).join("") : '<div class="note">Nothing sent yet.</div>';
+  }catch(e){}
+}
+
+async 
+
+// Daily schedule is the most-used tool, so wire its Load button and default the
+// date to today the moment the page opens.
+(function(){
+  function wire(){
+    var d=document.getElementById('date');
+    if(d && !d.value){ try{ d.value=new Date(new Date().toLocaleString('en-US',{timeZone:'America/Los_Angeles'})).toISOString().slice(0,10); }catch(e){} }
+    var b=document.getElementById('load');
+    if(b) b.onclick=function(){ try{ loadDay(); }catch(e){ console.error(e); } };
+    try{ if(typeof nlLoad==='function') nlLoad(); }catch(e){}
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',wire); else wire();
+})();
+</script>
+<script>
+/* ===== Tool shell: searchable index + focus mode =====
+   Every tool stays exactly where it was and keeps its own code. This only adds a
+   way to FIND one and hide the other 34 while you use it. */
+(function(){
+  // Synonyms are what make search useful — you think "slot", the tool is called
+  // "Session capacity & blocking". Add words here, never rename the tools.
+  var KEYWORDS = {
+    "sec-schedule":"daily schedule today check in checkin arrivals who is coming roster day",
+    "sec-walkin":"walk in walkin drop by unbooked log visit door",
+    "sec-punch":"punch card check in loyalty stamp visit",
+    "sec-loyalty-list":"loyalty customers search punch card find child name phone military birthday visit history",
+    "sec-bookings":"bookings by date roster list paid",
+    "sec-reschedule":"reschedule cancel move change booking refund",
+    "sec-party":"session capacity blocking slot block time range close reserve full unavailable hold",
+    "sec-parties":"party bookings deposit list upcoming release cancel",
+    "sec-deposit":"party deposit record in store payment",
+    "sec-partyoff":"open play only no parties disable party day",
+    "sec-redeem":"redeem credit store credit use apply",
+    "sec-issue":"issue credit give store credit compensate",
+    "sec-credit-backfill":"backfill credit emails missing old",
+    "sec-code":"manage code look up deactivate reward gift",
+    "sec-discount":"discount code percent off promo",
+    "sec-punchissue":"legacy card tools prepaid old punch card redeem search",
+    "sec-passes":"legacy prepaid holders passes remaining visits",
+    "sec-grandfather":"grandfather note legacy pricing",
+    "sec-closures":"closures hours closed holiday day off",
+    "sec-weekly":"weekly hours open close schedule times",
+    "sec-seasonal":"seasonal hours extended summer",
+    "sec-weekday-special":"weekday special automatic discount",
+    "sec-prices":"prices pricing admission cost rates change price",
+    "sec-birthdays":"birthday club birthdays gift code cake age dob",
+    "sec-birthdaycode":"birthday code custom dates issue manual",
+    "sec-events":"events upcoming tickets rsvp",
+    "sec-promos":"promotions flyers posters",
+    "sec-news":"news banner update announcement ticker",
+    "sec-newsletter":"newsletter email blast subscribers campaign send",
+    "sec-photos":"site photos gallery images carousel",
+    "sec-rating":"reviews rating stars google",
+    "sec-partners":"partners perks local business logo",
+    "sec-failed":"failed redemptions errors problems log",
+    "sec-legacy":"legacy",
+    "sec-issue-pass":"issue pass"
+  };
+  var QUICK = [
+    ["sec-schedule",      "\ud83d\uddd3\ufe0f", "Daily schedule",  "Today's check-ins"],
+    ["sec-walkin",        "\ud83d\udeb6",       "Walk-in check-in","Log a drop-by"],
+    ["sec-loyalty-list",  "\ud83c\udf88",       "Loyalty cards",   "Search & punch"],
+    ["sec-party",         "\ud83d\udeab",       "Block a session", "Capacity & time ranges"],
+    ["sec-punchissue",    "\ud83c\udfab",       "Legacy cards",    "Prepaid visits"],
+    ["sec-birthdays",     "\ud83c\udf82",       "Birthday club",   "Codes & ages"],
+    ["sec-parties",       "\ud83c\udf89",       "Party bookings",  "Deposits & slots"],
+    ["sec-redeem",        "\ud83d\udcb3",       "Redeem a credit", "Store credit"]
+  ];
+
+  function ready(fn){ if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',fn); else fn(); }
+
+  ready(function(){
+    var search=document.getElementById('toolSearch'),
+        results=document.getElementById('toolResults'),
+        grid=document.getElementById('qgrid'),
+        backBtn=document.getElementById('focusBack');
+    if(!search||!results||!grid) return;
+
+    // Build the index straight off the page, so a tool added later is findable
+    // without touching this list.
+    var TOOLS=[];
+    Array.prototype.forEach.call(document.querySelectorAll('.card[id^="sec-"]'),function(card){
+      var id=card.id;
+      var h=card.querySelector('h2');
+      var name=(h?h.textContent:id.replace('sec-','')).replace(/\s+/g,' ').trim();
+      var grp=card.closest('details.secgroup');
+      var gs=grp?grp.querySelector('summary'):null;
+      TOOLS.push({ id:id, name:name,
+        group:(gs?gs.textContent.replace(/\s+/g,' ').trim():''),
+        hay:(name+' '+(KEYWORDS[id]||'')).toLowerCase() });
+    });
+
+    function focusTool(id){
+      var card=document.getElementById(id); if(!card) return;
+      Array.prototype.forEach.call(document.querySelectorAll('.focus-on'),function(e){e.classList.remove('focus-on');});
+      Array.prototype.forEach.call(document.querySelectorAll('.has-focus'),function(e){e.classList.remove('has-focus');});
+      card.classList.add('focus-on');
+      var d=card.closest('details.secgroup'); if(d){ d.classList.add('has-focus'); d.open=true; }
+      var p=card.closest('details'); while(p){ p.open=true; p=p.parentElement?p.parentElement.closest('details'):null; }
+      document.body.classList.add('focusing');
+      closeResults(); search.value='';
+      window.scrollTo({top:0,behavior:'smooth'});
+    }
+    window.focusTool=focusTool;
+
+    function unfocus(){
+      document.body.classList.remove('focusing');
+      Array.prototype.forEach.call(document.querySelectorAll('.focus-on'),function(e){e.classList.remove('focus-on');});
+      Array.prototype.forEach.call(document.querySelectorAll('.has-focus'),function(e){e.classList.remove('has-focus');});
+      window.scrollTo({top:0,behavior:'smooth'});
+    }
+    backBtn.onclick=unfocus;
+
+    // quick tiles
+    QUICK.forEach(function(q){
+      if(!document.getElementById(q[0])) return;      // tool not on this page
+      var b=document.createElement('button');
+      b.type='button'; b.className='qtile';
+      b.innerHTML='<span class="qi">'+q[1]+'</span><span class="ql">'+q[2]+'</span><span class="qs">'+q[3]+'</span>';
+      b.onclick=function(){ focusTool(q[0]); };
+      grid.appendChild(b);
+    });
+
+    var sel=-1, shown=[];
+    function closeResults(){ results.classList.remove('open'); results.innerHTML=''; sel=-1; shown=[]; }
+    function render(list){
+      shown=list; sel=list.length?0:-1;
+      if(!list.length){ results.innerHTML='<div class="tr-none">No tool matches that.</div>'; results.classList.add('open'); return; }
+      results.innerHTML='';
+      list.forEach(function(t,i){
+        var b=document.createElement('button');
+        b.type='button'; if(i===0) b.className='sel';
+        b.innerHTML=t.name+(t.group?'<span class="tr-grp">'+t.group+'</span>':'');
+        b.onclick=function(){ focusTool(t.id); };
+        results.appendChild(b);
+      });
+      results.classList.add('open');
+    }
+    function mark(){
+      Array.prototype.forEach.call(results.querySelectorAll('button'),function(b,i){ b.classList.toggle('sel', i===sel); });
+      var el=results.querySelectorAll('button')[sel]; if(el&&el.scrollIntoView) el.scrollIntoView({block:'nearest'});
+    }
+    search.addEventListener('input',function(){
+      var q=search.value.trim().toLowerCase();
+      if(!q){ closeResults(); return; }
+      var words=q.split(/\s+/);
+      render(TOOLS.filter(function(t){ return words.every(function(w){ return t.hay.indexOf(w)>-1; }); }).slice(0,12));
+    });
+    search.addEventListener('keydown',function(e){
+      if(!results.classList.contains('open')) return;
+      if(e.key==='ArrowDown'){ e.preventDefault(); sel=Math.min(sel+1,shown.length-1); mark(); }
+      else if(e.key==='ArrowUp'){ e.preventDefault(); sel=Math.max(sel-1,0); mark(); }
+      else if(e.key==='Enter'){ e.preventDefault(); if(shown[sel]) focusTool(shown[sel].id); }
+      else if(e.key==='Escape'){ closeResults(); search.blur(); }
+    });
+    document.addEventListener('click',function(e){ if(!e.target.closest||!e.target.closest('#toolSearchWrap')) closeResults(); });
+    // "/" anywhere jumps to the search box
+    document.addEventListener('keydown',function(e){
+      if(e.key==='/'&&!/^(INPUT|TEXTAREA|SELECT)$/.test((e.target.tagName||''))){ e.preventDefault(); search.focus(); }
+    });
+    // sidebar links focus the tool instead of scrolling past 34 others
+    document.addEventListener('click',function(e){
+      var a=e.target.closest?e.target.closest('#sideNav a[href^="#sec-"], #secMenu a[href^="#sec-"]'):null;
+      if(!a) return;
+      e.preventDefault(); focusTool(a.getAttribute('href').slice(1));
+    },true);
+  });
+})();
+</script>
+</body>
 </html>

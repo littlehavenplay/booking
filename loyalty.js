@@ -80,6 +80,7 @@ export default async (req) => {
           waiverSigned: rec.waiverSigned || "", waiverExpiry: rec.waiverExpiry || "",
           waiverAdults: Array.isArray(rec.waiverAdults) ? rec.waiverAdults : [],
           militaryVerified: !!rec.militaryVerified,
+          militaryEmailSentDate: rec.militaryEmailSentDate || null,
           lastVisit: rec.lastVisit ? rec.lastVisit.slice(0, 10) : "",
           createdAt: rec.createdAt ? rec.createdAt.slice(0, 10) : "" });
       }
@@ -120,6 +121,8 @@ export default async (req) => {
           parentName: rec.parentName || "", phone4: rec.phone4 || "",
           punches: rec.punches || 0, needed: PUNCHES_FOR_REWARD, rewardsEarned: rec.rewardsEarned || 0,
           email: rec.buyerEmail || "", militaryVerified: !!rec.militaryVerified,
+          militaryEmailSentDate: rec.militaryEmailSentDate || null,
+          militaryEmailSentCount: rec.militaryEmailSentCount || 0,
           waiverSigned: rec.waiverSigned || "", waiverExpiry: rec.waiverExpiry || "",
           waiverAdults: Array.isArray(rec.waiverAdults) ? rec.waiverAdults.map(a => a.name || a).filter(Boolean) : [],
           lastVisit: rec.lastVisit ? rec.lastVisit.slice(0, 10) : "" });
@@ -155,7 +158,22 @@ export default async (req) => {
 
     const sent = await sendMilitaryVerifiedEmail(toEmail, verified);
     if (!sent) return json({ error: "Couldn't send the email. Try again." }, 502);
-    return json({ ok: true, sentTo: toEmail, children: verified.map(v => v.childName), count: verified.length });
+
+    // Record WHEN it went out, on every card in the family, so the dashboard can
+    // show it and nobody sends the same family a second or third copy.
+    const stampedAt = new Date().toISOString();
+    const stampedDate = todayPacific();
+    for (const k of keys) {
+      let c = null; try { c = await loyalty.get(k, { type: "json" }); } catch { continue; }
+      if (!c || c.phone4 !== phone4 || !c.militaryVerified) continue;
+      c.militaryEmailSentAt = stampedAt;
+      c.militaryEmailSentDate = stampedDate;
+      c.militaryEmailSentCount = (c.militaryEmailSentCount || 0) + 1;
+      c.militaryEmailSentTo = toEmail;
+      try { await loyalty.setJSON(k, c); } catch {}
+    }
+    return json({ ok: true, sentTo: toEmail, children: verified.map(v => v.childName),
+      count: verified.length, sentDate: stampedDate });
   }
 
   if (action === "visit-history") {
@@ -407,12 +425,33 @@ export default async (req) => {
       if (r) targets.push(r);
     }
     if (!targets.length) return json({ error: "No matching loyalty card found." }, 404);
+    // The child's badge reads the card-level waiverSigned date, not the adult list.
+    // So adding the FIRST adult with a signed date has to fill that in too —
+    // otherwise the family shows an adult signed and the child still reads
+    // "no waiver on file", which is exactly what it used to do.
+    let derivedSigned = null, derivedExpiry = null;
+    if (!hasSigned && hasAdults && adults.length) {
+      const dates = adults.map(a => a.signedDate).filter(Boolean).sort();
+      if (dates.length) {
+        derivedSigned = dates[dates.length - 1];          // most recent signature
+        const e = new Date(derivedSigned + "T12:00:00"); e.setDate(e.getDate() + 365);
+        derivedExpiry = e.toISOString().slice(0, 10);
+      }
+    }
+
     for (const r of targets) {
       if (hasSigned) { r.waiverSigned = signed; r.waiverExpiry = expiry; }
       if (hasAdults) { r.waiverAdults = adults; }
+      // Only fill it in when the card has nothing — never overwrite a date
+      // someone set by hand.
+      if (!hasSigned && derivedSigned && !r.waiverSigned) {
+        r.waiverSigned = derivedSigned;
+        r.waiverExpiry = derivedExpiry;
+      }
       try { await loyalty.setJSON("card:" + r.code, r); } catch {}
     }
-    return json({ ok: true, signed, expiry, adults, count: targets.length });
+    return json({ ok: true, signed: signed || derivedSigned, expiry: expiry || derivedExpiry,
+      adults, count: targets.length, autoFilled: !!(derivedSigned && !hasSigned) });
   }
 
   return json({ error: "Unknown action." }, 400);

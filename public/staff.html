@@ -102,7 +102,7 @@
         <option value="arr11">11:00 AM</option><option value="arr1130">11:30 AM</option>
         <option value="arr12">12:00 PM</option><option value="arr1230">12:30 PM</option>
         <option value="arr13">1:00 PM</option><option value="arr1330">1:30 PM</option>
-        <option value="arr14">2:00 PM</option><option value="arr1430">2:30 PM</option><option value="arr15">3:00 PM (Fri/Sat)</option>
+        <option value="arr14">2:00 PM</option><option value="arr1430">2:30 PM</option><option value="arr15">3:00 PM</option><option value="arr1530">3:30 PM</option><option value="arr16">4:00 PM</option><option value="arr1630">4:30 PM</option><option value="arr17">5:00 PM</option><option value="arr1730">5:30 PM</option><option value="arr18">6:00 PM</option>
       </select>
       <div class="row">
         <div><label>Children walking in</label><input type="number" id="wiCount" min="1" placeholder="e.g. 2"></div>
@@ -294,7 +294,7 @@
         <option value="arr11">11:00 AM</option><option value="arr1130">11:30 AM</option>
         <option value="arr12">12:00 PM</option><option value="arr1230">12:30 PM</option>
         <option value="arr13">1:00 PM</option><option value="arr1330">1:30 PM</option>
-        <option value="arr14">2:00 PM</option><option value="arr1430">2:30 PM</option><option value="arr15">3:00 PM (Fri/Sat)</option>
+        <option value="arr14">2:00 PM</option><option value="arr1430">2:30 PM</option><option value="arr15">3:00 PM</option><option value="arr1530">3:30 PM</option><option value="arr16">4:00 PM</option><option value="arr1630">4:30 PM</option><option value="arr17">5:00 PM</option><option value="arr1730">5:30 PM</option><option value="arr18">6:00 PM</option>
       </select></div>
     </div>
     <div class="row"><div><label>Parent/guardian name</label><input type="text" id="mbName" placeholder="e.g. Adrian Navarro"></div><div><label>Email (optional)</label><input type="email" id="mbEmail" placeholder="parent@email.com"></div></div>
@@ -322,7 +322,7 @@
           <option value="arr11">11:00 AM</option><option value="arr1130">11:30 AM</option>
           <option value="arr12">12:00 PM</option><option value="arr1230">12:30 PM</option>
           <option value="arr13">1:00 PM</option><option value="arr1330">1:30 PM</option>
-          <option value="arr14">2:00 PM</option><option value="arr1430">2:30 PM</option><option value="arr15">3:00 PM (Fri/Sat)</option>
+          <option value="arr14">2:00 PM</option><option value="arr1430">2:30 PM</option><option value="arr15">3:00 PM</option><option value="arr1530">3:30 PM</option><option value="arr16">4:00 PM</option><option value="arr1630">4:30 PM</option><option value="arr17">5:00 PM</option><option value="arr1730">5:30 PM</option><option value="arr18">6:00 PM</option>
         </optgroup>
         <optgroup label="Private party times (Fri–Sun)">
           <option value="p0930">9:30 - 11:30 AM (party)</option>
@@ -377,7 +377,7 @@
           <option value="arr11">11:00 AM</option><option value="arr1130">11:30 AM</option>
           <option value="arr12">12:00 PM</option><option value="arr1230">12:30 PM</option>
           <option value="arr13">1:00 PM</option><option value="arr1330">1:30 PM</option>
-          <option value="arr14">2:00 PM</option><option value="arr1430">2:30 PM</option><option value="arr15">3:00 PM (Fri/Sat)</option>
+          <option value="arr14">2:00 PM</option><option value="arr1430">2:30 PM</option><option value="arr15">3:00 PM</option><option value="arr1530">3:30 PM</option><option value="arr16">4:00 PM</option><option value="arr1630">4:30 PM</option><option value="arr17">5:00 PM</option><option value="arr1730">5:30 PM</option><option value="arr18">6:00 PM</option>
         </optgroup>
         <optgroup label="Private party times (Fri–Sun)">
           <option value="p0930">9:30 - 11:30 AM (party)</option>
@@ -1727,15 +1727,16 @@ function bdRender(){
   if(!bdRows.length){ wrap.innerHTML='<div class="note">No birthdays on file yet. Families add them (optionally) when booking online.</div>'; return; }
   var html='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:.82rem;min-width:660px">'
     +'<thead><tr style="text-align:left;color:#8a8276;font-size:.7rem;text-transform:uppercase;letter-spacing:.05em">'
-    +'<th style="padding:6px 8px">Day</th><th style="padding:6px 8px">Child</th><th style="padding:6px 8px">Turning</th>'
+    +'<th style="padding:6px 8px">Day</th><th style="padding:6px 8px">Child</th><th style="padding:6px 8px">Age / DOB</th>'
     +'<th style="padding:6px 8px">Email</th><th style="padding:6px 8px">Phone</th>'
     +'<th style="padding:6px 8px">Gift sent</th><th style="padding:6px 8px">Actions</th></tr></thead><tbody>';
   bdRows.forEach(function(r){
     var sentTxt=r.lastSentYear?('✅ '+esc(r.lastSentYear)+(r.lastCode?'<br><span style="font-family:monospace;font-size:.75rem">'+esc(r.lastCode)+'</span>':'')):'<span style="color:#a89a89">—</span>';
+    if(r.birthdayUsedYear) sentTxt+='<br><span style="font-size:.7rem;color:#3f7d54;font-weight:800">🎂 used '+esc(r.birthdayUsedYear)+'</span>';
     html+='<tr style="border-top:1px solid #efe7da">'
       +'<td style="padding:7px 8px;font-weight:800;white-space:nowrap">'+bdDayLabel(r)+'</td>'
       +'<td style="padding:7px 8px;font-weight:700">'+esc(r.first+" "+r.last)+'<br><span style="font-family:monospace;font-size:.72rem;color:#a89a89">'+esc(r.code)+'</span></td>'
-      +'<td style="padding:7px 8px;white-space:nowrap">'+(r.turning>0&&r.turning<19?esc(String(r.turning)):"—")+'</td>'
+      +'<td style="padding:7px 8px;white-space:nowrap">'+(typeof r.ageNow==="number"?'<b>'+esc(String(r.ageNow))+'</b> yr':(r.turning>0&&r.turning<19?'turning '+esc(String(r.turning)):"—"))+(r.dob?'<br><span style="font-size:.72rem;color:#a89a89">'+esc(r.dob)+'</span>':'')+'</td>'
       +'<td style="padding:7px 8px">'+(r.email?'<a href="mailto:'+esc(r.email)+'">'+esc(r.email)+'</a>':'<span style="color:#b5382f">no email</span>')+'</td>'
       +'<td style="padding:7px 8px;white-space:nowrap">'+(r.phone?'<a href="sms:'+esc(r.phone)+'">'+esc(r.phone)+'</a>':'—')+'</td>'
       +'<td style="padding:7px 8px;white-space:nowrap">'+sentTxt+'</td>'
@@ -2541,15 +2542,17 @@ if($("#wsSave")) $("#wsSave").onclick=async function(){
   function waiverBadge(c){ var t=todayISO(); if(c.waiverExpiry && c.waiverExpiry>=t) return '<span style="color:#3f7d5c;font-weight:700">\u2713 Waiver on file (exp '+esc(c.waiverExpiry)+')</span>'; return '<span style="color:#b5622f;font-weight:700">\u26a0\ufe0f No current waiver \u2014 check WaiverMaster</span>'; }
   function renderCards(cards){
     var box=$('#lwResults');
-    if(!cards.length){ box.innerHTML='<div class="note" style="color:var(--rose-deep)">No match yet \u2014 create a card below \U0001F447</div>'; if($('#lwNewWrap'))$('#lwNewWrap').open=true; return; }
+    if(!cards.length){ box.innerHTML='<div class="note" style="color:var(--rose-deep)">No match yet \u2014 create a card below \uD83D\uDC47</div>'; if($('#lwNewWrap'))$('#lwNewWrap').open=true; return; }
     box.innerHTML=cards.map(function(c){
       var adults=(c.waiverAdults&&c.waiverAdults.length)?'<div class="note" style="margin:2px 0 0">Adults on file: '+c.waiverAdults.map(esc).join(', ')+'</div>':'<div class="note" style="margin:2px 0 0;color:#b5622f">No adult names on file \u2014 add today\u2019s adult on WaiverMaster</div>';
       return '<div style="border:1px solid #eadfce;border-radius:10px;padding:10px 12px;margin-bottom:8px;background:#fff">'
-        +'<div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><div><b>'+esc(c.childName)+'</b> <span style="font-family:monospace;color:var(--rose-deep)">'+esc(c.code)+'</span><br><span class="note">'+c.punches+'/'+c.needed+' visits'+(c.dob?' \u00b7 \U0001F382 '+esc(c.dob):'')+(c.phone4?' \u00b7 \u260E \u2026'+esc(c.phone4):'')+(c.parentName?' \u00b7 '+esc(c.parentName):'')+'</span></div>'
-        +'<button class="lwPunch" data-code="'+esc(c.code)+'" style="margin:0;padding:8px 14px;white-space:nowrap">\u2795 Punch visit</button></div>'
+        +'<div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><div><b>'+esc(c.childName)+'</b> <span style="font-family:monospace;color:var(--rose-deep)">'+esc(c.code)+'</span><br><span class="note">'+c.punches+'/'+c.needed+' visits'+(c.dob?' \u00b7 \uD83C\uDF82 '+esc(c.dob):'')+(c.phone4?' \u00b7 \u260E \u2026'+esc(c.phone4):'')+(c.parentName?' \u00b7 '+esc(c.parentName):'')+'</span></div>'
+        +'<button class="lwPunch" data-code="'+esc(c.code)+'" style="margin:0;padding:8px 14px;white-space:nowrap">\u2795 Punch visit</button>'
+        +'<button class="lwBday" data-code="'+esc(c.code)+'" data-name="'+esc(c.childName||"")+'" title="Free birthday admission \u2014 visit recorded, no punch" style="margin:0 0 0 6px;padding:8px 12px;white-space:nowrap;background:#fdeee9;color:#a85f59">\uD83C\uDF82 Birthday visit</button></div>'
         +'<div style="margin-top:6px">'+waiverBadge(c)+'</div>'+adults+'</div>';
     }).join('');
     Array.prototype.forEach.call(document.querySelectorAll('.lwPunch'),function(b){ b.onclick=function(){ punchExisting(b.getAttribute('data-code'), b); }; });
+    Array.prototype.forEach.call(document.querySelectorAll('.lwBday'),function(b){ b.onclick=function(){ birthdayVisit(b.getAttribute('data-code'), b.getAttribute('data-name'), b); }; });
   }
   async function lwFind(){
     var key=KEY(); var box=$('#lwResults'); var q=($('#lwPhone').value||'').trim();
@@ -2562,11 +2565,22 @@ if($("#wsSave")) $("#wsSave").onclick=async function(){
       renderCards(r.cards||[]);
     }catch(e){ box.innerHTML='<div class="out err" style="display:block">Network error.</div>'; }
   }
+  // Free birthday admission: logs the visit, adds NO punch, and marks the
+  // birthday used for this year so no further code gets emailed.
+  async function birthdayVisit(code, name, btn){
+    if(!confirm('Record a FREE BIRTHDAY ADMISSION for '+(name||code)+'?\n\n\u2022 Counts as a visit in their history\n\u2022 Does NOT add a loyalty punch\n\u2022 No further birthday code will be emailed this year')) return;
+    var key=KEY(); if(!key){ alert('Enter your '+KLABEL+' first.'); return; }
+    btn.disabled=true; btn.textContent='Recording\u2026';
+    try{ var r=await (await fetch('/api/loyalty',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({key:key,action:'punch',code:code,birthday:true})})).json();
+      if(r.ok){ btn.textContent='\uD83C\uDF82 Birthday visit logged'; btn.style.background='#e7f0df'; btn.style.color='#3f7d5c'; }
+      else { btn.disabled=false; btn.textContent='\uD83C\uDF82 Birthday visit'; alert(r.error||'Could not record it.'); }
+    }catch(e){ btn.disabled=false; btn.textContent='\uD83C\uDF82 Birthday visit'; alert('Network error.'); }
+  }
   async function punchExisting(code, btn){
     var key=KEY(); if(!key){ alert('Enter your '+KLABEL+' first.'); return; }
     btn.disabled=true; btn.textContent='Punching\u2026';
     try{ var r=await (await fetch('/api/loyalty',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({key:key,action:'punch',code:code})})).json();
-      if(r.ok){ btn.textContent=r.rewardIssued?'\U0001F389 FREE VISIT!':('\u2713 '+r.punches+'/'+r.needed); btn.style.background='#3f7d5c'; }
+      if(r.ok){ btn.textContent=r.rewardIssued?'\uD83C\uDF89 FREE VISIT!':('\u2713 '+r.punches+'/'+r.needed); btn.style.background='#3f7d5c'; }
       else { btn.disabled=false; btn.textContent='\u2795 Punch visit'; alert(r.error||'Could not punch.'); }
     }catch(e){ btn.disabled=false; btn.textContent='\u2795 Punch visit'; alert('Network error.'); }
   }

@@ -465,7 +465,11 @@ window.sendMilitaryEmail=async function(phone4,anchorCode){
   var btn=document.getElementById("milEmailBtn-"+phone4); if(btn){ btn.disabled=true; btn.textContent="Sending\u2026"; }
   try{
     var r=await (await fetch("/api/loyalty",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key,action:"send-military-email",phone4,code:anchorCode})})).json();
-    if(r.ok){ alert("\u2705 Sent to "+r.sentTo+" \u2014 covers "+r.count+" child"+(r.count===1?"":"ren")+": "+r.children.join(", ")+"."); }
+    if(r.ok){
+      // Remember it locally too, so the badge updates without a full reload.
+      LOYALTY.forEach(function(c){ if(String(c.phone4)===String(phone4)&&c.militaryVerified){ c.militaryEmailSentDate=r.sentDate; c.militaryEmailSentCount=(c.militaryEmailSentCount||0)+1; } });
+      alert("\u2705 Sent to "+r.sentTo+" \u2014 covers "+r.count+" child"+(r.count===1?"":"ren")+": "+r.children.join(", ")+".");
+    }
     else { alert(r.error||"Couldn't send."); }
   }catch(e){ alert("Network error."); }
   if(btn){ btn.disabled=false; renderLoyaltyList(); }
@@ -494,6 +498,22 @@ window.punchFromList=async function(code,name){
       renderLoyaltyList();
       alert(r.rewardIssued? ("🎉 "+(r.childName||name)+" earned a FREE visit! Reward code "+r.rewardCode+" emailed.") : ("🎈 Punched "+(r.childName||name)+" — "+r.punches+"/"+r.needed));
     } else { alert(r.error||"Couldn't punch."); }
+  }catch(e){ alert("Network error."); }
+};
+// Free birthday admission: records the visit in their history but adds NO punch,
+// and marks the birthday used for this year so the cron won't email another code.
+window.birthdayVisit=async function(code,name){
+  if(!confirm("Record a FREE BIRTHDAY ADMISSION for "+(name||code)+"?\n\n\u2022 Counts as a visit in their history\n\u2022 Does NOT add a loyalty punch\n\u2022 No further birthday code will be emailed this year")) return;
+  const key=KEY;
+  if(!key){ alert("Enter your admin key (top of page)."); return; }
+  try{
+    const r=await (await fetch("/api/loyalty",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key,action:"punch",code,birthday:true})})).json();
+    if(r.ok){
+      var c=LOYALTY.find(function(x){return x.code===code;});
+      if(c){ c.totalVisits=(c.totalVisits||0)+1; }
+      renderLoyaltyList();
+      alert("\uD83C\uDF82 Birthday visit recorded for "+(r.childName||name)+". No punch added \u2014 still "+r.punches+"/"+r.needed+" toward a free visit.");
+    } else { alert(r.error||"Couldn't record it."); }
   }catch(e){ alert("Network error."); }
 };
 window.deleteLoyalty=async function(code,name){
@@ -582,6 +602,7 @@ function llChildRow(c){
     +'<span style="margin-left:auto;display:flex;gap:5px">'
       +'<button onclick="loEditFromList(\''+esc(c.code)+'\')" title="Edit name, birthday, or punches" style="border:none;background:#eee6f5;color:#5c4a80;border-radius:6px;cursor:pointer;font-weight:800;font-size:.75rem;padding:4px 9px">\u270F\uFE0F Edit</button>'
       +'<button onclick="punchFromList(\''+esc(c.code)+'\',\''+esc((c.childName||"").replace(/[\x27\\]/g,""))+'\')" title="Add a punch" style="border:none;background:#e7f0df;color:#4d6b3e;border-radius:6px;cursor:pointer;font-weight:800;font-size:.75rem;padding:4px 9px">\u2795 Punch</button>'
+      +'<button onclick="birthdayVisit(\''+esc(c.code)+'\',\''+esc((c.childName||"").replace(/[\x27\\]/g,""))+'\')" title="Free birthday admission — visit recorded, no punch" style="border:none;background:#fdeee9;color:#a85f59;border-radius:6px;cursor:pointer;font-weight:800;font-size:.75rem;padding:4px 9px;margin-left:4px">\uD83C\uDF82 Birthday</button>' 
       +'<button onclick="toggleBdayRow(\''+esc(c.code)+'\')" title="Set this child\'s birthday" style="border:none;background:#fdeedd;color:#a5651a;border-radius:6px;cursor:pointer;font-weight:800;font-size:.75rem;padding:4px 9px">\uD83C\uDF82 Birthday</button>'
       +'<button onclick="toggleMilitary(\''+esc(c.code)+'\','+(c.militaryVerified?'false':'true')+')" title="'+(c.militaryVerified?'Remove military verification':'Mark as military-verified')+'" style="border:none;background:'+(c.militaryVerified?'#dff0d3':'#f0ede5')+';color:'+(c.militaryVerified?'#33521f':'#6b6255')+';border-radius:6px;cursor:pointer;font-weight:800;font-size:.75rem;padding:4px 9px">\uD83C\uDF96\uFE0F '+(c.militaryVerified?'Military \u2713':'Military')+'</button>'
       +'<button onclick="toggleVisitHistory(\''+esc(c.code)+'\')" title="See this child\'s visit history" style="border:none;background:#e3ecf5;color:#2f5a80;border-radius:6px;cursor:pointer;font-weight:800;font-size:.75rem;padding:4px 9px">\uD83D\uDCC5 Visit History</button>'
@@ -619,6 +640,9 @@ function renderLoyaltyList(){
     var verifiedKids=kids.filter(function(c){return c.militaryVerified;});
     var militaryEmailBtn=verifiedKids.length
       ? ' <button type="button" onclick="sendMilitaryEmail(\''+esc(famKey)+'\',\''+esc(verifiedKids[0].code)+'\')" id="milEmailBtn-'+esc(famKey)+'" style="border:none;background:#dff0d3;color:#33521f;border-radius:6px;cursor:pointer;font-weight:800;font-size:.72rem;padding:4px 9px;margin-left:6px" title="Send one email covering all '+verifiedKids.length+' verified child'+(verifiedKids.length===1?"":"ren")+' in this family, with each of their codes">\uD83D\uDCE7 Email military verification ('+verifiedKids.length+')</button>'
+      + (function(){ var s=verifiedKids.find(function(k){return k.militaryEmailSentDate;});
+          return s ? '<span title="Verification email already sent on '+esc(s.militaryEmailSentDate)+'" style="display:inline-block;margin-left:6px;font-size:.7rem;font-weight:800;color:#3f7d54;background:#e7f0df;border-radius:999px;padding:3px 9px">\u2705 Sent '+esc(s.militaryEmailSentDate)+'</span>'
+                   : '<span style="display:inline-block;margin-left:6px;font-size:.7rem;font-weight:800;color:#a85f59;background:#fdf1ec;border-radius:999px;padding:3px 9px">Not sent yet</span>'; })()
       : '';
     var adults=Array.isArray(fam.waiverAdults)?fam.waiverAdults:[];
     var today=new Date().toISOString().slice(0,10);
@@ -660,7 +684,10 @@ window.addWaiverAdult=async function(phone4,code,name,signedDate){
   if(phone4){body.family=true;body.phone4=phone4;}else{body.code=code;}
   try{
     var r=await (await fetch("/api/loyalty",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)})).json();
-    if(r.ok){ LOYALTY.forEach(function(c){ if((phone4&&c.phone4===phone4)||(!phone4&&c.code===code)){c.waiverAdults=r.adults;} }); renderLoyaltyList(); }
+    if(r.ok){ LOYALTY.forEach(function(c){ if((phone4&&c.phone4===phone4)||(!phone4&&c.code===code)){ c.waiverAdults=r.adults;
+        // Server fills the card's waiver date from the first adult signature —
+        // mirror it so the child's badge flips to valid without a reload.
+        if(r.autoFilled&&!c.waiverSigned){ c.waiverSigned=r.signed; c.waiverExpiry=r.expiry; } } }); renderLoyaltyList(); }
     else alert(r.error||"Couldn't save.");
   }catch(e){alert("Network error.");}
 };

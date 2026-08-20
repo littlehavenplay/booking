@@ -80,6 +80,7 @@ export default async (req) => {
           waiverSigned: rec.waiverSigned || "", waiverExpiry: rec.waiverExpiry || "",
           waiverAdults: Array.isArray(rec.waiverAdults) ? rec.waiverAdults : [],
           militaryVerified: !!rec.militaryVerified,
+          militaryEmailSentDate: rec.militaryEmailSentDate || null,
           lastVisit: rec.lastVisit ? rec.lastVisit.slice(0, 10) : "",
           createdAt: rec.createdAt ? rec.createdAt.slice(0, 10) : "" });
       }
@@ -120,6 +121,8 @@ export default async (req) => {
           parentName: rec.parentName || "", phone4: rec.phone4 || "",
           punches: rec.punches || 0, needed: PUNCHES_FOR_REWARD, rewardsEarned: rec.rewardsEarned || 0,
           email: rec.buyerEmail || "", militaryVerified: !!rec.militaryVerified,
+          militaryEmailSentDate: rec.militaryEmailSentDate || null,
+          militaryEmailSentCount: rec.militaryEmailSentCount || 0,
           waiverSigned: rec.waiverSigned || "", waiverExpiry: rec.waiverExpiry || "",
           waiverAdults: Array.isArray(rec.waiverAdults) ? rec.waiverAdults.map(a => a.name || a).filter(Boolean) : [],
           lastVisit: rec.lastVisit ? rec.lastVisit.slice(0, 10) : "" });
@@ -155,7 +158,22 @@ export default async (req) => {
 
     const sent = await sendMilitaryVerifiedEmail(toEmail, verified);
     if (!sent) return json({ error: "Couldn't send the email. Try again." }, 502);
-    return json({ ok: true, sentTo: toEmail, children: verified.map(v => v.childName), count: verified.length });
+
+    // Record WHEN it went out, on every card in the family, so the dashboard can
+    // show it and nobody sends the same family a second or third copy.
+    const stampedAt = new Date().toISOString();
+    const stampedDate = todayPacific();
+    for (const k of keys) {
+      let c = null; try { c = await loyalty.get(k, { type: "json" }); } catch { continue; }
+      if (!c || c.phone4 !== phone4 || !c.militaryVerified) continue;
+      c.militaryEmailSentAt = stampedAt;
+      c.militaryEmailSentDate = stampedDate;
+      c.militaryEmailSentCount = (c.militaryEmailSentCount || 0) + 1;
+      c.militaryEmailSentTo = toEmail;
+      try { await loyalty.setJSON(k, c); } catch {}
+    }
+    return json({ ok: true, sentTo: toEmail, children: verified.map(v => v.childName),
+      count: verified.length, sentDate: stampedDate });
   }
 
   if (action === "visit-history") {
@@ -281,17 +299,24 @@ export default async (req) => {
   if (action === "punch") {
     const direct = normalizeCode(b.code);
     const waiverSigned = (b.waiverSigned || "").toString().trim();
+    // Free birthday admission: log the visit, skip the punch, and mark the
+    // birthday as used so no further code is emailed for this year.
+    const birthday = b.birthday === true || b.birthday === "1";
+    const bYear = birthday ? (todayPacific() || "").slice(0, 4) : null;
     const adultNames = Array.isArray(b.adultNames) ? b.adultNames : [];
     if (direct) {
       if (await isLegacyPassCode(direct)) return json({ error: "That's a legacy prepaid card — don't punch it here." }, 409);
       let exists = null; try { exists = await loyalty.get("card:" + direct, { type: "json" }); } catch {}
       if (!exists) return json({ error: "No loyalty card found for that code." }, 404);
-      const r = await addPunch(loyalty, { code: direct, waiverSigned, adultNames, visitMeta: { date: todayPacific(), source: "manual" } });
+      const r = await addPunch(loyalty, { code: direct, waiverSigned, adultNames, noPunch: birthday, birthdayYear: bYear,
+        visitMeta: { date: todayPacific(), source: birthday ? "birthday" : "manual", birthday } });
       if (r.error) return json({ error: "Couldn't save the punch. Try again." }, 502);
       return json({ ok: true, ...r,
-        message: r.rewardIssued
-          ? `${r.childName} earned a FREE visit! Reward code ${r.rewardCode} was emailed (expires ${r.rewardExpiry}).`
-          : `Punched! ${r.childName} (${r.code}) now has ${r.punches}/${r.needed} visits toward a free one.` });
+        message: birthday
+          ? `🎂 Birthday visit recorded for ${r.childName} (${r.code}). No punch added, and no birthday code will be emailed again this year. Still ${r.punches}/${r.needed} toward a free visit.`
+          : r.rewardIssued
+            ? `${r.childName} earned a FREE visit! Reward code ${r.rewardCode} was emailed (expires ${r.rewardExpiry}).`
+            : `Punched! ${r.childName} (${r.code}) now has ${r.punches}/${r.needed} visits toward a free one.` });
     }
     const first = (b.childFirst || "").toString().trim();
     const last  = (b.childLast || "").toString().trim();
@@ -301,8 +326,12 @@ export default async (req) => {
     const email = (b.email || "").toString().slice(0, 160).trim();
     const militaryVerified = !!b.militaryVerified;
     const dob = (b.dob || "").toString().trim();
-    const r = await addPunch(loyalty, { first, last, phone4, email, waiverSigned, adultNames, militaryVerified, dob, visitMeta: { date: todayPacific(), source: "manual" } });
+    const r = await addPunch(loyalty, { first, last, phone4, email, waiverSigned, adultNames, militaryVerified, dob,
+      noPunch: birthday, birthdayYear: bYear,
+      visitMeta: { date: todayPacific(), source: birthday ? "birthday" : "manual", birthday } });
     if (r.error) return json({ error: r.message || "Couldn't save the punch. Try again." }, 502);
+    if (birthday) return json({ ok: true, ...r,
+      message: `🎂 Birthday visit recorded for ${r.childName} (${r.code}). No punch added, and no birthday code will be emailed again this year.` });
     return json({ ok: true, ...r,
       message: r.rewardIssued
         ? `${r.childName} earned a FREE visit! Reward code ${r.rewardCode} was emailed (expires ${r.rewardExpiry}).`
@@ -396,12 +425,33 @@ export default async (req) => {
       if (r) targets.push(r);
     }
     if (!targets.length) return json({ error: "No matching loyalty card found." }, 404);
+    // The child's badge reads the card-level waiverSigned date, not the adult list.
+    // So adding the FIRST adult with a signed date has to fill that in too —
+    // otherwise the family shows an adult signed and the child still reads
+    // "no waiver on file", which is exactly what it used to do.
+    let derivedSigned = null, derivedExpiry = null;
+    if (!hasSigned && hasAdults && adults.length) {
+      const dates = adults.map(a => a.signedDate).filter(Boolean).sort();
+      if (dates.length) {
+        derivedSigned = dates[dates.length - 1];          // most recent signature
+        const e = new Date(derivedSigned + "T12:00:00"); e.setDate(e.getDate() + 365);
+        derivedExpiry = e.toISOString().slice(0, 10);
+      }
+    }
+
     for (const r of targets) {
       if (hasSigned) { r.waiverSigned = signed; r.waiverExpiry = expiry; }
       if (hasAdults) { r.waiverAdults = adults; }
+      // Only fill it in when the card has nothing — never overwrite a date
+      // someone set by hand.
+      if (!hasSigned && derivedSigned && !r.waiverSigned) {
+        r.waiverSigned = derivedSigned;
+        r.waiverExpiry = derivedExpiry;
+      }
       try { await loyalty.setJSON("card:" + r.code, r); } catch {}
     }
-    return json({ ok: true, signed, expiry, adults, count: targets.length });
+    return json({ ok: true, signed: signed || derivedSigned, expiry: expiry || derivedExpiry,
+      adults, count: targets.length, autoFilled: !!(derivedSigned && !hasSigned) });
   }
 
   return json({ error: "Unknown action." }, 400);

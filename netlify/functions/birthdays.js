@@ -16,6 +16,16 @@ import { getStore } from "@netlify/blobs";
 import { nextOccurrence, ageOn, issueBirthdayCode, birthdayWeek } from "./lib-birthday.js";
 import { normalizeCode } from "./lib-loyalty.js";
 
+// Whole years completed as of today, Pacific.
+function currentAge(dob) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dob || "")) return null;
+  const today = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Los_Angeles" }))
+    .toISOString().slice(0, 10);
+  let age = Number(today.slice(0, 4)) - Number(dob.slice(0, 4));
+  if (today.slice(5) < dob.slice(5)) age -= 1;   // birthday hasn't come round yet
+  return age < 0 || age > 120 ? null : age;
+}
+
 export default async (req) => {
   if (req.method !== "POST") return json({ error: "Use POST." }, 405);
   let b; try { b = await req.json(); } catch { return json({ error: "Invalid request." }, 400); }
@@ -45,7 +55,13 @@ export default async (req) => {
       rows.push({
         code: rec.code || k.slice(5), first: parts[0] || "", last: parts.slice(1).join(" ") || "",
         dob: rec.dob, month: cmm, day: cdd,
+        // "Turning" is the age at the NEXT birthday, so once this year's has
+        // passed it jumps to next year's number — which reads as wrong when you
+        // are looking at a child who just had their birthday. Send the current
+        // age and the raw DOB too so the table can show something unambiguous.
         turning: ageOn(rec.dob, nextOccurrence(rec.dob)),
+        ageNow: currentAge(rec.dob),
+        birthdayUsedYear: rec.birthdayUsedYear || null,
         email: rec.buyerEmail || "", phone: rec.phone || "",
         lastSentYear: rec.lastSentYear || null, lastCode: rec.lastCode || "",
       });

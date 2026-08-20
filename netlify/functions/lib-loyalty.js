@@ -151,7 +151,11 @@ export async function issueCode(loyalty, { first, last, phone4, email, dob, supp
 
 // Add ONE punch to a child's card. Creates the card if new (welcome email), and
 // on the 7th punch issues a free-visit reward code (reward email). Returns details.
-export async function addPunch(loyalty, { first, last, phone4, email, code: directCode, suppressEmail, waiverSigned, adultNames, militaryVerified, dob, visitMeta }) {
+// noPunch: record the visit and everything else, but DON'T advance the loyalty
+// count. Used for a free birthday admission — the child was here, so it belongs
+// in their visit history, but a free visit shouldn't earn progress toward another
+// free visit.
+export async function addPunch(loyalty, { first, last, phone4, email, code: directCode, suppressEmail, waiverSigned, adultNames, militaryVerified, dob, visitMeta, noPunch, birthdayYear }) {
   let code, existing;
   if (directCode) {
     code = normalizeCode(directCode);
@@ -191,9 +195,19 @@ export async function addPunch(loyalty, { first, last, phone4, email, code: dire
     const signedDate = (waiverSigned && /^\d{4}-\d{2}-\d{2}$/.test(waiverSigned)) ? waiverSigned : "";
     const expiry = rec.waiverExpiry || "";
     const existingAdults = Array.isArray(rec.waiverAdults) ? rec.waiverAdults : [];
-    const newAdults = adultNames.map(n => (n || "").toString().slice(0, 80).trim()).filter(Boolean)
-      .filter(n => !existingAdults.some(a => (a.name || "").toLowerCase() === n.toLowerCase()))
-      .map(n => ({ name: n, signedDate, expiry }));
+    // Dedupe against the names already on file AND against duplicates inside this
+    // same submission — otherwise checking one adult in twice files them twice
+    // ("Alesha Kee, Alesha Kee"), since neither copy is on the card yet.
+    const seen = new Set(existingAdults.map(a => (a.name || "").toLowerCase().trim()));
+    const newAdults = [];
+    for (const raw of adultNames) {
+      const n = (raw || "").toString().slice(0, 80).trim();
+      if (!n) continue;
+      const key = n.toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      newAdults.push({ name: n, signedDate, expiry });
+    }
     rec.waiverAdults = existingAdults.concat(newAdults).slice(0, 20);
   }
   if (militaryVerified === true && !rec.militaryVerified) {
@@ -202,16 +216,28 @@ export async function addPunch(loyalty, { first, last, phone4, email, code: dire
     rec.history.push({ at: new Date().toISOString(), action: "military-verified" });
   }
 
-  rec.punches = (rec.punches || 0) + 1;
+  // A birthday admission still counts as a visit — it just doesn't earn a punch.
+  if (!noPunch) rec.punches = (rec.punches || 0) + 1;
   rec.totalVisits = (rec.totalVisits || 0) + 1;
   rec.lastVisit = new Date().toISOString();
   rec.history = Array.isArray(rec.history) ? rec.history : [];
-  rec.history.push({ at: rec.lastVisit, action: "punch", punches: rec.punches });
+  rec.history.push(noPunch
+    ? { at: rec.lastVisit, action: "birthday-visit", punches: rec.punches || 0, note: "Free birthday admission — no punch" }
+    : { at: rec.lastVisit, action: "punch", punches: rec.punches });
+
+  // Stamp the birthday as used for this year so neither cron pass emails another
+  // code. Mirrors what the manual issue buttons write.
+  if (birthdayYear) {
+    rec.lastSentYear = birthdayYear;
+    rec.dayOfSentYear = birthdayYear;
+    rec.birthdayUsedYear = birthdayYear;
+    rec.birthdayUsedAt = rec.lastVisit;
+  }
 
   if (isNew && rec.buyerEmail && !suppressEmail) { try { await sendWelcome(rec); } catch {} }
 
   let rewardIssued = null;
-  if (rec.punches >= PUNCHES_FOR_REWARD) {
+  if (!noPunch && rec.punches >= PUNCHES_FOR_REWARD) {
     const rewards = getStore("rewards");
     const rewardCode = await uniqueReward(rewards);
     const now = new Date();
@@ -228,7 +254,7 @@ export async function addPunch(loyalty, { first, last, phone4, email, code: dire
 
   try { await loyalty.setJSON("card:" + code, rec); } catch { return { error: true }; }
   if (visitMeta) await pushVisit(loyalty, code, visitMeta, false);
-  return { code, childName: rec.childName, isNew, punches: rec.punches, needed: PUNCHES_FOR_REWARD,
+  return { code, childName: rec.childName, isNew, punches: rec.punches, needed: PUNCHES_FOR_REWARD, noPunch: !!noPunch,
     rewardIssued: !!rewardIssued, rewardCode: rewardIssued ? rewardIssued.rewardCode : null,
     rewardExpiry: rewardIssued ? rewardIssued.expiry : null,
     waiverSigned: rec.waiverSigned || null, waiverExpiry: rec.waiverExpiry || null,
