@@ -302,6 +302,19 @@
       </div>
       <p class="note" style="margin-top:6px">Limits how many children can book this session (for capacity control). The website shows the reduced spots. Set 0 to accept none.</p>
     </div>
+    <div style="border-top:1px dashed #e2d9cc;margin-top:12px;padding-top:12px">
+      <label>Or block a whole time range (e.g. saving 2:30&ndash;4:30 for your own kids)</label>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <input type="time" id="rzFrom" step="1800" style="width:130px">
+        <span class="note" style="margin:0">to</span>
+        <input type="time" id="rzTo" step="1800" style="width:130px">
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+        <button id="rzRangeBlock" style="margin:0;flex:1;min-width:150px">🚫 Block this range</button>
+        <button id="rzRangeFree" class="alt" style="margin:0;flex:1;min-width:150px">↩️ Reopen this range</button>
+      </div>
+      <p class="note" style="margin-top:6px">Uses the date above. Closes every open-play arrival that starts inside the window &mdash; 2:30 to 4:30 blocks the 2:30, 3:00, 3:30 and 4:00 arrivals. Walk-ins you log in person still work.</p>
+    </div>
     <button class="alt" id="rzRelease" style="margin-top:10px">↩️ Release — back to normal capacity</button>
     <div class="out" id="rzOut"></div>
     <p class="note">Blocking hides the session from open play (shows as unavailable/"private party" if a party is booked). Limiting caps how many kids can book it. Release restores normal open-play capacity.</p>
@@ -904,6 +917,24 @@ async function rzCall(action){
 $("#rzReserve").onclick=()=>rzCall("reserve");
 $("#rzRelease").onclick=()=>rzCall("release");
 $("#rzCapBtn").onclick=()=>rzCall("cap");
+
+async function rzRange(action){
+  const out=$("#rzOut"); out.className="out"; out.style.display="";
+  const key=$("#key").value.trim(), date=$("#rzDate").value;
+  const fromTime=$("#rzFrom").value, toTime=$("#rzTo").value;
+  if(!key){ out.className="out err"; out.textContent="Enter your admin key (top of page)."; return; }
+  if(!date){ out.className="out err"; out.textContent="Pick a date."; return; }
+  if(!fromTime||!toTime){ out.className="out err"; out.textContent="Pick both a start and an end time."; return; }
+  if(toTime<=fromTime){ out.className="out err"; out.textContent="The end time has to be after the start time."; return; }
+  try{
+    const r=await (await fetch("/api/slot-block",{method:"POST",headers:{"content-type":"application/json"},
+      body:JSON.stringify({key,date,fromTime,toTime,note:$("#rzNote").value.trim(),action})})).json();
+    if(r.ok){ out.className="out ok"; out.textContent=r.message||"Done."; }
+    else { out.className="out err"; out.textContent=r.error||"Couldn't update those slots."; }
+  }catch(e){ out.className="out err"; out.textContent="Network error."; }
+}
+$("#rzRangeBlock").onclick=()=>rzRange("blockRange");
+$("#rzRangeFree").onclick=()=>rzRange("releaseRange");
 $("#rosView").onclick=async()=>{
   const out=$("#rosOut"); out.innerHTML="";
   const key=$("#key").value.trim(), date=$("#rosDate").value;
@@ -1569,7 +1600,7 @@ async function markPaid(date,slot,paid){
 }
 if($("#pcLoad"))$("#pcLoad").onclick=loadPasses;
 if($("#ptLoad"))$("#ptLoad").onclick=loadParties;
-window.renderPasses=renderPasses;window.markPaid=markPaid;
+window.renderPasses=renderPasses;window.markPaid=markPaid;window.releaseParty=releaseParty;
 function reloadRoster(){ if($("#rosDate").value && $("#key").value.trim()) $("#rosView").click(); }
 $("#awAdd").onclick=async()=>{
   const out=$("#awOut"); out.className="out";

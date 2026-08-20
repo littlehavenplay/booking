@@ -830,6 +830,11 @@ if(s)s.style.display="block";var nv=document.getElementById("navNews");if(nv)nv.
 <script>
 (function(){
   var SEEN="lh_news_seen", SUB="lh_news_sub";
+  // How long a "no thanks" lasts before we ask again. Subscribers are never
+  // asked again. Showing the popup on EVERY visit would drive regulars away —
+  // a month is long enough not to nag and short enough to catch people who
+  // dismissed it in a hurry the first time.
+  var REASK_DAYS = 30;
   function stored(k){ try{return localStorage.getItem(k);}catch(e){return null;} }
   function setStored(k,v){ try{localStorage.setItem(k,v);}catch(e){} }
   var overlay=document.getElementById("lhnews-overlay");
@@ -841,10 +846,22 @@ if(s)s.style.display="block";var nv=document.getElementById("navNews");if(nv)nv.
       body=document.getElementById("lhnews-body");
 
   function open(){ overlay.classList.add("open"); setTimeout(function(){ try{emailEl.focus();}catch(e){} },60); }
-  function dismiss(){ overlay.classList.remove("open"); setStored(SEEN,"1"); }
+  // Store WHEN it was dismissed, not just that it was — that's what lets it
+  // come back later instead of being hidden forever on that device.
+  function dismiss(){ overlay.classList.remove("open"); setStored(SEEN, String(Date.now())); }
 
-  // Show once, ~1s after load, unless already subscribed or dismissed on this device.
-  if(!stored(SUB) && !stored(SEEN)){ setTimeout(open, 1000); }
+  function shouldShow(){
+    if(stored(SUB)) return false;                 // already on the list — never ask again
+    var seen = stored(SEEN);
+    if(!seen) return true;                        // never seen it
+    var when = parseInt(seen, 10);
+    if(!when || isNaN(when)) return true;         // old "1" value from before this change
+    return (Date.now() - when) > REASK_DAYS * 86400000;
+  }
+
+  // Let you force it open for testing: littlehavenplay.com/?newsletter=1
+  var force = /[?&]newsletter=1/.test(location.search);
+  if(force || shouldShow()){ setTimeout(open, 1000); }
 
   document.getElementById("lhnews-close").onclick=dismiss;
   document.getElementById("lhnews-nothanks").onclick=dismiss;
