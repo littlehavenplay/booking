@@ -195,9 +195,19 @@ export async function addPunch(loyalty, { first, last, phone4, email, code: dire
     const signedDate = (waiverSigned && /^\d{4}-\d{2}-\d{2}$/.test(waiverSigned)) ? waiverSigned : "";
     const expiry = rec.waiverExpiry || "";
     const existingAdults = Array.isArray(rec.waiverAdults) ? rec.waiverAdults : [];
-    const newAdults = adultNames.map(n => (n || "").toString().slice(0, 80).trim()).filter(Boolean)
-      .filter(n => !existingAdults.some(a => (a.name || "").toLowerCase() === n.toLowerCase()))
-      .map(n => ({ name: n, signedDate, expiry }));
+    // Dedupe against the names already on file AND against duplicates inside this
+    // same submission — otherwise checking one adult in twice files them twice
+    // ("Alesha Kee, Alesha Kee"), since neither copy is on the card yet.
+    const seen = new Set(existingAdults.map(a => (a.name || "").toLowerCase().trim()));
+    const newAdults = [];
+    for (const raw of adultNames) {
+      const n = (raw || "").toString().slice(0, 80).trim();
+      if (!n) continue;
+      const key = n.toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      newAdults.push({ name: n, signedDate, expiry });
+    }
     rec.waiverAdults = existingAdults.concat(newAdults).slice(0, 20);
   }
   if (militaryVerified === true && !rec.militaryVerified) {

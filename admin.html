@@ -2447,11 +2447,11 @@ if($("#wsSave")) $("#wsSave").onclick=async function(){
   function waiverBadge(c){ var t=todayISO(); if(c.waiverExpiry && c.waiverExpiry>=t) return '<span style="color:#3f7d5c;font-weight:700">\u2713 Waiver on file (exp '+esc(c.waiverExpiry)+')</span>'; return '<span style="color:#b5622f;font-weight:700">\u26a0\ufe0f No current waiver \u2014 check WaiverMaster</span>'; }
   function renderCards(cards){
     var box=$('#lwResults');
-    if(!cards.length){ box.innerHTML='<div class="note" style="color:var(--rose-deep)">No match yet \u2014 create a card below \U0001F447</div>'; if($('#lwNewWrap'))$('#lwNewWrap').open=true; return; }
+    if(!cards.length){ box.innerHTML='<div class="note" style="color:var(--rose-deep)">No match yet \u2014 create a card below \uD83D\uDC47</div>'; if($('#lwNewWrap'))$('#lwNewWrap').open=true; return; }
     box.innerHTML=cards.map(function(c){
       var adults=(c.waiverAdults&&c.waiverAdults.length)?'<div class="note" style="margin:2px 0 0">Adults on file: '+c.waiverAdults.map(esc).join(', ')+'</div>':'<div class="note" style="margin:2px 0 0;color:#b5622f">No adult names on file \u2014 add today\u2019s adult on WaiverMaster</div>';
       return '<div style="border:1px solid #eadfce;border-radius:10px;padding:10px 12px;margin-bottom:8px;background:#fff">'
-        +'<div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><div><b>'+esc(c.childName)+'</b> <span style="font-family:monospace;color:var(--rose-deep)">'+esc(c.code)+'</span><br><span class="note">'+c.punches+'/'+c.needed+' visits'+(c.dob?' \u00b7 \U0001F382 '+esc(c.dob):'')+(c.phone4?' \u00b7 \u260E \u2026'+esc(c.phone4):'')+(c.parentName?' \u00b7 '+esc(c.parentName):'')+'</span></div>'
+        +'<div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><div><b>'+esc(c.childName)+'</b> <span style="font-family:monospace;color:var(--rose-deep)">'+esc(c.code)+'</span><br><span class="note">'+c.punches+'/'+c.needed+' visits'+(c.dob?' \u00b7 \uD83C\uDF82 '+esc(c.dob):'')+(c.phone4?' \u00b7 \u260E \u2026'+esc(c.phone4):'')+(c.parentName?' \u00b7 '+esc(c.parentName):'')+'</span></div>'
         +'<button class="lwPunch" data-code="'+esc(c.code)+'" style="margin:0;padding:8px 14px;white-space:nowrap">\u2795 Punch visit</button>'
         +'<button class="lwBday" data-code="'+esc(c.code)+'" data-name="'+esc(c.childName||"")+'" title="Free birthday admission \u2014 visit recorded, no punch" style="margin:0 0 0 6px;padding:8px 12px;white-space:nowrap;background:#fdeee9;color:#a85f59">\uD83C\uDF82 Birthday visit</button></div>'
         +'<div style="margin-top:6px">'+waiverBadge(c)+'</div>'+adults+'</div>';
@@ -2485,7 +2485,7 @@ if($("#wsSave")) $("#wsSave").onclick=async function(){
     var key=KEY(); if(!key){ alert('Enter your '+KLABEL+' first.'); return; }
     btn.disabled=true; btn.textContent='Punching\u2026';
     try{ var r=await (await fetch('/api/loyalty',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({key:key,action:'punch',code:code})})).json();
-      if(r.ok){ btn.textContent=r.rewardIssued?'\U0001F389 FREE VISIT!':('\u2713 '+r.punches+'/'+r.needed); btn.style.background='#3f7d5c'; }
+      if(r.ok){ btn.textContent=r.rewardIssued?'\uD83C\uDF89 FREE VISIT!':('\u2713 '+r.punches+'/'+r.needed); btn.style.background='#3f7d5c'; }
       else { btn.disabled=false; btn.textContent='\u2795 Punch visit'; alert(r.error||'Could not punch.'); }
     }catch(e){ btn.disabled=false; btn.textContent='\u2795 Punch visit'; alert('Network error.'); }
   }
