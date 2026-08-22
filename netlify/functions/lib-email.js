@@ -8,9 +8,12 @@ export const SIGNATURE_HTML = `<div style="margin-top:24px;border-top:1px solid 
 // a real-time heads-up (e.g. a code that failed to redeem at checkout). Silently
 // no-ops if STUDIO_EMAIL or RESEND_API_KEY aren't configured, so it never blocks
 // the request that triggered it.
-export async function sendOwnerAlert(subject, bodyHtml) {
+// extraTo: an additional recipient for this one alert (used by the family-code
+// tripwire so it can reach a personal inbox as well as the studio address).
+export async function sendOwnerAlert(subject, bodyHtml, extraTo) {
   const key = process.env.RESEND_API_KEY;
-  const to = process.env.STUDIO_EMAIL;
+  const base = process.env.STUDIO_EMAIL;
+  const to = extraTo && extraTo !== base ? [base, extraTo].filter(Boolean) : base;
   const from = process.env.EMAIL_FROM || "onboarding@resend.dev";
   const studio = process.env.STUDIO_NAME || "Little Haven Play Studio";
   if (!key || !to) return false;
@@ -18,7 +21,7 @@ export async function sendOwnerAlert(subject, bodyHtml) {
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ from: `${studio} Alerts <${from}>`, to: [to], subject,
+      body: JSON.stringify({ from: `${studio} Alerts <${from}>`, to: Array.isArray(to) ? to : [to], subject,
         html: `<div style="font-family:Arial,Helvetica,sans-serif;color:#2a2622;line-height:1.6">${bodyHtml}</div>${SIGNATURE_HTML}` }),
     });
     return res.ok;

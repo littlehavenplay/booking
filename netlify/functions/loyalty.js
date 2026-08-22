@@ -8,6 +8,7 @@
 //   { action:"code-check", code }                  (public — booking page, auto-fill by loyalty code)
 import { getStore } from "@netlify/blobs";
 import { listAllKeys } from "./lib-blobs.js";
+import { getActiveFamCode } from "./famcode.js";
 import {
   PUNCHES_FOR_REWARD, resolveCard, addPunch, cleanName, last4, normalizeCode,
   isLegacyPassCode, sendFamilyPunch, sendMilitaryVerifiedEmail,
@@ -23,6 +24,15 @@ export default async (req) => {
     const rewards = getStore("rewards");
     const rc = normalizeCode(b.rewardCode);
     if (!rc) return json({ valid: false });
+
+    // The owner's family master code lives in its own store, so check it before
+    // the rewards lookup — otherwise it comes back "not found" and the booking
+    // page rejects it before the customer can even submit.
+    const fam = await getActiveFamCode();
+    if (fam && rc === fam.code.toUpperCase().replace(/[^A-Z0-9]/g, "")) {
+      return json({ valid: true, family: true, code: fam.code,
+        maxChildren: fam.maxChildren || 6, childName: "" });
+    }
     let r = null;
     try { r = await rewards.get("reward:" + rc, { type: "json" }); } catch { r = null; }
     if (!r) return json({ valid: false, reason: "not_found" });

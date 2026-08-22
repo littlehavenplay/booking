@@ -19,6 +19,7 @@ import {
   additionalAdultsFor, additionalAdultCentsFor,
 } from "./lib-settings.js";
 import { issueCode, sendWelcome, sendFamilyPunch, PUNCHES_FOR_REWARD, cleanName, last4 as loyaltyLast4, graduateLegacyCard } from "./lib-loyalty.js";
+import { getActiveFamCode, logFamUse } from "./famcode.js";
 import { loadSeasonal, loadWeekly } from "./lib-hours.js";
 import { getClosure, slotBlockedByClosure, getEventHold } from "./lib-closures.js";
 import { getWeekdaySpecial } from "./lib-weekday.js";
@@ -251,7 +252,29 @@ export default async (req) => {
   // Comparing against "today" was a real bug: a customer booking in advance for a
   // date inside the code's valid window (entirely normal — people book ahead) would
   // get incorrectly rejected as "not valid yet" days before their actual visit.
+  // ---- Owner's family master code -------------------------------------------
+  // Zeroes the WHOLE admission total, any headcount, unlimited uses, no expiry.
+  // Everything else about the booking behaves normally: it takes real capacity,
+  // names are still collected, a confirmation still goes out, and the visit is
+  // recorded — it just isn't paid for and earns no punches.
+  let famUsed = null;
   if (rewardCode) {
+    const fam = await getActiveFamCode();
+    if (fam && rewardCode === fam.code.toUpperCase().replace(/[^A-Z0-9]/g, "")) {
+      const maxKids = fam.maxChildren || 6;
+      const kidCount = regular + sibling + infant;
+      if (kidCount < 1) return json({ error: "reward", message: "Add at least one child." }, 409);
+      if (kidCount > maxKids) {
+        return json({ error: "reward",
+          message: `The family code covers up to ${maxKids} children per booking. Please split this into two bookings.` }, 409);
+      }
+      famUsed = fam;
+      // No punches for any child on a free booking.
+      for (const ch of childNames) ch._freeAdmission = true;
+    }
+  }
+
+  if (rewardCode && !famUsed) {
     if (discountCode) return json({ error: "reward", message: "A free-visit reward can't be combined with a discount code." }, 409);
     if (hasStoreCredit) return json({ error: "reward", message: "A free-visit reward can't be combined with store credit." }, 409);
     const rewardStore = getStore("rewards");
@@ -345,7 +368,11 @@ export default async (req) => {
     }
   }
 
-  const taxable = Math.max(0, subtotal - discountAmount - weekdaySpecialAmount - militaryAmount - rewardAmount - birthdayAmount);
+  // The family code zeroes everything, whatever the headcount.
+  const famAmount = famUsed
+    ? Math.max(0, subtotal - discountAmount - weekdaySpecialAmount - militaryAmount - rewardAmount - birthdayAmount)
+    : 0;
+  const taxable = Math.max(0, subtotal - discountAmount - weekdaySpecialAmount - militaryAmount - rewardAmount - birthdayAmount - famAmount);
   // No sales tax: recreational/amusement admission is CDTFA-exempt (intangible admission),
   // so this business does not collect sales tax on any admission, party, or gift card sale.
   const tax = 0;
@@ -581,6 +608,35 @@ export default async (req) => {
   // The customer has already paid, so we still report success to them — but a
   // write failure here means the booking is NOT on the roster. Alert the studio
   // immediately with everything needed to add it by hand.
+  // Family code: log the use and alert the owner. This is the tripwire — if the
+  // code ever leaks, an email lands the same day rather than being noticed weeks
+  // later in the takings.
+  if (famUsed) {
+    const lbl = (SLOTS.find(s => s.id === slot) || {}).label || slot;
+    await logFamUse({
+      code: famUsed.code, date, slot, slotLabel: lbl,
+      name, email, phone,
+      children: regular + sibling + infant, adults: totalAdults,
+      regular, sibling, infant,
+      valueWaived: famAmount,
+      children_names: childNames.map(c => cleanName(c.first, c.last)).filter(Boolean),
+    });
+    try {
+      await sendOwnerAlert(
+        `👨‍👩‍👧 Family code used — ${date} ${lbl}`,
+        `<h3>The family master code was used</h3>
+         <p><b>${date} · ${lbl}</b><br>
+         Booked by <b>${name}</b> — ${email}${phone ? " — " + phone : ""}<br>
+         ${regular} regular · ${sibling} sibling · ${infant} infant · ${totalAdults} adult(s)<br>
+         Admission waived: <b>$${(famAmount / 100).toFixed(2)}</b><br>
+         Code: <code>${famUsed.code}</code></p>
+         <p>If you didn't expect this booking, rotate the code in the admin tools
+         straight away — the old code stops working the moment you do.</p>`,
+        famUsed.notifyEmail || undefined
+      );
+    } catch {}
+  }
+
   try { await store.setJSON(key, base); }
   catch (e) {
     try {

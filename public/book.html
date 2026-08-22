@@ -742,8 +742,13 @@ function updateTotals(){
   const rewardOn = !discOn && state.reward.ok;
   let rewardAmt = 0;
   if(rewardOn){
-    const present=[]; if(paidReg>0)present.push(CFG.prices.regular); if(paidSib>0)present.push(CFG.prices.sibling); if(paidInf>0)present.push(CFG.prices.infant);
-    if(present.length) rewardAmt=Math.min(Math.max(...present), subtotal-discAmt-wdAmt-milAmt);
+    if(state.reward.family){
+      // Family master code: covers the whole admission total, any headcount.
+      rewardAmt = Math.max(0, subtotal - discAmt - wdAmt - milAmt);
+    } else {
+      const present=[]; if(paidReg>0)present.push(CFG.prices.regular); if(paidSib>0)present.push(CFG.prices.sibling); if(paidInf>0)present.push(CFG.prices.infant);
+      if(present.length) rewardAmt=Math.min(Math.max(...present), subtotal-discAmt-wdAmt-milAmt);
+    }
   }
   if($("#wdRow")){ if(wdAmt>0){ $("#wdRow").style.display="flex"; $("#wdLabel").textContent="\uD83D\uDDD3\uFE0F "+wdLabel; $("#wdAmtTxt").textContent="\u2212"+money(wdAmt); } else { $("#wdRow").style.display="none"; } }
   const taxable = Math.max(0, subtotal - discAmt - wdAmt - milAmt - rewardAmt);
@@ -1010,11 +1015,20 @@ async function pay(){
 async function checkReward(){
   const code=$("#rewardCode").value.trim().toUpperCase().replace(/[^A-Z0-9]/g,"");
   const msg=$("#rewardMsg"); msg.style.display="block";
-  if(!code){ msg.style.display="none"; state.reward={code:"",amount:0,ok:false}; updateTotals(); return; }
+  if(!code){ msg.style.display="none"; state.reward={code:"",amount:0,ok:false,family:false}; updateTotals(); return; }
   msg.textContent="Checking…"; msg.style.color="var(--ink-soft)";
   try{
     const r=await (await fetch("/api/loyalty",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({action:"reward-check",rewardCode:code,date:state.date})})).json();
-    if(r.valid){
+    if(r.valid && r.family){
+      const kids=state.reg+state.sib+state.inf;
+      const max=r.maxChildren||6;
+      if(kids<1){ msg.style.color="var(--red)"; msg.textContent="Add a child admission above first."; state.reward={code:"",amount:0,ok:false}; }
+      else if(kids>max){ msg.style.color="var(--red)"; msg.textContent="This code covers up to "+max+" children per booking."; state.reward={code:"",amount:0,ok:false}; }
+      else {
+        state.reward={code:r.code,amount:0,ok:true,family:true};
+        msg.style.color="#3f7d54"; msg.textContent="\u2713 Family code applied \u2014 admission is free for this booking.";
+      }
+    } else if(r.valid){
       // Value = one admission of the most expensive type currently in the cart —
       // matches the server's own calculation exactly.
       const present=[]; if(state.reg>0)present.push(CFG.prices.regular); if(state.sib>0)present.push(CFG.prices.sibling); if(state.inf>0)present.push(CFG.prices.infant);

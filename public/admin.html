@@ -61,7 +61,7 @@
 <link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#7a6253"><link rel="apple-touch-icon" href="/assets/icons/apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="Little Haven"><link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32.png"></head>
 <body>
 <div class="wrap">
-<div id="secBar"><button id="secToggle" type="button">Sections ▾</button><div id="secMenu"><a href="#sec-bookings">Bookings by date</a><a href="#sec-walkin">Walk-in check-in</a><a href="#sec-punch">Punch-card check-in</a><a href="/loyalty.html">Loyalty &amp; Punch Cards</a><a href="#sec-reschedule">Reschedule &amp; cancel</a><a href="#sec-redeem">Redeem a credit</a><a href="#sec-credit-backfill">Backfill credit emails</a><a href="#sec-party">Session capacity &amp; blocking</a><a href="#sec-issue">Issue a credit</a><a href="#sec-punchissue">Legacy card tools</a><a href="#sec-code">Manage a code</a><a href="#sec-closures">Closures &amp; hours</a><a href="#sec-passes">Legacy prepaid holders</a><a href="#sec-grandfather">Grandfather note</a><a href="#sec-parties">Party bookings</a><a href="#sec-deposit">Record a party deposit</a><a href="#sec-partyoff">Open play only (no parties)</a><a href="/headcount.html">Head count</a><a href="#sec-prices">Manage prices</a><a href="#sec-weekly">Weekly hours</a><a href="#sec-seasonal">Seasonal hours</a><a href="#sec-weekday-special">Weekday special</a><a href="#sec-discount">Discount codes</a><a href="#sec-news">News update</a><a href="#sec-promos">Promotions &amp; Flyers</a><a href="#sec-events">Upcoming events</a><a href="#sec-partners">Partners page</a><a href="#sec-birthdays">Birthday club</a></div></div>
+<div id="secBar"><button id="secToggle" type="button">Sections ▾</button><div id="secMenu"><a href="#sec-bookings">Bookings by date</a><a href="#sec-walkin">Walk-in check-in</a><a href="#sec-punch">Punch-card check-in</a><a href="/loyalty.html">Loyalty &amp; Punch Cards</a><a href="#sec-reschedule">Reschedule &amp; cancel</a><a href="#sec-redeem">Redeem a credit</a><a href="#sec-credit-backfill">Backfill credit emails</a><a href="#sec-party">Session capacity &amp; blocking</a><a href="#sec-issue">Issue a credit</a><a href="#sec-punchissue">Legacy card tools</a><a href="#sec-code">Manage a code</a><a href="#sec-closures">Closures &amp; hours</a><a href="#sec-passes">Legacy prepaid holders</a><a href="#sec-grandfather">Grandfather note</a><a href="#sec-parties">Party bookings</a><a href="#sec-deposit">Record a party deposit</a><a href="#sec-partyoff">Open play only (no parties)</a><a href="/headcount.html">Head count</a><a href="#sec-prices">Manage prices</a><a href="#sec-weekly">Weekly hours</a><a href="#sec-seasonal">Seasonal hours</a><a href="#sec-weekday-special">Weekday special</a><a href="#sec-famcode">Family master code</a><a href="#sec-discount">Discount codes</a><a href="#sec-news">News update</a><a href="#sec-promos">Promotions &amp; Flyers</a><a href="#sec-events">Upcoming events</a><a href="#sec-partners">Partners page</a><a href="#sec-birthdays">Birthday club</a></div></div>
 <nav id="sideNav" aria-label="Sections"><div class="snav-title">Sections</div><a href="#sec-bookings">Bookings by date</a><a href="#sec-walkin">Walk-in check-in</a><a href="#sec-punch">Punch-card check-in</a><a href="/loyalty.html">Loyalty &amp; Punch Cards</a><a href="#sec-reschedule">Reschedule &amp; cancel</a><a href="#sec-redeem">Redeem a credit</a><a href="#sec-credit-backfill">Backfill credit emails</a><a href="#sec-party">Session capacity &amp; blocking</a><a href="#sec-issue">Issue a credit</a><a href="#sec-punchissue">Legacy card tools</a><a href="#sec-code">Manage a code</a><a href="#sec-closures">Closures &amp; hours</a><a href="#sec-passes">Legacy prepaid holders</a><a href="#sec-grandfather">Grandfather note</a><a href="#sec-parties">Party bookings</a><a href="#sec-deposit">Record a party deposit</a><a href="#sec-partyoff">Open play only (no parties)</a><a href="/headcount.html">Head count</a><a href="#sec-prices">Manage prices</a><a href="#sec-weekly">Weekly hours</a><a href="#sec-seasonal">Seasonal hours</a><a href="#sec-weekday-special">Weekday special</a><a href="#sec-discount">Discount codes</a><a href="#sec-news">News update</a><a href="#sec-rating">Reviews rating</a><a href="#sec-photos">Site photos</a><a href="#sec-promos">Promotions &amp; Flyers</a><a href="#sec-events">Upcoming events</a><a href="#sec-partners">Partners page</a><a href="#sec-birthdays">Birthday club</a></nav>
   <h1>Store Credit</h1>
   <div class="sub">Issue and look up Little Haven store credit codes</div>
@@ -502,7 +502,38 @@
     <div class="out" id="wsOut"></div>
     </div>
 
-    <div class="card" id="sec-discount">
+    <div class="card" id="sec-famcode">
+      <h2>&#128104;&#8205;&#128105;&#8205;&#128103; Family master code</h2>
+      <p class="note" style="margin-top:0"><b>Owner only.</b> One code that zeroes the entire admission
+      total on a normal online booking, whatever the headcount. Never expires, unlimited uses. The booking
+      still takes real capacity, still collects names and phone, still sends a confirmation, and still
+      records the visit &mdash; it just isn't paid for and earns no punches.</p>
+      <p class="note" style="background:#fdf1ec;border:1px solid #efcfc4;border-radius:10px;padding:9px 12px">
+      &#9888;&#65039; Treat this like a key to the front door. Anyone who has it can book free play. You get an
+      email every single time it's used, and rotating it kills the old one instantly.</p>
+
+      <div id="fcCurrent" class="note">Loading&hellip;</div>
+
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+        <button type="button" id="fcRotate" style="margin:0">&#128260; Generate / rotate code</button>
+        <button type="button" id="fcRefresh" class="alt" style="margin:0">Refresh</button>
+        <button type="button" id="fcLog" class="alt" style="margin:0">View full usage log</button>
+      </div>
+
+      <div style="margin-top:14px;border-top:1px dashed #e2d9cc;padding-top:12px">
+        <label>Max children per booking</label>
+        <input type="number" id="fcMax" min="1" max="20" value="6" style="max-width:120px">
+        <label style="margin-top:10px">Also email me here when it's used (optional)</label>
+        <input type="email" id="fcEmail" placeholder="you@email.com">
+        <p class="note" style="margin:4px 0 10px">Alerts always go to the studio address; this adds a second one.</p>
+        <button type="button" id="fcSave" class="alt" style="margin:0">Save settings</button>
+      </div>
+
+      <div id="fcOut" class="out" style="display:none;margin-top:10px"></div>
+      <div id="fcUses" style="margin-top:12px"></div>
+    </div>
+    
+  <div class="card" id="sec-discount">
     <h2>Discount codes (% off)</h2>
     <p class="note" style="margin-bottom:10px">Generate a one-time percent-off code and email it straight to the customer. Online-only, single use, and can't be combined with any other offer.</p>
     <div class="row">
@@ -2620,6 +2651,70 @@ if($("#wsSave")) $("#wsSave").onclick=async function(){
   if($("#lgLoad")) $("#lgLoad").onclick=lgLoad;
   if($("#lgSearch")) $("#lgSearch").addEventListener("input",function(){ if(LGDATA.length) lgRender(); });
   if($("#lgSearch")) $("#lgSearch").addEventListener("keydown",function(e){ if(e.key==="Enter"){ e.preventDefault(); LGDATA.length?lgRender():lgLoad(); } });
+})();
+
+/* ---- Family master code (admin only) ---- */
+(function(){
+  function el(id){ return document.getElementById(id); }
+  if(!el('sec-famcode')) return;
+  function KEYV(){ var k=el('key'); return k?k.value.trim():''; }
+  function out(msg,cls){ var o=el('fcOut'); if(!o) return; o.style.display='block'; o.className='out '+(cls||''); o.textContent=msg; }
+
+  function esc2(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+
+  function renderCode(c){
+    var box=el('fcCurrent');
+    if(!c){ box.innerHTML='<span style="color:#a85f59;font-weight:800">No family code yet — press Generate below.</span>'; return; }
+    box.innerHTML =
+      '<div style="background:#fdfbf8;border:1.5px solid #e7ddd0;border-radius:14px;padding:14px">'
+      + '<div style="font-size:.72rem;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:#aea298">Active code</div>'
+      + '<div style="font-family:monospace;font-size:1.5rem;font-weight:800;color:#a85f59;letter-spacing:.06em;margin:4px 0 8px">'+esc2(c.code)+'</div>'
+      + '<div class="note" style="margin:0">Used <b>'+(c.useCount||0)+'</b> time'+((c.useCount||0)===1?'':'s')
+      + (c.lastUsedAt?(' · last '+esc2(String(c.lastUsedAt).slice(0,10))):'')
+      + ' · max <b>'+(c.maxChildren||6)+'</b> children per booking'
+      + (c.active===false?' · <span style="color:#b8524a;font-weight:800">DISABLED</span>':'')
+      + '</div></div>';
+    if(el('fcMax')) el('fcMax').value = c.maxChildren||6;
+    if(el('fcEmail')) el('fcEmail').value = c.notifyEmail||'';
+  }
+
+  function renderUses(list){
+    var box=el('fcUses');
+    if(!list||!list.length){ box.innerHTML='<p class="note">No uses recorded yet.</p>'; return; }
+    var rows=list.map(function(u){
+      return '<tr><td style="padding:6px 8px;white-space:nowrap">'+esc2(String(u.at||'').slice(0,10))+'</td>'
+        +'<td style="padding:6px 8px;white-space:nowrap">'+esc2(u.date||'')+' '+esc2(u.slotLabel||'')+'</td>'
+        +'<td style="padding:6px 8px">'+esc2(u.name||'')+'<br><span class="note">'+esc2(u.email||'')+'</span></td>'
+        +'<td style="padding:6px 8px;white-space:nowrap">'+(u.children||0)+' kids · '+(u.adults||0)+' adults</td>'
+        +'<td style="padding:6px 8px;white-space:nowrap">$'+(((u.valueWaived||0)/100).toFixed(2))+'</td></tr>';
+    }).join('');
+    box.innerHTML='<div style="overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:.85rem">'
+      +'<thead><tr style="background:#f4ece1"><th style="padding:6px 8px;text-align:left">Logged</th>'
+      +'<th style="padding:6px 8px;text-align:left">Visit</th><th style="padding:6px 8px;text-align:left">Booked by</th>'
+      +'<th style="padding:6px 8px;text-align:left">Party</th><th style="padding:6px 8px;text-align:left">Waived</th></tr></thead>'
+      +'<tbody>'+rows+'</tbody></table></div>';
+  }
+
+  async function call(body, okMsg){
+    var key=KEYV();
+    if(!key){ out('Enter your admin key at the top of the page.','err'); return null; }
+    try{
+      var r=await (await fetch('/api/famcode',{method:'POST',headers:{'content-type':'application/json'},
+        body:JSON.stringify(Object.assign({key:key},body))})).json();
+      if(r.ok){ if(okMsg||r.message) out(r.message||okMsg,'ok'); renderCode(r.code); if(r.uses) renderUses(r.uses); return r; }
+      out(r.error||'That did not work.','err'); return null;
+    }catch(e){ out('Network error.','err'); return null; }
+  }
+
+  el('fcRefresh').onclick=function(){ call({action:'get'}); };
+  el('fcLog').onclick=function(){ call({action:'log'}); };
+  el('fcSave').onclick=function(){
+    call({action:'update', maxChildren:parseInt(el('fcMax').value,10)||6, notifyEmail:el('fcEmail').value.trim()}, 'Saved.');
+  };
+  el('fcRotate').onclick=function(){
+    if(!confirm('Generate a NEW family code?\n\nThe current code stops working the moment you do this. Anyone still holding the old one will be turned away.')) return;
+    call({action:'rotate', maxChildren:parseInt(el('fcMax').value,10)||6, notifyEmail:el('fcEmail').value.trim()});
+  };
 })();
 </script></body>
 </html>
