@@ -371,6 +371,10 @@ export default async (req) => {
     // Free birthday admission: log the visit, skip the punch, and mark the
     // birthday as used so no further code is emailed for this year.
     const birthday = b.birthday === true || b.birthday === "1";
+    // Punched at the desk for someone who walked in. Recorded in the visit history
+    // so "how did this visit happen" is answerable later.
+    const walkin = b.walkin === true || b.walkin === "1";
+    const src = birthday ? "birthday" : (walkin ? "walkin" : "manual");
     const bYear = birthday ? (todayPacific() || "").slice(0, 4) : null;
     const adultNames = Array.isArray(b.adultNames) ? b.adultNames : [];
     if (direct) {
@@ -378,7 +382,7 @@ export default async (req) => {
       let exists = null; try { exists = await loyalty.get("card:" + direct, { type: "json" }); } catch {}
       if (!exists) return json({ error: "No loyalty card found for that code." }, 404);
       const r = await addPunch(loyalty, { code: direct, waiverSigned, adultNames, noPunch: birthday, birthdayYear: bYear,
-        visitMeta: { date: todayPacific(), source: birthday ? "birthday" : "manual", birthday } });
+        visitMeta: { date: todayPacific(), source: src, birthday, walkin } });
       if (r.error) return json({ error: "Couldn't save the punch. Try again." }, 502);
       return json({ ok: true, ...r,
         message: birthday
@@ -397,7 +401,7 @@ export default async (req) => {
     const dob = (b.dob || "").toString().trim();
     const r = await addPunch(loyalty, { first, last, phone4, email, waiverSigned, adultNames, militaryVerified, dob,
       noPunch: birthday, birthdayYear: bYear,
-      visitMeta: { date: todayPacific(), source: birthday ? "birthday" : "manual", birthday } });
+      visitMeta: { date: todayPacific(), source: src, birthday, walkin } });
     if (r.error) return json({ error: r.message || "Couldn't save the punch. Try again." }, 502);
     if (birthday) return json({ ok: true, ...r,
       message: `🎂 Birthday visit recorded for ${r.childName} (${r.code}). No punch added, and no birthday code will be emailed again this year.` });

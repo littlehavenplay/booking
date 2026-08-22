@@ -98,7 +98,15 @@
     <p class="note" style="margin-top:-2px">Everyone on the loyalty punch card, sorted by family name. Search a name to find someone's code when they ask. Use the loyalty tool above to adjust punches.</p>
     <input type="text" id="llSearch" placeholder="Search name or code…" oninput="renderLoyaltyList()">
     <div id="llList"><div class="note">Click Load to pull the list.</div></div>
-    <button id="llLoad" style="margin-top:10px">Load loyalty customers</button> <button id="llExport" class="alt" style="margin-top:10px">📤 Export contacts (CSV)</button>
+<div style="border:1.5px dashed #e7ddd0;border-radius:14px;padding:12px;margin:0 0 12px;background:#fdfbf8">
+      <p class="note" style="margin:0 0 8px"><b>One-time housekeeping</b> &mdash; run each of these once.</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button type="button" id="milBackfill" class="alt" style="margin:0;font-size:.82rem;padding:8px 14px">✅ Mark all military as already emailed</button>
+        <button type="button" id="loy2news" class="alt" style="margin:0;font-size:.82rem;padding:8px 14px">✉️ Add punch-card emails to newsletter</button>
+      </div>
+      <div id="hkOut" class="out" style="display:none;margin-top:10px"></div>
+    </div>
+        <button id="llLoad" style="margin-top:10px">Load loyalty customers</button> <button id="llExport" class="alt" style="margin-top:10px">📤 Export contacts (CSV)</button>
     <div class="note" style="margin-top:6px">Export downloads a spreadsheet of every customer name, email &amp; phone (de-duplicated) for a future mass email or text.</div>
     <div class="out" id="llOut"></div>
   </div>
@@ -493,15 +501,30 @@ window.punchFromList=async function(code,name){
   try{
     const r=await (await fetch("/api/loyalty",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key,action:"punch",code})})).json();
     if(r.ok){
-      var c=LOYALTY.find(function(x){return x.code===code;});
-      if(c){ c.punches=r.punches; c.totalVisits=(c.totalVisits||0)+1; if(r.rewardIssued)c.rewardsEarned=(c.rewardsEarned||0)+1; }
-      renderLoyaltyList();
+      await refreshCard(code);
       alert(r.rewardIssued? ("🎉 "+(r.childName||name)+" earned a FREE visit! Reward code "+r.rewardCode+" emailed.") : ("🎈 Punched "+(r.childName||name)+" — "+r.punches+"/"+r.needed));
     } else { alert(r.error||"Couldn't punch."); }
   }catch(e){ alert("Network error."); }
 };
 // Free birthday admission: records the visit in their history but adds NO punch,
 // and marks the birthday used for this year so the cron won't email another code.
+// Single source of truth: after ANY change, pull that card back from the server
+// rather than guessing locally. Two tools showing different visit counts is
+// always a symptom of local patching drifting from what's stored.
+async function refreshCard(code){
+  try{
+    var r=await (await fetch("/api/loyalty",{method:"POST",headers:{"content-type":"application/json"},
+      body:JSON.stringify({key:KEY,action:"by-phone",query:code})})).json();
+    var fresh=(r&&r.cards||[]).find(function(x){return x.code===code;});
+    if(fresh){
+      var i=LOYALTY.findIndex(function(x){return x.code===code;});
+      if(i>-1) Object.assign(LOYALTY[i],fresh);
+    }
+  }catch(e){}
+  renderLoyaltyList();
+}
+window.refreshCard=refreshCard;
+
 window.birthdayVisit=async function(code,name){
   if(!confirm("Record a FREE BIRTHDAY ADMISSION for "+(name||code)+"?\n\n\u2022 Counts as a visit in their history\n\u2022 Does NOT add a loyalty punch\n\u2022 No further birthday code will be emailed this year")) return;
   const key=KEY;
@@ -509,9 +532,7 @@ window.birthdayVisit=async function(code,name){
   try{
     const r=await (await fetch("/api/loyalty",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key,action:"punch",code,birthday:true})})).json();
     if(r.ok){
-      var c=LOYALTY.find(function(x){return x.code===code;});
-      if(c){ c.totalVisits=(c.totalVisits||0)+1; }
-      renderLoyaltyList();
+      await refreshCard(code);
       alert("\uD83C\uDF82 Birthday visit recorded for "+(r.childName||name)+". No punch added \u2014 still "+r.punches+"/"+r.needed+" toward a free visit.");
     } else { alert(r.error||"Couldn't record it."); }
   }catch(e){ alert("Network error."); }
@@ -602,7 +623,7 @@ function llChildRow(c){
     +'<span style="margin-left:auto;display:flex;gap:5px">'
       +'<button onclick="loEditFromList(\''+esc(c.code)+'\')" title="Edit name, birthday, or punches" style="border:none;background:#eee6f5;color:#5c4a80;border-radius:6px;cursor:pointer;font-weight:800;font-size:.75rem;padding:4px 9px">\u270F\uFE0F Edit</button>'
       +'<button onclick="punchFromList(\''+esc(c.code)+'\',\''+esc((c.childName||"").replace(/[\x27\\]/g,""))+'\')" title="Add a punch" style="border:none;background:#e7f0df;color:#4d6b3e;border-radius:6px;cursor:pointer;font-weight:800;font-size:.75rem;padding:4px 9px">\u2795 Punch</button>'
-      +'<button onclick="birthdayVisit(\''+esc(c.code)+'\',\''+esc((c.childName||"").replace(/[\x27\\]/g,""))+'\')" title="Free birthday admission — visit recorded, no punch" style="border:none;background:#fdeee9;color:#a85f59;border-radius:6px;cursor:pointer;font-weight:800;font-size:.75rem;padding:4px 9px;margin-left:4px">\uD83C\uDF82 Birthday</button>' 
+      +'<button onclick="birthdayVisit(\''+esc(c.code)+'\',\''+esc((c.childName||"").replace(/[\x27\\]/g,""))+'\')" title="Free birthday admission — visit recorded, no punch" style="border:none;background:#fdeee9;color:#a85f59;border-radius:6px;cursor:pointer;font-weight:800;font-size:.75rem;padding:4px 9px;margin-left:4px">\uD83C\uDF82 Birthday visit</button>' 
       +'<button onclick="toggleBdayRow(\''+esc(c.code)+'\')" title="Set this child\'s birthday" style="border:none;background:#fdeedd;color:#a5651a;border-radius:6px;cursor:pointer;font-weight:800;font-size:.75rem;padding:4px 9px">\uD83C\uDF82 Birthday</button>'
       +'<button onclick="toggleMilitary(\''+esc(c.code)+'\','+(c.militaryVerified?'false':'true')+')" title="'+(c.militaryVerified?'Remove military verification':'Mark as military-verified')+'" style="border:none;background:'+(c.militaryVerified?'#dff0d3':'#f0ede5')+';color:'+(c.militaryVerified?'#33521f':'#6b6255')+';border-radius:6px;cursor:pointer;font-weight:800;font-size:.75rem;padding:4px 9px">\uD83C\uDF96\uFE0F '+(c.militaryVerified?'Military \u2713':'Military')+'</button>'
       +'<button onclick="toggleVisitHistory(\''+esc(c.code)+'\')" title="See this child\'s visit history" style="border:none;background:#e3ecf5;color:#2f5a80;border-radius:6px;cursor:pointer;font-weight:800;font-size:.75rem;padding:4px 9px">\uD83D\uDCC5 Visit History</button>'
@@ -706,6 +727,27 @@ window.removeWaiverAdult=async function(phone4,code,idx){
 };
 
 </script>
-<script src="/assets/phone-format.js" defer></script>
+<script src="/assets/phone-format.js" defer>
+// ---- one-time housekeeping ----
+async function hkRun(action, confirmMsg, btn){
+  if(!confirm(confirmMsg)) return;
+  var key=KEY; if(!key){ alert("Enter your admin key (top of page)."); return; }
+  var out=document.getElementById("hkOut"); out.style.display="block"; out.className="out"; out.textContent="Working\u2026";
+  btn.disabled=true;
+  try{
+    var r=await (await fetch("/api/loyalty",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key:key,action:action})})).json();
+    if(r.ok){ out.className="out ok"; out.textContent=r.message||"Done."; renderLoyaltyList&&renderLoyaltyList(); }
+    else { out.className="out err"; out.textContent=r.error||"Couldn't run that."; }
+  }catch(e){ out.className="out err"; out.textContent="Network error."; }
+  btn.disabled=false;
+}
+(function(){
+  var a=document.getElementById("milBackfill"), b=document.getElementById("loy2news");
+  if(a) a.onclick=function(){ hkRun("military-backfill-sent",
+    "Mark EVERY military-verified family as already emailed?\n\nUse this once, because you've already sent them all by hand. It only stamps cards that have no send date yet \u2014 nothing is emailed.", a); };
+  if(b) b.onclick=function(){ hkRun("loyalty-to-newsletter",
+    "Add every punch-card email to your newsletter list?\n\nAnyone who previously unsubscribed is skipped. Nothing is emailed now \u2014 this only builds the list.", b); };
+})();
+</script>
 </body>
 </html>

@@ -221,9 +221,12 @@ export async function addPunch(loyalty, { first, last, phone4, email, code: dire
   rec.totalVisits = (rec.totalVisits || 0) + 1;
   rec.lastVisit = new Date().toISOString();
   rec.history = Array.isArray(rec.history) ? rec.history : [];
+  const via = (visitMeta && visitMeta.source) || "manual";
   rec.history.push(noPunch
-    ? { at: rec.lastVisit, action: "birthday-visit", punches: rec.punches || 0, note: "Free birthday admission — no punch" }
-    : { at: rec.lastVisit, action: "punch", punches: rec.punches });
+    ? { at: rec.lastVisit, action: "birthday-visit", punches: rec.punches || 0, source: via,
+        note: "Free birthday admission — no punch" }
+    : { at: rec.lastVisit, action: "punch", punches: rec.punches, source: via,
+        note: via === "walkin" ? "Walk-in visit" : undefined });
 
   // Stamp the birthday as used for this year so neither cron pass emails another
   // code. Mirrors what the manual issue buttons write.

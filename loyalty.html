@@ -501,15 +501,30 @@ window.punchFromList=async function(code,name){
   try{
     const r=await (await fetch("/api/loyalty",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key,action:"punch",code})})).json();
     if(r.ok){
-      var c=LOYALTY.find(function(x){return x.code===code;});
-      if(c){ c.punches=r.punches; c.totalVisits=(c.totalVisits||0)+1; if(r.rewardIssued)c.rewardsEarned=(c.rewardsEarned||0)+1; }
-      renderLoyaltyList();
+      await refreshCard(code);
       alert(r.rewardIssued? ("🎉 "+(r.childName||name)+" earned a FREE visit! Reward code "+r.rewardCode+" emailed.") : ("🎈 Punched "+(r.childName||name)+" — "+r.punches+"/"+r.needed));
     } else { alert(r.error||"Couldn't punch."); }
   }catch(e){ alert("Network error."); }
 };
 // Free birthday admission: records the visit in their history but adds NO punch,
 // and marks the birthday used for this year so the cron won't email another code.
+// Single source of truth: after ANY change, pull that card back from the server
+// rather than guessing locally. Two tools showing different visit counts is
+// always a symptom of local patching drifting from what's stored.
+async function refreshCard(code){
+  try{
+    var r=await (await fetch("/api/loyalty",{method:"POST",headers:{"content-type":"application/json"},
+      body:JSON.stringify({key:KEY,action:"by-phone",query:code})})).json();
+    var fresh=(r&&r.cards||[]).find(function(x){return x.code===code;});
+    if(fresh){
+      var i=LOYALTY.findIndex(function(x){return x.code===code;});
+      if(i>-1) Object.assign(LOYALTY[i],fresh);
+    }
+  }catch(e){}
+  renderLoyaltyList();
+}
+window.refreshCard=refreshCard;
+
 window.birthdayVisit=async function(code,name){
   if(!confirm("Record a FREE BIRTHDAY ADMISSION for "+(name||code)+"?\n\n\u2022 Counts as a visit in their history\n\u2022 Does NOT add a loyalty punch\n\u2022 No further birthday code will be emailed this year")) return;
   const key=KEY;
@@ -517,9 +532,7 @@ window.birthdayVisit=async function(code,name){
   try{
     const r=await (await fetch("/api/loyalty",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key,action:"punch",code,birthday:true})})).json();
     if(r.ok){
-      var c=LOYALTY.find(function(x){return x.code===code;});
-      if(c){ c.totalVisits=(c.totalVisits||0)+1; }
-      renderLoyaltyList();
+      await refreshCard(code);
       alert("\uD83C\uDF82 Birthday visit recorded for "+(r.childName||name)+". No punch added \u2014 still "+r.punches+"/"+r.needed+" toward a free visit.");
     } else { alert(r.error||"Couldn't record it."); }
   }catch(e){ alert("Network error."); }
@@ -610,7 +623,7 @@ function llChildRow(c){
     +'<span style="margin-left:auto;display:flex;gap:5px">'
       +'<button onclick="loEditFromList(\''+esc(c.code)+'\')" title="Edit name, birthday, or punches" style="border:none;background:#eee6f5;color:#5c4a80;border-radius:6px;cursor:pointer;font-weight:800;font-size:.75rem;padding:4px 9px">\u270F\uFE0F Edit</button>'
       +'<button onclick="punchFromList(\''+esc(c.code)+'\',\''+esc((c.childName||"").replace(/[\x27\\]/g,""))+'\')" title="Add a punch" style="border:none;background:#e7f0df;color:#4d6b3e;border-radius:6px;cursor:pointer;font-weight:800;font-size:.75rem;padding:4px 9px">\u2795 Punch</button>'
-      +'<button onclick="birthdayVisit(\''+esc(c.code)+'\',\''+esc((c.childName||"").replace(/[\x27\\]/g,""))+'\')" title="Free birthday admission — visit recorded, no punch" style="border:none;background:#fdeee9;color:#a85f59;border-radius:6px;cursor:pointer;font-weight:800;font-size:.75rem;padding:4px 9px;margin-left:4px">\uD83C\uDF82 Birthday</button>' 
+      +'<button onclick="birthdayVisit(\''+esc(c.code)+'\',\''+esc((c.childName||"").replace(/[\x27\\]/g,""))+'\')" title="Free birthday admission — visit recorded, no punch" style="border:none;background:#fdeee9;color:#a85f59;border-radius:6px;cursor:pointer;font-weight:800;font-size:.75rem;padding:4px 9px;margin-left:4px">\uD83C\uDF82 Birthday visit</button>' 
       +'<button onclick="toggleBdayRow(\''+esc(c.code)+'\')" title="Set this child\'s birthday" style="border:none;background:#fdeedd;color:#a5651a;border-radius:6px;cursor:pointer;font-weight:800;font-size:.75rem;padding:4px 9px">\uD83C\uDF82 Birthday</button>'
       +'<button onclick="toggleMilitary(\''+esc(c.code)+'\','+(c.militaryVerified?'false':'true')+')" title="'+(c.militaryVerified?'Remove military verification':'Mark as military-verified')+'" style="border:none;background:'+(c.militaryVerified?'#dff0d3':'#f0ede5')+';color:'+(c.militaryVerified?'#33521f':'#6b6255')+';border-radius:6px;cursor:pointer;font-weight:800;font-size:.75rem;padding:4px 9px">\uD83C\uDF96\uFE0F '+(c.militaryVerified?'Military \u2713':'Military')+'</button>'
       +'<button onclick="toggleVisitHistory(\''+esc(c.code)+'\')" title="See this child\'s visit history" style="border:none;background:#e3ecf5;color:#2f5a80;border-radius:6px;cursor:pointer;font-weight:800;font-size:.75rem;padding:4px 9px">\uD83D\uDCC5 Visit History</button>'

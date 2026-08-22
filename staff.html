@@ -2547,11 +2547,12 @@ if($("#wsSave")) $("#wsSave").onclick=async function(){
       var adults=(c.waiverAdults&&c.waiverAdults.length)?'<div class="note" style="margin:2px 0 0">Adults on file: '+c.waiverAdults.map(esc).join(', ')+'</div>':'<div class="note" style="margin:2px 0 0;color:#b5622f">No adult names on file \u2014 add today\u2019s adult on WaiverMaster</div>';
       return '<div style="border:1px solid #eadfce;border-radius:10px;padding:10px 12px;margin-bottom:8px;background:#fff">'
         +'<div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><div><b>'+esc(c.childName)+'</b> <span style="font-family:monospace;color:var(--rose-deep)">'+esc(c.code)+'</span><br><span class="note">'+c.punches+'/'+c.needed+' visits'+(c.dob?' \u00b7 \uD83C\uDF82 '+esc(c.dob):'')+(c.phone4?' \u00b7 \u260E \u2026'+esc(c.phone4):'')+(c.parentName?' \u00b7 '+esc(c.parentName):'')+'</span></div>'
-        +'<button class="lwPunch" data-code="'+esc(c.code)+'" style="margin:0;padding:8px 14px;white-space:nowrap">\u2795 Punch visit</button>'
+        +'<button class="lwPunch" data-code="'+esc(c.code)+'" title="Punches the card AND logs a walk-in for the numbers above" style="margin:0;padding:8px 14px;white-space:nowrap">\u2795 Punch + walk-in</button><button class="lwPunchOnly" data-code="'+esc(c.code)+'" title="Punch the card only — no walk-in logged" style="margin:0 0 0 6px;padding:8px 12px;white-space:nowrap;background:#f4ece1;color:#5c6470">Punch only</button>'
         +'<button class="lwBday" data-code="'+esc(c.code)+'" data-name="'+esc(c.childName||"")+'" title="Free birthday admission \u2014 visit recorded, no punch" style="margin:0 0 0 6px;padding:8px 12px;white-space:nowrap;background:#fdeee9;color:#a85f59">\uD83C\uDF82 Birthday visit</button></div>'
         +'<div style="margin-top:6px">'+waiverBadge(c)+'</div>'+adults+'</div>';
     }).join('');
-    Array.prototype.forEach.call(document.querySelectorAll('.lwPunch'),function(b){ b.onclick=function(){ punchExisting(b.getAttribute('data-code'), b); }; });
+    Array.prototype.forEach.call(document.querySelectorAll('.lwPunch'),function(b){ b.onclick=function(){ punchExisting(b.getAttribute('data-code'), b, true); }; });
+    Array.prototype.forEach.call(document.querySelectorAll('.lwPunchOnly'),function(b){ b.onclick=function(){ punchExisting(b.getAttribute('data-code'), b, false); }; });
     Array.prototype.forEach.call(document.querySelectorAll('.lwBday'),function(b){ b.onclick=function(){ birthdayVisit(b.getAttribute('data-code'), b.getAttribute('data-name'), b); }; });
   }
   async function lwFind(){
@@ -2576,13 +2577,42 @@ if($("#wsSave")) $("#wsSave").onclick=async function(){
       else { btn.disabled=false; btn.textContent='\uD83C\uDF82 Birthday visit'; alert(r.error||'Could not record it.'); }
     }catch(e){ btn.disabled=false; btn.textContent='\uD83C\uDF82 Birthday visit'; alert('Network error.'); }
   }
-  async function punchExisting(code, btn){
+  // One button does both jobs: punch the card AND log the walk-in against the
+  // session's capacity. Doing them separately was two steps for one real-world
+  // action, and it was easy to do one and forget the other.
+  async function punchExisting(code, btn, alsoWalkin){
     var key=KEY(); if(!key){ alert('Enter your '+KLABEL+' first.'); return; }
-    btn.disabled=true; btn.textContent='Punching\u2026';
-    try{ var r=await (await fetch('/api/loyalty',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({key:key,action:'punch',code:code})})).json();
-      if(r.ok){ btn.textContent=r.rewardIssued?'\uD83C\uDF89 FREE VISIT!':('\u2713 '+r.punches+'/'+r.needed); btn.style.background='#3f7d5c'; }
-      else { btn.disabled=false; btn.textContent='\u2795 Punch visit'; alert(r.error||'Could not punch.'); }
-    }catch(e){ btn.disabled=false; btn.textContent='\u2795 Punch visit'; alert('Network error.'); }
+    var label=btn.textContent;
+    btn.disabled=true; btn.textContent='Working\u2026';
+    var walkinNote='';
+    try{
+      if(alsoWalkin){
+        // Children defaults to 1 (the child being punched); adults come from the
+        // walk-in box if it's filled in.
+        var kidsEl=$('#wiCount')||$('#awCount'), adEl=$('#wiAdults')||$('#awAdults');
+        var kids=parseInt((kidsEl&&kidsEl.value)||'',10); if(!kids||kids<1) kids=1;
+        var adults=parseInt((adEl&&adEl.value)||'',10); if(!adults||adults<0) adults=0;
+        var slotEl=$('#wiSlot')||$('#awSlot');
+        var body={key:key,action:'walkin',count:kids,adults:adults,waiverConfirmed:true};
+        if(slotEl&&slotEl.value&&slotEl.value!=='auto') body.slot=slotEl.value;
+        try{
+          var w=await (await fetch('/api/checkin',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)})).json();
+          walkinNote = w && w.ok ? (' \u00b7 walk-in logged ('+kids+' child'+(kids===1?'':'ren')+(adults?', '+adults+' adult'+(adults===1?'':'s'):'')+')')
+                                 : ' \u00b7 punch saved, but the walk-in did NOT log';
+        }catch(e){ walkinNote=' \u00b7 punch saved, but the walk-in did NOT log'; }
+      }
+      var r=await (await fetch('/api/loyalty',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({key:key,action:'punch',code:code,walkin:!!alsoWalkin})})).json();
+      if(r.ok){
+        btn.textContent=r.rewardIssued?'\uD83C\uDF89 FREE VISIT!':('\u2713 '+r.punches+'/'+r.needed);
+        btn.style.background='#3f7d5c';
+        if(walkinNote) { var m=$('#lwResults'); if(m){ var n=document.createElement('div'); n.className='note'; n.style.marginTop='6px'; n.textContent=(r.childName||'Punched')+walkinNote; m.appendChild(n); } }
+        // Pull the numbers back from the server so this card and the Loyalty page
+        // never show different counts.
+        setTimeout(function(){ try{ lwFind(); }catch(e){} }, 700);
+        try{ if(typeof loadDay==='function') loadDay(); }catch(e){}
+      }
+      else { btn.disabled=false; btn.textContent=label; alert(r.error||'Could not punch.'); }
+    }catch(e){ btn.disabled=false; btn.textContent=label; alert('Network error.'); }
   }
   if($('#lwFind')) $('#lwFind').onclick=lwFind;
   if($('#lwPhone')) $('#lwPhone').addEventListener('keydown',function(e){ if(e.key==='Enter'){ e.preventDefault(); lwFind(); } });

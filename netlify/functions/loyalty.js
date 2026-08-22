@@ -176,6 +176,75 @@ export default async (req) => {
       count: verified.length, sentDate: stampedDate });
   }
 
+  // One-time backfill: every military-verified family has already had its
+  // verification email sent by hand, so stamp them all as sent. Without this the
+  // new badge would read "Not sent yet" for everyone and you'd re-send.
+  // Safe to run more than once — it never overwrites a date that's already there.
+  if (action === "military-backfill-sent") {
+    const when = (b.sentDate || "").toString().slice(0, 10);
+    const stampDate = /^\d{4}-\d{2}-\d{2}$/.test(when) ? when : todayPacific();
+    const stampAt = new Date().toISOString();
+    let scanned = 0, stamped = 0, already = 0;
+    try {
+      const keys = await listAllKeys(loyalty, { prefix: "card:" });
+      for (const k of keys) {
+        let c = null; try { c = await loyalty.get(k, { type: "json" }); } catch { continue; }
+        if (!c || !c.militaryVerified) continue;
+        scanned++;
+        if (c.militaryEmailSentDate) { already++; continue; }
+        c.militaryEmailSentDate = stampDate;
+        c.militaryEmailSentAt = stampAt;
+        c.militaryEmailSentCount = c.militaryEmailSentCount || 1;
+        c.militaryEmailBackfilled = true;
+        try { await loyalty.setJSON(k, c); stamped++; } catch {}
+      }
+    } catch { return json({ error: "Couldn't read the cards. Try again." }, 502); }
+    return json({ ok: true, scanned, stamped, already,
+      message: `${scanned} military-verified card${scanned === 1 ? "" : "s"} found. ${stamped} marked as already sent (${stampDate}); ${already} already had a date.` });
+  }
+
+  // Copy loyalty-card emails onto the newsletter list so one campaign reaches
+  // punch-card families as well as pop-up subscribers. Anyone who previously
+  // unsubscribed is left alone.
+  if (action === "loyalty-to-newsletter") {
+    const news = getStore("newsletter");
+    let scanned = 0, added = 0, already = 0, skippedUnsub = 0, noEmail = 0;
+    try {
+      const keys = await listAllKeys(loyalty, { prefix: "card:" });
+      const seen = new Set();
+      for (const k of keys) {
+        let c = null; try { c = await loyalty.get(k, { type: "json" }); } catch { continue; }
+        if (!c) continue;
+        scanned++;
+        const email = (c.buyerEmail || "").toString().trim().toLowerCase();
+        if (!email || !/^\S+@\S+\.\S+$/.test(email)) { noEmail++; continue; }
+        if (seen.has(email)) continue;
+        seen.add(email);
+        const sk = "sub:" + email;
+        let ex = null; try { ex = await news.get(sk, { type: "json" }); } catch {}
+        if (ex) {
+          // Never resurrect someone who opted out — that's the one thing that
+          // would get the domain flagged as a spam source.
+          if (ex.active === false) { skippedUnsub++; continue; }
+          already++; continue;
+        }
+        try {
+          await news.setJSON(sk, {
+            email,
+            name: (c.parentName || "").toString().slice(0, 80),
+            token: (globalThis.crypto?.randomUUID?.() || (Date.now().toString(36) + Math.random().toString(36).slice(2))),
+            subscribedAt: new Date().toISOString(),
+            active: true,
+            source: "loyalty-import",
+          });
+          added++;
+        } catch {}
+      }
+    } catch { return json({ error: "Couldn't read the cards. Try again." }, 502); }
+    return json({ ok: true, scanned, added, already, skippedUnsub, noEmail,
+      message: `${added} punch-card email${added === 1 ? "" : "s"} added to the newsletter list. ${already} were already on it, ${skippedUnsub} had unsubscribed (left alone), ${noEmail} cards had no email.` });
+  }
+
   if (action === "visit-history") {
     const code = normalizeCode(b.code);
     if (!code) return json({ error: "Missing code." }, 400);
@@ -302,6 +371,10 @@ export default async (req) => {
     // Free birthday admission: log the visit, skip the punch, and mark the
     // birthday as used so no further code is emailed for this year.
     const birthday = b.birthday === true || b.birthday === "1";
+    // Punched at the desk for someone who walked in. Recorded in the visit history
+    // so "how did this visit happen" is answerable later.
+    const walkin = b.walkin === true || b.walkin === "1";
+    const src = birthday ? "birthday" : (walkin ? "walkin" : "manual");
     const bYear = birthday ? (todayPacific() || "").slice(0, 4) : null;
     const adultNames = Array.isArray(b.adultNames) ? b.adultNames : [];
     if (direct) {
@@ -309,7 +382,7 @@ export default async (req) => {
       let exists = null; try { exists = await loyalty.get("card:" + direct, { type: "json" }); } catch {}
       if (!exists) return json({ error: "No loyalty card found for that code." }, 404);
       const r = await addPunch(loyalty, { code: direct, waiverSigned, adultNames, noPunch: birthday, birthdayYear: bYear,
-        visitMeta: { date: todayPacific(), source: birthday ? "birthday" : "manual", birthday } });
+        visitMeta: { date: todayPacific(), source: src, birthday, walkin } });
       if (r.error) return json({ error: "Couldn't save the punch. Try again." }, 502);
       return json({ ok: true, ...r,
         message: birthday
@@ -328,7 +401,7 @@ export default async (req) => {
     const dob = (b.dob || "").toString().trim();
     const r = await addPunch(loyalty, { first, last, phone4, email, waiverSigned, adultNames, militaryVerified, dob,
       noPunch: birthday, birthdayYear: bYear,
-      visitMeta: { date: todayPacific(), source: birthday ? "birthday" : "manual", birthday } });
+      visitMeta: { date: todayPacific(), source: src, birthday, walkin } });
     if (r.error) return json({ error: r.message || "Couldn't save the punch. Try again." }, 502);
     if (birthday) return json({ ok: true, ...r,
       message: `🎂 Birthday visit recorded for ${r.childName} (${r.code}). No punch added, and no birthday code will be emailed again this year.` });
