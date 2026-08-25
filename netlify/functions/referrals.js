@@ -12,7 +12,7 @@ import { listAllKeys } from "./lib-blobs.js";
 import {
   REFERRAL_STORE, FRIEND_DISCOUNT_CENTS, REFERRER_REWARD_CENTS,
   getOrCreateFamilyCode, findFamilyByCode, isNewFamily, familyStatus, normalizeRef,
-  last4, reconcileLots, lotSummaryLines, shareMessage, pacificToday, addDays,
+  last4, reconcileLots, lotSummaryLines, shareMessage, pacificToday, addDays, creditReferrer,
 } from "./lib-referral.js";
 
 const SITE = process.env.SITE_URL || "https://littlehavenplay.com";
@@ -207,11 +207,47 @@ export default async (req) => {
       } catch {}
     }
     const pending = out.filter(r => !r.paidAt).length;
-    return json({ ok: true, referrals: out.slice(0, 300), count: out.length, pending, balances });
+    const flagged = out.filter(r => r.needsReview && !r.paidAt && !r.reviewDismissed).length;
+    return json({ ok: true, referrals: out.slice(0, 300), count: out.length, pending, flagged, balances });
   }
 
   // Playdate case: an existing family walks in with a brand-new friend and no
   // online booking ever happens, so nothing on the site would catch it.
+  // Approve or reject a flagged referral. Approving pays the referrer their $5
+  // right away; rejecting leaves the friend's discount alone (they already had
+  // their visit) and simply doesn't reward the referrer.
+  if (action === "review") {
+    const id = (b.id || "").toString();
+    const approve = b.approve === true || b.approve === "1";
+    if (!id) return json({ error: "Missing referral id." }, 400);
+    const key = "ref:" + id;
+    let rec = null; try { rec = await store.get(key, { type: "json" }); } catch {}
+    if (!rec) return json({ error: "That referral wasn't found." }, 404);
+    if (rec.paidAt) return json({ error: "That referral has already been rewarded." }, 409);
+
+    rec.reviewedAt = new Date().toISOString();
+    rec.reviewedBy = (b.by || "").toString().slice(0, 60);
+    rec.reviewNote = (b.note || "").toString().slice(0, 160);
+
+    if (!approve) {
+      rec.reviewDismissed = true;
+      rec.needsReview = false;
+      try { await store.setJSON(key, rec); } catch { return json({ error: "Couldn't save." }, 502); }
+      return json({ ok: true, message: "Marked as not a valid referral. No credit was issued." });
+    }
+
+    const fam = await findFamilyByCode(rec.refCode);
+    if (!fam) return json({ error: "Couldn't find the referrer's family." }, 404);
+    const credit = await creditReferrer(fam, { friendName: rec.friendName || "" });
+    if (!credit) return json({ error: "Couldn't issue the credit. Try again." }, 502);
+    rec.paidAt = new Date().toISOString();
+    rec.creditCode = credit.code;
+    rec.needsReview = false;
+    try { await store.setJSON(key, rec); } catch {}
+    return json({ ok: true, creditCode: credit.code, balance: credit.amount,
+      message: `Approved. $5 added to ${rec.referrerName || "the referrer"} — code ${credit.code}, balance $${((credit.amount || 0) / 100).toFixed(2)}.` });
+  }
+
   if (action === "record") {
     const fam = await findFamilyByCode(b.refCode);
     if (!fam) return json({ error: "That referral code doesn't match anyone." }, 404);

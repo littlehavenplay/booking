@@ -126,10 +126,12 @@
         .join(" ").toLowerCase().indexOf(q)>-1;
     });
     var paid=ALL.filter(function(r){return r.paidAt;}).length;
+    var flag=ALL.filter(function(r){return r.needsReview&&!r.paidAt&&!r.reviewDismissed;}).length;
     $("#stats").innerHTML=
        '<div class="stat"><div class="n">'+ALL.length+'</div><div class="l">Total referrals</div></div>'
       +'<div class="stat"><div class="n">'+paid+'</div><div class="l">Rewarded</div></div>'
-      +'<div class="stat"><div class="n">'+(ALL.length-paid)+'</div><div class="l">Awaiting visit</div></div>';
+      +'<div class="stat"><div class="n">'+(ALL.length-paid)+'</div><div class="l">Awaiting visit</div></div>'
+      +(flag?'<div class="stat" style="background:#fdf1ec;border-color:#efcfc4"><div class="n" style="color:#b8524a">'+flag+'</div><div class="l">Need a look</div></div>':'');
 
     if(!rows.length){ $("#tableWrap").innerHTML='<p class="note">Nothing matches.</p>'; return; }
     $("#tableWrap").innerHTML='<table><thead><tr>'
@@ -142,15 +144,39 @@
           +'<td>'+esc(r.friendName||"—")+'<br><span class="note">'+esc(r.friendEmail||"")+(r.friendPhone4?" · ···"+esc(r.friendPhone4):"")+'</span></td>'
           +'<td>'+(r.paidAt
               ?'<span class="pill paid">✓ Rewarded</span><br><span class="note">'+esc(String(r.paidAt).slice(0,10))+'</span>'
-              :'<span class="pill wait">Awaiting visit</span>')+'</td>'
+              : r.reviewDismissed
+                ?'<span class="pill" style="background:#eee;color:#777">Not valid</span>'
+                : r.needsReview
+                  ?'<span class="pill" style="background:#fdf1ec;color:#b8524a">⚠ Check this one</span>'
+                   +(r.suspectMatch?'<br><span class="note">looks like <b>'+esc(r.suspectMatch)+'</b></span>':'')
+                   +'<div style="margin-top:6px;display:flex;gap:5px;flex-wrap:wrap">'
+                   +'<button class="revOK" data-id="'+esc(r.id)+'" style="margin:0;padding:5px 11px;font-size:.75rem">Approve $5</button>'
+                   +'<button class="revNo" data-id="'+esc(r.id)+'" class="alt" style="margin:0;padding:5px 11px;font-size:.75rem;background:#f4ece1;color:#5c6470">Not valid</button></div>'
+                  :'<span class="pill wait">Awaiting visit</span>')+'</td>'
           +'<td>'+(r.creditCode
               ?('<b>'+esc(r.creditCode)+'</b><br><span class="note">'+(b?("balance "+money(b.balance)):"")+'</span>'
                 +(b&&b.lots&&b.lots.length?'<br><span class="note">'+b.lots.map(esc).join("<br>")+'</span>':''))
               :'<span class="note">—</span>')+'</td>'
           +'</tr>';
       }).join('')+'</tbody></table>';
+    wireReview();
   }
 
+  function wireReview(){
+    Array.prototype.forEach.call(document.querySelectorAll(".revOK,.revNo"),function(btn){
+      btn.onclick=async function(){
+        var ok=btn.classList.contains("revOK");
+        if(!confirm(ok?"Approve this referral and add $5 to the referrer?":"Mark this as NOT a valid referral?\n\nNo credit will be issued. The friend keeps the $5 they already got at booking.")) return;
+        btn.disabled=true;
+        try{
+          var r=await (await fetch("/api/referrals",{method:"POST",headers:{"content-type":"application/json"},
+            body:JSON.stringify({key:KEY(),action:"review",id:btn.getAttribute("data-id"),approve:ok})})).json();
+          if(r.ok){ out($("#keyOut"),r.message,"ok"); load(); }
+          else { out($("#keyOut"),r.error||"Couldn't save.","err"); btn.disabled=false; }
+        }catch(e){ out($("#keyOut"),"Network error.","err"); btn.disabled=false; }
+      };
+    });
+  }
   $("#load").onclick=load;
   $("#q").addEventListener("input",render);
   $("#key").addEventListener("keydown",function(e){ if(e.key==="Enter") load(); });

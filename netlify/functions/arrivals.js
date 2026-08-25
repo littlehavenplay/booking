@@ -75,7 +75,9 @@ export default async (req) => {
         // ---- Referral payout ------------------------------------------------
         // The friend has physically turned up, so the referrer earns their $5.
         // Guarded by referralPaid so a second check-in can't pay twice.
-        if (entry && entry.referredBy && !entry.referralPaid) {
+        // A flagged referral does NOT auto-pay. It waits for approval in the
+        // Referrals tool, where you can see both families side by side.
+        if (entry && entry.referredBy && !entry.referralPaid && !entry.referralNeedsReview) {
           try {
             const fam = await findFamilyByCode(entry.referredBy);
             if (fam) {

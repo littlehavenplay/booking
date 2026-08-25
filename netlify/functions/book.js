@@ -400,6 +400,10 @@ export default async (req) => {
 
     if (myP4) {
       referral = refFam;
+      // A close-but-not-exact name match. The discount still applies — refusing
+      // on a fuzzy match would turn away genuinely new families — but the
+      // referrer's $5 is held until a human looks at it.
+      if (famStatus.suspect) { referral._suspect = true; referral._suspectMatch = famStatus.suspectMatch || ""; }
       referralAmount = Math.min(FRIEND_DISCOUNT_CENTS,
         Math.max(0, subtotal - discountAmount - weekdaySpecialAmount - militaryAmount - rewardAmount - birthdayAmount));
     }
@@ -637,6 +641,8 @@ export default async (req) => {
     referredBy: referral ? referral.code : null,
     referralAmount: referralAmount || 0,
     referralPaid: false,
+    referralNeedsReview: !!(referral && referral._suspect),
+    referralSuspectMatch: (referral && referral._suspectMatch) || null,
     discountCode: discountAmount > 0 ? discountCode : null, discountPct, discountAmount,
     weekdaySpecialAmount, weekdaySpecialLabel: weekdaySpecialAmount > 0 ? weekdaySpecialLabel : "",
     militaryAmount, militaryChildren: militaryAmount > 0 ? militaryChildren : [],
@@ -691,6 +697,8 @@ export default async (req) => {
         source: "online", at: new Date().toISOString(),
         bookingDate: date, slot, discountGiven: referralAmount,
         paidAt: null, creditCode: null,
+        needsReview: !!referral._suspect,
+        suspectMatch: referral._suspectMatch || null,
       });
     } catch {}
   }

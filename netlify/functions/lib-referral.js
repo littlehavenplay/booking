@@ -114,6 +114,36 @@ export async function findFamilyByCode(code) {
 // Phone alone is not enough: mum and dad have different numbers, so a second
 // phone looks brand new. Match on email and on the children's names too — if a
 // child already has a loyalty card, that household has been here.
+// Edit distance, capped — we only care about "close", not how far apart.
+function editDistance(a, b) {
+  a = a || ""; b = b || "";
+  if (a === b) return 0;
+  if (!a.length || !b.length) return Math.max(a.length, b.length);
+  let prev = Array.from({ length: b.length + 1 }, (_, i) => i);
+  for (let i = 1; i <= a.length; i++) {
+    const cur = [i];
+    for (let j = 1; j <= b.length; j++) {
+      cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    }
+    prev = cur;
+  }
+  return prev[b.length];
+}
+
+// A "soft" match: close enough to be worth a human glance, not close enough to
+// refuse automatically. Refusing on a fuzzy match would block genuinely new
+// families who happen to share a surname — a worse mistake than missing a fake.
+function looksRelated(aFirst, aLast, bFirst, bLast) {
+  const nf = s => (s || "").toLowerCase().replace(/[^a-z]/g, "");
+  const [af, al, bf, bl] = [nf(aFirst), nf(aLast), nf(bFirst), nf(bLast)];
+  if (!al || !bl) return false;
+  const lastClose = al === bl || editDistance(al, bl) <= 2 || al.startsWith(bl) || bl.startsWith(al);
+  if (!lastClose) return false;
+  if (!af || !bf) return true;                       // same surname, no first name to compare
+  const firstClose = af === bf || editDistance(af, bf) <= 3 || af[0] === bf[0];
+  return firstClose;
+}
+
 export async function familyStatus({ phone, email, childNames, childCodes } = {}) {
   const p4 = last4(phone);
   // Fail CLOSED. If we can't identify who is booking, we do not hand out money.
@@ -126,6 +156,11 @@ export async function familyStatus({ phone, email, childNames, childCodes } = {}
     .filter(Boolean);
   // An entered loyalty code is the strongest signal of all — it IS an existing child.
   const codes = (childCodes || []).map(c => (c || "").toString().toUpperCase().replace(/[^A-Z0-9]/g, "")).filter(Boolean);
+
+  const kidParts = (childNames || [])
+    .map(c => (typeof c === "string" ? { first: c.split(" ")[0], last: c.split(" ").slice(1).join(" ") } : (c || {})))
+    .filter(c => c && (c.first || c.last));
+  let soft = null;
 
   try {
     const loyalty = getStore("loyalty");
@@ -142,8 +177,20 @@ export async function familyStatus({ phone, email, childNames, childCodes } = {}
         if (known && kidNames.indexOf(known) > -1)
           return { isNew: false, reason: "existing_child", match: c.childName || "" };
       }
+      // Not an exact match, but close enough that a person should look at it.
+      // Remembered, not acted on.
+      if (!soft) {
+        const kf = (c.childName || "").trim().split(/\s+/);
+        for (const kid of kidParts) {
+          if (looksRelated(kid.first, kid.last, kf[0], kf.slice(1).join(" "))) {
+            soft = { match: c.childName || "", phone4: c.phone4 || "" };
+            break;
+          }
+        }
+      }
     }
   } catch { return { isNew: false, reason: "lookup_failed" }; }
+  if (soft) return { isNew: true, reason: "new", suspect: true, suspectMatch: soft.match };
   return { isNew: true, reason: "new" };
 }
 
