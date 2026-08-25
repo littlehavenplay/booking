@@ -39,6 +39,7 @@ export default async (req) => {
         childName: r.childName || "", name: r.name || "", phone: r.phone || "", email: r.email || "",
         kids: r.kids || null, adults: r.adults || null,
         status: r.status || "", depositPaid: !!r.depositPaid, at: r.at || "",
+        promo: r.promo || null,
       });
     } catch {}
   }

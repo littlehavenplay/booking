@@ -190,6 +190,10 @@
           <span style="font-weight:700" id="wdLabel">🗓️ Weekday special</span>
           <span style="font-weight:700" id="wdAmtTxt">−$0</span>
         </div>
+        <div id="refRow" style="display:none;justify-content:space-between;align-items:center;margin-bottom:6px;color:#7ba676">
+          <span style="font-weight:700" id="refLabel">🤝 Referral discount</span>
+          <span style="font-weight:700" id="refAmtTxt">−$0</span>
+        </div>
         <div id="milRow" style="display:none;justify-content:space-between;align-items:center;margin-bottom:6px;color:#7ba676">
           <span style="font-weight:700">🎖️ Military discount (10% off)</span>
           <span style="font-weight:700" id="milAmtTxt">−$0</span>
@@ -322,6 +326,15 @@
       <input type="text" id="rewardCode" placeholder="Reward code (e.g. FREE1234 or BDAYXXXX)" style="text-transform:uppercase;width:100%">
       <div id="rewardMsg" style="margin-top:6px;font-size:.85rem;display:none"></div>
       <div class="note" style="margin-top:6px">Applied automatically at checkout — you'll see it subtracted from your total below. One-time use · can't be combined with a % off discount code.</div>
+    </div>
+
+    <div class="card" id="referCard">
+      <p class="step"><span class="n">🤝</span> Referred by a friend? <span class="opt">Optional</span></p>
+      <p class="note" style="margin-top:0">New to Little Haven? Enter your friend's referral code for <b>$5 off</b> your first visit.</p>
+      <label class="fld">Referral code</label>
+      <input type="text" id="refCode" placeholder="REF1234" autocomplete="off" style="text-transform:uppercase">
+      <p class="fieldnote" id="err-refCode"></p>
+      <p id="refMsg" class="note" style="margin-top:6px"></p>
     </div>
 
     <div class="card">
@@ -739,6 +752,7 @@ function updateTotals(){
   // with the discount code, same as the server enforces. Zeroes one admission, recomputed
   // live in case admission counts changed since the code was checked. Stacks with the
   // weekday special.
+  const refAmt = (state.referral && state.referral.ok) ? Math.min(state.referral.amount, Math.max(0, subtotal-discAmt-wdAmt-milAmt)) : 0;
   const rewardOn = !discOn && state.reward.ok;
   let rewardAmt = 0;
   if(rewardOn){
@@ -750,8 +764,9 @@ function updateTotals(){
       if(present.length) rewardAmt=Math.min(Math.max(...present), subtotal-discAmt-wdAmt-milAmt);
     }
   }
+  if($("#refRow")){ if(refAmt>0){ $("#refRow").style.display="flex"; $("#refAmtTxt").textContent="\u2212"+money(refAmt); } else { $("#refRow").style.display="none"; } }
   if($("#wdRow")){ if(wdAmt>0){ $("#wdRow").style.display="flex"; $("#wdLabel").textContent="\uD83D\uDDD3\uFE0F "+wdLabel; $("#wdAmtTxt").textContent="\u2212"+money(wdAmt); } else { $("#wdRow").style.display="none"; } }
-  const taxable = Math.max(0, subtotal - discAmt - wdAmt - milAmt - rewardAmt);
+  const taxable = Math.max(0, subtotal - discAmt - wdAmt - milAmt - rewardAmt - refAmt);
   const amt=taxable;
   $("#kidCount").textContent=kids;
   $("#subtotal").textContent=money(subtotal);
@@ -969,6 +984,7 @@ async function submitBooking(token){
         phone:($("#phone")||{}).value||"",childNames,
         regular:state.reg,sibling:state.sib,infant:state.inf,totalAdults:state.ad,
         sourceId:token,giftCards,visitPasses,promoCode,discountCode,rewardCode,
+        refCode:(state.referral&&state.referral.ok?state.referral.code:""),
         attemptId:lhAttemptId})});
     const data=await res.json();
     if(res.ok && data.ok){
@@ -1098,6 +1114,47 @@ init();
 })();
 </script>
 <script src="/assets/phone-format.js" defer></script>
-<script src="/assets/chat.js" defer></script>
+<script src="/assets/chat.js" defer>
+// ---- Referral code ($5 off, new families only) ----
+state.referral={code:"",amount:0,ok:false};
+(function(){
+  var input=document.getElementById("refCode"), msg=document.getElementById("refMsg");
+  if(!input) return;
+  // A ?ref=CODE link prefills and locks it in visually, so a shared link just works.
+  try{
+    var p=new URLSearchParams(location.search).get("ref");
+    if(p){ input.value=p.toUpperCase().replace(/[^A-Z0-9]/g,""); }
+  }catch(e){}
+
+  var t=null;
+  async function check(){
+    var code=(input.value||"").toUpperCase().replace(/[^A-Z0-9]/g,"");
+    input.value=code;
+    state.referral={code:"",amount:0,ok:false};
+    if(!code){ msg.textContent=""; msg.style.color=""; updateTotals(); return; }
+    var phone=(($("#phone")||{}).value||"");
+    try{
+      var r=await (await fetch("/api/referrals",{method:"POST",headers:{"content-type":"application/json"},
+        body:JSON.stringify({action:"check",code:code,phone:phone})})).json();
+      if(r.valid){
+        state.referral={code:code,amount:r.amount||500,ok:true};
+        msg.style.color="#3f7d54";
+        msg.textContent="\u2713 $5 off applied"+(r.referrerName?(" \u2014 thanks to "+r.referrerName+"!"):"!");
+      } else {
+        msg.style.color="var(--red)";
+        msg.textContent = r.reason==="self" ? "That's your own referral code."
+          : r.reason==="not_new" ? "Referral codes are for families visiting us for the first time."
+          : "We don't recognise that referral code.";
+      }
+    }catch(e){ msg.style.color="var(--taupe)"; msg.textContent="Couldn't check that code right now \u2014 we'll try again at checkout."; }
+    updateTotals();
+  }
+  input.addEventListener("input",function(){ clearTimeout(t); t=setTimeout(check,500); });
+  // The phone number decides whether they're a new family, so re-check when it changes.
+  var ph=document.getElementById("phone");
+  if(ph) ph.addEventListener("change",function(){ if(input.value) check(); });
+  if(input.value) setTimeout(check,300);
+})();
+</script>
 </body>
 </html>

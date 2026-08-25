@@ -3,6 +3,7 @@
 //   { key, date, action:"get" }                    -> { ok, arrivals:{ id:true } }
 //   { key, date, id, arrived:true|false, action:"set" } -> { ok, arrivals }
 import { getStore } from "@netlify/blobs";
+import { findFamilyByCode, creditReferrer, reconcileLots, lotSummaryLines, last4 as refLast4 } from "./lib-referral.js";
 import { addPunch, issueCode, sendFamilyPunch } from "./lib-loyalty.js";
 import { listAllKeys } from "./lib-blobs.js";
 
@@ -69,6 +70,36 @@ export default async (req) => {
           let r = null; try { r = await bstore.get(key, { type: "json", consistency: "strong" }); } catch {}
           const e = r && Array.isArray(r.bookings) ? r.bookings.find(x => x.id === id) : null;
           if (e) { entry = e; rec = r; bookingKey = key; break; }
+        }
+
+        // ---- Referral payout ------------------------------------------------
+        // The friend has physically turned up, so the referrer earns their $5.
+        // Guarded by referralPaid so a second check-in can't pay twice.
+        if (entry && entry.referredBy && !entry.referralPaid) {
+          try {
+            const fam = await findFamilyByCode(entry.referredBy);
+            if (fam) {
+              const credit = await creditReferrer(fam, { friendName: entry.name || "" });
+              if (credit) {
+                entry.referralPaid = true;
+                entry.referralCreditCode = credit.code;
+                try { await bstore.setJSON(bookingKey, rec); } catch {}
+                try {
+                  const rstore = getStore("referrals");
+                  const rk = "ref:" + entry.id;
+                  let rr = null; try { rr = await rstore.get(rk, { type: "json" }); } catch {}
+                  rr = rr || { id: entry.id, refCode: fam.code, referrerPhone4: fam.phone4,
+                               referrerName: fam.name || "", friendPhone4: refLast4(entry.phone),
+                               friendName: entry.name || "", friendEmail: entry.email || "",
+                               source: "online", at: new Date().toISOString(), bookingDate: date };
+                  rr.paidAt = new Date().toISOString();
+                  rr.creditCode = credit.code;
+                  await rstore.setJSON(rk, rr);
+                } catch {}
+                await emailReferrer(fam, credit, entry.name || "your friend");
+              }
+            }
+          } catch {}
         }
 
         if (!entry) {
@@ -149,6 +180,44 @@ export default async (req) => {
   }
   return json({ ok: true, arrivals: map });
 };
+
+// Tell the referrer they earned it, and spell out every expiry date so the
+// oldest $5 creates the urgency to come back.
+async function emailReferrer(fam, credit, friendName) {
+  const key = process.env.RESEND_API_KEY;
+  const from = process.env.EMAIL_FROM || "onboarding@resend.dev";
+  const studio = process.env.STUDIO_NAME || "Little Haven Play Studio";
+  const bcc = process.env.STUDIO_EMAIL || "";
+  const to = fam.email || credit.email;
+  if (!key || !to) return;
+  reconcileLots(credit);
+  const lines = lotSummaryLines(credit);
+  const esc = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const html = `
+  <div style="font-family:Nunito,Arial,sans-serif;max-width:560px;margin:0 auto;color:#2a2622">
+    <h2 style="color:#a85f59;font-weight:normal">Your friend came to play! 🎈</h2>
+    <p style="color:#5c6470">${esc(friendName)} just visited us — thank you for sending them our way.
+    We've added <b>$5</b> to your referral credit.</p>
+    <div style="background:#e7f0df;border:1px solid #c2d7bd;border-radius:14px;padding:16px;margin:14px 0;text-align:center">
+      <div style="font-size:.75rem;font-weight:bold;letter-spacing:.08em;text-transform:uppercase;color:#5c6470">Your credit code</div>
+      <div style="font-family:monospace;font-size:1.6rem;font-weight:bold;color:#3f5d33;margin:6px 0">${esc(credit.code)}</div>
+      <div style="font-size:1.1rem;font-weight:bold;color:#2a2622">Balance: $${((credit.amount || 0) / 100).toFixed(2)}</div>
+    </div>
+    ${lines.length ? `<p style="color:#5c6470;margin:0 0 4px"><b>Use it before it expires:</b></p>
+    <ul style="color:#5c6470;margin:0 0 14px;padding-left:20px">${lines.map(l => `<li>${esc(l)}</li>`).join("")}</ul>` : ""}
+    <p style="color:#5c6470">Enter the code in the <b>store credit</b> box when you book. It works alongside any
+    discount we're running, so you can use it on a promo day too.</p>
+    <p style="color:#5c6470;font-size:13px">Keep sharing — every friend who visits adds another $5. — ${studio}</p>
+  </div>`;
+  try {
+    await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ from: `${studio} <${from}>`, to: [to], bcc: bcc ? [bcc] : undefined,
+        subject: `You earned $5 — ${friendName} came to play!`, html }),
+    });
+  } catch {}
+}
 
 function json(obj, status = 200) {
   return new Response(JSON.stringify(obj), { status, headers: { "content-type": "application/json", "cache-control": "no-store" } });

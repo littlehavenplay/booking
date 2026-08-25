@@ -368,11 +368,26 @@ export default async (req) => {
     }
   }
 
+  // ---- Referral: $5 off, new families only -------------------------------
+  // Re-verified here every time. The browser check only exists to show the
+  // discount early; it is never trusted.
+  let referral = null, referralAmount = 0;
+  const refCode = normalizeRef(body.refCode || body.referralCode || "");
+  if (refCode) {
+    const refFam = await findFamilyByCode(refCode);
+    const myP4 = refLast4(phone);
+    if (refFam && myP4 && myP4 !== refFam.phone4 && await isNewFamily(phone, { email, childNames })) {
+      referral = refFam;
+      referralAmount = Math.min(FRIEND_DISCOUNT_CENTS,
+        Math.max(0, subtotal - discountAmount - weekdaySpecialAmount - militaryAmount - rewardAmount - birthdayAmount));
+    }
+  }
+
   // The family code zeroes everything, whatever the headcount.
   const famAmount = famUsed
-    ? Math.max(0, subtotal - discountAmount - weekdaySpecialAmount - militaryAmount - rewardAmount - birthdayAmount)
+    ? Math.max(0, subtotal - discountAmount - weekdaySpecialAmount - militaryAmount - rewardAmount - birthdayAmount - referralAmount)
     : 0;
-  const taxable = Math.max(0, subtotal - discountAmount - weekdaySpecialAmount - militaryAmount - rewardAmount - birthdayAmount - famAmount);
+  const taxable = Math.max(0, subtotal - discountAmount - weekdaySpecialAmount - militaryAmount - rewardAmount - birthdayAmount - referralAmount - famAmount);
   // No sales tax: recreational/amusement admission is CDTFA-exempt (intangible admission),
   // so this business does not collect sales tax on any admission, party, or gift card sale.
   const tax = 0;
@@ -595,6 +610,11 @@ export default async (req) => {
     cardPaid: cardAmount,
     giftCards: giftApplied.map(g => ({ gan: g.gan, applied: g.applied, balanceAfter: g.balanceAfter ?? null })),
     creditApplied, promoCode: creditApplied > 0 ? promoCode : null,
+    // Stamped so check-in can pay the referrer. Payout happens on ARRIVAL, never
+    // on booking — a no-show must not earn anyone $5.
+    referredBy: referral ? referral.code : null,
+    referralAmount: referralAmount || 0,
+    referralPaid: false,
     discountCode: discountAmount > 0 ? discountCode : null, discountPct, discountAmount,
     weekdaySpecialAmount, weekdaySpecialLabel: weekdaySpecialAmount > 0 ? weekdaySpecialLabel : "",
     militaryAmount, militaryChildren: militaryAmount > 0 ? militaryChildren : [],
@@ -634,6 +654,22 @@ export default async (req) => {
          straight away — the old code stops working the moment you do.</p>`,
         famUsed.notifyEmail || undefined
       );
+    } catch {}
+  }
+
+  // Log the referral as pending so it appears in the staff history straight away,
+  // not only once the friend turns up.
+  if (referral) {
+    try {
+      const rstore = getStore("referrals");
+      await rstore.setJSON("ref:" + bookingId, {
+        id: bookingId, refCode: referral.code,
+        referrerPhone4: referral.phone4, referrerName: referral.name || "",
+        friendPhone4: refLast4(phone), friendName: name, friendEmail: email,
+        source: "online", at: new Date().toISOString(),
+        bookingDate: date, slot, discountGiven: referralAmount,
+        paidAt: null, creditCode: null,
+      });
     } catch {}
   }
 

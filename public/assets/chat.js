@@ -1,7 +1,7 @@
 /* Little Haven Play Studio — Tawk.to live chat loader.
 
    Loaded on customer-facing pages only. Deliberately NOT on admin.html,
-   staff.html, headcount.html or loyalty.html — a chat bubble has no place on the dashboards
+   staff.html, headcount.html, loyalty.html, referrals.html or tools.html — a chat bubble has no place on the dashboards
    used at the front desk during check-in.
 
    To change the chat account later, edit TAWK_SRC below and nothing else.
@@ -13,7 +13,7 @@
 
   // Don't load on internal dashboards even if this file is included by mistake.
   var page = (location.pathname.split("/").pop() || "index.html").toLowerCase();
-  if (["admin.html", "staff.html", "headcount.html", "loyalty.html"].indexOf(page) > -1) return;
+  if (["admin.html", "staff.html", "headcount.html", "loyalty.html", "referrals.html", "tools.html"].indexOf(page) > -1) return;
 
   window.Tawk_API = window.Tawk_API || {};
   window.Tawk_LoadStart = new Date();

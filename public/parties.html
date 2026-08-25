@@ -50,6 +50,10 @@
 </style>
 <link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#7a6253"><link rel="apple-touch-icon" href="/assets/icons/apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="Little Haven"><link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32.png"></head>
 <body>
+<div id="promoBanner" style="display:none;background:linear-gradient(90deg,#e7f0df,#f4ece1);border-bottom:1px solid #c2d7bd;padding:12px 16px;text-align:center">
+  <span style="font-family:'Nunito',sans-serif;font-weight:900;color:#3f5d33;font-size:.95rem" id="promoBannerText"></span>
+</div>
+
 <div class="topbar"><a class="name" href="/index.html" style="text-decoration:none;color:inherit">Little <em>Haven</em> Play Studio</a><a class="back" href="/index.html">← Back to site</a></div>
 <div class="wrap">
   <h1>Book a Private Party</h1>
@@ -261,5 +265,25 @@ async function submitQuestionnaire(){
 </script>
 <script>if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("/sw.js").catch(function(){});});}</script><script src="/assets/phone-format.js" defer></script>
 <script src="/assets/chat.js" defer></script>
+
+<script>
+/* Party promo banner — only ever shows when the booking flow will actually honour
+   it, because both read the same live-promo check on the server. */
+(function(){
+  function show(){
+    fetch('/api/partypromo',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({action:'public'})})
+      .then(function(r){ return r.json(); })
+      .then(function(d){
+        if(!d || !d.ok || !d.promo) return;
+        var b=document.getElementById('promoBanner'), t=document.getElementById('promoBannerText');
+        if(!b||!t) return;
+        t.textContent = '\uD83C\uDF89 ' + d.promo.name + ' \u2014 ' + (d.promo.blurb || (d.promo.label + ' any party package booked today. Deposit stays the same; the discount comes off your final balance.'));
+        b.style.display='block';
+      })
+      .catch(function(){});
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',show); else show();
+})();
+</script>
 </body>
 </html>

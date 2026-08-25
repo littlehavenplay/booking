@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Referrals — Little Haven Staff</title>
+<meta name="robots" content="noindex,nofollow">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,400&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root{--cream:#faf7f3;--sand:#f4ece1;--blush-pale:#fdf1ec;--blush:#efcfc4;--rose:#c97d76;
+        --rose-deep:#a85f59;--sage-pale:#ecf1e8;--sage-light:#c2d7bd;--sage:#7ba676;--sage-dark:#4d7848;
+        --slate:#5c6470;--taupe:#aea298;--charcoal:#2a2622;--line:#e7ddd0;--red:#b8524a;
+        --shadow:0 4px 24px rgba(0,0,0,.07)}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--cream);font-family:'Nunito',sans-serif;color:var(--charcoal);line-height:1.55}
+  .top{padding:14px 16px;border-bottom:1px solid var(--line);background:#fff;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+  .top .b{font-family:'Cormorant Garamond',Georgia,serif;font-size:1.3rem}
+  .top .b i{color:var(--rose-deep)}
+  .top a{color:var(--rose-deep);text-decoration:none;font-weight:800;font-size:.85rem}
+  .wrap{max-width:1000px;margin:0 auto;padding:18px 16px 60px}
+  h1{font-family:'Cormorant Garamond',Georgia,serif;font-weight:400;font-size:1.9rem;margin:.2em 0 .4em}
+  .card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:var(--shadow);margin-bottom:16px}
+  h2{font-family:'Cormorant Garamond',Georgia,serif;font-weight:400;font-size:1.35rem;margin:0 0 10px}
+  label{display:block;font-size:.72rem;font-weight:900;letter-spacing:.06em;text-transform:uppercase;color:var(--taupe);margin:10px 0 5px}
+  input{width:100%;border:1.5px solid var(--line);border-radius:11px;padding:11px;font-family:'Nunito';font-weight:700;
+        font-size:.95rem;background:#fcfaf6;outline:none;color:var(--charcoal)}
+  input:focus{border-color:var(--rose);box-shadow:0 0 0 3px rgba(201,125,118,.13)}
+  button{font-family:'Nunito';font-weight:800;border:0;border-radius:999px;padding:11px 20px;font-size:.9rem;
+         background:var(--rose);color:#fff;cursor:pointer;margin-top:10px}
+  button.alt{background:var(--sand);color:var(--slate)}
+  .row{display:flex;gap:10px;flex-wrap:wrap}
+  .row>div{flex:1;min-width:150px}
+  .out{display:none;margin-top:10px;padding:10px 13px;border-radius:11px;font-weight:700;font-size:.9rem}
+  .out.ok{display:block;background:var(--sage-pale);color:var(--sage-dark)}
+  .out.err{display:block;background:#fdf5f4;color:var(--red)}
+  table{width:100%;border-collapse:collapse;font-size:.86rem}
+  th{background:var(--sand);text-align:left;padding:8px;font-size:.72rem;letter-spacing:.05em;text-transform:uppercase;color:var(--slate)}
+  td{padding:8px;border-bottom:1px solid #f4ece1;vertical-align:top}
+  .pill{display:inline-block;border-radius:999px;padding:2px 9px;font-size:.7rem;font-weight:900}
+  .pill.paid{background:var(--sage-pale);color:var(--sage-dark)}
+  .pill.wait{background:var(--blush-pale);color:var(--rose-deep)}
+  .note{color:var(--taupe);font-size:.85rem}
+  .stats{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+  .stat{flex:1;min-width:120px;background:var(--sage-pale);border:1px solid var(--sage-light);border-radius:14px;padding:12px;text-align:center}
+  .stat .n{font-size:1.5rem;font-weight:900;color:var(--sage-dark)}
+  .stat .l{font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--slate)}
+</style>
+</head>
+<body>
+<div class="top">
+  <span class="b">Little <i>Haven</i> · Referrals</span>
+  <span><a href="/staff.html">← Staff tools</a> &nbsp; <a href="/tools.html">All tools</a></span>
+</div>
+<div class="wrap">
+  <h1>Referrals</h1>
+
+  <div class="card">
+    <label for="key">Staff PIN or admin key</label>
+    <input id="key" type="password" autocomplete="off" placeholder="Enter your key">
+    <button id="load">Load referrals</button>
+    <div id="keyOut" class="out"></div>
+  </div>
+
+  <div class="card">
+    <h2>🔎 Find a family's credit</h2>
+    <p class="note" style="margin-top:0">For when someone says "my wife has credit" and doesn't know the code.
+    Search by <b>phone, parent name, or child's name</b>. Deducting always spends the
+    soonest-to-expire money first, so nothing gets wasted.</p>
+    <label for="lq">Phone, parent name, or child name</label>
+    <input id="lq" placeholder="760-555-1234 · Simpson · Loella">
+    <button id="lgo">Search</button>
+    <div id="lOut" class="out"></div>
+    <div id="lRes" style="margin-top:12px"></div>
+  </div>
+
+  <div class="card">
+    <h2>🤝 Record a walk-in referral</h2>
+    <p class="note" style="margin-top:0">For when an existing family brings a brand-new friend in person and no online
+    booking happens. The referrer's $5 still only lands once the friend is checked in.</p>
+    <div class="row">
+      <div><label>Referrer's code</label><input id="rcRef" placeholder="REF7K2M"></div>
+      <div><label>Friend's phone</label><input id="rcPhone" type="tel" placeholder="(760) 555-1234"></div>
+      <div><label>Friend's name</label><input id="rcName" placeholder="Jane Smith"></div>
+    </div>
+    <button id="rcSave">Log this referral</button>
+    <div id="rcOut" class="out"></div>
+  </div>
+
+  <div class="card">
+    <h2>History — who referred whom</h2>
+    <div class="stats" id="stats"></div>
+    <label for="q">Search by name, code or phone last-4</label>
+    <input id="q" placeholder="Type to filter…">
+    <div id="tableWrap" style="overflow:auto;margin-top:12px"><p class="note">Enter your key above and press Load.</p></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var $=function(s){return document.querySelector(s);};
+  var ALL=[], BAL={};
+  function KEY(){ return $("#key").value.trim(); }
+  function money(c){ return "$"+((c||0)/100).toFixed(2); }
+  function esc(s){ return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];}); }
+  function out(el,msg,cls){ el.className="out "+(cls||""); el.textContent=msg; }
+
+  async function load(){
+    if(!KEY()){ out($("#keyOut"),"Enter your key first.","err"); return; }
+    out($("#keyOut"),"Loading…","ok");
+    try{
+      var r=await (await fetch("/api/referrals",{method:"POST",headers:{"content-type":"application/json"},
+        body:JSON.stringify({key:KEY(),action:"history"})})).json();
+      if(!r.ok){ out($("#keyOut"),r.error||"Couldn't load.","err"); return; }
+      ALL=r.referrals||[]; BAL=r.balances||{};
+      out($("#keyOut"),ALL.length+" referral"+(ALL.length===1?"":"s")+" loaded.","ok");
+      try{ sessionStorage.setItem("lh_ref_key",KEY()); }catch(e){}
+      render();
+    }catch(e){ out($("#keyOut"),"Network error.","err"); }
+  }
+
+  function render(){
+    var q=$("#q").value.trim().toLowerCase();
+    var rows=ALL.filter(function(r){
+      if(!q) return true;
+      return [r.refCode,r.referrerName,r.friendName,r.friendEmail,r.referrerPhone4,r.friendPhone4]
+        .join(" ").toLowerCase().indexOf(q)>-1;
+    });
+    var paid=ALL.filter(function(r){return r.paidAt;}).length;
+    $("#stats").innerHTML=
+       '<div class="stat"><div class="n">'+ALL.length+'</div><div class="l">Total referrals</div></div>'
+      +'<div class="stat"><div class="n">'+paid+'</div><div class="l">Rewarded</div></div>'
+      +'<div class="stat"><div class="n">'+(ALL.length-paid)+'</div><div class="l">Awaiting visit</div></div>';
+
+    if(!rows.length){ $("#tableWrap").innerHTML='<p class="note">Nothing matches.</p>'; return; }
+    $("#tableWrap").innerHTML='<table><thead><tr>'
+      +'<th>When</th><th>Referrer</th><th>Friend</th><th>Status</th><th>Credit</th></tr></thead><tbody>'
+      +rows.map(function(r){
+        var b=r.creditCode?BAL[r.creditCode]:null;
+        return '<tr>'
+          +'<td style="white-space:nowrap">'+esc(String(r.at||"").slice(0,10))+'<br><span class="note">'+esc(r.source||"")+'</span></td>'
+          +'<td>'+esc(r.referrerName||"—")+'<br><span class="note">'+esc(r.refCode||"")+' · ···'+esc(r.referrerPhone4||"")+'</span></td>'
+          +'<td>'+esc(r.friendName||"—")+'<br><span class="note">'+esc(r.friendEmail||"")+(r.friendPhone4?" · ···"+esc(r.friendPhone4):"")+'</span></td>'
+          +'<td>'+(r.paidAt
+              ?'<span class="pill paid">✓ Rewarded</span><br><span class="note">'+esc(String(r.paidAt).slice(0,10))+'</span>'
+              :'<span class="pill wait">Awaiting visit</span>')+'</td>'
+          +'<td>'+(r.creditCode
+              ?('<b>'+esc(r.creditCode)+'</b><br><span class="note">'+(b?("balance "+money(b.balance)):"")+'</span>'
+                +(b&&b.lots&&b.lots.length?'<br><span class="note">'+b.lots.map(esc).join("<br>")+'</span>':''))
+              :'<span class="note">—</span>')+'</td>'
+          +'</tr>';
+      }).join('')+'</tbody></table>';
+  }
+
+  $("#load").onclick=load;
+  $("#q").addEventListener("input",render);
+  $("#key").addEventListener("keydown",function(e){ if(e.key==="Enter") load(); });
+
+  $("#rcSave").onclick=async function(){
+    if(!KEY()){ out($("#rcOut"),"Enter your key at the top first.","err"); return; }
+    var ref=$("#rcRef").value.trim(), ph=$("#rcPhone").value.trim(), nm=$("#rcName").value.trim();
+    if(!ref||!ph){ out($("#rcOut"),"Enter the referrer's code and the friend's phone.","err"); return; }
+    out($("#rcOut"),"Saving…","ok");
+    try{
+      var r=await (await fetch("/api/referrals",{method:"POST",headers:{"content-type":"application/json"},
+        body:JSON.stringify({key:KEY(),action:"record",refCode:ref,friendPhone:ph,friendName:nm})})).json();
+      if(r.ok){ out($("#rcOut"),r.message||"Logged.","ok"); $("#rcRef").value="";$("#rcPhone").value="";$("#rcName").value=""; load(); }
+      else out($("#rcOut"),r.error||"Couldn't save.","err");
+    }catch(e){ out($("#rcOut"),"Network error.","err"); }
+  };
+
+
+  // ---- Find a family's credit, then deduct oldest-first ----
+  function fmtLot(l){
+    var soon = l.expiringSoon ? ' style="color:#b8524a;font-weight:800"' : '';
+    return '<li'+soon+'>'+money(l.remaining)+' expires '+esc(l.expiry)+(l.expiringSoon?' \u2014 soon!':'')+'</li>';
+  }
+  async function lookup(){
+    var q=$("#lq").value.trim();
+    if(q.length<2){ out($("#lOut"),"Type at least two characters.","err"); return; }
+    if(!KEY()){ out($("#lOut"),"Enter your key at the top first.","err"); return; }
+    out($("#lOut"),"Searching\u2026","ok");
+    try{
+      var r=await (await fetch("/api/referrals",{method:"POST",headers:{"content-type":"application/json"},
+        body:JSON.stringify({key:KEY(),action:"lookup",q:q})})).json();
+      if(!r.ok){ out($("#lOut"),r.error||"Couldn't search.","err"); return; }
+      out($("#lOut"),r.count+" famil"+(r.count===1?"y":"ies")+" found.","ok");
+      if(!r.families.length){ $("#lRes").innerHTML='<p class="note">No match.</p>'; return; }
+      $("#lRes").innerHTML=r.families.map(function(f){
+        var creditsHtml = f.credits.length ? f.credits.map(function(c){
+          return '<div style="background:#fdfbf8;border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin:8px 0">'
+            +'<div><b style="font-family:monospace">'+esc(c.code)+'</b> \u2014 <b>'+money(c.amount)+'</b></div>'
+            +'<ul style="margin:6px 0 8px;padding-left:18px;font-size:.84rem;color:var(--slate)">'+c.lots.map(fmtLot).join("")+'</ul>'
+            +'<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">'
+            +'<input type="number" step="0.01" min="0.01" class="rdAmt" data-code="'+esc(c.code)+'" placeholder="$ to deduct" style="max-width:130px;margin:0">'
+            +'<input type="text" class="rdNote" data-code="'+esc(c.code)+'" placeholder="Note (e.g. redeemed by dad)" style="flex:1;min-width:150px;margin:0">'
+            +'<button class="rdGo" data-code="'+esc(c.code)+'" style="margin:0;padding:9px 16px;font-size:.85rem">Deduct</button>'
+            +'</div></div>';
+        }).join("") : '<p class="note" style="margin:6px 0">No credit on this family right now.</p>';
+        return '<div class="card" style="box-shadow:none;margin-bottom:10px">'
+          +'<div style="font-weight:800">'+esc(f.parentName||"(no parent name)")+' \u00b7 <span class="note">\u00b7\u00b7\u00b7'+esc(f.phone4)+'</span></div>'
+          +'<div class="note">'+esc(f.children.join(", "))+(f.referralCode?(' \u00b7 referral code <b>'+esc(f.referralCode)+'</b>'):'')+'</div>'
+          +'<div style="margin-top:4px;font-weight:800;color:var(--rose-deep)">Total credit: '+money(f.total)+'</div>'
+          +creditsHtml+'</div>';
+      }).join("");
+      wireDeduct();
+    }catch(e){ out($("#lOut"),"Network error.","err"); }
+  }
+  function wireDeduct(){
+    Array.prototype.forEach.call(document.querySelectorAll(".rdGo"),function(btn){
+      btn.onclick=async function(){
+        var code=btn.getAttribute("data-code");
+        var amtEl=document.querySelector('.rdAmt[data-code="'+code+'"]');
+        var noteEl=document.querySelector('.rdNote[data-code="'+code+'"]');
+        var amt=parseFloat(amtEl.value);
+        if(!(amt>0)){ out($("#lOut"),"Enter the dollar amount to deduct.","err"); return; }
+        if(!confirm("Deduct $"+amt.toFixed(2)+" from "+code+"?\n\nThe soonest-to-expire credit is used first. Remember to key the same discount into Square.")) return;
+        btn.disabled=true; btn.textContent="Working\u2026";
+        try{
+          var r=await (await fetch("/api/referrals",{method:"POST",headers:{"content-type":"application/json"},
+            body:JSON.stringify({key:KEY(),action:"redeem",code:code,amount:amt,note:noteEl.value.trim()})})).json();
+          if(r.ok){ out($("#lOut"),r.message,"ok"); lookup(); }
+          else { out($("#lOut"),r.error||"Couldn't deduct.","err"); btn.disabled=false; btn.textContent="Deduct"; }
+        }catch(e){ out($("#lOut"),"Network error.","err"); btn.disabled=false; btn.textContent="Deduct"; }
+      };
+    });
+  }
+  $("#lgo").onclick=lookup;
+  $("#lq").addEventListener("keydown",function(e){ if(e.key==="Enter") lookup(); });
+
+  try{ var k=sessionStorage.getItem("lh_ref_key"); if(k){ $("#key").value=k; load(); } }catch(e){}
+})();
+</script>
+</body>
+</html>

@@ -119,7 +119,7 @@ body.focusing details.secgroup.has-focus > summary{display:none}
 </div>
 
 <div class="wrap">
-<div id="secBar"><button id="secToggle" type="button">Sections ▾</button><div id="secMenu"><a href="#sec-schedule">Daily schedule</a><a href="#sec-bookings">Bookings by date</a><a href="#sec-walkin">Walk-in check-in</a><a href="#sec-punch">Punch-card check-in</a><a href="/loyalty.html">Loyalty &amp; Punch Cards</a><a href="#sec-reschedule">Reschedule &amp; cancel</a><a href="#sec-redeem">Redeem a credit</a><a href="#sec-credit-backfill">Backfill credit emails</a><a href="#sec-party">Session capacity &amp; blocking</a><a href="#sec-issue">Issue a credit</a><a href="#sec-punchissue">Legacy card tools</a><a href="#sec-code">Manage a code</a><a href="#sec-closures">Closures &amp; hours</a><a href="#sec-passes">Legacy prepaid holders</a><a href="#sec-grandfather">Grandfather note</a><a href="#sec-parties">Party bookings</a><a href="#sec-deposit">Record a party deposit</a><a href="#sec-partyoff">Open play only (no parties)</a><a href="/headcount.html">Head count</a><a href="#sec-prices">Manage prices</a><a href="#sec-weekly">Weekly hours</a><a href="#sec-seasonal">Seasonal hours</a><a href="#sec-weekday-special">Weekday special</a><a href="#sec-famcode">Family master code</a><a href="#sec-discount">Discount codes</a><a href="#sec-news">News update</a><a href="#sec-promos">Promotions &amp; Flyers</a><a href="#sec-events">Upcoming events</a><a href="#sec-partners">Partners page</a><a href="#sec-newsletter">Newsletter</a><a href="#sec-birthdays">Birthday club</a></div></div>
+<div id="secBar"><button id="secToggle" type="button">Sections ▾</button><div id="secMenu"><a href="#sec-schedule">Daily schedule</a><a href="#sec-bookings">Bookings by date</a><a href="#sec-walkin">Walk-in check-in</a><a href="#sec-punch">Punch-card check-in</a><a href="/loyalty.html">Loyalty &amp; Punch Cards</a><a href="/referrals.html" style="margin-left:8px">🤝 Referrals</a><a href="#sec-reschedule">Reschedule &amp; cancel</a><a href="#sec-redeem">Redeem a credit</a><a href="#sec-credit-backfill">Backfill credit emails</a><a href="#sec-party">Session capacity &amp; blocking</a><a href="#sec-issue">Issue a credit</a><a href="#sec-punchissue">Legacy card tools</a><a href="#sec-code">Manage a code</a><a href="#sec-closures">Closures &amp; hours</a><a href="#sec-passes">Legacy prepaid holders</a><a href="#sec-grandfather">Grandfather note</a><a href="#sec-parties">Party bookings</a><a href="#sec-deposit">Record a party deposit</a><a href="#sec-partyoff">Open play only (no parties)</a><a href="/headcount.html">Head count</a><a href="#sec-prices">Manage prices</a><a href="#sec-weekly">Weekly hours</a><a href="#sec-seasonal">Seasonal hours</a><a href="#sec-weekday-special">Weekday special</a><a href="#sec-partypromo">Party booking promo</a><a href="#sec-famcode">Family master code</a><a href="#sec-discount">Discount codes</a><a href="#sec-news">News update</a><a href="#sec-promos">Promotions &amp; Flyers</a><a href="#sec-events">Upcoming events</a><a href="#sec-partners">Partners page</a><a href="#sec-newsletter">Newsletter</a><a href="#sec-birthdays">Birthday club</a></div></div>
 <nav id="sideNav" aria-label="Sections"><div class="snav-title">Sections</div><a href="#sec-schedule">Daily schedule</a><a href="#sec-bookings">Bookings by date</a><a href="#sec-walkin">Walk-in check-in</a><a href="#sec-punch">Punch-card check-in</a><a href="/loyalty.html">Loyalty &amp; Punch Cards</a><a href="#sec-reschedule">Reschedule &amp; cancel</a><a href="#sec-redeem">Redeem a credit</a><a href="#sec-credit-backfill">Backfill credit emails</a><a href="#sec-party">Session capacity &amp; blocking</a><a href="#sec-issue">Issue a credit</a><a href="#sec-punchissue">Legacy card tools</a><a href="#sec-code">Manage a code</a><a href="#sec-closures">Closures &amp; hours</a><a href="#sec-passes">Legacy prepaid holders</a><a href="#sec-grandfather">Grandfather note</a><a href="#sec-parties">Party bookings</a><a href="#sec-deposit">Record a party deposit</a><a href="#sec-partyoff">Open play only (no parties)</a><a href="/headcount.html">Head count</a><a href="#sec-prices">Manage prices</a><a href="#sec-weekly">Weekly hours</a><a href="#sec-seasonal">Seasonal hours</a><a href="#sec-weekday-special">Weekday special</a><a href="#sec-discount">Discount codes</a><a href="#sec-news">News update</a><a href="#sec-rating">Reviews rating</a><a href="#sec-photos">Site photos</a><a href="#sec-promos">Promotions &amp; Flyers</a><a href="#sec-events">Upcoming events</a><a href="#sec-partners">Partners page</a><a href="#sec-newsletter">Newsletter</a><a href="#sec-birthdays">Birthday club</a></nav>
   <h1>Store Credit</h1>
   <div class="sub">Issue and look up Little Haven store credit codes</div>
@@ -567,7 +567,49 @@ body.focusing details.secgroup.has-focus > summary{display:none}
     <div class="out" id="wsOut"></div>
     </div>
 
-    <div class="card" id="sec-famcode">
+    <div class="card" id="sec-partypromo">
+      <h2>&#127881; Party booking promo (one-day special)</h2>
+      <p class="note" style="margin-top:0">Runs off <b>the date the party is booked</b>, not the party date &mdash;
+      book on Labor Day for a November party and it still counts. The deposit never changes; the discount comes off
+      the <b>final balance</b> you settle at the end of the party. It only locks in once you mark the deposit paid,
+      so no deposit means no discount.</p>
+
+      <div id="ppCurrent" class="note">Loading&hellip;</div>
+
+      <label style="margin-top:12px">Promo name (customers see this)</label>
+      <input type="text" id="ppName" placeholder="Labor Day Special" maxlength="60">
+
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px">
+        <div style="flex:1;min-width:150px">
+          <label>Discount type</label>
+          <select id="ppKind"><option value="amount">$ off</option><option value="percent">% off</option></select>
+        </div>
+        <div style="flex:1;min-width:120px">
+          <label>Amount</label>
+          <input type="number" id="ppValue" min="1" placeholder="100">
+          <p class="note" style="margin:4px 0 0">Dollars for &ldquo;$ off&rdquo;, e.g. 100</p>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px">
+        <div style="flex:1;min-width:150px"><label>Bookings from</label><input type="date" id="ppStart"></div>
+        <div style="flex:1;min-width:150px"><label>Bookings until</label><input type="date" id="ppEnd"></div>
+      </div>
+      <p class="note" style="margin:4px 0 10px">Same date in both boxes for a one-day special.</p>
+
+      <label>Banner line for the parties page (optional)</label>
+      <input type="text" id="ppBlurb" placeholder="Today only &mdash; book any party package and take $100 off your final balance." maxlength="200">
+
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
+        <button type="button" id="ppSave" style="margin:0">Save promo</button>
+        <button type="button" id="ppClear" class="alt" style="margin:0">Turn promo off</button>
+        <button type="button" id="ppLog" class="alt" style="margin:0">Who claimed it</button>
+      </div>
+      <div id="ppOut" class="out" style="display:none;margin-top:10px"></div>
+      <div id="ppClaims" style="margin-top:12px"></div>
+    </div>
+    
+  <div class="card" id="sec-famcode">
       <h2>&#128104;&#8205;&#128105;&#8205;&#128103; Family master code</h2>
       <p class="note" style="margin-top:0"><b>Owner only.</b> One code that zeroes the entire admission
       total on a normal online booking, whatever the headcount. Never expires, unlimited uses. The booking
@@ -1710,6 +1752,7 @@ function renderParties(){
     h+='<div style="border:1px solid #efe7da;border-radius:12px;padding:12px 14px;margin:8px 0;'+(past?"opacity:.6;":"")+'background:#fff">'
       +'<div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><div style="font-weight:800">'+esc(p.date)+' · '+esc(p.slotLabel)+'</div><span style="background:'+sbg+';color:'+scol+';font-weight:800;font-size:.72rem;padding:3px 10px;border-radius:999px">'+stxt+'</span></div>'
       +'<div style="margin-top:4px;font-weight:700;color:#a85f59">'+esc(p.package)+(p.deposit?' · deposit $'+(p.deposit/100).toFixed(2):"")+'</div>'
+      +(p.promo?('<div style="margin-top:5px;display:inline-block;background:#e7f0df;border:1px solid #c2d7bd;border-radius:999px;padding:3px 10px;font-size:.75rem;font-weight:800;color:#3f5d33">\uD83C\uDF89 '+esc(p.promo.name)+' — '+esc(p.promo.label)+' off final balance'+(p.promo.pending?' (pending deposit)':'')+'</div>'):'')
       +'<div style="margin-top:4px;font-size:.86rem">'+esc(p.name||"—")+(p.childName?' — for '+esc(p.childName):"")+(p.kids?' · '+p.kids+' kids':"")+'</div>'
       +'<div style="color:var(--taupe);font-size:.8rem">'+esc(p.phone||"")+(p.email?' · '+esc(p.email):"")+'</div>'
       +'<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">'+(p.depositPaid
@@ -3089,6 +3132,68 @@ async
     if(!confirm('Generate a NEW family code?\n\nThe current code stops working the moment you do this. Anyone still holding the old one will be turned away.')) return;
     call({action:'rotate', maxChildren:parseInt(el('fcMax').value,10)||6, notifyEmail:el('fcEmail').value.trim()});
   };
+})();
+
+/* ---- Party booking promo (admin only) ---- */
+(function(){
+  function el(id){ return document.getElementById(id); }
+  if(!el('sec-partypromo')) return;
+  function KEYV(){ var k=el('key'); return k?k.value.trim():''; }
+  function esc3(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+  function out(m,c){ var o=el('ppOut'); o.style.display='block'; o.className='out '+(c||''); o.textContent=m; }
+
+  function render(p, live){
+    var box=el('ppCurrent');
+    if(!p || p.active===false){ box.innerHTML='<span style="color:#aea298;font-weight:700">No promo set up.</span>'; return; }
+    box.innerHTML='<div style="background:'+(live?'#e7f0df':'#fdfbf8')+';border:1.5px solid '+(live?'#c2d7bd':'#e7ddd0')+';border-radius:14px;padding:13px">'
+      +'<div style="font-weight:800;color:#2a2622">'+esc3(p.name)+' &mdash; '
+      +(p.kind==='percent'?(p.value+'% off'):('$'+p.value+' off'))+'</div>'
+      +'<div class="note" style="margin:4px 0 0">Bookings '+esc3(p.startDate)+(p.endDate&&p.endDate!==p.startDate?(' to '+esc3(p.endDate)):'')
+      +' &middot; '+(live?'<b style="color:#3f7d54">RUNNING NOW</b>':'not running today')+'</div></div>';
+    el('ppName').value=p.name||''; el('ppKind').value=p.kind||'amount';
+    el('ppValue').value=p.kind==='percent'?(p.value||''):((p.value||0)/100);
+    el('ppStart').value=p.startDate||''; el('ppEnd').value=p.endDate||''; el('ppBlurb').value=p.blurb||'';
+  }
+
+  function renderClaims(list){
+    var box=el('ppClaims');
+    if(!list||!list.length){ box.innerHTML='<p class="note">Nobody has claimed it yet.</p>'; return; }
+    box.innerHTML='<div style="overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:.85rem">'
+      +'<thead><tr style="background:#f4ece1"><th style="padding:6px 8px;text-align:left">Booked on</th>'
+      +'<th style="padding:6px 8px;text-align:left">Party</th><th style="padding:6px 8px;text-align:left">Customer</th>'
+      +'<th style="padding:6px 8px;text-align:left">Package</th><th style="padding:6px 8px;text-align:left">Discount</th></tr></thead><tbody>'
+      +list.map(function(c){ return '<tr><td style="padding:6px 8px;white-space:nowrap">'+esc3(c.bookedOn||String(c.at||'').slice(0,10))+'</td>'
+        +'<td style="padding:6px 8px;white-space:nowrap">'+esc3(c.partyDate||'')+'</td>'
+        +'<td style="padding:6px 8px">'+esc3(c.customer||'')+'<br><span class="note">'+esc3(c.email||'')+'</span></td>'
+        +'<td style="padding:6px 8px">'+esc3(c.packageLabel||'')+'</td>'
+        +'<td style="padding:6px 8px;white-space:nowrap">'+esc3(c.label||'')+'</td></tr>'; }).join('')
+      +'</tbody></table></div>';
+  }
+
+  async function call(body,okMsg){
+    var key=KEYV(); if(!key){ out('Enter your admin key at the top of the page.','err'); return; }
+    try{
+      var r=await (await fetch('/api/partypromo',{method:'POST',headers:{'content-type':'application/json'},
+        body:JSON.stringify(Object.assign({key:key},body))})).json();
+      if(r.ok){ if(r.message||okMsg) out(r.message||okMsg,'ok'); render(r.promo,r.live); if(r.claims) renderClaims(r.claims); }
+      else out(r.error||'That did not work.','err');
+    }catch(e){ out('Network error.','err'); }
+  }
+
+  el('ppSave').onclick=function(){
+    var kind=el('ppKind').value;
+    var raw=parseFloat(el('ppValue').value)||0;
+    // Dollars in the box, cents on the wire.
+    var value = kind==='percent' ? Math.round(raw) : Math.round(raw*100);
+    call({action:'save',name:el('ppName').value.trim()||'Party special',kind:kind,value:value,
+      startDate:el('ppStart').value,endDate:el('ppEnd').value||el('ppStart').value,blurb:el('ppBlurb').value.trim()});
+  };
+  el('ppClear').onclick=function(){
+    if(!confirm('Turn the promo off?\n\nParties already booked keep their discount — this only stops new ones qualifying.')) return;
+    call({action:'clear'});
+  };
+  el('ppLog').onclick=function(){ call({action:'log'}); };
+  call({action:'get'});
 })();
 </script>
 </body>

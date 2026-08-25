@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Refer a Friend — Little Haven Play Studio</title>
+<meta name="description" content="Give a friend $5 off their first visit and earn $5 for yourself when they come to play.">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,400&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root{--cream:#faf7f3;--sand:#f4ece1;--blush-pale:#fdf1ec;--blush:#efcfc4;--rose:#c97d76;
+        --rose-deep:#a85f59;--sage-pale:#ecf1e8;--sage-light:#c2d7bd;--sage:#7ba676;--sage-dark:#4d7848;
+        --slate:#5c6470;--taupe:#aea298;--charcoal:#2a2622;--line:#e7ddd0;
+        --shadow:0 4px 24px rgba(0,0,0,.07);--radius:22px}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--cream);font-family:'Nunito',sans-serif;color:var(--charcoal);line-height:1.6}
+  .top{padding:16px;text-align:center;border-bottom:1px solid var(--line);background:#fff}
+  .top a{font-family:'Cormorant Garamond',Georgia,serif;font-size:1.35rem;color:var(--charcoal);text-decoration:none}
+  .top a i{color:var(--rose-deep)}
+  .wrap{max-width:560px;margin:0 auto;padding:22px 16px 60px}
+  h1{font-family:'Cormorant Garamond',Georgia,serif;font-weight:400;font-size:2.1rem;margin:.2em 0 .1em;text-align:center}
+  .sub{text-align:center;color:var(--slate);margin:0 0 22px}
+  .card{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow);margin-bottom:16px}
+  label{display:block;font-size:.72rem;font-weight:900;letter-spacing:.06em;text-transform:uppercase;color:var(--taupe);margin:0 0 6px}
+  input{width:100%;border:1.5px solid var(--line);border-radius:12px;padding:13px;font-family:'Nunito';font-weight:700;
+        font-size:1rem;background:#fcfaf6;outline:none;color:var(--charcoal)}
+  input:focus{border-color:var(--rose);box-shadow:0 0 0 3px rgba(201,125,118,.13)}
+  button{font-family:'Nunito';font-weight:800;border:0;border-radius:999px;padding:13px 22px;font-size:.95rem;
+         background:var(--rose);color:#fff;cursor:pointer;width:100%;margin-top:10px}
+  button:disabled{opacity:.55;cursor:default}
+  button.alt{background:var(--sage);}
+  button.ghost{background:var(--sand);color:var(--slate)}
+  .codebox{background:var(--sage-pale);border:2px dashed var(--sage-light);border-radius:16px;padding:18px;text-align:center;margin:4px 0 14px}
+  .codebox .lbl{font-size:.7rem;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:var(--slate)}
+  .codebox .code{font-family:monospace;font-size:2rem;font-weight:800;color:var(--sage-dark);letter-spacing:.08em;margin:4px 0}
+  .steps{counter-reset:s;padding:0;margin:0;list-style:none}
+  .steps li{counter-increment:s;position:relative;padding-left:38px;margin-bottom:12px;color:var(--slate)}
+  .steps li::before{content:counter(s);position:absolute;left:0;top:1px;width:26px;height:26px;border-radius:50%;
+    background:var(--blush-pale);color:var(--rose-deep);font-weight:900;font-size:.85rem;display:flex;align-items:center;justify-content:center}
+  .bal{background:var(--blush-pale);border:1px solid var(--blush);border-radius:14px;padding:14px;margin-top:12px}
+  .bal .amt{font-size:1.5rem;font-weight:900;color:var(--rose-deep)}
+  .bal ul{margin:6px 0 0;padding-left:18px;color:var(--slate);font-size:.88rem}
+  .msg{margin-top:10px;font-weight:700;font-size:.9rem}
+  .msg.err{color:#b8524a}.msg.ok{color:var(--sage-dark)}
+  .hide{display:none}
+  .fine{color:var(--taupe);font-size:.82rem;text-align:center;margin-top:18px}
+</style>
+</head>
+<body>
+<div class="top"><a href="/index.html">Little <i>Haven</i> Play Studio</a></div>
+<div class="wrap">
+  <h1>Refer a friend 🎈</h1>
+  <p class="sub">Give a friend <b>$5 off</b> their first visit.<br>Get <b>$5</b> yourself once they come to play.</p>
+
+  <div class="card" id="lookupCard">
+    <label for="phone">Your phone number</label>
+    <input id="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="(760) 555-1234">
+    <p style="color:var(--taupe);font-size:.84rem;margin:6px 0 0">Use the number you book with — that's how we find your family.</p>
+    <button id="go">Get my referral code</button>
+    <div id="msg" class="msg"></div>
+  </div>
+
+  <div class="card hide" id="resultCard">
+    <div class="codebox">
+      <div class="lbl">Your referral code</div>
+      <div class="code" id="code">—</div>
+      <div style="color:var(--slate);font-size:.85rem" id="count"></div>
+    </div>
+
+    <button id="share" class="alt">📲 Share with a friend</button>
+    <button id="copyMsg" class="ghost">Copy the message</button>
+    <button id="copyCode" class="ghost">Copy just the code</button>
+    <div id="shareMsg" class="msg"></div>
+
+    <div class="bal hide" id="balBox">
+      <div style="font-size:.72rem;font-weight:900;letter-spacing:.06em;text-transform:uppercase;color:var(--slate)">Your referral credit</div>
+      <div class="amt" id="balAmt">$0.00</div>
+      <div style="color:var(--slate);font-size:.85rem">Code <b id="creditCode"></b> — enter it in the store credit box when you book.</div>
+      <ul id="lots"></ul>
+    </div>
+
+    <h3 style="font-family:'Cormorant Garamond',Georgia,serif;font-weight:400;font-size:1.35rem;margin:22px 0 10px">How it works</h3>
+    <ol class="steps">
+      <li>Share your code or link with a friend who hasn't been to Little Haven yet.</li>
+      <li>They get <b>$5 off</b> their first booking when they use it.</li>
+      <li>Once they come and play, <b>$5</b> lands in your referral credit automatically.</li>
+      <li>Use your credit any time — it works alongside any discount we're running.</li>
+    </ol>
+    <p style="color:var(--taupe);font-size:.84rem;margin-top:14px">Each $5 is good for 60 days from the day you earn it.
+    New families only — one reward per friend.</p>
+  </div>
+
+  <p class="fine">Questions? <a href="mailto:hello@littlehavenplay.com" style="color:var(--rose-deep)">hello@littlehavenplay.com</a></p>
+</div>
+
+<script>
+(function(){
+  var $=function(s){return document.querySelector(s);};
+  var shareData=null;
+
+  function money(c){ return "$"+((c||0)/100).toFixed(2); }
+  function say(el,t,cls){ el.textContent=t; el.className="msg "+(cls||""); }
+
+  async function lookup(){
+    var phone=$("#phone").value.trim();
+    var digits=phone.replace(/\D/g,"");
+    if(digits.length<10){ say($("#msg"),"Please enter your full 10-digit phone number.","err"); return; }
+    $("#go").disabled=true; say($("#msg"),"Looking you up…","");
+    try{
+      var r=await (await fetch("/api/referrals",{method:"POST",headers:{"content-type":"application/json"},
+        body:JSON.stringify({action:"my-code",phone:phone})})).json();
+      if(!r.ok){ say($("#msg"),r.error||"Something went wrong.","err"); $("#go").disabled=false; return; }
+      say($("#msg"),"","");
+      $("#code").textContent=r.code;
+      $("#count").textContent = r.referredCount ? (r.referredCount+" friend"+(r.referredCount===1?"":"s")+" referred so far — thank you!") : "Share it and start earning.";
+      shareData={ text:r.shareText, url:r.url, code:r.code };
+      if(r.balance>0){
+        $("#balBox").classList.remove("hide");
+        $("#balAmt").textContent=money(r.balance);
+        $("#creditCode").textContent=r.creditCode||"";
+        $("#lots").innerHTML=(r.lots||[]).map(function(l){return "<li>"+l+"</li>";}).join("");
+      }
+      $("#lookupCard").classList.add("hide");
+      $("#resultCard").classList.remove("hide");
+    }catch(e){ say($("#msg"),"Couldn't reach us — please try again.","err"); $("#go").disabled=false; }
+  }
+
+  $("#go").onclick=lookup;
+  $("#phone").addEventListener("keydown",function(e){ if(e.key==="Enter") lookup(); });
+
+  // The native share sheet is the whole point on a phone — one tap, pick a
+  // contact, send. Falls back to copying on desktop where it doesn't exist.
+  $("#share").onclick=async function(){
+    if(!shareData) return;
+    if(navigator.share){
+      try{ await navigator.share({ title:"Little Haven Play Studio", text:shareData.text }); return; }
+      catch(e){ if(e && e.name==="AbortError") return; }
+    }
+    copy(shareData.text,"Message copied — paste it into a text.");
+  };
+  $("#copyMsg").onclick=function(){ if(shareData) copy(shareData.text,"Message copied!"); };
+  $("#copyCode").onclick=function(){ if(shareData) copy(shareData.code,"Code copied!"); };
+
+  function copy(text,okMsg){
+    function done(){ say($("#shareMsg"),okMsg,"ok"); setTimeout(function(){ say($("#shareMsg"),"",""); },2500); }
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(done).catch(fallback);
+    } else fallback();
+    function fallback(){
+      var t=document.createElement("textarea"); t.value=text; t.style.position="fixed"; t.style.opacity="0";
+      document.body.appendChild(t); t.select();
+      try{ document.execCommand("copy"); done(); }catch(e){ say($("#shareMsg"),"Copy didn't work — long-press the code to copy it.","err"); }
+      document.body.removeChild(t);
+    }
+  }
+})();
+</script>
+<script src="/assets/chat.js" defer></script>
+</body>
+</html>

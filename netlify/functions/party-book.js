@@ -6,6 +6,7 @@
 // Body: { date, partySlot, package, childName, name, phone, email, kids, adults, comment, agree, staffPin? }
 
 import { getStore } from "@netlify/blobs";
+import { getLivePartyPromo, promoValue, promoLabel } from "./partypromo.js";
 import { SIGNATURE_HTML } from "./lib-email.js";
 import {
   PARTY_SLOTS, PARTY_SLOT_IDS, PARTY_PACKAGES, isPartyDay,
@@ -42,6 +43,9 @@ export default async (req) => {
   if (!PARTY_SLOT_IDS.includes(partySlot)) return json({ error: "Pick a valid party time." }, 400);
   const pkg = PARTY_PACKAGES[pkgId];
   if (!pkg)                              return json({ error: "Pick a party package." }, 400);
+  // Is a booking-window promo running today? Checked against the booking date,
+  // never the party date.
+  const livePromo = await getLivePartyPromo();
   if (!childName)                        return json({ error: "Please enter the birthday child's name." }, 400);
   if (!name)                             return json({ error: "Please enter your full name." }, 400);
   if ((phone.replace(/\D/g, "")).length < 7) return json({ error: "Please enter a valid phone number." }, 400);
@@ -65,6 +69,17 @@ export default async (req) => {
     status: isStaff ? "confirmed-instore" : "pending-deposit",
     date, partySlot, slotLabel,
     package: pkgId, packageLabel: pkg.label, deposit: pkg.deposit,
+    // Booking-window promo, attached at the moment of booking. It stays "pending"
+    // until the deposit is marked paid — no deposit, no discount.
+    ...(livePromo ? { promo: {
+      name: livePromo.name,
+      kind: livePromo.kind,
+      value: livePromo.value,
+      label: promoLabel(livePromo),
+      amount: promoValue(livePromo, pkg.price),
+      bookedOn: todayPacificDate(),
+      pending: true,
+    } } : {}),
     childName, name, phone, email, kids, adults, comment,
     at: new Date().toISOString(),
   };
@@ -109,6 +124,7 @@ async function emailStudio(r) {
     <table style="width:100%;border-collapse:collapse;font-size:15px">
       <tr><td style="padding:5px 0;color:#5c6470;width:150px">Status</td><td style="padding:5px 0;font-weight:bold">${r.status}</td></tr>
       <tr><td style="padding:5px 0;color:#5c6470">Package</td><td style="padding:5px 0;font-weight:bold">${esc(r.packageLabel)} (deposit ${money(r.deposit)})</td></tr>
+      ${r.promo ? `<tr><td style="padding:5px 0;color:#5c6470">Promo</td><td style="padding:5px 0;font-weight:bold;color:#3f5d33">${esc(r.promo.name)} — ${esc(r.promo.label)} off the final balance</td></tr>` : ""}
       <tr><td style="padding:5px 0;color:#5c6470">Date</td><td style="padding:5px 0;font-weight:bold">${esc(r.date)}</td></tr>
       <tr><td style="padding:5px 0;color:#5c6470">Time</td><td style="padding:5px 0;font-weight:bold">${esc(r.slotLabel)}</td></tr>
       <tr><td style="padding:5px 0;color:#5c6470">Birthday child</td><td style="padding:5px 0;font-weight:bold">${esc(r.childName)}</td></tr>
@@ -156,6 +172,11 @@ async function emailCustomer(r, depositLink) {
     ${pending && depositLink
       ? `<p style="margin:16px 0"><a href="${depositLink}" style="display:inline-block;background:#c97d76;color:#fff;text-decoration:none;font-weight:bold;padding:13px 22px;border-radius:12px">Pay your deposit to confirm →</a></p><p style="color:#5c6470;font-size:13px">Your time is held, but it isn't confirmed until the deposit is paid.</p>`
       : `<p style="color:#5f7d52;font-weight:bold;margin:16px 0">Your reservation is confirmed — we can't wait to celebrate! 🎂</p>`}
+    ${r.promo ? `<div style="background:#e7f0df;border:1px solid #c2d7bd;border-radius:12px;padding:14px 16px;margin:14px 0">
+      <p style="margin:0 0 6px;font-weight:bold;color:#3f5d33">🎉 ${esc(r.promo.name)} — ${esc(r.promo.label)} applied!</p>
+      <p style="margin:0;color:#5c6470;font-size:14px">Thank you for taking advantage of our special! Your deposit stays the same,
+      and <b>${esc(r.promo.label)}</b> comes off your remaining balance when we settle up at the end of your party.</p>
+    </div>` : ""}
     <div style="background:#f3f0ff;border-radius:12px;padding:14px 16px;margin:14px 0">
       <p style="margin:0 0 6px;font-weight:bold;color:#5b4636">📋 Don't forget the waiver!</p>
       <p style="margin:0 0 10px;color:#5c6470;font-size:14px">Every guest must sign before arrival to avoid delays at your party. Please forward this link to all your guests, or have them sign at littlehavenplay.com:</p>
@@ -171,6 +192,11 @@ async function emailCustomer(r, depositLink) {
         subject: `${pending ? "Party request" : "Party confirmed"} — ${r.childName}'s party on ${r.date}`, html: html + SIGNATURE_HTML }),
     });
   } catch {}
+}
+
+function todayPacificDate() {
+  return new Date(new Date().toLocaleString("en-US", { timeZone: "America/Los_Angeles" }))
+    .toISOString().slice(0, 10);
 }
 
 function json(obj, status = 200) {
