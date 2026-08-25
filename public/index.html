@@ -22,6 +22,15 @@ nav .logo img{height:46px;width:auto;display:block}
 .bnw{font-size:.64rem;letter-spacing:.05em;text-transform:uppercase;background:var(--sage);color:#fff;padding:.5rem 1rem;border-radius:40px;text-decoration:none;font-weight:700;transition:background .2s;white-space:nowrap}
 .bnw:hover{background:var(--sage-dark)}
 .bnb{font-size:.64rem;letter-spacing:.05em;text-transform:uppercase;background:var(--rose);color:#fff;padding:.5rem 1rem;border-radius:40px;text-decoration:none;font-weight:700;transition:background .2s;white-space:nowrap}
+  /* Third header button. Outlined rather than solid so Book Now stays the
+     clear primary action — three solid buttons would compete with each other. */
+  .bnr{font-size:.64rem;letter-spacing:.05em;text-transform:uppercase;background:var(--blush-pale);
+    color:var(--rose-deep);border:1.5px solid var(--blush);padding:calc(.5rem - 1.5px) 1rem;border-radius:40px;
+    text-decoration:none;font-weight:700;transition:background .2s,border-color .2s;white-space:nowrap}
+  .bnr:hover{background:#fbe7e2;border-color:var(--rose-light)}
+  /* Below ~900px the three buttons crowd the burger, so the referral one drops
+     out of the header — it's still in the mobile menu. */
+  @media (max-width:900px){ .bnr{display:none} }
 .bnb:hover{background:var(--rose-deep)}
 .wbar{background:var(--sage-dark);padding:.5rem 2rem;display:flex;align-items:center;justify-content:center;gap:1rem;flex-wrap:wrap;margin-top:64px}
 .wbar p{font-size:.73rem;color:rgba(255,255,255,.92);font-weight:600}
@@ -294,7 +303,8 @@ nav, .wbar, .ticker, footer{text-align:left}
 <li><a href="/aboutus.html">About Us</a></li>
 <li><a href="#openplay">Open Play</a></li>
 <li><a href="#birthday">Parties</a></li>
-<li><a href="/cards.html">Gift &amp; Loyalty Cards</a><a href="/refer.html">Refer a Friend</a></li>
+<li><a href="/cards.html">Gift &amp; Loyalty Cards</a></li>
+<li><a href="/refer.html">Refer a Friend</a></li>
 <li><a href="/events.html">Events &amp; Promos</a></li>
 <li><a href="/reviews.html" target="_blank" rel="noopener">Reviews</a></li>
 <li><a href="#faq">FAQ</a></li>
@@ -302,6 +312,7 @@ nav, .wbar, .ticker, footer{text-align:left}
 </ul>
 <div class="nav-act">
 <button class="navburger" id="navBurger" aria-label="Open menu" aria-expanded="false" aria-controls="navLinks">☰</button>
+<a class="bnr" href="/refer.html">🎈 Refer a Friend</a>
 <a class="bnw" href="https://waivermaster.com/sign.html?q=DU3F7C23VNX8D" target="_blank">📝 Sign Waiver</a>
 <a class="bnb" href="/book.html" target="_blank">🎉 Book Now</a>
 </div>
@@ -547,7 +558,7 @@ nav, .wbar, .ticker, footer{text-align:left}
 <a href="/aboutus.html">About Us</a>
 <a href="index.html#openplay">Open Play</a>
 <a href="index.html#birthday">Parties</a>
-<a href="/cards.html">Gift &amp; Loyalty Cards</a><a href="/refer.html">Refer a Friend</a>
+<a href="/cards.html">Gift &amp; Loyalty Cards</a>
 <a href="/events.html">Events &amp; Promos</a>
 <a href="/reviews.html" target="_blank" rel="noopener">Reviews</a>
 <a href="#faq">FAQ</a>
