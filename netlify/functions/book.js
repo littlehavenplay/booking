@@ -20,7 +20,7 @@ import {
 } from "./lib-settings.js";
 import { issueCode, sendWelcome, sendFamilyPunch, PUNCHES_FOR_REWARD, cleanName, last4 as loyaltyLast4, graduateLegacyCard } from "./lib-loyalty.js";
 import { getActiveFamCode, logFamUse } from "./famcode.js";
-import { FRIEND_DISCOUNT_CENTS, findFamilyByCode, isNewFamily, normalizeRef, last4 as refLast4 } from "./lib-referral.js";
+import { FRIEND_DISCOUNT_CENTS, findFamilyByCode, familyStatus, normalizeRef, last4 as refLast4 } from "./lib-referral.js";
 import { loadSeasonal, loadWeekly } from "./lib-hours.js";
 import { getClosure, slotBlockedByClosure, getEventHold } from "./lib-closures.js";
 import { getWeekdaySpecial } from "./lib-weekday.js";
@@ -377,7 +377,28 @@ export default async (req) => {
   if (refCode) {
     const refFam = await findFamilyByCode(refCode);
     const myP4 = refLast4(phone);
-    if (refFam && myP4 && myP4 !== refFam.phone4 && await isNewFamily(phone, { email, childNames })) {
+    // Same rule as /api/referrals check — the page and the server must never
+    // disagree about whether this discount applies.
+    const famStatus = await familyStatus({ phone, email, childNames,
+      childCodes: childNames.map(c => c && c.code).filter(Boolean) });
+
+    // If the browser sent a code we won't honour, STOP — don't quietly charge a
+    // different total than the page displayed. Tell them why and let the page
+    // recalculate. Silently dropping the discount is what made the total lie.
+    if (!refFam) {
+      return json({ error: "referral", message: "We don't recognise that referral code. Please remove it and try again." }, 409);
+    }
+    if (myP4 && myP4 === refFam.phone4) {
+      return json({ error: "referral", message: "That's your own referral code — it can't be used on your own booking. Please remove it." }, 409);
+    }
+    if (!famStatus.isNew) {
+      return json({ error: "referral", message:
+        "The referral discount is a welcome offer for families who haven't visited us before, and it looks like you've already played with us"
+        + (famStatus.match ? ` (${famStatus.match})` : "")
+        + ". Please remove the referral code. If you've earned referral credit, its code starts with LHC and goes in the store credit box." }, 409);
+    }
+
+    if (myP4) {
       referral = refFam;
       referralAmount = Math.min(FRIEND_DISCOUNT_CENTS,
         Math.max(0, subtotal - discountAmount - weekdaySpecialAmount - militaryAmount - rewardAmount - birthdayAmount));

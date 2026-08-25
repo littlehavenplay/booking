@@ -1007,6 +1007,14 @@ async function submitBooking(token){
       showMsg(data.message||"That time just filled up.","err"); if(data.error==="full") loadAvailability();
       $("#pay").disabled=false; newAttempt();
     } else {
+      // A referral rejection means the total on screen was wrong — clear it and
+      // recalculate so the customer sees the real price before trying again.
+      if(data.error==="referral"){
+        state.referral={code:"",amount:0,ok:false};
+        var rm=document.getElementById("refMsg");
+        if(rm){ rm.style.color="var(--red)"; rm.textContent="Referral code removed \u2014 see the note above the total."; }
+        updateTotals();
+      }
       showMsg(data.message||data.error||"Payment didn't go through.","err"); $("#pay").disabled=false; newAttempt();
     }
   }catch(e){ showMsg("Network error — please try again.","err"); $("#pay").disabled=false; }   // keep the same attemptId: the charge may have landed, so a retry must de-duplicate
@@ -1117,47 +1125,109 @@ init();
 <script src="/assets/chat.js" defer></script>
 <script>
 
-// ---- Referral code ($5 off, new families only) ----
+// ---- Referral code ($5 off, genuinely NEW families only) ----
+// The page must apply the SAME rule as the server. When it didn't, the total
+// showed a $5 discount the server correctly refused, and the customer was
+// charged a different amount than the page displayed.
 state.referral={code:"",amount:0,ok:false};
 (function(){
   var input=document.getElementById("refCode"), msg=document.getElementById("refMsg");
   if(!input) return;
-  // A ?ref=CODE link prefills and locks it in visually, so a shared link just works.
   try{
     var p=new URLSearchParams(location.search).get("ref");
     if(p){ input.value=p.toUpperCase().replace(/[^A-Z0-9]/g,""); }
   }catch(e){}
 
-  var t=null;
+  function childSignals(){
+    var names=[], codes=[];
+    document.querySelectorAll("#childNames .cn-row").forEach(function(r){
+      var f=(r.querySelector(".cn-f")||{}).value||"", l=(r.querySelector(".cn-l")||{}).value||"";
+      if(f.trim()||l.trim()) names.push({first:f.trim(),last:l.trim()});
+      var c=(r.querySelector(".cn-code")||{}).value||"";
+      if(c.trim()) codes.push(c.trim().toUpperCase());
+    });
+    return {names:names, codes:codes};
+  }
+
+  function clear(){ state.referral={code:"",amount:0,ok:false}; }
+
+  function deny(text){
+    clear();
+    msg.style.color="var(--red)";
+    msg.innerHTML=text;
+    updateTotals();
+  }
+
+  var t=null, seq=0;
   async function check(){
     var code=(input.value||"").toUpperCase().replace(/[^A-Z0-9]/g,"");
     input.value=code;
-    state.referral={code:"",amount:0,ok:false};
+    var my=++seq;
+    clear();
     if(!code){ msg.textContent=""; msg.style.color=""; updateTotals(); return; }
+
+    var sig=childSignals();
     var phone=(($("#phone")||{}).value||"");
+    var email=(($("#email")||{}).value||"");
+
+    // Nothing is applied until the server confirms it. Fail closed, always.
+    if(phone.replace(/\D/g,"").length<10){
+      msg.style.color="var(--taupe)";
+      msg.textContent="Enter your phone number above and we'll check this code.";
+      updateTotals(); return;
+    }
     try{
       var r=await (await fetch("/api/referrals",{method:"POST",headers:{"content-type":"application/json"},
-        body:JSON.stringify({action:"check",code:code,phone:phone})})).json();
+        body:JSON.stringify({action:"check",code:code,phone:phone,email:email,
+          childNames:sig.names,childCodes:sig.codes})})).json();
+      if(my!==seq) return;                       // a newer check superseded this one
       if(r.valid){
         state.referral={code:code,amount:r.amount||500,ok:true};
         msg.style.color="#3f7d54";
         msg.textContent="\u2713 $5 off applied"+(r.referrerName?(" \u2014 thanks to "+r.referrerName+"!"):"!");
-      } else {
-        msg.style.color="var(--red)";
-        msg.textContent = r.reason==="self" ? "That's your own referral code."
-          : r.reason==="not_new" ? "Referral codes are for families visiting us for the first time."
-          : "We don't recognise that referral code.";
+        updateTotals();
+        return;
       }
-    }catch(e){ msg.style.color="var(--taupe)"; msg.textContent="Couldn't check that code right now \u2014 we'll try again at checkout."; }
-    updateTotals();
+      var who = r.match ? (" (" + r.match + ")") : "";
+      if(r.reason==="self"){
+        deny("That's your own referral code \u2014 it can't be used on your own booking.");
+      } else if(r.reason==="existing_child"||r.reason==="existing_phone"||r.reason==="existing_email"){
+        deny("This is a <b>welcome offer for families who haven't visited us before</b>, and it looks like "
+          +"you've already played with us"+who+". <br><br>"
+          +"<b>Already a Little Haven family?</b> Referral codes are for sharing with friends \u2014 you earn "
+          +"<b>$5</b> each time one of them visits. Any credit you've already earned has its own code "
+          +"starting with <b>LHC</b>, and that goes in the <b>store credit</b> box further down, not here.");
+      } else if(r.reason==="not_found"){
+        deny("We don't recognise that referral code.");
+      } else {
+        deny("We couldn't verify that code, so it hasn't been applied.");
+      }
+    }catch(e){
+      if(my!==seq) return;
+      deny("We couldn't check that code right now, so it hasn't been applied.");
+    }
   }
-  input.addEventListener("input",function(){ clearTimeout(t); t=setTimeout(check,500); });
-  // The phone number decides whether they're a new family, so re-check when it changes.
-  var ph=document.getElementById("phone");
-  if(ph) ph.addEventListener("change",function(){ if(input.value) check(); });
-  if(input.value) setTimeout(check,300);
-})();
 
+  input.addEventListener("input",function(){ clearTimeout(t); t=setTimeout(check,500); });
+
+  // Anything that changes who is booking has to re-run the check — phone, email,
+  // a child's name, or a loyalty code being entered.
+  function recheck(){ if(input.value) { clearTimeout(t); t=setTimeout(check,350); } }
+  ["phone","email"].forEach(function(id){
+    var el=document.getElementById(id);
+    if(el){ el.addEventListener("change",recheck); el.addEventListener("blur",recheck); }
+  });
+  document.addEventListener("change",function(e){
+    if(e.target && e.target.classList &&
+       (e.target.classList.contains("cn-f")||e.target.classList.contains("cn-l")||e.target.classList.contains("cn-code"))) recheck();
+  },true);
+  document.addEventListener("blur",function(e){
+    if(e.target && e.target.classList && e.target.classList.contains("cn-code")) recheck();
+  },true);
+  window.__lhRecheckReferral = recheck;
+
+  if(input.value) setTimeout(check,600);
+})();
 </script>
 </body>
 </html>

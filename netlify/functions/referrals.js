@@ -11,7 +11,7 @@ import { getStore } from "@netlify/blobs";
 import { listAllKeys } from "./lib-blobs.js";
 import {
   REFERRAL_STORE, FRIEND_DISCOUNT_CENTS, REFERRER_REWARD_CENTS,
-  getOrCreateFamilyCode, findFamilyByCode, isNewFamily, normalizeRef,
+  getOrCreateFamilyCode, findFamilyByCode, isNewFamily, familyStatus, normalizeRef,
   last4, reconcileLots, lotSummaryLines, shareMessage, pacificToday, addDays,
 } from "./lib-referral.js";
 
@@ -45,14 +45,25 @@ export default async (req) => {
   }
 
   // ---------- PUBLIC: validate a code at booking time ----------
+  // This must apply EXACTLY the same rule the booking endpoint applies. When the
+  // two disagreed, the page promised $5 off and the server correctly refused —
+  // the customer saw one total and got charged another.
   if (action === "check") {
     const code = normalizeRef(b.code);
     if (!code) return json({ valid: false });
     const fam = await findFamilyByCode(code);
     if (!fam) return json({ valid: false, reason: "not_found" });
+
     const p4 = last4(b.phone);
     if (p4 && p4 === fam.phone4) return json({ valid: false, reason: "self" });
-    if (p4 && !(await isNewFamily(b.phone))) return json({ valid: false, reason: "not_new" });
+
+    const status = await familyStatus({
+      phone: b.phone, email: b.email,
+      childNames: b.childNames || [], childCodes: b.childCodes || [],
+    });
+    if (!status.isNew) {
+      return json({ valid: false, reason: status.reason, match: status.match || "" });
+    }
     return json({ valid: true, amount: FRIEND_DISCOUNT_CENTS,
       referrerName: (fam.name || "").split(" ")[0] || "" });
   }

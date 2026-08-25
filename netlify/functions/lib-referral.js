@@ -108,34 +108,49 @@ export async function findFamilyByCode(code) {
 // Is this phone genuinely a new family? A loyalty card is created on the first
 // booking, so having one is a reliable "they've been here before".
 // ---------------------------------------------------------------------------
-// Phone alone isn't enough: mum and dad have different numbers, so dad's phone
-// looks brand new and the household could quietly refer itself. Also match on
-// email and on the children's names — two kids called Silas and Steel Ruiz
-// turning up on a fresh number are not a new family.
-export async function isNewFamily(phone, opts = {}) {
+// Why a family is or isn't new. Returns a REASON so the booking page can say
+// something specific instead of a vague rejection.
+//
+// Phone alone is not enough: mum and dad have different numbers, so a second
+// phone looks brand new. Match on email and on the children's names too — if a
+// child already has a loyalty card, that household has been here.
+export async function familyStatus({ phone, email, childNames, childCodes } = {}) {
   const p4 = last4(phone);
-  if (!p4) return false;
-  const email = (opts.email || "").toString().trim().toLowerCase();
-  const kidNames = (opts.childNames || [])
-    .map(c => (typeof c === "string" ? c : ((c && (c.first + " " + c.last)) || "")))
+  // Fail CLOSED. If we can't identify who is booking, we do not hand out money.
+  if (!p4) return { isNew: false, reason: "no_phone" };
+
+  const mail = (email || "").toString().trim().toLowerCase();
+  const kidNames = (childNames || [])
+    .map(c => (typeof c === "string" ? c : ((c && ((c.first || "") + " " + (c.last || ""))) || "")))
     .map(s => s.toLowerCase().replace(/\s+/g, " ").trim())
     .filter(Boolean);
+  // An entered loyalty code is the strongest signal of all — it IS an existing child.
+  const codes = (childCodes || []).map(c => (c || "").toString().toUpperCase().replace(/[^A-Z0-9]/g, "")).filter(Boolean);
 
   try {
     const loyalty = getStore("loyalty");
-    const keys = await listAllKeys(loyalty, { prefix: "card:" });
-    for (const k of keys) {
+    for (const k of await listAllKeys(loyalty, { prefix: "card:" })) {
       let c = null; try { c = await loyalty.get(k, { type: "json" }); } catch { continue; }
       if (!c) continue;
-      if (c.phone4 === p4) return false;                                     // same number
-      if (email && (c.buyerEmail || "").toLowerCase().trim() === email) return false;   // same inbox
+      if (codes.length && codes.indexOf((c.code || "").toUpperCase()) > -1)
+        return { isNew: false, reason: "existing_child", match: c.childName || "" };
+      if (c.phone4 === p4) return { isNew: false, reason: "existing_phone", match: c.childName || "" };
+      if (mail && (c.buyerEmail || "").toLowerCase().trim() === mail)
+        return { isNew: false, reason: "existing_email", match: c.childName || "" };
       if (kidNames.length) {
         const known = (c.childName || "").toLowerCase().replace(/\s+/g, " ").trim();
-        if (known && kidNames.indexOf(known) > -1) return false;             // same child
+        if (known && kidNames.indexOf(known) > -1)
+          return { isNew: false, reason: "existing_child", match: c.childName || "" };
       }
     }
-  } catch { return false; }   // can't verify -> don't hand out the discount
-  return true;
+  } catch { return { isNew: false, reason: "lookup_failed" }; }
+  return { isNew: true, reason: "new" };
+}
+
+// Kept for callers that only need the boolean.
+export async function isNewFamily(phone, opts = {}) {
+  const r = await familyStatus({ phone, ...opts });
+  return r.isNew;
 }
 
 // ---------------------------------------------------------------------------
