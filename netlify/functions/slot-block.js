@@ -9,7 +9,7 @@
 // is no longer bookable for open play. Use once a party deposit is paid.
 
 import { getStore } from "@netlify/blobs";
-import { SLOT_IDS, PARTY_SLOT_IDS, PARTY_SLOTS, isPartyDay, slotKey } from "./lib-settings.js";
+import { SLOT_IDS, PARTY_SLOT_IDS, PARTY_SLOTS, ARRIVAL, slotLabel, isPartyDay, slotKey } from "./lib-settings.js";
 
 export default async (req) => {
   if (req.method !== "POST") return json({ error: "Use POST." }, 405);

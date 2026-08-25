@@ -1114,7 +1114,9 @@ init();
 })();
 </script>
 <script src="/assets/phone-format.js" defer></script>
-<script src="/assets/chat.js" defer>
+<script src="/assets/chat.js" defer></script>
+<script>
+
 // ---- Referral code ($5 off, new families only) ----
 state.referral={code:"",amount:0,ok:false};
 (function(){
@@ -1155,6 +1157,7 @@ state.referral={code:"",amount:0,ok:false};
   if(ph) ph.addEventListener("change",function(){ if(input.value) check(); });
   if(input.value) setTimeout(check,300);
 })();
+
 </script>
 </body>
 </html>
