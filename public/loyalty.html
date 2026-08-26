@@ -468,6 +468,21 @@ window.toggleMilitary=async function(code,setTo){
     else alert(r.error||"Couldn't save.");
   }catch(e){ alert("Network error."); }
 };
+// Click the badge to record that a family was emailed before this tracking
+// existed. Sends nothing — it only writes the date.
+window.milMarkSent=async function(phone4, undo){
+  if(!undo && !confirm("Mark this family's military verification as ALREADY EMAILED?\n\nNothing is sent \u2014 this just records that you've already done it.")) return;
+  if(undo && !confirm("Clear the sent date for this family?")) return;
+  try{
+    var r=await (await fetch("/api/loyalty",{method:"POST",headers:{"content-type":"application/json"},
+      body:JSON.stringify({key:KEY,action:"military-mark-sent",phone4:phone4,undo:!!undo})})).json();
+    if(r.ok){
+      LOYALTY.forEach(function(c){ if(String(c.phone4)===String(phone4)&&c.militaryVerified){ c.militaryEmailSentDate=r.sentDate; } });
+      renderLoyaltyList();
+    } else alert(r.error||"Couldn't update.");
+  }catch(e){ alert("Network error."); }
+};
+
 window.sendMilitaryEmail=async function(phone4,anchorCode){
   var key=KEY; if(!key){ alert("Enter your admin key (top of page)."); return; }
   var btn=document.getElementById("milEmailBtn-"+phone4); if(btn){ btn.disabled=true; btn.textContent="Sending\u2026"; }
@@ -643,6 +658,10 @@ function llChildRow(c){
     +'</div>'
     +'</div>';
 }
+function wireMilBadges(){
+  Array.prototype.forEach.call(document.querySelectorAll('.milMark'),function(b){ b.onclick=function(){ milMarkSent(b.getAttribute('data-p4'), false); }; });
+  Array.prototype.forEach.call(document.querySelectorAll('.milUndo'),function(b){ b.onclick=function(){ milMarkSent(b.getAttribute('data-p4'), true); }; });
+}
 function renderLoyaltyList(){
   var q=($("#llSearch").value||"").toLowerCase().trim();
   var rows=LOYALTY.filter(function(c){return !q||(c.childName||"").toLowerCase().includes(q)||(c.code||"").toLowerCase().includes(q)||(c.email||"").toLowerCase().includes(q)||(c.phone4||"").includes(q);});
@@ -662,8 +681,8 @@ function renderLoyaltyList(){
     var militaryEmailBtn=verifiedKids.length
       ? ' <button type="button" onclick="sendMilitaryEmail(\''+esc(famKey)+'\',\''+esc(verifiedKids[0].code)+'\')" id="milEmailBtn-'+esc(famKey)+'" style="border:none;background:#dff0d3;color:#33521f;border-radius:6px;cursor:pointer;font-weight:800;font-size:.72rem;padding:4px 9px;margin-left:6px" title="Send one email covering all '+verifiedKids.length+' verified child'+(verifiedKids.length===1?"":"ren")+' in this family, with each of their codes">\uD83D\uDCE7 Email military verification ('+verifiedKids.length+')</button>'
       + (function(){ var s=verifiedKids.find(function(k){return k.militaryEmailSentDate;});
-          return s ? '<span title="Verification email already sent on '+esc(s.militaryEmailSentDate)+'" style="display:inline-block;margin-left:6px;font-size:.7rem;font-weight:800;color:#3f7d54;background:#e7f0df;border-radius:999px;padding:3px 9px">\u2705 Sent '+esc(s.militaryEmailSentDate)+'</span>'
-                   : '<span style="display:inline-block;margin-left:6px;font-size:.7rem;font-weight:800;color:#a85f59;background:#fdf1ec;border-radius:999px;padding:3px 9px">Not sent yet</span>'; })()
+          return s ? '<button type="button" class="milUndo" data-p4="'+esc(famKey)+'" title="Already emailed on '+esc(s.militaryEmailSentDate)+' \u2014 click to clear" style="border:none;margin-left:6px;font-size:.7rem;font-weight:800;color:#3f7d54;background:#e7f0df;border-radius:999px;padding:3px 9px;cursor:pointer">\u2705 Sent '+esc(s.militaryEmailSentDate)+'</button>'
+                   : '<button type="button" class="milMark" data-p4="'+esc(famKey)+'" title="Already emailed this family before? Click to mark it \u2014 nothing is sent" style="border:none;margin-left:6px;font-size:.7rem;font-weight:800;color:#a85f59;background:#fdf1ec;border-radius:999px;padding:3px 9px;cursor:pointer">Not sent yet \u2014 mark as sent?</button>'; })()
       : '';
     var adults=Array.isArray(fam.waiverAdults)?fam.waiverAdults:[];
     var today=new Date().toISOString().slice(0,10);

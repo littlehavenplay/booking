@@ -26,6 +26,22 @@ export function validEmail(e) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail(e));
 }
 export function subKey(email) { return "sub:" + cleanEmail(email); }
+// A PERMANENT block, kept separately from the subscriber record. Once someone
+// opts out they stay out — a later bulk import must never be able to resurrect
+// them, which is both the law and the fastest way to earn a spam complaint.
+export function suppressKey(email) { return "supp:" + cleanEmail(email); }
+
+export async function isSuppressed(store, email) {
+  try { return !!(await store.get(suppressKey(email), { type: "json" })); } catch { return false; }
+}
+
+export async function suppress(store, email, reason) {
+  try {
+    await store.setJSON(suppressKey(email), {
+      email: cleanEmail(email), at: new Date().toISOString(), reason: reason || "unsubscribed",
+    });
+  } catch {}
+}
 
 export function unsubUrl(email, token) {
   return `${SITE}/api/newsletter-unsubscribe?e=${encodeURIComponent(cleanEmail(email))}&t=${encodeURIComponent(token || "")}`;
@@ -80,10 +96,20 @@ export function buildCampaignHtml(campaign, subscriber) {
 // Fetch active subscribers (paginated).
 export async function listActiveSubscribers(store) {
   const keys = await listAllKeys(store, { prefix: "sub:" });
+  // Belt and braces: skip anyone suppressed even if their subscriber record
+  // somehow says active, and de-duplicate on the normalised address so nobody
+  // can receive the same campaign twice.
+  const suppKeys = new Set((await listAllKeys(store, { prefix: "supp:" }).catch(() => []))
+    .map(k => k.slice("supp:".length)));
+  const seen = new Set();
   const out = [];
   for (const k of keys) {
     let s = null; try { s = await store.get(k, { type: "json" }); } catch {}
-    if (s && s.active !== false && s.email) out.push(s);
+    if (!s || !s.email || s.active === false) continue;
+    const e = cleanEmail(s.email);
+    if (!e || suppKeys.has(e) || seen.has(e)) continue;
+    seen.add(e);
+    out.push(s);
   }
   return out;
 }
@@ -93,7 +119,9 @@ export async function listActiveSubscribers(store) {
 // { processed, remaining, complete }.
 export async function sendCampaignBatch(store, campaign, { max = BATCH_SIZE } = {}) {
   const key = process.env.RESEND_API_KEY;
-  const from = process.env.EMAIL_FROM || "onboarding@resend.dev";
+  // Marketing goes out under its own sender so a deliverability problem with a
+  // campaign can never affect booking confirmations or birthday emails.
+  const from = process.env.NEWSLETTER_FROM || process.env.EMAIL_FROM || "onboarding@resend.dev";
   const studio = process.env.STUDIO_NAME || "Little Haven Play Studio";
   const replyTo = process.env.STUDIO_EMAIL || "hello@littlehavenplay.com";
   if (!key) return { processed: 0, remaining: 0, complete: true, error: "email-not-configured" };

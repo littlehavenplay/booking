@@ -393,15 +393,47 @@ export async function sendMilitaryVerifiedEmail(to, cards) {
       <div style="font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:#8a8276;font-weight:bold">${esc(c.childName || "Loyalty code")}</div>
       <div style="font-size:26px;font-weight:900;letter-spacing:2px;color:#a85f59;margin-top:2px">${esc(c.code)}</div>
     </div>`).join("");
-  const html = `<div style="font-family:Arial,Helvetica,sans-serif;color:#2a2622;max-width:520px;margin:0 auto;line-height:1.6">
+  const site = (process.env.SITE_URL || "https://littlehavenplay.com").replace(/\/$/, "");
+  const one = cards.length === 1;
+  const html = `<div style="font-family:Arial,Helvetica,sans-serif;color:#2a2622;max-width:560px;margin:0 auto;line-height:1.6">
     <h2 style="color:#a85f59;font-weight:normal;margin:0 0 4px">Thank you for your service 🎖️</h2>
     <p>Hi there,</p>
-    <p>We've verified your military ID in person, and <b>${esc(nameList)}</b>'s loyalty card${cards.length > 1 ? "s are" : " is"} now marked as a military family.</p>
-    <p>Going forward, <b>10% off admission</b> will apply automatically every time you book Open Play online — just enter the code below at checkout, same as always. No separate discount code needed.</p>
-    ${cards.length > 1 ? `<p style="font-size:14px;color:#5c6470">Each child has their own code — screenshot this and use whichever one applies at checkout:</p>` : ""}
+    <p>We've verified your military ID in person, and <b>${esc(nameList)}</b>'s loyalty card${one ? " is" : "s are"} now marked as a military family. <b>10% off admission</b> is yours from now on.</p>
+
+    <div style="background:#fdf1ec;border:1px solid #efcfc4;border-radius:12px;padding:14px 16px;margin:16px 0">
+      <p style="margin:0;font-weight:bold;color:#a85f59">There's no discount code to type.</p>
+      <p style="margin:6px 0 0;font-size:14px;color:#5c6470">The discount is attached to your child's loyalty card, so it applies
+      automatically as soon as we know which child is playing. Here's exactly where that goes:</p>
+    </div>
+
+    <p style="font-weight:bold;margin:0 0 6px">How to book with your discount</p>
+    <table style="width:100%;border-collapse:collapse;font-size:15px">
+      <tr><td style="vertical-align:top;padding:6px 10px 6px 0;width:26px"><b style="color:#a85f59">1</b></td>
+        <td style="padding:6px 0">Go to <a href="${site}/book" style="color:#a85f59">${site.replace(/^https?:\/\//, "")}/book</a> and pick your date, time and admissions as usual.</td></tr>
+      <tr><td style="vertical-align:top;padding:6px 10px 6px 0"><b style="color:#a85f59">2</b></td>
+        <td style="padding:6px 0">Scroll to <b>&ldquo;Who's playing?&rdquo;</b> in the <b>Your details</b> section.</td></tr>
+      <tr><td style="vertical-align:top;padding:6px 10px 6px 0"><b style="color:#a85f59">3</b></td>
+        <td style="padding:6px 0">In the box marked <b>&ldquo;Loyalty card number&rdquo;</b>, type ${one ? "the code below" : "that child's code from below"}.
+        Their name fills in by itself &mdash; that's how you know it worked.</td></tr>
+      <tr><td style="vertical-align:top;padding:6px 10px 6px 0"><b style="color:#a85f59">4</b></td>
+        <td style="padding:6px 0">The <b>10% military discount</b> appears in your total automatically. Nothing else to do.</td></tr>
+    </table>
+
+    ${one ? "" : `<p style="font-size:14px;color:#5c6470;margin-top:14px">Each child has their own code &mdash; use the one that matches whoever is playing that day:</p>`}
     ${codeBlocks}
-    <p style="font-size:14px;color:#8a8276">A couple of things to know: this discount applies to the admission itself only (not the adult add-on), and it can't be combined with a discount code or the Weekday Special — whichever is bigger automatically applies.</p>
-    <p style="margin-top:14px">Thank you again for your service — we're glad to have your family with us!</p>
+
+    <div style="background:#fff8ec;border:1px solid #f0e2c8;border-radius:12px;padding:12px 16px;margin:16px 0">
+      <p style="margin:0;font-weight:bold;font-size:14px;color:#8a6d3b">Please don't put this code in the discount, reward or store credit boxes</p>
+      <p style="margin:6px 0 0;font-size:14px;color:#5c6470">Those are for different things and your code won't work there. It belongs
+      in the <b>Loyalty card number</b> box under &ldquo;Who's playing?&rdquo; &mdash; the same box that fills in your child's name.</p>
+    </div>
+
+    <p style="font-size:14px;color:#8a8276">A couple of things to know: the discount applies to the child's admission only (not extra adults),
+    and it can't be stacked with a discount code or the Weekday Special &mdash; whichever saves you more applies automatically.
+    Gift cards and store credit still come off on top, because those are payment rather than a discount.</p>
+
+    <p style="margin-top:14px">Stuck at checkout? Just reply to this email or use the chat on our website and we'll sort it out.</p>
+    <p style="margin-top:14px">Thank you again for your service &mdash; we're glad to have your family with us!</p>
     <p style="font-size:14px;color:#5c6470">— ${esc(studio)}</p></div>`;
   try {
     const res = await fetch("https://api.resend.com/emails", {

@@ -249,6 +249,21 @@
     </div>
 
     <div style="margin-top:16px;border-top:1px solid #efe4d5;padding-top:12px">
+      <b>\U0001F4E5 Add subscribers in bulk</b>
+      <p class="note" style="margin:4px 0 8px">Paste a column straight from Excel, a CSV, or one address per line.
+      Names are picked up automatically when they're in the same row. Nothing is saved until you press Import
+      &mdash; you'll see the numbers first.</p>
+      <textarea id="nlImport" rows="6" placeholder="Paste here, e.g.&#10;Jane Smith, jane@example.com&#10;mike@example.com&#10;Ana Lopez &lt;ana@example.com&gt;"></textarea>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+        <button id="nlPreview" class="alt" style="margin:0">Check this list</button>
+        <button id="nlDoImport" style="margin:0;display:none">Import them</button>
+      </div>
+      <div id="nlImportOut" class="out" style="display:none;margin-top:10px"></div>
+      <p class="note" style="margin-top:8px">Anyone who has unsubscribed before is skipped automatically and can
+      never be re-added by an import.</p>
+    </div>
+
+    <div style="margin-top:16px;border-top:1px solid #efe4d5;padding-top:12px">
       <b>Recent &amp; scheduled sends</b>
       <div id="nlCampaigns" style="margin-top:10px"></div>
     </div>
@@ -2657,6 +2672,34 @@ if($("#wsSave")) $("#wsSave").onclick=async function(){
     $("#mbAdd").disabled=false; $("#mbAdd").textContent="Add to schedule";
   };
   try{ var d=$("#mbDate"); if(d && !d.value) d.value=new Date().toLocaleDateString("en-CA",{timeZone:"America/Los_Angeles"}); }catch(e){}
+})();
+
+// ---- bulk subscriber import ----
+(function(){
+  var ta=document.getElementById("nlImport");
+  if(!ta) return;
+  var prev=document.getElementById("nlPreview"), go=document.getElementById("nlDoImport"), out=document.getElementById("nlImportOut");
+  function show(msg,cls){ out.style.display="block"; out.className="out "+(cls||""); out.textContent=msg; }
+  async function call(commit){
+    var key=KEY(); if(!key){ show("Enter your "+KLABEL+" first.","err"); return; }
+    var text=ta.value.trim(); if(!text){ show("Paste some addresses first.","err"); return; }
+    show(commit?"Importing\u2026":"Checking\u2026","");
+    try{
+      var r=await (await fetch("/api/newsletter-admin",{method:"POST",headers:{"content-type":"application/json"},
+        body:JSON.stringify({key:key,action:"import",text:text,commit:!!commit,source:"waiver-import"})})).json();
+      if(!r.ok){ show(r.error||"That didn't work.","err"); return; }
+      show(r.message,"ok");
+      if(r.preview && r.toAdd>0){ go.style.display="inline-block"; }
+      else { go.style.display="none"; }
+      if(r.imported){ ta.value=""; go.style.display="none"; try{ nlLoad(); }catch(e){} }
+    }catch(e){ show("Network error.","err"); }
+  }
+  prev.onclick=function(){ call(false); };
+  go.onclick=function(){
+    if(!confirm("Add these to your newsletter list?\n\nNothing is emailed now \u2014 this only builds the list.")) return;
+    call(true);
+  };
+  ta.addEventListener("input",function(){ go.style.display="none"; });
 })();
 </script></body>
 </html>

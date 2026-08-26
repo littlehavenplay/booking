@@ -4,7 +4,7 @@
 //   POST -> the same, for Gmail/Apple "List-Unsubscribe-Post" one-click.
 // Either way the studio owner is notified, and the subscriber stops appearing
 // in the admin's active list right away (no manual step needed).
-import { newsletterStore, cleanEmail, subKey } from "./lib-newsletter.js";
+import { newsletterStore, cleanEmail, subKey, suppress } from "./lib-newsletter.js";
 import { sendOwnerAlert } from "./lib-email.js";
 
 async function doUnsub(email, token) {
@@ -19,6 +19,8 @@ async function doUnsub(email, token) {
     rec.active = false;
     rec.unsubscribedAt = new Date().toISOString();
     try { await store.setJSON(subKey(email), rec); } catch {}
+    // Permanent block, so a future CSV import can't quietly put them back.
+    await suppress(store, email, "unsubscribed");
     // Heads-up to the owner (best-effort; never blocks the unsubscribe).
     sendOwnerAlert(
       "📭 Newsletter unsubscribe",

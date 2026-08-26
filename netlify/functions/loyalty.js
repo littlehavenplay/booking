@@ -190,6 +190,31 @@ export default async (req) => {
   // verification email sent by hand, so stamp them all as sent. Without this the
   // new badge would read "Not sent yet" for everyone and you'd re-send.
   // Safe to run more than once — it never overwrites a date that's already there.
+  // Mark ONE family as already emailed, from the badge on their card. Emails sent
+  // by hand before this tracking existed have no date, so the badge reads "not
+  // sent" forever until someone says otherwise.
+  if (action === "military-mark-sent") {
+    const p4 = last4(b.phone4 || b.phone);
+    if (!p4) return json({ error: "Missing the family's phone." }, 400);
+    const when = (b.sentDate || "").toString().slice(0, 10);
+    const stampDate = /^\d{4}-\d{2}-\d{2}$/.test(when) ? when : todayPacific();
+    let marked = 0;
+    try {
+      for (const k of await listAllKeys(loyalty, { prefix: "card:" })) {
+        let c = null; try { c = await loyalty.get(k, { type: "json" }); } catch { continue; }
+        if (!c || c.phone4 !== p4 || !c.militaryVerified) continue;
+        c.militaryEmailSentDate = stampDate;
+        c.militaryEmailSentAt = new Date().toISOString();
+        c.militaryEmailSentCount = c.militaryEmailSentCount || 1;
+        c.militaryEmailBackfilled = true;
+        try { await loyalty.setJSON(k, c); marked++; } catch {}
+      }
+    } catch { return json({ error: "Couldn't read the cards. Try again." }, 502); }
+    if (!marked) return json({ error: "No military-verified cards found on that number." }, 404);
+    return json({ ok: true, marked, sentDate: stampDate,
+      message: `Marked as already emailed (${stampDate}).` });
+  }
+
   if (action === "military-backfill-sent") {
     const when = (b.sentDate || "").toString().slice(0, 10);
     const stampDate = /^\d{4}-\d{2}-\d{2}$/.test(when) ? when : todayPacific();
@@ -211,6 +236,37 @@ export default async (req) => {
     } catch { return json({ error: "Couldn't read the cards. Try again." }, 502); }
     return json({ ok: true, scanned, stamped, already,
       message: `${scanned} military-verified card${scanned === 1 ? "" : "s"} found. ${stamped} marked as already sent (${stampDate}); ${already} already had a date.` });
+  }
+
+  // Mark ONE family's verification email as already sent. The global backfill is
+  // for the initial catch-up; this is for fixing a single family without hunting
+  // for a button somewhere else on the page.
+  if (action === "military-mark-sent") {
+    const p4 = (b.phone4 || "").toString().replace(/\D/g, "").slice(-4);
+    if (!p4) return json({ error: "Missing the family's phone." }, 400);
+    const when = (b.sentDate || "").toString().slice(0, 10);
+    const stampDate = /^\d{4}-\d{2}-\d{2}$/.test(when) ? when : todayPacific();
+    let touched = 0;
+    try {
+      for (const k of await listAllKeys(loyalty, { prefix: "card:" })) {
+        let c = null; try { c = await loyalty.get(k, { type: "json" }); } catch { continue; }
+        if (!c || c.phone4 !== p4 || !c.militaryVerified) continue;
+        if (b.undo) {
+          delete c.militaryEmailSentDate; delete c.militaryEmailSentAt;
+          delete c.militaryEmailSentCount; delete c.militaryEmailBackfilled;
+        } else {
+          c.militaryEmailSentDate = stampDate;
+          c.militaryEmailSentAt = new Date().toISOString();
+          c.militaryEmailSentCount = c.militaryEmailSentCount || 1;
+          c.militaryEmailBackfilled = true;
+        }
+        try { await loyalty.setJSON(k, c); touched++; } catch {}
+      }
+    } catch { return json({ error: "Couldn't read the cards. Try again." }, 502); }
+    if (!touched) return json({ error: "No military-verified cards found on that phone." }, 404);
+    return json({ ok: true, phone4: p4, sentDate: b.undo ? null : stampDate, cards: touched,
+      message: b.undo ? "Cleared — it now shows as not sent."
+                      : `Marked as already emailed on ${stampDate}. Nothing was sent.` });
   }
 
   // Copy loyalty-card emails onto the newsletter list so one campaign reaches
