@@ -5,6 +5,7 @@
 import { getStore } from "@netlify/blobs";
 import { listAllKeys } from "./lib-blobs.js";
 import { STORE, sendCampaignBatch } from "./lib-newsletter.js";
+import { sendOwnerAlert } from "./lib-email.js";
 
 const BATCHES_PER_RUN = 3; // up to 3×100 recipients per campaign per run
 
@@ -28,7 +29,21 @@ export default async () => {
       const r = await sendCampaignBatch(store, c, { max: 100 });
       sent += r.processed;
       if (r.complete) { completed++; break; }
-      if (r.processed === 0) break; // nothing sent (e.g. email misconfigured) — stop, retry next run
+      if (r.processed === 0) break; // nothing sent — stop and let the next run retry
+    }
+    // A campaign that has parked itself gets one owner alert, not a nightly one.
+    if (c.status === "failed" && !c.errorAlerted) {
+      c.errorAlerted = true;
+      try {
+        await sendOwnerAlert(
+          `\u26A0\uFE0F Newsletter "${c.subject || "campaign"}" could not send`,
+          `<h3>A newsletter campaign has stopped after repeated failures</h3>
+           <p><b>${c.subject || "(no subject)"}</b><br>
+           Sent: ${(c.stats && c.stats.sent) || 0} of ${(c.stats && c.stats.total) || 0}</p>
+           <p><b>Reason:</b><br>${c.lastError || "unknown"}</p>
+           <p>Nothing further will be sent for this campaign until you look at it.</p>`
+        );
+      } catch {}
     }
     try { await store.setJSON(k, c); } catch {}
   }

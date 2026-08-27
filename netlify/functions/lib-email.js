@@ -10,6 +10,20 @@ export const SIGNATURE_HTML = `<div style="margin-top:24px;border-top:1px solid 
 // the request that triggered it.
 // extraTo: an additional recipient for this one alert (used by the family-code
 // tripwire so it can reach a personal inbox as well as the studio address).
+// Build a valid RFC-5322 From header.
+//
+// Env vars sometimes hold a bare address ("hello@x.com") and sometimes a full
+// display-name form ("Studio <hello@x.com>"). Blindly wrapping the second kind
+// produces "Studio <Studio <hello@x.com>>", which Resend rejects with a 422 —
+// and because batch sends only checked res.ok, that failed silently and retried
+// forever. Use this everywhere instead of interpolating by hand.
+export function fromHeader(addr, studioName) {
+  const a = (addr || "").toString().trim();
+  if (!a) return `${studioName || "Little Haven Play Studio"} <onboarding@resend.dev>`;
+  if (a.indexOf("<") > -1 && a.indexOf(">") > -1) return a;   // already has a display name
+  return `${studioName || "Little Haven Play Studio"} <${a}>`;
+}
+
 export async function sendOwnerAlert(subject, bodyHtml, extraTo) {
   const key = process.env.RESEND_API_KEY;
   const base = process.env.STUDIO_EMAIL;

@@ -5,7 +5,7 @@
 // reschedule.js only.
 import { getStore } from "@netlify/blobs";
 import { STUDIO_NAME, pacificToday } from "./lib-settings.js";
-import { SIGNATURE_HTML } from "./lib-email.js";
+import { SIGNATURE_HTML, fromHeader } from "./lib-email.js";
 
 function addDaysToDateStr(dateStr, days) {
   const d = new Date(dateStr + "T00:00:00Z"); d.setUTCDate(d.getUTCDate() + days);
@@ -125,7 +125,7 @@ export async function sendCreditEmail(to, rec, isOwner) {
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ from: `${studio} <${from}>`, to: [to], bcc: process.env.STUDIO_EMAIL ? [process.env.STUDIO_EMAIL] : undefined, subject, html: html + SIGNATURE_HTML }),
+      body: JSON.stringify({ from: fromHeader(from, studio), to: [to], bcc: process.env.STUDIO_EMAIL ? [process.env.STUDIO_EMAIL] : undefined, subject, html: html + SIGNATURE_HTML }),
     });
     return res.ok;
   } catch { return false; }
@@ -162,7 +162,7 @@ export async function sendCreditReminderEmail(to, rec, daysLeft) {
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ from: `${studio} <${from}>`, to: [to], subject, html: html + SIGNATURE_HTML }),
+      body: JSON.stringify({ from: fromHeader(from, studio), to: [to], subject, html: html + SIGNATURE_HTML }),
     });
     return res.ok;
   } catch { return false; }

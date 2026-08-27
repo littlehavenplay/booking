@@ -5,7 +5,7 @@
 //   { key, action:"move-booking", fromDate, fromSlot, entryId, toDate, toSlot, override?, notify? }
 //   { key, action:"move-party", fromDate, fromSlot, toDate, toSlot, override?, notify? }
 import { getStore } from "@netlify/blobs";
-import { SIGNATURE_HTML } from "./lib-email.js";
+import { SIGNATURE_HTML, fromHeader } from "./lib-email.js";
 import { SLOT_IDS, SLOTS, ALL_SLOT_IDS, slotLabel, PARTY_SLOT_IDS, PARTY_SLOTS, openPlayForDate, hoursFor, slotCap, slotKey, isPartyDay, CLOSED_DATES, STUDIO_NAME, countHourChildren, hourMatesFor } from "./lib-settings.js";
 import { getClosure, slotBlockedByClosure } from "./lib-closures.js";
 import { loadSeasonal, loadWeekly } from "./lib-hours.js";
@@ -270,7 +270,7 @@ async function sendReschedule(to, name, fromDate, fromLabel, toDate, toLabel, is
   try {
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST", headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ from: `${studio} <${from}>`, to: [to], bcc: process.env.STUDIO_EMAIL ? [process.env.STUDIO_EMAIL] : undefined, subject: `Your ${studio} booking has been rescheduled`, html: html + SIGNATURE_HTML }),
+      body: JSON.stringify({ from: fromHeader(from, studio), to: [to], bcc: process.env.STUDIO_EMAIL ? [process.env.STUDIO_EMAIL] : undefined, subject: `Your ${studio} booking has been rescheduled`, html: html + SIGNATURE_HTML }),
     });
     return res.ok;
   } catch { return false; }

@@ -6,6 +6,7 @@ import { getStore } from "@netlify/blobs";
 import { findFamilyByCode, creditReferrer, reconcileLots, lotSummaryLines, last4 as refLast4 } from "./lib-referral.js";
 import { addPunch, issueCode, sendFamilyPunch } from "./lib-loyalty.js";
 import { listAllKeys } from "./lib-blobs.js";
+import { fromHeader } from "./lib-email.js";
 
 export default async (req) => {
   if (req.method !== "POST") return json({ error: "Use POST." }, 405);
@@ -215,7 +216,7 @@ async function emailReferrer(fam, credit, friendName) {
     await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ from: `${studio} <${from}>`, to: [to], bcc: bcc ? [bcc] : undefined,
+      body: JSON.stringify({ from: fromHeader(from, studio), to: [to], bcc: bcc ? [bcc] : undefined,
         subject: `You earned $5 — ${friendName} came to play!`, html }),
     });
   } catch {}

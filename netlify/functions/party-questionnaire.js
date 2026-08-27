@@ -1,6 +1,6 @@
 // POST /api/party-questionnaire — saves a party's preferences to its record and emails owner + customer.
 import { getStore } from "@netlify/blobs";
-import { SIGNATURE_HTML } from "./lib-email.js";
+import { SIGNATURE_HTML, fromHeader } from "./lib-email.js";
 import { slotKey } from "./lib-settings.js";
 
 export default async (req) => {
@@ -46,7 +46,7 @@ export default async (req) => {
       ${comments ? `<p style="margin-top:12px"><b>Comments / questions:</b><br>${esc(comments)}</p>` : ""}</div>`;
     try {
       await fetch("https://api.resend.com/emails", { method: "POST", headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ from: `${studio} <${from}>`, to: [studioEmail], reply_to: email || undefined, subject: `Party preferences — ${name} (${date})`, html: html + SIGNATURE_HTML }) });
+        body: JSON.stringify({ from: fromHeader(from, studio), to: [studioEmail], reply_to: email || undefined, subject: `Party preferences — ${name} (${date})`, html: html + SIGNATURE_HTML }) });
     } catch {}
   }
   // Customer copy
@@ -60,7 +60,7 @@ export default async (req) => {
       <p style="color:#5c6470;font-size:13px">— ${studio}</p></div>`;
     try {
       await fetch("https://api.resend.com/emails", { method: "POST", headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ from: `${studio} <${from}>`, to: [email], bcc: studioEmail ? [studioEmail] : undefined, subject: `Your party preferences — ${studio}`, html: html + SIGNATURE_HTML }) });
+        body: JSON.stringify({ from: fromHeader(from, studio), to: [email], bcc: studioEmail ? [studioEmail] : undefined, subject: `Your party preferences — ${studio}`, html: html + SIGNATURE_HTML }) });
     } catch {}
   }
   return json({ ok: true });

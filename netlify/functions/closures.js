@@ -4,7 +4,7 @@
 //   { key, action:"clear", date }
 //   { key, action:"list" }
 import { getStore } from "@netlify/blobs";
-import { SIGNATURE_HTML } from "./lib-email.js";
+import { SIGNATURE_HTML, fromHeader } from "./lib-email.js";
 import { minutesToLabel, slotBlockedByClosure } from "./lib-closures.js";
 import { ALL_SLOT_IDS, slotKey, STUDIO_NAME } from "./lib-settings.js";
 
@@ -165,7 +165,7 @@ async function sendClosureEmail(a, date, closure) {
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ from: `${studio} <${from}>`, to: [a.email], bcc: process.env.STUDIO_EMAIL ? [process.env.STUDIO_EMAIL] : undefined, subject: `Important: a change to your ${studio} reservation`, html, text }),
+      body: JSON.stringify({ from: fromHeader(from, studio), to: [a.email], bcc: process.env.STUDIO_EMAIL ? [process.env.STUDIO_EMAIL] : undefined, subject: `Important: a change to your ${studio} reservation`, html, text }),
     });
     return res.ok;
   } catch { return false; }

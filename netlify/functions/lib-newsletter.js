@@ -12,7 +12,7 @@
 
 import { getStore } from "@netlify/blobs";
 import { listAllKeys } from "./lib-blobs.js";
-import { SITE, SIGNATURE_HTML } from "./lib-email.js";
+import { SITE, SIGNATURE_HTML, fromHeader } from "./lib-email.js";
 
 export const STORE = "newsletter";
 export const BATCH_SIZE = 100; // Resend batch endpoint max per call
@@ -140,7 +140,7 @@ export async function sendCampaignBatch(store, campaign, { max = BATCH_SIZE } = 
   }
 
   const payload = chunk.map(s => ({
-    from: `${studio} <${from}>`,
+    from: fromHeader(from, studio),
     to: [s.email],
     reply_to: replyTo,
     subject: campaign.subject,
@@ -151,7 +151,10 @@ export async function sendCampaignBatch(store, campaign, { max = BATCH_SIZE } = 
     },
   }));
 
-  let ok = false;
+  // Capture WHY a batch failed. Previously this only looked at res.ok, so a
+  // rejected batch retried every 15 minutes forever with nothing on screen to
+  // explain it — which is exactly how a campaign sat at 0 sent for hours.
+  let ok = false, lastError = "";
   try {
     const res = await fetch("https://api.resend.com/emails/batch", {
       method: "POST",
@@ -159,7 +162,25 @@ export async function sendCampaignBatch(store, campaign, { max = BATCH_SIZE } = 
       body: JSON.stringify(payload),
     });
     ok = res.ok;
-  } catch { ok = false; }
+    if (!ok) {
+      let detail = "";
+      try { const j = await res.json(); detail = j.message || j.error || JSON.stringify(j).slice(0, 300); }
+      catch { try { detail = (await res.text()).slice(0, 300); } catch {} }
+      lastError = `Resend rejected the batch (HTTP ${res.status})${detail ? ": " + detail : ""}`;
+    }
+  } catch (e) { ok = false; lastError = "Couldn't reach Resend: " + (e && e.message ? e.message : "network error"); }
+
+  if (!ok) {
+    campaign.lastError = lastError;
+    campaign.lastErrorAt = new Date().toISOString();
+    campaign.errorCount = (campaign.errorCount || 0) + 1;
+    // Stop hammering a broken campaign. After several identical failures it
+    // parks itself so a human looks at it instead of retrying all night.
+    if (campaign.errorCount >= 4) campaign.status = "failed";
+  } else {
+    campaign.lastError = "";
+    campaign.errorCount = 0;
+  }
 
   if (ok) {
     for (const s of chunk) { done.add(cleanEmail(s.email)); campaign.stats.sent++; }
@@ -175,5 +196,5 @@ export async function sendCampaignBatch(store, campaign, { max = BATCH_SIZE } = 
   } else {
     campaign.status = "sending";
   }
-  return { processed: ok ? chunk.length : 0, remaining, complete: remaining === 0 && ok };
+  return { processed: ok ? chunk.length : 0, remaining, complete: remaining === 0 && ok, error: lastError || undefined };
 }

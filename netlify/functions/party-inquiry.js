@@ -1,4 +1,4 @@
-import { SIGNATURE_HTML } from "./lib-email.js";
+import { SIGNATURE_HTML, fromHeader } from "./lib-email.js";
 // POST /api/party-inquiry — emails the owner each inquiry + sends the customer a confirmation.
 export default async (req) => {
   if (req.method !== "POST") return json({ error: "Use POST." }, 405);
@@ -36,7 +36,7 @@ export default async (req) => {
       <p style="margin-top:12px"><b>Details:</b><br>${esc(details) || "—"}</p></div>`;
     try {
       await fetch("https://api.resend.com/emails", { method: "POST", headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ from: `${studio} <${from}>`, to: [studioEmail], reply_to: email || undefined, subject: `New party inquiry — ${name}`, html: ownerHtml + SIGNATURE_HTML }) });
+        body: JSON.stringify({ from: fromHeader(from, studio), to: [studioEmail], reply_to: email || undefined, subject: `New party inquiry — ${name}`, html: ownerHtml + SIGNATURE_HTML }) });
     } catch {}
   }
 
@@ -48,7 +48,7 @@ export default async (req) => {
       <p style="color:#5c6470;font-size:13px">— ${studio}</p></div>`;
     try {
       await fetch("https://api.resend.com/emails", { method: "POST", headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ from: `${studio} <${from}>`, to: [email], bcc: studioEmail ? [studioEmail] : undefined, subject: `We got your party inquiry — ${studio}`, html: custHtml + SIGNATURE_HTML }) });
+        body: JSON.stringify({ from: fromHeader(from, studio), to: [email], bcc: studioEmail ? [studioEmail] : undefined, subject: `We got your party inquiry — ${studio}`, html: custHtml + SIGNATURE_HTML }) });
     } catch {}
   }
   return json({ ok: true });

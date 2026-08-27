@@ -1,7 +1,7 @@
 // Shared loyalty punch-card logic, used by loyalty.js (staff tool), book.js
 // (auto-issue codes at booking), and checkin.js (punch at check-in).
 import { getStore } from "@netlify/blobs";
-import { SIGNATURE_HTML } from "./lib-email.js";
+import { SIGNATURE_HTML, fromHeader } from "./lib-email.js";
 
 export const PUNCHES_FOR_REWARD = 7;      // 7 paid visits → 8th is free
 export const REWARD_EXPIRY_DAYS = 30;
@@ -313,7 +313,7 @@ export async function sendWelcome(rec) {
     ${reviewFooter()}</div>`;
   await fetch("https://api.resend.com/emails", { method: "POST",
     headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ from: `${studio} <${from}>`, to: [rec.buyerEmail], bcc: bcc ? [bcc] : undefined,
+    body: JSON.stringify({ from: fromHeader(from, studio), to: [rec.buyerEmail], bcc: bcc ? [bcc] : undefined,
       subject: rec.militaryVerified ? `Your ${studio} punch card code — and thank you for your service 🎖️` : `Your ${studio} punch card code`,
       html: html + SIGNATURE_HTML }) });
 }
@@ -363,7 +363,7 @@ async function sendLegacyGraduationEmail(pass, card) {
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ from: `${studio} <${from}>`, to: [to], bcc: bcc ? [bcc] : undefined,
+      body: JSON.stringify({ from: fromHeader(from, studio), to: [to], bcc: bcc ? [bcc] : undefined,
         subject: `Your punch card is complete — you're on our free loyalty program now`, html: html + SIGNATURE_HTML }),
     });
     return res.ok;
@@ -465,7 +465,7 @@ export async function sendReward(rec, rewardCode, expiry) {
     ${reviewFooter()}</div>`;
   await fetch("https://api.resend.com/emails", { method: "POST",
     headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ from: `${studio} <${from}>`, to: [rec.buyerEmail], bcc: bcc ? [bcc] : undefined,
+    body: JSON.stringify({ from: fromHeader(from, studio), to: [rec.buyerEmail], bcc: bcc ? [bcc] : undefined,
       subject: `🎉 You've earned a free visit at ${studio}!`, html: html + SIGNATURE_HTML }) });
 }
 
@@ -505,6 +505,6 @@ export async function sendFamilyPunch(email, results) {
     ${reviewFooter()}</div>`;
   await fetch("https://api.resend.com/emails", { method: "POST",
     headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ from: `${studio} <${from}>`, to: [email], bcc: bcc ? [bcc] : undefined,
+    body: JSON.stringify({ from: fromHeader(from, studio), to: [email], bcc: bcc ? [bcc] : undefined,
       subject: `Your ${studio} punch cards 🎈`, html: html + SIGNATURE_HTML }) });
 }

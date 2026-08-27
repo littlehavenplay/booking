@@ -2,7 +2,7 @@
 //   { key }                              -> all parties, chronological (soonest first)
 //   { key, action:"mark-paid", date, partySlot, paid } -> toggle deposit paid
 import { getStore } from "@netlify/blobs";
-import { SIGNATURE_HTML } from "./lib-email.js";
+import { SIGNATURE_HTML, fromHeader } from "./lib-email.js";
 import { slotKey, WAIVER_URL } from "./lib-settings.js";
 
 export default async (req) => {
@@ -61,7 +61,7 @@ async function emailConfirmed(r) {
     </div>
     <p style="color:#5c6470;font-size:13px">Reply anytime or message @littlehavenplay. — ${studio}</p></div>`;
   await fetch("https://api.resend.com/emails", { method: "POST", headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ from: `${studio} <${from}>`, to: [r.email], bcc: studioEmail ? [studioEmail] : undefined, subject: `Your party is confirmed — ${r.date}`, html: html + SIGNATURE_HTML }) });
+    body: JSON.stringify({ from: fromHeader(from, studio), to: [r.email], bcc: studioEmail ? [studioEmail] : undefined, subject: `Your party is confirmed — ${r.date}`, html: html + SIGNATURE_HTML }) });
 }
 function json(obj, status = 200) { return new Response(JSON.stringify(obj), { status, headers: { "content-type": "application/json", "cache-control": "no-store" } }); }
 export const config = { path: "/api/parties-list" };

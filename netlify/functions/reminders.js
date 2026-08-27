@@ -1,6 +1,6 @@
 // Scheduled daily — emails every host whose party is TOMORROW a "big day" reminder + waiver nudge.
 import { getStore } from "@netlify/blobs";
-import { SIGNATURE_HTML } from "./lib-email.js";
+import { SIGNATURE_HTML, fromHeader } from "./lib-email.js";
 import { WAIVER_URL } from "./lib-settings.js";
 import { eventPacificParts } from "./lib-closures.js";
 
@@ -34,7 +34,7 @@ export default async () => {
         </div>
         <p style="color:#5c6470;font-size:13px">See you soon! Reply or message @littlehavenplay with any last-minute questions. — ${studio}</p></div>`;
       await fetch("https://api.resend.com/emails", { method: "POST", headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ from: `${studio} <${from}>`, to: [r.email], bcc: studioEmail ? [studioEmail] : undefined, subject: `Tomorrow's the big day — ${r.childName}'s party! 🎈`, html: html + SIGNATURE_HTML }) });
+        body: JSON.stringify({ from: fromHeader(from, studio), to: [r.email], bcc: studioEmail ? [studioEmail] : undefined, subject: `Tomorrow's the big day — ${r.childName}'s party! 🎈`, html: html + SIGNATURE_HTML }) });
       sent++;
     } catch {}
   }
@@ -57,7 +57,7 @@ export default async () => {
             </div>
             <p style="color:#5c6470;font-size:13px">Need to change your visit? Just reply or message @littlehavenplay. See you soon! — ${studio}</p></div>`;
           await fetch("https://api.resend.com/emails", { method: "POST", headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
-            body: JSON.stringify({ from: `${studio} <${from}>`, to: [bk.email], bcc: studioEmail ? [studioEmail] : undefined, subject: `See you tomorrow at ${studio}! 🎈`, html: html + SIGNATURE_HTML }) });
+            body: JSON.stringify({ from: fromHeader(from, studio), to: [bk.email], bcc: studioEmail ? [studioEmail] : undefined, subject: `See you tomorrow at ${studio}! 🎈`, html: html + SIGNATURE_HTML }) });
           sent++;
         }
       } catch {}
@@ -89,7 +89,7 @@ export default async () => {
             ${waivers}
             <p style="color:#5c6470;font-size:13px">Questions? Reply or message @littlehavenplay. — ${studio}</p></div>`;
           await fetch("https://api.resend.com/emails", { method: "POST", headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
-            body: JSON.stringify({ from: `${studio} <${from}>`, to: [buyer.email], bcc: studioEmail ? [studioEmail] : undefined, subject: `Reminder: ${ev.title} is tomorrow!`, html: html + SIGNATURE_HTML }) });
+            body: JSON.stringify({ from: fromHeader(from, studio), to: [buyer.email], bcc: studioEmail ? [studioEmail] : undefined, subject: `Reminder: ${ev.title} is tomorrow!`, html: html + SIGNATURE_HTML }) });
           sent++;
         }
       } catch {}

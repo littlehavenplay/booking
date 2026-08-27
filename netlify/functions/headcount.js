@@ -2,7 +2,7 @@
 //   { key, action:"list" }                          -> today + upcoming parties with caps & saved counts
 //   { key, action:"set", date, partySlot, kids, adults } -> save head count, returns overage + charge
 import { getStore } from "@netlify/blobs";
-import { SIGNATURE_HTML } from "./lib-email.js";
+import { SIGNATURE_HTML, fromHeader } from "./lib-email.js";
 import { slotKey, PARTY_PACKAGES } from "./lib-settings.js";
 const ADDITIONAL_CHILD_PRICE = 2500, ADDITIONAL_ADULT_PRICE = 1500;  // inlined so the build never depends on a stale _settings.js
 
@@ -105,7 +105,7 @@ export default async (req) => {
       <p style="color:#5c6470;font-size:13px">Questions or changes? Just reply to this email or message @littlehavenplay. — ${studio}</p></div>`;
     try {
       const res = await fetch("https://api.resend.com/emails", { method: "POST", headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ from: `${studio} <${from}>`, to: [rec.email], bcc: studioEmail ? [studioEmail] : undefined,
+        body: JSON.stringify({ from: fromHeader(from, studio), to: [rec.email], bcc: studioEmail ? [studioEmail] : undefined,
           subject: `Your party is confirmed — ${esc(rec.childName || "Little Haven")}! 🎈`, html: html + SIGNATURE_HTML }) });
       if (!res.ok) return json({ error: "Email failed to send. Try again." }, 502);
     } catch { return json({ error: "Email failed to send. Try again." }, 502); }

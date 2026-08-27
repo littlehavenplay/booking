@@ -13,7 +13,7 @@
 // deliberately separate, with no link between them.
 import { getStore } from "@netlify/blobs";
 import { listAllKeys } from "./lib-blobs.js";
-import { SIGNATURE_HTML } from "./lib-email.js";
+import { SIGNATURE_HTML, fromHeader } from "./lib-email.js";
 import { getOrCreateFamilyCode, shareMessage, reconcileLots, lotSummaryLines } from "./lib-referral.js";
 
 const SITE = process.env.SITE_URL || "https://littlehavenplay.com";
@@ -135,7 +135,7 @@ async function sendFollowUp(entry, fam) {
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ from: `${studio} <${from}>`, to: [entry.email],
+      body: JSON.stringify({ from: fromHeader(from, studio), to: [entry.email],
         subject: `Thanks for playing with us! 💛`, html: html + SIGNATURE_HTML }),
     });
     return res.ok;

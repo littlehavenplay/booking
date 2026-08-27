@@ -3,7 +3,7 @@
 
 import { getStore } from "@netlify/blobs";
 import { PARTY_SLOT_IDS, PARTY_SLOTS, slotKey } from "./lib-settings.js";
-import { SIGNATURE_HTML } from "./lib-email.js";
+import { SIGNATURE_HTML, fromHeader } from "./lib-email.js";
 import { logPromoClaim } from "./partypromo.js";
 
 export default async (req) => {
@@ -94,7 +94,7 @@ async function sendDepositConfirmed(r) {
     await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ from: `${studio} <${from}>`, to: [r.email], bcc: bcc ? [bcc] : undefined,
+      body: JSON.stringify({ from: fromHeader(from, studio), to: [r.email], bcc: bcc ? [bcc] : undefined,
         subject: `Party confirmed — ${r.childName}'s party on ${r.date}`, html: html + SIGNATURE_HTML }),
     });
   } catch {}

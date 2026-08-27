@@ -21,6 +21,17 @@ export default async (req) => {
   // Paste a column from Excel, drop in a CSV, or type addresses. Two-step:
   // preview first so nothing is saved until you've seen the numbers.
   // { key, action:"import", text, commit:false|true, source }
+  // Clear the error and put a parked campaign back in the queue.
+  if (action === "retry-campaign") {
+    const id = (b.id || "").toString();
+    if (!id) return json({ error: "Missing campaign id." }, 400);
+    let c = null; try { c = await store.get("campaign:" + id, { type: "json" }); } catch {}
+    if (!c) return json({ error: "Campaign not found." }, 404);
+    c.status = "sending"; c.lastError = ""; c.errorCount = 0; c.errorAlerted = false;
+    try { await store.setJSON("campaign:" + id, c); } catch { return json({ error: "Couldn't save." }, 502); }
+    return json({ ok: true, message: "Queued again — it'll pick up within 15 minutes from where it stopped." });
+  }
+
   if (action === "import") {
     const raw = (b.text || "").toString();
     if (!raw.trim()) return json({ error: "Paste some email addresses first." }, 400);
@@ -112,6 +123,7 @@ export default async (req) => {
         scheduledAt: c.scheduledAt || null, sentAt: c.sentAt || null,
         createdAt: c.createdAt || null, hasImage: !!c.imageMime,
         stats: c.stats || { sent: 0, total: 0 },
+        lastError: c.lastError || "", errorCount: c.errorCount || 0,
       });
     }
     campaigns.sort((a, c) => String(c.createdAt || "").localeCompare(String(a.createdAt || "")));
