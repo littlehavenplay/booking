@@ -85,7 +85,7 @@ export function buildCampaignHtml(campaign, subscriber) {
       </div>
       <div style="padding:0 26px">${SIGNATURE_HTML}</div>
       <div style="padding:16px 26px 24px;color:#9a8d80;font-size:12px;line-height:1.6;text-align:center">
-        You're getting this because you opted in to promotions &amp; event updates from ${esc(studio)}.
+        You're receiving this because you've visited ${esc(studio)} or signed up for updates.
         We only email occasionally &mdash; never spam.<br>
         <a href="${uUrl}" style="color:#a85f59;font-weight:700">Unsubscribe instantly</a> &middot; you'll be removed right away.
       </div>
