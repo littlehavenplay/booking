@@ -42,6 +42,9 @@
   input[type=date],input[type=text],input[type=email],input[type=tel],input[type=number],select,textarea{width:100%;border:1.5px solid #e7ddd0;border-radius:12px;
     padding:12px 13px;font-family:'Nunito';font-weight:600;font-size:.95rem;background:#fcfaf6;outline:none;color:var(--charcoal);}
   input:focus{border-color:var(--rose);box-shadow:0 0 0 3px rgba(201,125,118,.13);}
+  /* Members don't choose admissions — their subscription covers it. */
+  body.pc-member-mode #adm, body.pc-member-mode .adm-rows{opacity:.45;pointer-events:none}
+  body.pc-member-mode #pcMemberCard{border:2px solid var(--sage-light);background:var(--sage-pale)}
   .req{display:inline-block;margin-left:6px;font-size:.66rem;font-weight:900;letter-spacing:.04em;
     text-transform:uppercase;color:var(--rose-deep);background:var(--blush-pale);
     border:1px solid var(--blush);border-radius:999px;padding:2px 8px;vertical-align:middle;}
@@ -144,6 +147,21 @@
     <div class="card">
       <p class="step"><span class="n">1</span> Pick a date <span class="req">Required</span></p>
       <input type="date" id="date">
+    </div>
+
+    <div class="card" id="pcMemberCard">
+      <p class="step"><span class="n">🎟️</span> Play Club member? <span class="opt">Optional</span></p>
+      <p class="note" style="margin-top:0">If you have a monthly Play Club membership, enter your phone number or
+      membership code and your admission is already covered.</p>
+      <label class="fld">Membership code or phone number</label>
+      <input type="text" id="pcMemberInput" placeholder="PC7K2M  or  760-555-1234" autocomplete="off">
+      <p id="pcMemberMsg" class="note" style="margin-top:6px"></p>
+      <div id="pcMemberKids" style="display:none;margin-top:10px">
+        <label class="fld">Who's coming today?</label>
+        <div id="pcKidList"></div>
+        <p class="note" style="margin-top:6px">Tick each child who's playing. Your membership covers their admission,
+        so there's nothing to pay.</p>
+      </div>
     </div>
 
     <div class="card">
@@ -752,6 +770,8 @@ function updateTotals(){
   // with the discount code, same as the server enforces. Zeroes one admission, recomputed
   // live in case admission counts changed since the code was checked. Stacks with the
   // weekday special.
+  // A membership covers the whole admission total.
+  var pcCovered = !!state.playClub;
   const refAmt = (state.referral && state.referral.ok) ? Math.min(state.referral.amount, Math.max(0, subtotal-discAmt-wdAmt-milAmt)) : 0;
   const rewardOn = !discOn && state.reward.ok;
   let rewardAmt = 0;
@@ -766,7 +786,7 @@ function updateTotals(){
   }
   if($("#refRow")){ if(refAmt>0){ $("#refRow").style.display="flex"; $("#refAmtTxt").textContent="\u2212"+money(refAmt); } else { $("#refRow").style.display="none"; } }
   if($("#wdRow")){ if(wdAmt>0){ $("#wdRow").style.display="flex"; $("#wdLabel").textContent="\uD83D\uDDD3\uFE0F "+wdLabel; $("#wdAmtTxt").textContent="\u2212"+money(wdAmt); } else { $("#wdRow").style.display="none"; } }
-  const taxable = Math.max(0, subtotal - discAmt - wdAmt - milAmt - rewardAmt - refAmt);
+  const taxable = pcCovered ? 0 : Math.max(0, subtotal - discAmt - wdAmt - milAmt - rewardAmt - refAmt);
   const amt=taxable;
   $("#kidCount").textContent=kids;
   $("#subtotal").textContent=money(subtotal);
@@ -985,6 +1005,7 @@ async function submitBooking(token){
         regular:state.reg,sibling:state.sib,infant:state.inf,totalAdults:state.ad,
         sourceId:token,giftCards,visitPasses,promoCode,discountCode,rewardCode,
         refCode:(state.referral&&state.referral.ok?state.referral.code:""),
+        playClubCode:(state.playClub?state.playClub.code:""),
         attemptId:lhAttemptId})});
     const data=await res.json();
     if(res.ok && data.ok){
@@ -1227,6 +1248,108 @@ state.referral={code:"",amount:0,ok:false};
   window.__lhRecheckReferral = recheck;
 
   if(input.value) setTimeout(check,600);
+})();
+
+// ---- Play Club membership ----
+// Members shouldn't have to pick admissions at all — their subscription covers
+// it. Enter a phone or code, tick who's coming, done. Everything still counts
+// toward capacity and still appears on the roster.
+state.playClub = null;
+(function(){
+  function el(id){ return document.getElementById(id); }
+  var input=el("pcMemberInput"), msg=el("pcMemberMsg"),
+      kidsWrap=el("pcMemberKids"), kidList=el("pcKidList");
+  if(!input) return;
+
+  function clearMember(){
+    state.playClub=null;
+    kidsWrap.style.display="none";
+    kidList.innerHTML="";
+    document.body.classList.remove("pc-member-mode");
+    try{ updateTotals(); }catch(e){}
+  }
+
+  function applyKids(){
+    if(!state.playClub) return;
+    var boxes=[].slice.call(kidList.querySelectorAll("input[type=checkbox]"));
+    var chosen=boxes.filter(function(b){ return b.checked; });
+    // A member's children all count as regular admissions for capacity — the
+    // room fills up the same whether or not anyone paid today.
+    state.reg=chosen.length; state.sib=0; state.inf=0;
+    state.playClub.selected=chosen.map(function(b){
+      return { code:b.getAttribute("data-code")||"", name:b.getAttribute("data-name")||"" };
+    });
+    // Mirror the choice into the child-name rows the booking already uses.
+    try{ if(typeof renderChildNames==="function") renderChildNames(); }catch(e){}
+    try{ syncMemberChildRows(); }catch(e){}
+    try{ updateTotals(); }catch(e){}
+  }
+
+  // Fill the "Who's playing?" rows from the ticked members so the roster still
+  // shows real names, and the customer doesn't retype them.
+  window.syncMemberChildRows=function(){
+    if(!state.playClub || !state.playClub.selected) return;
+    var rows=[].slice.call(document.querySelectorAll("#childNames .cn-row"));
+    state.playClub.selected.forEach(function(kid,i){
+      var r=rows[i]; if(!r) return;
+      var parts=(kid.name||"").trim().split(/\s+/);
+      var f=r.querySelector(".cn-f"), l=r.querySelector(".cn-l"), c=r.querySelector(".cn-code");
+      if(c && kid.code && !c.value) c.value=kid.code;
+      if(f && !f.value) f.value=parts[0]||"";
+      if(l && !l.value) l.value=parts.slice(1).join(" ")||"";
+    });
+  };
+
+  var t=null, seq=0;
+  async function check(){
+    var raw=(input.value||"").trim();
+    var my=++seq;
+    if(!raw){ msg.textContent=""; msg.style.color=""; clearMember(); return; }
+    var digits=raw.replace(/\D/g,"");
+    var body={action:"member-check"};
+    if(digits.length>=10) body.phone=raw; else body.code=raw;
+    try{
+      var r=await (await fetch("/api/playclub",{method:"POST",headers:{"content-type":"application/json"},
+        body:JSON.stringify(body)})).json();
+      if(my!==seq) return;
+      if(!r.member){
+        clearMember();
+        msg.style.color="var(--red)";
+        msg.textContent="We couldn't find a Play Club membership for that. Check the code, or leave this blank and book normally.";
+        return;
+      }
+      state.playClub={ code:r.code, planName:r.planName, maxChildren:r.maxChildren, children:r.children||[], selected:[] };
+      msg.style.color="#3f7d54";
+      msg.textContent="\u2713 "+(r.name?r.name+" \u2014 ":"")+r.planName+". Admission is covered for up to "
+        + r.maxChildren + " child" + (r.maxChildren===1?"":"ren") + " per visit.";
+      kidList.innerHTML=(r.children||[]).map(function(c,i){
+        return '<label class="agree" style="align-items:center"><input type="checkbox" data-code="'
+          + (c.code||"") + '" data-name="' + (c.name||"").replace(/"/g,"&quot;") + '"'
+          + (i===0?" checked":"") + '> ' + ((c.name||c.code||"Child "+(i+1))) + '</label>';
+      }).join("") || '<p class="note">No children linked yet — please ask us at the desk.</p>';
+      [].slice.call(kidList.querySelectorAll("input[type=checkbox]")).forEach(function(b){
+        b.addEventListener("change",applyKids);
+      });
+      kidsWrap.style.display="block";
+      document.body.classList.add("pc-member-mode");
+      applyKids();
+    }catch(e){
+      if(my!==seq) return;
+      clearMember();
+      msg.style.color="var(--taupe)";
+      msg.textContent="We couldn't check that just now — you can still book normally.";
+    }
+  }
+
+  input.addEventListener("input",function(){ clearTimeout(t); t=setTimeout(check,500); });
+
+  // If they type their phone further down and it matches a membership, offer it.
+  var ph=el("phone");
+  if(ph) ph.addEventListener("change",function(){
+    if(!state.playClub && !input.value && (ph.value||"").replace(/\D/g,"").length>=10){
+      input.value=ph.value; check();
+    }
+  });
 })();
 </script>
 </body>

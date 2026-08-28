@@ -31,6 +31,8 @@ nav .logo img{height:46px;width:auto;display:block}
   /* Below ~900px the three buttons crowd the burger, so the referral one drops
      out of the header — it's still in the mobile menu. */
   @media (max-width:900px){ .bnr{display:none} }
+  /* Mirror of the rule above: the button covers desktop, this covers phones. */
+  @media (min-width:901px){ .nav-links li.mobile-only{display:none} }
 .bnb:hover{background:var(--rose-deep)}
 .wbar{background:var(--sage-dark);padding:.5rem 2rem;display:flex;align-items:center;justify-content:center;gap:1rem;flex-wrap:wrap;margin-top:64px}
 .wbar p{font-size:.73rem;color:rgba(255,255,255,.92);font-weight:600}
@@ -304,7 +306,8 @@ nav, .wbar, .ticker, footer{text-align:left}
 <li><a href="#openplay">Open Play</a></li>
 <li><a href="#birthday">Parties</a></li>
 <li><a href="/cards.html">Gift &amp; Loyalty Cards</a></li>
-<li><a href="/refer.html">Refer a Friend</a></li>
+<li><a href="/playclub.html">Play Club</a></li>
+<li class="mobile-only"><a href="/refer.html">Refer a Friend</a></li>
 <li><a href="/events.html">Events &amp; Promos</a></li>
 <li><a href="/reviews.html" target="_blank" rel="noopener">Reviews</a></li>
 <li><a href="#faq">FAQ</a></li>
@@ -559,6 +562,7 @@ nav, .wbar, .ticker, footer{text-align:left}
 <a href="index.html#openplay">Open Play</a>
 <a href="index.html#birthday">Parties</a>
 <a href="/cards.html">Gift &amp; Loyalty Cards</a>
+<a href="/playclub.html">Play Club</a>
 <a href="/events.html">Events &amp; Promos</a>
 <a href="/reviews.html" target="_blank" rel="noopener">Reviews</a>
 <a href="#faq">FAQ</a>

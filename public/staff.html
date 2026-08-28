@@ -83,7 +83,7 @@
 
   <div id="app" class="hidden">
 <div id="secBar"><button id="secToggle" type="button">Sections ▾</button><div id="secMenu"><a href="#sec-schedule">Daily schedule</a><a href="#sec-walkin">Walk-in check-in</a><a href="#sec-punch">Punch-card check-in</a><a href="/loyalty.html">Loyalty &amp; Punch Cards</a><a href="/referrals.html" style="margin-left:8px">🤝 Referrals</a><a href="#sec-reschedule">Reschedule &amp; cancel</a><a href="#sec-party">Session capacity &amp; blocking</a><a href="#sec-deposit">Record a party deposit</a><a href="#sec-partyoff">Open play only (no parties)</a><a href="#sec-redeem">Redeem a credit</a><a href="#sec-credit-backfill">Backfill credit emails</a><a href="#sec-issue">Issue a credit</a><a href="#sec-code">Manage a code</a><a href="#sec-punchissue">Legacy card tools</a><a href="#sec-closures">Closures &amp; hours</a><a href="#sec-passes">Legacy prepaid holders</a><a href="#sec-parties">Party bookings</a><a href="/headcount.html">Head count</a><a href="#sec-prices">Manage prices</a><a href="#sec-weekly">Weekly hours</a><a href="#sec-seasonal">Seasonal hours</a><a href="#sec-weekday-special">Weekday special</a><a href="#sec-discount">Discount codes</a><a href="#sec-news">News banner</a></div></div>
-<nav id="sideNav" aria-label="Sections"><div class="snav-title">Sections</div><a href="#sec-schedule">Daily schedule</a><a href="#sec-walkin">Walk-in check-in</a><a href="#sec-punch">Punch-card check-in</a><a href="/loyalty.html">Loyalty &amp; Punch Cards</a><a href="#sec-reschedule">Reschedule &amp; cancel</a><a href="#sec-party">Session capacity &amp; blocking</a><a href="#sec-deposit">Record a party deposit</a><a href="#sec-partyoff">Open play only (no parties)</a><a href="#sec-redeem">Redeem a credit</a><a href="#sec-credit-backfill">Backfill credit emails</a><a href="#sec-issue">Issue a credit</a><a href="#sec-code">Manage a code</a><a href="#sec-punchissue">Legacy card tools</a><a href="#sec-closures">Closures &amp; hours</a><a href="#sec-passes">Legacy prepaid holders</a><a href="#sec-parties">Party bookings</a><a href="/headcount.html">Head count</a><a href="#sec-prices">Manage prices</a><a href="#sec-weekly">Weekly hours</a><a href="#sec-seasonal">Seasonal hours</a><a href="#sec-weekday-special">Weekday special</a><a href="#sec-discount">Discount codes</a><a href="#sec-news">News banner</a><a href="#sec-rating">Reviews rating</a><a href="#sec-photos">Site photos</a><a href="#sec-promos">Promotions &amp; Flyers</a><a href="#sec-events">Upcoming events</a><a href="#sec-newsletter">📧 Newsletter</a><a href="#sec-partners">Partners page</a><a href="#sec-birthdays">Birthday club</a></nav>
+<nav id="sideNav" aria-label="Sections"><div class="snav-title">Sections</div><a href="#sec-schedule">Daily schedule</a><a href="#sec-walkin">Walk-in check-in</a><a href="#sec-punch">Punch-card check-in</a><a href="/loyalty.html">Loyalty &amp; Punch Cards</a><a href="#sec-reschedule">Reschedule &amp; cancel</a><a href="#sec-party">Session capacity &amp; blocking</a><a href="#sec-deposit">Record a party deposit</a><a href="#sec-partyoff">Open play only (no parties)</a><a href="#sec-redeem">Redeem a credit</a><a href="#sec-credit-backfill">Backfill credit emails</a><a href="#sec-issue">Issue a credit</a><a href="#sec-code">Manage a code</a><a href="#sec-punchissue">Legacy card tools</a><a href="#sec-closures">Closures &amp; hours</a><a href="#sec-passes">Legacy prepaid holders</a><a href="#sec-parties">Party bookings</a><a href="/headcount.html">Head count</a><a href="#sec-prices">Manage prices</a><a href="#sec-weekly">Weekly hours</a><a href="#sec-seasonal">Seasonal hours</a><a href="#sec-weekday-special">Weekday special</a><a href="#sec-discount">Discount codes</a><a href="#sec-news">News banner</a><a href="#sec-rating">Reviews rating</a><a href="#sec-photos">Site photos</a><a href="#sec-promos">Promotions &amp; Flyers</a><a href="#sec-events">Upcoming events</a><a href="#sec-newsletter">📧 Newsletter</a><a href="#sec-playclub">Play Club plans</a><a href="#sec-playclub-members">Play Club members</a><a href="#sec-partners">Partners page</a><a href="#sec-birthdays">Birthday club</a></nav>
     <h1>Daily schedule</h1>
     <div class="card" id="sec-schedule">
       <label>Date</label>
@@ -269,7 +269,97 @@
     </div>
   </div>
 
-  <div class="card" id="sec-partners">
+  <div class="card" id="sec-playclub">
+      <h2>&#127903;&#65039; Play Club memberships</h2>
+      <p class="note" style="margin-top:0">Monthly subscription plans shown on
+      <a href="/playclub.html" target="_blank">littlehavenplay.com/playclub</a>. Square handles the billing,
+      renewals and cancellations &mdash; you just paste the subscription link here and add a name, price and icon.</p>
+
+      <div style="border:1.5px solid #e2d9cc;border-radius:14px;padding:13px;margin-bottom:14px;background:#fdfbf8">
+        <b>Page banner &amp; heading</b>
+        <label style="margin-top:8px">Heading</label>
+        <input type="text" id="pclubHeading" maxlength="80" placeholder="Monthly Play Club">
+        <label>Short intro (optional)</label>
+        <input type="text" id="pclubBlurb" maxlength="300" placeholder="Unlimited weekday play for your little ones.">
+        <label>Banner image (optional)</label>
+        <input type="file" id="pclubBanner" accept="image/*">
+        <p class="note" style="margin:4px 0 8px">Wide image, roughly 1200&times;400. Leave empty to keep the current one.</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button type="button" id="pclubSaveBanner" style="margin:0">Save banner &amp; heading</button>
+          <button type="button" id="pclubClearBanner" class="alt" style="margin:0">Remove banner</button>
+        </div>
+      </div>
+
+      <div style="border:1.5px solid #e2d9cc;border-radius:14px;padding:13px;margin-bottom:14px">
+        <b id="pclubFormTitle">Add a plan</b>
+        <input type="hidden" id="pclubId">
+        <label style="margin-top:8px">Plan name</label>
+        <input type="text" id="pclubName" maxlength="80" placeholder="Weekday Play Club &mdash; 2 Children">
+        <label>Short description</label>
+        <input type="text" id="pclubDesc" maxlength="240" placeholder="Unlimited weekday open play for two children.">
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <div style="flex:1;min-width:120px"><label>Price shown</label><input type="text" id="pclubPrice" maxlength="24" placeholder="$89"></div>
+          <div style="flex:1;min-width:110px"><label>Per</label><input type="text" id="pclubPeriod" maxlength="16" placeholder="month" value="month"></div>
+          <div style="flex:1;min-width:120px"><label>Badge (optional)</label><input type="text" id="pclubBadge" maxlength="24" placeholder="Most popular"></div>
+        </div>
+        <label>Square subscription link</label>
+        <input type="text" id="pclubLink" placeholder="https://square.link/u/XXXXXXXX">
+        <p class="note" style="margin:4px 0 8px">Copy it straight from Square &rarr; Payment links. Must start with https://square.link/</p>
+        <label>Icon / image for this plan</label>
+        <input type="file" id="pclubImage" accept="image/*">
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+          <button type="button" id="pclubSave" style="margin:0">Save plan</button>
+          <button type="button" id="pclubReset" class="alt" style="margin:0">Clear form</button>
+        </div>
+      </div>
+
+      <div id="pclubOut" class="out" style="display:none;margin-bottom:10px"></div>
+      <b>Current plans</b>
+      <div id="pclubList" style="margin-top:8px"><p class="note">Enter your key and press Load.</p></div>
+      <button type="button" id="pclubLoad" class="alt" style="margin-top:10px">Load plans</button>
+    </div>
+
+    <div class="card" id="sec-playclub-members">
+      <h2>&#127903;&#65039; Play Club members</h2>
+      <p class="note" style="margin-top:0">When someone subscribes in Square, link them here and tick which children
+      the membership covers. They can then book with just their phone number &mdash; admission is covered, the visit
+      still counts toward capacity, and it still shows on your daily schedule.</p>
+
+      <div style="border:1.5px solid #e2d9cc;border-radius:14px;padding:13px;margin-bottom:14px">
+        <b id="pmTitle">Add a member</b>
+        <input type="hidden" id="pmCode">
+        <div class="row" style="display:flex;gap:10px;flex-wrap:wrap">
+          <div style="flex:1;min-width:150px"><label>Parent name</label><input type="text" id="pmName" maxlength="80" placeholder="Sarah Ruiz"></div>
+          <div style="flex:1;min-width:150px"><label>Phone they book with</label><input type="tel" id="pmPhone" placeholder="(760) 555-1234"></div>
+        </div>
+        <div class="row" style="display:flex;gap:10px;flex-wrap:wrap">
+          <div style="flex:1;min-width:150px"><label>Email (optional)</label><input type="email" id="pmEmail" placeholder="sarah@email.com"></div>
+          <div style="flex:1;min-width:120px"><label>Plan</label><select id="pmPlan"></select></div>
+          <div style="flex:1;min-width:110px"><label>Children covered</label><input type="number" id="pmMax" min="1" max="10" value="2"></div>
+        </div>
+
+        <label style="margin-top:10px">Find the family &amp; tick their children</label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <input type="text" id="pmSearch" placeholder="Search by phone, child, or parent name" style="flex:1;min-width:180px">
+          <button type="button" id="pmFind" class="alt" style="margin:0">Find</button>
+        </div>
+        <div id="pmKids" style="margin-top:8px"></div>
+        <p class="note" style="margin:4px 0 0">Ticked children are linked to this membership. Their loyalty cards keep
+        working normally &mdash; a covered visit is recorded but earns no punch.</p>
+
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
+          <button type="button" id="pmSave" style="margin:0">Save member</button>
+          <button type="button" id="pmReset" class="alt" style="margin:0">Clear form</button>
+        </div>
+      </div>
+
+      <div id="pmOut" class="out" style="display:none;margin-bottom:10px"></div>
+      <b>Current members</b>
+      <div id="pmList" style="margin-top:8px"><p class="note">Enter your key and press Load.</p></div>
+      <button type="button" id="pmLoad" class="alt" style="margin-top:10px">Load members</button>
+    </div>
+
+    <div class="card" id="sec-partners">
     <h2>🤝 Partners page</h2>
     <p class="note" style="margin-top:-2px">Edit the party perks shown on your public <b>Partners</b> tab. Turn a partner off to hide them without deleting. Changes go live after you save (hard-refresh to see them).</p>
     <div id="pnList"></div>
@@ -874,7 +964,7 @@ async function loadDay(silent){
         html+='<table>';
         s.people.forEach(p=>{ const a=[]; if(p.regular)a.push(p.regular+' reg'); if(p.sibling)a.push(p.sibling+' sib'); if(p.infant)a.push(p.infant+' inf');
           const arrived=p.id&&arr[p.id];
-          html+='<tr'+(arrived?' style="background:#eaf3e4"':'')+'><td style="width:30px;text-align:center">'+(p.id?'<input type="checkbox" data-id="'+p.id+'" data-email="'+(p.email||'')+'" '+(arrived?'checked':'')+' onchange="markArrived(this)" title="Mark arrived" style="width:auto;transform:scale(1.35);cursor:pointer">':'')+'</td><td style="font-weight:700">'+(arrived?'\u2705 ':'')+esc(p.name)+(p.arrivalLabel?' <span style="font-size:.68rem;font-weight:800;color:#7a6f95;background:#efeaf3;border-radius:6px;padding:1px 6px;white-space:nowrap">\u23F1 '+esc(p.arrivalLabel)+'</span>':'')+(p.legacy?' <span style="font-size:.7rem;color:var(--taupe)">(2-hr session)</span>':'')+(p.childNames&&p.childNames.length?'<div style="font-size:.75rem;font-weight:600;color:var(--sage-dark);margin-top:3px">\uD83E\uDDD2 '+p.childNames.map(function(c){return esc(((c.first||'')+' '+(c.last||'')).trim())}).filter(Boolean).join(', ')+'</div>':'')+'</td><td style="color:var(--slate)">'+a.join(", ")+' · '+p.adults+' adult'+(p.adults===1?'':'s')+'</td><td style="color:var(--taupe);font-size:.78rem">'+esc(p.email)+(p.at?' <button type="button" onclick="showPayRec(this)" data-at="'+esc(p.at)+'" data-last4="'+esc(p.cardLast4||'')+'" data-paid="'+esc(p.paid||'')+'" style="border:none;background:#eef3ea;color:#4f6b43;border-radius:7px;cursor:pointer;font-weight:800;font-size:.68rem;padding:3px 8px;margin-left:6px;white-space:nowrap">💳 Payment record</button>':'')+'</td></tr>';
+          html+='<tr'+(arrived?' style="background:#eaf3e4"':'')+'><td style="width:30px;text-align:center">'+(p.id?'<input type="checkbox" data-id="'+p.id+'" data-email="'+(p.email||'')+'" '+(arrived?'checked':'')+' onchange="markArrived(this)" title="Mark arrived" style="width:auto;transform:scale(1.35);cursor:pointer">':'')+'</td><td style="font-weight:700">'+(arrived?'\u2705 ':'')+esc(p.name)+(p.arrivalLabel?' <span style="font-size:.68rem;font-weight:800;color:#7a6f95;background:#efeaf3;border-radius:6px;padding:1px 6px;white-space:nowrap">\u23F1 '+esc(p.arrivalLabel)+'</span>':'')+(p.legacy?' <span style="font-size:.7rem;color:var(--taupe)">(2-hr session)</span>':'')+(p.playClub?' <span style="font-size:.68rem;font-weight:800;color:#3f5d33;background:#e7f0df;border-radius:6px;padding:1px 6px;white-space:nowrap">\uD83C\uDF9F\uFE0F PLAY CLUB '+esc(p.playClub)+'</span>':'')+(p.childNames&&p.childNames.length?'<div style="font-size:.75rem;font-weight:600;color:var(--sage-dark);margin-top:3px">\uD83E\uDDD2 '+p.childNames.map(function(c){return esc(((c.first||'')+' '+(c.last||'')).trim())}).filter(Boolean).join(', ')+'</div>':'')+'</td><td style="color:var(--slate)">'+a.join(", ")+' · '+p.adults+' adult'+(p.adults===1?'':'s')+'</td><td style="color:var(--taupe);font-size:.78rem">'+esc(p.email)+(p.at?' <button type="button" onclick="showPayRec(this)" data-at="'+esc(p.at)+'" data-last4="'+esc(p.cardLast4||'')+'" data-paid="'+esc(p.paid||'')+'" style="border:none;background:#eef3ea;color:#4f6b43;border-radius:7px;cursor:pointer;font-weight:800;font-size:.68rem;padding:3px 8px;margin-left:6px;white-space:nowrap">💳 Payment record</button>':'')+'</td></tr>';
         });
         html+='</table>';
       } else { html+='<div class="note">No online bookings yet.</div>'; }
@@ -1479,7 +1569,7 @@ if($("#nlSend")) $("#nlSend").onclick=async function(){
     var image=null;
     var f=($("#nlImage").files||[])[0];
     if(f){ image=await shrinkImage(f); }
-    var body={ key:key, subject:subject, message:message, sendNow:sendNow, scheduledAt:scheduledAt, bookLink:bookLink };
+    var body={ key:key, subject:subject, message:message, sendNow:sendNow, scheduledAt:scheduledAt, bookLink:bookLink,bookLabel:(typeof __lhBookLabel==="function"?__lhBookLabel():"") };
     if(image) body.image=image;
     var r=await (await fetch("/api/newsletter-send",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)})).json();
     if(r.ok){
@@ -2781,6 +2871,340 @@ if($("#wsSave")) $("#wsSave").onclick=async function(){
       close();
       if(typeof original==="function") original.call(btn);
     };
+  };
+})();
+
+// ---- Button label: auto-suggest from the link, always editable ----
+// Previously the button always read "Book your visit", even on a campaign that
+// linked somewhere else entirely.
+(function(){
+  function el(id){ return document.getElementById(id); }
+  var link=el("nlBookLink"), wrap=el("nlBookLinkWrap");
+  if(!link || !wrap || el("nlBookLabel")) return;
+
+  var row=document.createElement("div");
+  row.style.marginTop="8px";
+  row.innerHTML='<label>Button text</label>'
+    +'<input type="text" id="nlBookLabel" maxlength="40" placeholder="Book your visit">'
+    +'<p class="note" style="margin:4px 0 0">Fills in automatically from the link above &mdash; type over it any time.</p>';
+  wrap.appendChild(row);
+  var label=el("nlBookLabel");
+
+  function suggest(u){
+    u=(u||"").toLowerCase();
+    if(u.indexOf("/refer")>-1) return "Get my referral code";
+    if(u.indexOf("/part")>-1) return "See party packages";
+    if(u.indexOf("/event")>-1||u.indexOf("/promo")>-1) return "See what's on";
+    if(u.indexOf("giftcard")>-1||u.indexOf("gift-card")>-1||u.indexOf("/cards")>-1) return "Get a gift card";
+    if(u.indexOf("loyalty")>-1||u.indexOf("punchcard")>-1) return "See your punch card";
+    if(u.indexOf("waiver")>-1) return "Sign the waiver";
+    if(u.indexOf("/pass")>-1) return "See passes";
+    if(u.indexOf("/book")>-1) return "Book your visit";
+    return "Visit our website";
+  }
+
+  // Only overwrite while the studio hasn't typed their own wording.
+  var edited=false;
+  label.addEventListener("input",function(){ edited=true; });
+  function sync(){ if(!edited) label.value=suggest(link.value); }
+  link.addEventListener("input",sync);
+  link.addEventListener("change",sync);
+  sync();
+  window.__lhBookLabel=function(){ return (label.value||"").trim(); };
+})();
+
+// ---- Play Club memberships (admin) ----
+// Self-contained: reads the key straight from the DOM rather than depending on
+// KEY()/KLABEL, which live inside IIFEs this block can't reach.
+(function(){
+  function el(id){ return document.getElementById(id); }
+  if(!el("sec-playclub")) return;
+  function theKey(){
+    var i=el("pin")||el("key");
+    var v=i&&i.value?i.value.trim():"";
+    if(v) return v;
+    try{ if(typeof PIN!=="undefined"&&PIN) return PIN; }catch(e){}
+    try{ if(typeof KEY==="function") return KEY(); }catch(e){}
+    return "";
+  }
+  function out(m,c){ var o=el("pclubOut"); o.style.display="block"; o.className="out "+(c||""); o.textContent=m; }
+  function esc(s){ return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];}); }
+
+  // Downscale before upload so a phone photo doesn't blow the size limit.
+  function readImage(input, cb){
+    var f = input && input.files && input.files[0];
+    if(!f){ cb(undefined); return; }
+    var rd=new FileReader();
+    rd.onload=function(){
+      var img=new Image();
+      img.onload=function(){
+        var max=900, w=img.width, h=img.height;
+        if(w>max||h>max){ var s=Math.min(max/w,max/h); w=Math.round(w*s); h=Math.round(h*s); }
+        var c=document.createElement("canvas"); c.width=w; c.height=h;
+        c.getContext("2d").drawImage(img,0,0,w,h);
+        cb(c.toDataURL("image/jpeg",0.85));
+      };
+      img.onerror=function(){ cb(rd.result); };
+      img.src=rd.result;
+    };
+    rd.onerror=function(){ cb(undefined); };
+    rd.readAsDataURL(f);
+  }
+
+  async function call(body, okMsg){
+    var key=theKey();
+    if(!key){ out("Enter your staff PIN or admin key at the top of the page first.","err"); return null; }
+    try{
+      var res=await fetch("/api/playclub",{method:"POST",headers:{"content-type":"application/json"},
+        body:JSON.stringify(Object.assign({key:key},body))});
+      var r=await res.json();
+      if(r.ok){ if(r.message||okMsg) out(r.message||okMsg,"ok"); return r; }
+      out(r.error||("That didn't work (HTTP "+res.status+")."),"err"); return null;
+    }catch(e){ out("Network error \u2014 "+(e&&e.message?e.message:"try again."),"err"); return null; }
+  }
+
+  function renderList(plans){
+    var box=el("pclubList");
+    if(!plans||!plans.length){ box.innerHTML='<p class="note">No plans yet \u2014 add your first one above.</p>'; return; }
+    box.innerHTML=plans.map(function(p,i){
+      return '<div style="display:flex;gap:10px;align-items:center;border:1px solid #e7ddd0;border-radius:12px;padding:10px;margin-bottom:8px;background:#fff">'
+        + (p.imageMime?'<img src="/api/playclub-image?id='+encodeURIComponent(p.id)+'&t='+Date.now()+'" style="width:46px;height:46px;border-radius:10px;object-fit:cover;flex:none">':'<div style="width:46px;height:46px;border-radius:10px;background:#fdf1ec;display:flex;align-items:center;justify-content:center;flex:none">\uD83C\uDF88</div>')
+        + '<div style="flex:1;min-width:0">'
+        +   '<div style="font-weight:800">'+esc(p.name)+(p.active===false?' <span class="note">(hidden)</span>':'')+'</div>'
+        +   '<div class="note" style="margin:0">'+esc(p.price||"")+(p.price?" / "+esc(p.period||"month"):"")+'</div>'
+        +   '<div class="note" style="margin:0;word-break:break-all;font-size:.75rem">'+esc(p.link)+'</div>'
+        + '</div>'
+        + '<div style="display:flex;flex-direction:column;gap:4px;flex:none">'
+        +   '<button type="button" class="pclubEdit" data-id="'+esc(p.id)+'" style="margin:0;padding:5px 11px;font-size:.75rem">Edit</button>'
+        +   '<button type="button" class="pclubUp" data-i="'+i+'" class="alt" style="margin:0;padding:5px 11px;font-size:.75rem;background:#f4ece1;color:#5c6470">\u2191</button>'
+        +   '<button type="button" class="pclubDel" data-id="'+esc(p.id)+'" style="margin:0;padding:5px 11px;font-size:.75rem;background:#fdf1ec;color:#b8524a">Delete</button>'
+        + '</div></div>';
+    }).join("");
+    wire(plans);
+  }
+
+  var CURRENT=[];
+  function wire(plans){
+    CURRENT=plans;
+    Array.prototype.forEach.call(document.querySelectorAll(".pclubEdit"),function(b){
+      b.onclick=function(){
+        var p=plans.find(function(x){return x.id===b.getAttribute("data-id");}); if(!p) return;
+        el("pclubId").value=p.id; el("pclubName").value=p.name||""; el("pclubDesc").value=p.blurb||"";
+        el("pclubPrice").value=p.price||""; el("pclubPeriod").value=p.period||"month";
+        el("pclubBadge").value=p.badge||""; el("pclubLink").value=p.link||"";
+        el("pclubFormTitle").textContent="Editing: "+p.name;
+        el("pclubFormTitle").scrollIntoView({behavior:"smooth",block:"center"});
+      };
+    });
+    Array.prototype.forEach.call(document.querySelectorAll(".pclubDel"),function(b){
+      b.onclick=async function(){
+        if(!confirm("Remove this plan from the page?\n\nAnyone already subscribed in Square keeps their subscription \u2014 this only hides it from new customers.")) return;
+        var r=await call({action:"delete",id:b.getAttribute("data-id")});
+        if(r) renderList(r.plans);
+      };
+    });
+    Array.prototype.forEach.call(document.querySelectorAll(".pclubUp"),function(b){
+      b.onclick=async function(){
+        var i=parseInt(b.getAttribute("data-i"),10); if(i<=0) return;
+        var ids=CURRENT.map(function(x){return x.id;});
+        var t=ids[i-1]; ids[i-1]=ids[i]; ids[i]=t;
+        var r=await call({action:"reorder",ids:ids});
+        if(r) renderList(r.plans);
+      };
+    });
+  }
+
+  function resetForm(){
+    ["pclubId","pclubName","pclubDesc","pclubPrice","pclubBadge","pclubLink"].forEach(function(i){ el(i).value=""; });
+    el("pclubPeriod").value="month"; el("pclubImage").value="";
+    el("pclubFormTitle").textContent="Add a plan";
+  }
+
+  el("pclubLoad").onclick=async function(){
+    var r=await call({action:"list"},"Loaded.");
+    if(!r) return;
+    renderList(r.plans||[]);
+    if(r.meta){ el("pclubHeading").value=r.meta.heading||""; el("pclubBlurb").value=r.meta.blurb||""; }
+  };
+  el("pclubReset").onclick=resetForm;
+
+  el("pclubSave").onclick=function(){
+    readImage(el("pclubImage"), async function(dataUrl){
+      var plan={ id:el("pclubId").value||undefined, name:el("pclubName").value.trim(),
+        blurb:el("pclubDesc").value.trim(), price:el("pclubPrice").value.trim(),
+        period:el("pclubPeriod").value.trim()||"month", badge:el("pclubBadge").value.trim(),
+        link:el("pclubLink").value.trim() };
+      if(dataUrl!==undefined) plan.dataUrl=dataUrl;
+      var r=await call({action:"save",plan:plan});
+      if(r){ renderList(r.plans); resetForm(); }
+    });
+  };
+
+  el("pclubSaveBanner").onclick=function(){
+    readImage(el("pclubBanner"), async function(dataUrl){
+      var body={action:"banner",heading:el("pclubHeading").value.trim(),blurb:el("pclubBlurb").value.trim()};
+      if(dataUrl!==undefined) body.dataUrl=dataUrl;
+      var r=await call(body,"Saved.");
+      if(r) el("pclubBanner").value="";
+    });
+  };
+  el("pclubClearBanner").onclick=async function(){
+    if(!confirm("Remove the banner image?")) return;
+    await call({action:"banner",dataUrl:null},"Banner removed.");
+  };
+})();
+
+// ---- Play Club members (admin) ----
+(function(){
+  function el(id){ return document.getElementById(id); }
+  if(!el("sec-playclub-members")) return;
+  function theKey(){
+    var i=el("pin")||el("key");
+    var v=i&&i.value?i.value.trim():"";
+    if(v) return v;
+    try{ if(typeof PIN!=="undefined"&&PIN) return PIN; }catch(e){}
+    try{ if(typeof KEY==="function") return KEY(); }catch(e){}
+    return "";
+  }
+  function esc(s){ return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];}); }
+  function out(m,c){ var o=el("pmOut"); o.style.display="block"; o.className="out "+(c||""); o.textContent=m; }
+
+  var PICKED=[];
+
+  async function api(body, okMsg){
+    var key=theKey();
+    if(!key){ out("Enter your staff PIN or admin key at the top first.","err"); return null; }
+    try{
+      var res=await fetch("/api/playclub",{method:"POST",headers:{"content-type":"application/json"},
+        body:JSON.stringify(Object.assign({key:key},body))});
+      var r=await res.json();
+      if(r.ok){ if(r.message||okMsg) out(r.message||okMsg,"ok"); return r; }
+      out(r.error||("That didn't work (HTTP "+res.status+")."),"err"); return null;
+    }catch(e){ out("Network error \u2014 "+(e&&e.message?e.message:"try again."),"err"); return null; }
+  }
+
+  // Reuse the loyalty search so linking uses the real cards, not typed names.
+  el("pmFind").onclick=async function(){
+    var key=theKey(); if(!key){ out("Enter your key first.","err"); return; }
+    var q=el("pmSearch").value.trim();
+    if(q.length<2){ out("Type at least two characters.","err"); return; }
+    try{
+      var r=await (await fetch("/api/loyalty",{method:"POST",headers:{"content-type":"application/json"},
+        body:JSON.stringify({key:key,action:"by-phone",query:q})})).json();
+      var cards=(r&&r.cards)||[];
+      if(!cards.length){ el("pmKids").innerHTML='<p class="note">No cards matched.</p>'; return; }
+      el("pmKids").innerHTML=cards.map(function(c){
+        var on=PICKED.some(function(k){return k.code===c.code;});
+        return '<label class="agree" style="align-items:center"><input type="checkbox" class="pmKid" data-code="'
+          + esc(c.code) + '" data-name="' + esc(c.childName||"") + '"' + (on?" checked":"") + '> '
+          + esc(c.childName||c.code) + ' <span class="note">(' + esc(c.code) + (c.phone4?" \u00b7 \u00b7\u00b7\u00b7"+esc(c.phone4):"") + ')</span></label>';
+      }).join("");
+      // Pre-fill the phone from the first match if it's still empty.
+      if(!el("pmPhone").value && cards[0] && cards[0].phone4) el("pmSearch").placeholder="\u00b7\u00b7\u00b7"+cards[0].phone4;
+      [].slice.call(document.querySelectorAll(".pmKid")).forEach(function(b){
+        b.addEventListener("change",function(){
+          var rec={code:b.getAttribute("data-code"),name:b.getAttribute("data-name")};
+          PICKED=PICKED.filter(function(k){return k.code!==rec.code;});
+          if(b.checked) PICKED.push(rec);
+        });
+      });
+      PICKED=[].slice.call(document.querySelectorAll(".pmKid")).filter(function(b){return b.checked;})
+        .map(function(b){return {code:b.getAttribute("data-code"),name:b.getAttribute("data-name")};});
+    }catch(e){ out("Network error.","err"); }
+  };
+
+  function renderList(members){
+    var box=el("pmList");
+    if(!members||!members.length){ box.innerHTML='<p class="note">No members yet.</p>'; return; }
+    box.innerHTML=members.map(function(m){
+      var kids=(m.children||[]).map(function(c){return esc(c.name||c.code);}).join(", ");
+      var hist=(m.history||[]).slice(0,5).map(function(v){
+        return '<div class="note" style="margin:0">'+esc(v.date||String(v.at||"").slice(0,10))+' \u00b7 '+esc(v.slot||"")
+          +' \u00b7 '+(v.count||0)+' child'+((v.count||0)===1?"":"ren")+(v.children&&v.children.length?' ('+esc(v.children.join(", "))+')':'')+'</div>';
+      }).join("");
+      return '<div style="border:1px solid #e7ddd0;border-radius:12px;padding:11px;margin-bottom:8px;background:#fff">'
+        + '<div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:flex-start">'
+        +   '<div><b>'+esc(m.name)+'</b> <span style="font-family:monospace;color:var(--rose-deep)">'+esc(m.code)+'</span>'
+        +     (m.active===false?' <span class="note">(paused)</span>':'')
+        +     '<div class="note" style="margin:0">\u00b7\u00b7\u00b7'+esc(m.phone4||"")+(m.planName?" \u00b7 "+esc(m.planName):"")+'</div>'
+        +     '<div class="note" style="margin:0">\uD83E\uDDD2 '+(kids||"no children linked")+'</div>'
+        +     '<div class="note" style="margin:2px 0 0"><b>'+(m.visits||0)+'</b> visit'+((m.visits||0)===1?"":"s")
+        +       (m.lastVisitDate?' \u00b7 last '+esc(m.lastVisitDate):"")+'</div>'
+        +   '</div>'
+        +   '<div style="display:flex;flex-direction:column;gap:4px">'
+        +     '<button type="button" class="pmEdit" data-code="'+esc(m.code)+'" style="margin:0;padding:5px 11px;font-size:.75rem">Edit</button>'
+        +     '<button type="button" class="pmHist" data-code="'+esc(m.code)+'" style="margin:0;padding:5px 11px;font-size:.75rem;background:#f4ece1;color:#5c6470">Visits</button>'
+        +     '<button type="button" class="pmDel" data-code="'+esc(m.code)+'" style="margin:0;padding:5px 11px;font-size:.75rem;background:#fdf1ec;color:#b8524a">Remove</button>'
+        +   '</div></div>'
+        + '<div class="pmHistBox" data-code="'+esc(m.code)+'" style="display:none;margin-top:8px;border-top:1px dashed #e7ddd0;padding-top:8px">'
+        +   (hist||'<div class="note" style="margin:0">No visits recorded yet.</div>')+'</div>'
+        + '</div>';
+    }).join("");
+    wireList(members);
+  }
+
+  function wireList(members){
+    [].slice.call(document.querySelectorAll(".pmEdit")).forEach(function(b){
+      b.onclick=function(){
+        var m=members.find(function(x){return x.code===b.getAttribute("data-code");}); if(!m) return;
+        el("pmCode").value=m.code; el("pmName").value=m.name||"";
+        el("pmPhone").value=m.phone4?("\u00b7\u00b7\u00b7"+m.phone4):"";
+        el("pmEmail").value=m.email||""; el("pmMax").value=m.maxChildren||2;
+        if(el("pmPlan")) el("pmPlan").value=m.planId||"";
+        PICKED=(m.children||[]).slice();
+        el("pmKids").innerHTML=PICKED.map(function(c){
+          return '<label class="agree" style="align-items:center"><input type="checkbox" class="pmKid" checked data-code="'
+            +esc(c.code)+'" data-name="'+esc(c.name||"")+'"> '+esc(c.name||c.code)+'</label>';
+        }).join("")||'<p class="note">Search above to link children.</p>';
+        el("pmTitle").textContent="Editing: "+m.name;
+        el("pmTitle").scrollIntoView({behavior:"smooth",block:"center"});
+        out("Editing "+m.code+". Phone shows only the last 4 \u2014 retype the full number if you change it.","ok");
+      };
+    });
+    [].slice.call(document.querySelectorAll(".pmHist")).forEach(function(b){
+      b.onclick=function(){
+        var box=document.querySelector('.pmHistBox[data-code="'+b.getAttribute("data-code")+'"]');
+        if(box) box.style.display = box.style.display==="none" ? "block" : "none";
+      };
+    });
+    [].slice.call(document.querySelectorAll(".pmDel")).forEach(function(b){
+      b.onclick=async function(){
+        if(!confirm("Remove this membership?\n\nThey'll no longer book for free. Cancel the subscription in Square separately.")) return;
+        var r=await api({action:"member-delete",code:b.getAttribute("data-code")});
+        if(r) renderList(r.members);
+      };
+    });
+  }
+
+  function reset(){
+    ["pmCode","pmName","pmPhone","pmEmail","pmSearch"].forEach(function(i){ el(i).value=""; });
+    el("pmMax").value=2; el("pmKids").innerHTML=""; PICKED=[];
+    el("pmTitle").textContent="Add a member";
+  }
+  el("pmReset").onclick=reset;
+
+  el("pmSave").onclick=async function(){
+    var phone=el("pmPhone").value.trim();
+    if(phone.indexOf("\u00b7")>-1){ out("Retype the full phone number \u2014 only the last 4 are stored.","err"); return; }
+    var sel=el("pmPlan");
+    var member={
+      code:el("pmCode").value||undefined,
+      name:el("pmName").value.trim(), phone:phone, email:el("pmEmail").value.trim(),
+      planId:sel?sel.value:"", planName:(sel&&sel.selectedIndex>=0)?sel.options[sel.selectedIndex].text:"",
+      maxChildren:parseInt(el("pmMax").value,10)||PICKED.length||1,
+      children:PICKED,
+    };
+    var r=await api({action:"member-save",member:member});
+    if(r){ renderList(r.members); reset(); }
+  };
+
+  el("pmLoad").onclick=async function(){
+    var r=await api({action:"members"},"Loaded.");
+    if(!r) return;
+    renderList(r.members||[]);
+    var sel=el("pmPlan");
+    if(sel){ sel.innerHTML='<option value="">(no plan)</option>'
+      + (r.plans||[]).map(function(p){ return '<option value="'+esc(p.id)+'">'+esc(p.name)+'</option>'; }).join(""); }
   };
 })();
 </script></body>

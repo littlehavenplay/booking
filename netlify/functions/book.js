@@ -20,6 +20,7 @@ import {
 } from "./lib-settings.js";
 import { issueCode, sendWelcome, sendFamilyPunch, PUNCHES_FOR_REWARD, cleanName, last4 as loyaltyLast4, graduateLegacyCard } from "./lib-loyalty.js";
 import { getActiveFamCode, logFamUse } from "./famcode.js";
+import { findMemberFor, recordMemberVisit } from "./lib-playclub.js";
 import { FRIEND_DISCOUNT_CENTS, findFamilyByCode, familyStatus, normalizeRef, last4 as refLast4 } from "./lib-referral.js";
 import { loadSeasonal, loadWeekly } from "./lib-hours.js";
 import { getClosure, slotBlockedByClosure, getEventHold } from "./lib-closures.js";
@@ -369,6 +370,30 @@ export default async (req) => {
     }
   }
 
+  // ---- Play Club membership --------------------------------------------
+  // A member's monthly subscription already covers admission, so the whole
+  // admission total goes to zero. The visit still takes real capacity and still
+  // shows on the roster; it just isn't charged and earns no punches.
+  let member = null, memberAmount = 0;
+  const pcCode = (body.playClubCode || "").toString().toUpperCase().replace(/[^A-Z0-9]/g, "");
+  if (pcCode || phone) {
+    const found = await findMemberFor({ code: pcCode, phone });
+    if (found) {
+      const kidCount = regular + sibling + infant;
+      const cap = found.maxChildren || (found.children || []).length || 1;
+      if (kidCount < 1) return json({ error: "playclub", message: "Choose which children are coming." }, 409);
+      if (kidCount > cap) {
+        return json({ error: "playclub",
+          message: `Your Play Club membership covers up to ${cap} child${cap === 1 ? "" : "ren"} per visit. Remove one, or book the extra child as a normal admission.` }, 409);
+      }
+      member = found;
+      // No punches on a covered visit — same rule as the family code.
+      for (const ch of childNames) ch._freeAdmission = true;
+    } else if (pcCode) {
+      return json({ error: "playclub", message: "We don't recognise that membership code. Please check it or leave it blank." }, 409);
+    }
+  }
+
   // ---- Referral: $5 off, new families only -------------------------------
   // Re-verified here every time. The browser check only exists to show the
   // discount early; it is never trusted.
@@ -410,10 +435,15 @@ export default async (req) => {
   }
 
   // The family code zeroes everything, whatever the headcount.
-  const famAmount = famUsed
+  // The membership covers whatever is left after any other discount.
+  memberAmount = member
     ? Math.max(0, subtotal - discountAmount - weekdaySpecialAmount - militaryAmount - rewardAmount - birthdayAmount - referralAmount)
     : 0;
-  const taxable = Math.max(0, subtotal - discountAmount - weekdaySpecialAmount - militaryAmount - rewardAmount - birthdayAmount - referralAmount - famAmount);
+
+  const famAmount = famUsed
+    ? Math.max(0, subtotal - discountAmount - weekdaySpecialAmount - militaryAmount - rewardAmount - birthdayAmount - referralAmount - memberAmount)
+    : 0;
+  const taxable = Math.max(0, subtotal - discountAmount - weekdaySpecialAmount - militaryAmount - rewardAmount - birthdayAmount - referralAmount - memberAmount - famAmount);
   // No sales tax: recreational/amusement admission is CDTFA-exempt (intangible admission),
   // so this business does not collect sales tax on any admission, party, or gift card sale.
   const tax = 0;
@@ -638,6 +668,9 @@ export default async (req) => {
     creditApplied, promoCode: creditApplied > 0 ? promoCode : null,
     // Stamped so check-in can pay the referrer. Payout happens on ARRIVAL, never
     // on booking — a no-show must not earn anyone $5.
+    playClubCode: member ? member.code : null,
+    playClubName: member ? (member.planName || "Play Club") : null,
+    playClubAmount: memberAmount || 0,
     referredBy: referral ? referral.code : null,
     referralAmount: referralAmount || 0,
     referralPaid: false,
@@ -699,6 +732,19 @@ export default async (req) => {
         paidAt: null, creditCode: null,
         needsReview: !!referral._suspect,
         suspectMatch: referral._suspectMatch || null,
+      });
+    } catch {}
+  }
+
+  // Count the visit against the membership so the staff view shows usage.
+  if (member) {
+    try {
+      await recordMemberVisit(member.code, {
+        date, slot,
+        slotLabel: (SLOTS.find(s => s.id === slot) || {}).label || slot,
+        count: regular + sibling + infant,
+        children: childNames.map(c => cleanName(c.first, c.last)).filter(Boolean),
+        bookedBy: name,
       });
     } catch {}
   }

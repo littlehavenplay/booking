@@ -38,12 +38,14 @@ export default async (req) => {
   if (b.bookLink !== false && b.bookLink !== "") {
     bookLink = String(b.bookLink || "https://littlehavenplay.com/book.html").slice(0, 300);
   }
+  // Blank means "work it out from the link" — see defaultButtonLabel().
+  const bookLabel = String(b.bookLabel || "").slice(0, 40).trim();
 
   const store = getStore(STORE);
   const id = (globalThis.crypto?.randomUUID?.() || (Date.now().toString(36) + Math.random().toString(36).slice(2)));
 
   const campaign = {
-    id, subject, message, bookLink,
+    id, subject, message, bookLink, bookLabel,
     imageMime: null,
     createdAt: new Date().toISOString(),
     status: sendNow ? "sending" : "scheduled",

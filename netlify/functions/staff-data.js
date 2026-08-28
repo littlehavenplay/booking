@@ -70,11 +70,13 @@ export default async (req) => {
           if (x.giftCards && x.giftCards.length) payParts.push("gift card");
           if (x.creditApplied) payParts.push("store credit");
           if (x.passesUsed && x.passesUsed.length) payParts.push("prepaid pass");
+          if (x.playClubCode) payParts.push("Play Club " + x.playClubCode);
           const paid = payParts.join(" + ") || "free / no charge";
           people.push({ id: x.id || null, name: x.name || "(no name)", email: x.email || "", slot: mid, legacy, arrivalLabel,
             childNames: Array.isArray(x.childNames) ? x.childNames : [], phone: x.phone || "",
             regular: x.regular || 0, sibling: x.sibling || 0, infant: x.infant || 0, adults,
-            at: x.at || null, cardLast4: x.cardLast4 || null, paid });
+            at: x.at || null, cardLast4: x.cardLast4 || null, paid,
+            playClub: x.playClubCode || null, playClubName: x.playClubName || null });
         }
       }
     }

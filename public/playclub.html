@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Play Club Membership — Little Haven Play Studio</title>
+<meta name="description" content="Monthly Play Club memberships at Little Haven Play Studio — unlimited weekday play for your little ones.">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,400&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root{--cream:#faf7f3;--sand:#f4ece1;--blush-pale:#fdf1ec;--blush:#efcfc4;--rose:#c97d76;
+        --rose-deep:#a85f59;--rose-light:#e8a99f;--sage-pale:#ecf1e8;--sage-light:#c2d7bd;--sage:#7ba676;
+        --sage-dark:#4d7848;--slate:#5c6470;--taupe:#aea298;--charcoal:#2a2622;--line:#e7ddd0;
+        --shadow:0 4px 24px rgba(0,0,0,.07);--shadow-lg:0 14px 44px rgba(0,0,0,.12)}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--cream);font-family:'Nunito',sans-serif;color:var(--charcoal);line-height:1.6}
+  .top{padding:14px 18px;background:#fff;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+  .top a.brand{font-family:'Cormorant Garamond',Georgia,serif;font-size:1.35rem;color:var(--charcoal);text-decoration:none}
+  .top a.brand i{color:var(--rose-deep)}
+  .top a.back{color:var(--rose-deep);text-decoration:none;font-weight:800;font-size:.85rem}
+  .wrap{max-width:1020px;margin:0 auto;padding:26px 16px 70px}
+  .banner{border-radius:22px;overflow:hidden;box-shadow:var(--shadow);margin-bottom:22px;display:none}
+  .banner img{display:block;width:100%;height:auto}
+  h1{font-family:'Cormorant Garamond',Georgia,serif;font-weight:400;font-size:2.4rem;text-align:center;margin:.1em 0 .2em}
+  .sub{text-align:center;color:var(--slate);max-width:620px;margin:0 auto 26px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(268px,1fr));gap:18px}
+  .plan{background:#fff;border:1px solid var(--line);border-radius:20px;padding:22px;box-shadow:var(--shadow);
+        display:flex;flex-direction:column;position:relative;transition:transform .14s,box-shadow .14s}
+  .plan:hover{transform:translateY(-3px);box-shadow:var(--shadow-lg)}
+  .plan .badge{position:absolute;top:14px;right:14px;background:var(--sage-pale);color:var(--sage-dark);
+        border:1px solid var(--sage-light);border-radius:999px;padding:3px 11px;font-size:.68rem;font-weight:900;
+        letter-spacing:.05em;text-transform:uppercase}
+  .plan .icon{width:74px;height:74px;border-radius:18px;object-fit:cover;background:var(--sand);margin-bottom:12px}
+  .plan .fallback{width:74px;height:74px;border-radius:18px;background:var(--blush-pale);display:flex;
+        align-items:center;justify-content:center;font-size:2rem;margin-bottom:12px}
+  .plan h3{font-family:'Cormorant Garamond',Georgia,serif;font-weight:500;font-size:1.4rem;margin:0 0 6px;line-height:1.25}
+  .plan p{color:var(--slate);font-size:.92rem;margin:0 0 14px;flex:1}
+  .price{font-size:1.7rem;font-weight:900;color:var(--rose-deep);line-height:1.1;margin-bottom:2px}
+  .period{color:var(--taupe);font-size:.82rem;font-weight:700;margin-bottom:14px}
+  .btn{display:block;text-align:center;background:var(--rose);color:#fff;text-decoration:none;font-weight:800;
+       padding:13px;border-radius:999px;transition:background .15s}
+  .btn:hover{background:var(--rose-deep)}
+  .empty{background:#fff;border:1px dashed var(--line);border-radius:20px;padding:40px 20px;text-align:center;color:var(--taupe)}
+  .note{max-width:620px;margin:26px auto 0;color:var(--taupe);font-size:.85rem;text-align:center;line-height:1.7}
+  .note b{color:var(--slate)}
+  @media (max-width:520px){ h1{font-size:1.9rem} .wrap{padding:18px 14px 50px} }
+</style>
+</head>
+<body>
+<div class="top">
+  <a class="brand" href="/index.html">Little <i>Haven</i> Play Studio</a>
+  <a class="back" href="/index.html">&larr; Back to site</a>
+</div>
+
+<div class="wrap">
+  <div class="banner" id="banner"><img id="bannerImg" alt=""></div>
+  <h1 id="heading">Monthly Play Club</h1>
+  <p class="sub" id="blurb">Loading membership plans&hellip;</p>
+  <div class="grid" id="grid"></div>
+  <p class="note" id="foot" style="display:none">
+    Memberships are billed monthly through <b>Square</b> and renew automatically until you cancel.
+    You can cancel any time from the receipt Square emails you, or just let us know and we'll help.
+    Questions? <a href="mailto:hello@littlehavenplay.com" style="color:var(--rose-deep)">hello@littlehavenplay.com</a>
+  </p>
+</div>
+
+<script>
+(function(){
+  var esc=function(s){ return String(s==null?"":s).replace(/[&<>"]/g,function(c){
+    return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]; }); };
+
+  function render(d){
+    if(d.heading) document.getElementById("heading").textContent=d.heading;
+    var blurb=document.getElementById("blurb");
+    if(d.blurb){ blurb.textContent=d.blurb; } else { blurb.style.display="none"; }
+
+    if(d.hasBanner){
+      var b=document.getElementById("banner"), img=document.getElementById("bannerImg");
+      img.src="/api/playclub-image?banner=1&t="+Date.now();
+      img.alt=d.heading||"Play Club";
+      // Only reveal the banner once it actually loads, so a missing image can't
+      // leave an empty grey slab at the top of the page.
+      img.onload=function(){ b.style.display="block"; };
+    }
+
+    var grid=document.getElementById("grid");
+    if(!d.plans || !d.plans.length){
+      grid.innerHTML='<div class="empty">Our Play Club plans are being set up &mdash; check back very soon!</div>';
+      return;
+    }
+    grid.innerHTML=d.plans.map(function(p){
+      var icon = p.hasImage
+        ? '<img class="icon" src="/api/playclub-image?id='+encodeURIComponent(p.id)+'" alt="">'
+        : '<div class="fallback">\uD83C\uDF88</div>';
+      return '<div class="plan">'
+        + (p.badge?'<span class="badge">'+esc(p.badge)+'</span>':'')
+        + icon
+        + '<h3>'+esc(p.name)+'</h3>'
+        + (p.blurb?'<p>'+esc(p.blurb)+'</p>':'<p></p>')
+        + (p.price?'<div class="price">'+esc(p.price)+'</div>':'')
+        + (p.price?'<div class="period">per '+esc(p.period||"month")+'</div>':'')
+        + '<a class="btn" href="'+esc(p.link)+'" target="_blank" rel="noopener">Join now</a>'
+        + '</div>';
+    }).join("");
+    document.getElementById("foot").style.display="block";
+  }
+
+  fetch("/api/playclub",{method:"POST",headers:{"content-type":"application/json"},
+    body:JSON.stringify({action:"public"})})
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      if(!d || !d.ok) throw new Error("bad response");
+      render(d);
+    })
+    .catch(function(){
+      document.getElementById("blurb").textContent="";
+      document.getElementById("grid").innerHTML=
+        '<div class="empty">We couldn\'t load the plans just now. Please refresh, or email '
+        + '<a href="mailto:hello@littlehavenplay.com" style="color:var(--rose-deep)">hello@littlehavenplay.com</a>.</div>';
+    });
+})();
+</script>
+<script src="/assets/chat.js" defer></script>
+</body>
+</html>

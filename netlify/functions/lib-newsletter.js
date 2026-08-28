@@ -63,6 +63,23 @@ function messageToHtml(message) {
 // Build the full HTML email for one subscriber. Includes the optional promo/event
 // image, the owner's message, an optional "Book your visit" button, and a footer
 // with a working one-click unsubscribe link.
+// Work out a sensible button label from where the link points, so a campaign
+// about referrals doesn't ship a button saying "Book your visit". Used as the
+// default; whatever the studio types always wins.
+export function defaultButtonLabel(url) {
+  const u = (url || "").toLowerCase();
+  if (u.indexOf("/refer") > -1)                                   return "Get my referral code";
+  if (u.indexOf("/part") > -1)                                    return "See party packages";
+  if (u.indexOf("/event") > -1 || u.indexOf("/promo") > -1)       return "See what's on";
+  if (u.indexOf("giftcard") > -1 || u.indexOf("gift-card") > -1 || u.indexOf("/cards") > -1)
+                                                                   return "Get a gift card";
+  if (u.indexOf("loyalty") > -1 || u.indexOf("punchcard") > -1)   return "See your punch card";
+  if (u.indexOf("waiver") > -1)                                   return "Sign the waiver";
+  if (u.indexOf("/pass") > -1)                                    return "See passes";
+  if (u.indexOf("/book") > -1)                                    return "Book your visit";
+  return "Visit our website";
+}
+
 export function buildCampaignHtml(campaign, subscriber) {
   const studio = process.env.STUDIO_NAME || "Little Haven Play Studio";
   const uUrl = unsubUrl(subscriber.email, subscriber.token);
@@ -72,7 +89,7 @@ export function buildCampaignHtml(campaign, subscriber) {
   const hello = subscriber.name ? `Hi ${esc(subscriber.name)},` : "Hi there,";
   const bookBtn = campaign.bookLink
     ? `<div style="text-align:center;margin:22px 0 6px">
-         <a href="${esc(campaign.bookLink)}" style="display:inline-block;background:#c97d76;color:#fff;text-decoration:none;font-weight:800;font-size:15px;padding:14px 30px;border-radius:40px">Book your visit →</a>
+         <a href="${esc(campaign.bookLink)}" style="display:inline-block;background:#c97d76;color:#fff;text-decoration:none;font-weight:800;font-size:15px;padding:14px 30px;border-radius:40px">${esc((campaign.bookLabel || "").trim() || defaultButtonLabel(campaign.bookLink))} →</a>
        </div>`
     : "";
   return `<div style="font-family:Arial,Helvetica,sans-serif;background:#faf7f3;padding:22px 0">
