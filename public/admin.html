@@ -844,11 +844,12 @@
         <div style="display:flex;gap:10px;flex-wrap:wrap">
           <div style="flex:1;min-width:120px"><label>Price shown</label><input type="text" id="pclubPrice" maxlength="24" placeholder="$89"></div>
           <div style="flex:1;min-width:110px"><label>Per</label><input type="text" id="pclubPeriod" maxlength="16" placeholder="month" value="month"></div>
-          <div style="flex:1;min-width:120px"><label>Badge (optional)</label><input type="text" id="pclubBadge" maxlength="24" placeholder="Most popular"></div>
+          <div style="flex:1;min-width:150px"><label>Category</label><input type="text" id="pclubCategory" maxlength="40" list="pclubCatList" placeholder="Weekday Play Club"><datalist id="pclubCatList"><option value="Weekday Play Club"><option value="Any Day Play Club"></datalist></div><div style="flex:1;min-width:120px"><label>Badge (optional)</label><input type="text" id="pclubBadge" maxlength="24" placeholder="Most popular"></div>
         </div>
         <label>Square subscription link</label>
         <input type="text" id="pclubLink" placeholder="https://square.link/u/XXXXXXXX">
         <p class="note" style="margin:4px 0 8px">Copy it straight from Square &rarr; Payment links. Must start with https://square.link/</p>
+        <p class="note" style="margin:0 0 8px">Plans with the same <b>Category</b> are grouped together under a heading on the page. Leave blank to show ungrouped.</p>
         <label>Icon / image for this plan</label>
         <input type="file" id="pclubImage" accept="image/*">
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
@@ -2970,7 +2971,7 @@ if($("#wsSave")) $("#wsSave").onclick=async function(){
         + (p.imageMime?'<img src="/api/playclub-image?id='+encodeURIComponent(p.id)+'&t='+Date.now()+'" style="width:46px;height:46px;border-radius:10px;object-fit:cover;flex:none">':'<div style="width:46px;height:46px;border-radius:10px;background:#fdf1ec;display:flex;align-items:center;justify-content:center;flex:none">\uD83C\uDF88</div>')
         + '<div style="flex:1;min-width:0">'
         +   '<div style="font-weight:800">'+esc(p.name)+(p.active===false?' <span class="note">(hidden)</span>':'')+'</div>'
-        +   '<div class="note" style="margin:0">'+esc(p.price||"")+(p.price?" / "+esc(p.period||"month"):"")+'</div>'
+        +   '<div class="note" style="margin:0">'+esc(p.price||"")+(p.price?" / "+esc(p.period||"month"):"")+(p.category?' \u00b7 <b>'+esc(p.category)+'</b>':'')+'</div>'
         +   '<div class="note" style="margin:0;word-break:break-all;font-size:.75rem">'+esc(p.link)+'</div>'
         + '</div>'
         + '<div style="display:flex;flex-direction:column;gap:4px;flex:none">'
@@ -2990,7 +2991,7 @@ if($("#wsSave")) $("#wsSave").onclick=async function(){
         var p=plans.find(function(x){return x.id===b.getAttribute("data-id");}); if(!p) return;
         el("pclubId").value=p.id; el("pclubName").value=p.name||""; el("pclubDesc").value=p.blurb||"";
         el("pclubPrice").value=p.price||""; el("pclubPeriod").value=p.period||"month";
-        el("pclubBadge").value=p.badge||""; el("pclubLink").value=p.link||"";
+        el("pclubBadge").value=p.badge||""; el("pclubCategory").value=p.category||""; el("pclubLink").value=p.link||"";
         el("pclubFormTitle").textContent="Editing: "+p.name;
         el("pclubFormTitle").scrollIntoView({behavior:"smooth",block:"center"});
       };
@@ -3014,7 +3015,7 @@ if($("#wsSave")) $("#wsSave").onclick=async function(){
   }
 
   function resetForm(){
-    ["pclubId","pclubName","pclubDesc","pclubPrice","pclubBadge","pclubLink"].forEach(function(i){ el(i).value=""; });
+    ["pclubId","pclubName","pclubDesc","pclubPrice","pclubBadge","pclubLink","pclubCategory"].forEach(function(i){ el(i).value=""; });
     el("pclubPeriod").value="month"; el("pclubImage").value="";
     el("pclubFormTitle").textContent="Add a plan";
   }
@@ -3031,7 +3032,7 @@ if($("#wsSave")) $("#wsSave").onclick=async function(){
     readImage(el("pclubImage"), async function(dataUrl){
       var plan={ id:el("pclubId").value||undefined, name:el("pclubName").value.trim(),
         blurb:el("pclubDesc").value.trim(), price:el("pclubPrice").value.trim(),
-        period:el("pclubPeriod").value.trim()||"month", badge:el("pclubBadge").value.trim(),
+        period:el("pclubPeriod").value.trim()||"month", badge:el("pclubBadge").value.trim(), category:el("pclubCategory").value.trim(),
         link:el("pclubLink").value.trim() };
       if(dataUrl!==undefined) plan.dataUrl=dataUrl;
       var r=await call({action:"save",plan:plan});

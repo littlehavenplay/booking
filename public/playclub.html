@@ -29,9 +29,12 @@
   .plan .badge{position:absolute;top:14px;right:14px;background:var(--sage-pale);color:var(--sage-dark);
         border:1px solid var(--sage-light);border-radius:999px;padding:3px 11px;font-size:.68rem;font-weight:900;
         letter-spacing:.05em;text-transform:uppercase}
-  .plan .icon{width:74px;height:74px;border-radius:18px;object-fit:cover;background:var(--sand);margin-bottom:12px}
-  .plan .fallback{width:74px;height:74px;border-radius:18px;background:var(--blush-pale);display:flex;
-        align-items:center;justify-content:center;font-size:2rem;margin-bottom:12px}
+  .plan .icon,.plan .fallback{width:118px;height:118px;border-radius:20px;object-fit:contain;
+        background:var(--sand);margin:0 auto 14px;display:block;
+        transition:transform .18s ease, box-shadow .18s ease}
+  .plan .fallback{background:var(--blush-pale);display:flex;align-items:center;justify-content:center;font-size:2.6rem}
+  .plan:hover .icon,.plan:hover .fallback{transform:scale(1.09);box-shadow:0 8px 22px rgba(0,0,0,.13)}
+  .plan h3,.plan p,.plan .price,.plan .period{text-align:center}
   .plan h3{font-family:'Cormorant Garamond',Georgia,serif;font-weight:500;font-size:1.4rem;margin:0 0 6px;line-height:1.25}
   .plan p{color:var(--slate);font-size:.92rem;margin:0 0 14px;flex:1}
   .price{font-size:1.7rem;font-weight:900;color:var(--rose-deep);line-height:1.1;margin-bottom:2px}
@@ -40,6 +43,14 @@
        padding:13px;border-radius:999px;transition:background .15s}
   .btn:hover{background:var(--rose-deep)}
   .empty{background:#fff;border:1px dashed var(--line);border-radius:20px;padding:40px 20px;text-align:center;color:var(--taupe)}
+  /* Category headings — a clear break between Weekday and Any Day rather than
+     one continuous wall of cards. */
+  .catwrap{margin:34px 0 0}
+  .catwrap:first-of-type{margin-top:8px}
+  .cathead{display:flex;align-items:center;gap:14px;margin:0 0 16px}
+  .cathead span{font-family:'Cormorant Garamond',Georgia,serif;font-size:1.6rem;color:var(--charcoal);white-space:nowrap}
+  .cathead::before,.cathead::after{content:"";flex:1;height:1px;background:var(--line)}
+  @media (max-width:520px){ .cathead span{font-size:1.3rem} }
   .note{max-width:620px;margin:26px auto 0;color:var(--taupe);font-size:.85rem;text-align:center;line-height:1.7}
   .note b{color:var(--slate)}
   @media (max-width:520px){ h1{font-size:1.9rem} .wrap{padding:18px 14px 50px} }
@@ -87,7 +98,8 @@
       grid.innerHTML='<div class="empty">Our Play Club plans are being set up &mdash; check back very soon!</div>';
       return;
     }
-    grid.innerHTML=d.plans.map(function(p){
+
+    function card(p){
       var icon = p.hasImage
         ? '<img class="icon" src="/api/playclub-image?id='+encodeURIComponent(p.id)+'" alt="">'
         : '<div class="fallback">\uD83C\uDF88</div>';
@@ -100,7 +112,31 @@
         + (p.price?'<div class="period">per '+esc(p.period||"month")+'</div>':'')
         + '<a class="btn" href="'+esc(p.link)+'" target="_blank" rel="noopener">Join now</a>'
         + '</div>';
-    }).join("");
+    }
+
+    // Group by category, keeping the order the plans were saved in. Anything
+    // without a category falls into one unlabelled group at the end, so an
+    // older plan can never vanish just because it predates categories.
+    var order=[], groups={};
+    d.plans.forEach(function(p){
+      var c=(p.category||"").trim();
+      if(!groups[c]){ groups[c]=[]; order.push(c); }
+      groups[c].push(p);
+    });
+    var labelled=order.filter(function(c){ return c; });
+
+    if(!labelled.length){
+      grid.innerHTML=d.plans.map(card).join("");
+    } else {
+      // Rebuild as sections; the grid class moves onto each section's card row.
+      grid.className="";
+      grid.innerHTML=order.map(function(c){
+        return '<div class="catwrap">'
+          + (c?'<div class="cathead"><span>'+esc(c)+'</span></div>':'')
+          + '<div class="grid">'+groups[c].map(card).join("")+'</div>'
+          + '</div>';
+      }).join("");
+    }
     document.getElementById("foot").style.display="block";
   }
 

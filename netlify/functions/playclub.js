@@ -89,9 +89,13 @@ export default async (req) => {
       heading: meta.heading || "Monthly Play Club",
       blurb: meta.blurb || "",
       hasBanner: !!meta.bannerMime,
+      // Categories keep Weekday and Any Day apart on the page instead of one
+      // undifferentiated wall of cards.
+      categories: [...new Set(plans.map(p => (p.category || "").trim()).filter(Boolean))],
       plans: plans.map(p => ({
         id: p.id, name: p.name, blurb: p.blurb || "",
         price: p.price || "", period: p.period || "month",
+        category: (p.category || "").trim(),
         link: p.link, hasImage: !!p.imageMime, badge: p.badge || "",
       })),
     });
@@ -142,7 +146,12 @@ export default async (req) => {
     const rec = {
       id, name, link,
       blurb: (p.blurb || "").toString().slice(0, 240),
-      price: (p.price || "").toString().slice(0, 24),
+      category: (p.category || "").toString().slice(0, 40).trim(),
+      // "128" typed on its own should still read as a price on the page.
+      price: (() => {
+        const raw = (p.price || "").toString().slice(0, 24).trim();
+        return /^[\d.,]+$/.test(raw) ? "$" + raw : raw;
+      })(),
       period: (p.period || "month").toString().slice(0, 16),
       badge: (p.badge || "").toString().slice(0, 24),
       active: p.active === false ? false : true,
