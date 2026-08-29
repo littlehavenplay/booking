@@ -18,6 +18,7 @@
 // served back by /api/playclub-image, so the page stays fast and nothing depends
 // on an external host.
 import { getStore } from "@netlify/blobs";
+import { listAllKeys } from "./lib-blobs.js";
 
 const STORE = "site";
 const PLANS = "playclub:plans";
@@ -39,6 +40,71 @@ function last4(phone) {
 }
 async function readMembers(store) {
   try { return (await store.get(MEMBERS, { type: "json" })) || []; } catch { return []; }
+}
+
+function todayPacific() {
+  return new Date(new Date().toLocaleString("en-US", { timeZone: "America/Los_Angeles" }))
+    .toISOString().slice(0, 10);
+}
+
+// Renewal falls on the same day each month. Clamp to the last day when the month
+// is short, so a 31st signup renews 28 Feb rather than silently rolling into March.
+export function nextRenewal(startDate, from) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(startDate || "")) return null;
+  const day = Number(startDate.slice(8, 10));
+  const ref = from || todayPacific();
+  let y = Number(ref.slice(0, 4)), m = Number(ref.slice(5, 7));
+  const lastOf = (yy, mm) => new Date(Date.UTC(yy, mm, 0)).getUTCDate();
+  const mk = (yy, mm) => `${yy}-${String(mm).padStart(2, "0")}-${String(Math.min(day, lastOf(yy, mm))).padStart(2, "0")}`;
+  let candidate = mk(y, m);
+  if (candidate <= ref) { m += 1; if (m > 12) { m = 1; y += 1; } candidate = mk(y, m); }
+  return candidate;
+}
+
+// Effective status right now. A cancelled membership keeps working until the paid
+// period ends — prepaid, no refunds, exactly as the policy says.
+export function effectiveStatus(m, today) {
+  const t = today || todayPacific();
+  if (!m || m.active === false) return "inactive";
+  if (m.pausedUntil && m.pausedUntil > t) return "paused";
+  if (m.status === "paused" && !m.pausedUntil) return "paused";
+  if (m.endsOn) return m.endsOn >= t ? "cancelling" : "ended";
+  return "active";
+}
+
+// Months completed, for the 18-month age-up watch.
+function monthsOld(dob, on) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dob || "")) return null;
+  const t = on || todayPacific();
+  let months = (Number(t.slice(0, 4)) - Number(dob.slice(0, 4))) * 12
+             + (Number(t.slice(5, 7)) - Number(dob.slice(5, 7)));
+  if (Number(t.slice(8, 10)) < Number(dob.slice(8, 10))) months -= 1;
+  return months;
+}
+
+// The date a child turns 18 months — when Baby/Infant pricing stops applying.
+export function turns18mo(dob) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dob || "")) return null;
+  let y = Number(dob.slice(0, 4)), m = Number(dob.slice(5, 7)) + 18, d = Number(dob.slice(8, 10));
+  while (m > 12) { m -= 12; y += 1; }
+  const last = new Date(Date.UTC(y, m, 0)).getUTCDate();
+  return `${y}-${String(m).padStart(2, "0")}-${String(Math.min(d, last)).padStart(2, "0")}`;
+}
+
+// Pull DOBs off the loyalty cards rather than asking for them twice.
+async function dobsForChildren(children) {
+  const out = {};
+  try {
+    const loyalty = getStore("loyalty");
+    for (const k of await listAllKeys(loyalty, { prefix: "card:" })) {
+      let c = null; try { c = await loyalty.get(k, { type: "json" }); } catch { continue; }
+      if (!c || !c.code || !c.dob) continue;
+      if ((children || []).some(x => (x.code || "").toUpperCase() === (c.code || "").toUpperCase())) {
+        out[c.code.toUpperCase()] = c.dob;
+      }
+    }
+  } catch {}
+  return out;
 }
 const MAX_IMG_BYTES = 900_000;   // ~900KB of base64 — plenty for an icon
 
@@ -71,6 +137,103 @@ function cleanSquareLink(url) {
   if (!/^https:\/\//i.test(u)) return "";
   if (!/(^|\.)square\.link$|(^|\.)squareup\.com$|(^|\.)square\.site$/i.test(new URL(u).hostname)) return "";
   return u.slice(0, 400);
+}
+
+
+// ---------------------------------------------------------------------------
+// Member emails
+// ---------------------------------------------------------------------------
+function esc(s) {
+  return String(s == null ? "" : s).replace(/[&<>"]/g,
+    c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+}
+
+async function sendMemberEmail(to, subject, inner) {
+  const key = process.env.RESEND_API_KEY;
+  const from = process.env.EMAIL_FROM || "onboarding@resend.dev";
+  const studio = process.env.STUDIO_NAME || "Little Haven Play Studio";
+  const bcc = process.env.STUDIO_EMAIL || "";
+  if (!key || !to) return false;
+  const html = `<div style="font-family:Nunito,Arial,sans-serif;max-width:560px;margin:0 auto;color:#2a2622;line-height:1.6">${inner}
+    <p style="color:#8a8276;font-size:13px;margin-top:20px">${esc(studio)} &middot; hello@littlehavenplay.com</p></div>`;
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        from: from.indexOf("<") > -1 ? from : `${studio} <${from}>`,
+        to: [to], bcc: bcc ? [bcc] : undefined, subject, html,
+      }),
+    });
+    return res.ok;
+  } catch { return false; }
+}
+
+// Welcome: what they bought, how to use it, and the terms — in that order,
+// because the "how do I book" question is the one that generates the emails.
+export async function sendWelcomeEmail(m, plan) {
+  const site = (process.env.SITE_URL || "https://littlehavenplay.com").replace(/\/$/, "");
+  const kids = (m.children || []).map(c => esc(c.name || c.code)).join(", ");
+  const renewal = m.startDate ? nextRenewal(m.startDate) : null;
+  const inner = `
+    <h2 style="color:#a85f59;font-weight:normal;margin:0 0 6px">Welcome to the Play Club! 🎟️</h2>
+    <p style="color:#5c6470">Hi ${esc((m.name || "").split(" ")[0] || "there")}, your membership is active.</p>
+
+    <table style="width:100%;border-collapse:collapse;font-size:15px;margin:14px 0">
+      <tr><td style="padding:5px 0;color:#5c6470;width:130px">Plan</td><td style="padding:5px 0;font-weight:bold">${esc(m.planName || (plan && plan.name) || "Play Club")}</td></tr>
+      <tr><td style="padding:5px 0;color:#5c6470">Covers</td><td style="padding:5px 0;font-weight:bold">${kids || "your children"}</td></tr>
+      <tr><td style="padding:5px 0;color:#5c6470">Membership no.</td><td style="padding:5px 0;font-weight:bold;font-family:monospace">${esc(m.code)}</td></tr>
+      ${m.startDate ? `<tr><td style="padding:5px 0;color:#5c6470">Started</td><td style="padding:5px 0">${esc(m.startDate)}</td></tr>` : ""}
+      ${renewal ? `<tr><td style="padding:5px 0;color:#5c6470">Next renewal</td><td style="padding:5px 0">${esc(renewal)}</td></tr>` : ""}
+    </table>
+
+    <div style="background:#e7f0df;border:1px solid #c2d7bd;border-radius:12px;padding:16px;margin:16px 0">
+      <p style="margin:0 0 8px;font-weight:bold;color:#3f5d33">How to book</p>
+      <table style="width:100%;border-collapse:collapse;font-size:15px">
+        <tr><td style="vertical-align:top;padding:4px 10px 4px 0;width:22px"><b style="color:#3f5d33">1</b></td>
+          <td style="padding:4px 0">Go to <a href="${site}/book" style="color:#a85f59">${esc(site.replace(/^https?:\/\//, ""))}/book</a> and pick your date and time.</td></tr>
+        <tr><td style="vertical-align:top;padding:4px 10px 4px 0"><b style="color:#3f5d33">2</b></td>
+          <td style="padding:4px 0">In the <b>Play Club member</b> box at the top, enter the phone number you book with — or your membership number above.</td></tr>
+        <tr><td style="vertical-align:top;padding:4px 10px 4px 0"><b style="color:#3f5d33">3</b></td>
+          <td style="padding:4px 0">Tick which children are coming.</td></tr>
+        <tr><td style="vertical-align:top;padding:4px 10px 4px 0"><b style="color:#3f5d33">4</b></td>
+          <td style="padding:4px 0">Your total shows <b>$0</b>. Complete the booking as normal — there's nothing to pay.</td></tr>
+      </table>
+      <p style="margin:10px 0 0;font-size:14px;color:#5c6470">Please still book ahead. Membership covers admission, not a reserved place, and sessions do fill.</p>
+    </div>
+
+    <p style="font-weight:bold;margin:18px 0 6px">Membership terms</p>
+    <ul style="color:#5c6470;font-size:14px;padding-left:20px;margin:0">
+      <li>Billed monthly through Square on the same date each month, renewing automatically until cancelled. Where that date doesn't exist in a shorter month, billing falls on the last day.</li>
+      <li>Memberships are prepaid. Cancelling stops future billing; access continues to the end of the period already paid for. Part-months are not refunded.</li>
+      <li>To cancel, pause or update your card, use the <b>Manage Subscription</b> link in any Square receipt, or email us and we'll take care of it.</li>
+      <li>Membership covers open play admission for the named children only, and does not include private parties, events or ticketed sessions.</li>
+      <li>Membership visits are recorded in your child's visit history but do not earn loyalty punches, as admission is already covered.</li>
+      <li>Baby/Infant plans apply to children aged 6–17 months. When a child turns 18 months the Toddler rate applies from the next renewal; we'll contact you a month beforehand.</li>
+      <li>Studio rules apply as usual — grip socks, a signed waiver, and a supervising adult 18+.</li>
+    </ul>
+
+    <p style="color:#5c6470;margin-top:16px">Any questions, just reply to this email. We're glad to have you with us!</p>`;
+  return sendMemberEmail(m.email, `Welcome to the Play Club — ${m.code}`, inner);
+}
+
+// Cancellation: no ambiguity about the last day.
+async function sendCancelEmail(m, endsOn) {
+  const kids = (m.children || []).map(c => esc(c.name || c.code)).join(", ");
+  const inner = `
+    <h2 style="color:#a85f59;font-weight:normal;margin:0 0 6px">Your Play Club membership has been cancelled</h2>
+    <p style="color:#5c6470">Hi ${esc((m.name || "").split(" ")[0] || "there")}, we've cancelled your membership as requested. No further payments will be taken.</p>
+    <div style="background:#fdf1ec;border:1px solid #efcfc4;border-radius:12px;padding:14px 16px;margin:14px 0">
+      <p style="margin:0;font-weight:bold;color:#a85f59">You can still play until ${esc(endsOn)}</p>
+      <p style="margin:6px 0 0;color:#5c6470;font-size:14px">Your membership is prepaid, so ${kids || "your children"} keep unlimited access
+      for the rest of the period you've already paid for. After that date, normal admission rates apply.</p>
+    </div>
+    <p style="color:#5c6470;font-size:14px">As set out when you joined, prepaid periods aren't refunded in part. Everything else stays
+    as it is — your children's loyalty cards, visit history and any credit are unaffected.</p>
+    <p style="color:#5c6470">You're welcome back at any time; just rejoin from
+    <a href="${(process.env.SITE_URL || "https://littlehavenplay.com").replace(/\/$/, "")}/playclub" style="color:#a85f59">our Play Club page</a>.</p>
+    <p style="color:#5c6470">Thank you for playing with us.</p>`;
+  return sendMemberEmail(m.email, `Play Club membership cancelled — access until ${endsOn}`, inner);
 }
 
 export default async (req) => {
@@ -111,6 +274,12 @@ export default async (req) => {
     const m = members.find(x => x && x.active !== false &&
       ((code && x.code === code) || (!code && p4 && x.phone4 === p4)));
     if (!m) return json({ member: false });
+    // Paused and ended memberships don't cover admission. Cancelled ones still
+    // do until the paid period runs out.
+    const st = effectiveStatus(m);
+    if (st === "paused")  return json({ member: false, reason: "paused", resumesOn: m.pausedUntil || null });
+    if (st === "ended")   return json({ member: false, reason: "ended", endedOn: m.endsOn || null });
+    if (st === "inactive") return json({ member: false, reason: "inactive" });
     const plans = await readPlans(store);
     const plan = plans.find(p => p.id === m.planId);
     return json({
@@ -235,11 +404,107 @@ export default async (req) => {
       updatedAt: new Date().toISOString(),
       visits: existing ? existing.visits || 0 : 0,
     };
+    rec.startDate = (m.startDate && /^\d{4}-\d{2}-\d{2}$/.test(m.startDate))
+      ? m.startDate : (existing ? existing.startDate : todayPacific());
     const next = existing ? members.map(x => (x.code === code ? rec : x)) : members.concat([rec]);
     try { await store.setJSON(MEMBERS, next); }
     catch { return json({ error: "Couldn't save. Try again." }, 502); }
-    return json({ ok: true, member: rec, members: next,
-      message: existing ? `Membership ${code} updated.` : `Membership ${code} created for ${name}.` });
+
+    // Welcome email on creation, or on request when editing.
+    let emailed = false;
+    if ((!existing || b.sendWelcome) && rec.email) {
+      const plans = await readPlans(store);
+      emailed = await sendWelcomeEmail(rec, plans.find(p2 => p2.id === rec.planId));
+    }
+    return json({ ok: true, member: rec, members: next, emailed,
+      renewal: nextRenewal(rec.startDate),
+      message: (existing ? `Membership ${code} updated.` : `Membership ${code} created for ${name}.`)
+        + (emailed ? " Welcome email sent." : "") });
+  }
+
+  // Cancel: access runs to the end of the paid period, then stops by itself.
+  if (action === "member-cancel") {
+    const code = (b.code || "").toString().toUpperCase();
+    const members = await readMembers(store);
+    const i = members.findIndex(x => x.code === code);
+    if (i < 0) return json({ error: "Membership not found." }, 404);
+    const m = members[i];
+    if (b.undo) {
+      delete m.endsOn; delete m.cancelledAt; m.squareCancelled = false;
+      try { await store.setJSON(MEMBERS, members); } catch { return json({ error: "Couldn't save." }, 502); }
+      return json({ ok: true, members, message: `Cancellation reversed. ${code} is active again — make sure it's active in Square too.` });
+    }
+    const endsOn = (b.endsOn && /^\d{4}-\d{2}-\d{2}$/.test(b.endsOn))
+      ? b.endsOn
+      : (m.startDate ? nextRenewal(m.startDate) : todayPacific());
+    m.endsOn = endsOn;
+    m.cancelledAt = new Date().toISOString();
+    m.cancelReason = (b.reason || "").toString().slice(0, 200);
+    m.squareCancelled = false;   // until you tick it off
+    try { await store.setJSON(MEMBERS, members); } catch { return json({ error: "Couldn't save." }, 502); }
+    if (b.email !== false) { try { await sendCancelEmail(m, endsOn); } catch {} }
+    return json({ ok: true, members, endsOn,
+      message: `${code} ends ${endsOn}. They keep access until then. NOW CANCEL IT IN SQUARE — this tool cannot stop the billing.` });
+  }
+
+  // Confirms you've also cancelled in Square. Nothing else can know this.
+  if (action === "member-square-done") {
+    const code = (b.code || "").toString().toUpperCase();
+    const members = await readMembers(store);
+    const m = members.find(x => x.code === code);
+    if (!m) return json({ error: "Membership not found." }, 404);
+    m.squareCancelled = true;
+    m.squareCancelledAt = new Date().toISOString();
+    try { await store.setJSON(MEMBERS, members); } catch { return json({ error: "Couldn't save." }, 502); }
+    return json({ ok: true, members, message: "Marked as cancelled in Square too." });
+  }
+
+  // Pause / resume. Square pauses at the end of the billing cycle, so this
+  // mirrors that: they finish the month they've paid for.
+  if (action === "member-pause") {
+    const code = (b.code || "").toString().toUpperCase();
+    const members = await readMembers(store);
+    const m = members.find(x => x.code === code);
+    if (!m) return json({ error: "Membership not found." }, 404);
+    if (b.resume) {
+      delete m.pausedUntil; m.status = "active"; m.resumedAt = new Date().toISOString();
+      try { await store.setJSON(MEMBERS, members); } catch { return json({ error: "Couldn't save." }, 502); }
+      return json({ ok: true, members, message: `${code} resumed. Resume it in Square as well.` });
+    }
+    const until = (b.until && /^\d{4}-\d{2}-\d{2}$/.test(b.until)) ? b.until : "";
+    m.pausedUntil = until || "2099-12-31";     // no date = paused until you resume
+    m.status = "paused";
+    m.pausedAt = new Date().toISOString();
+    try { await store.setJSON(MEMBERS, members); } catch { return json({ error: "Couldn't save." }, 502); }
+    return json({ ok: true, members,
+      message: `${code} paused${until ? " until " + until : " indefinitely"}. NOW PAUSE IT IN SQUARE so they aren't charged.` });
+  }
+
+  // Baby/Infant children approaching 18 months, with their renewal date.
+  if (action === "ageup") {
+    const members = await readMembers(store);
+    const today = todayPacific();
+    const horizon = (() => { const d = new Date(today + "T12:00:00"); d.setDate(d.getDate() + 60); return d.toISOString().slice(0, 10); })();
+    const out = [];
+    for (const m of members) {
+      if (effectiveStatus(m, today) === "ended") continue;
+      const dobs = await dobsForChildren(m.children || []);
+      for (const c of (m.children || [])) {
+        const dob = c.dob || dobs[(c.code || "").toUpperCase()];
+        if (!dob) continue;
+        const when = turns18mo(dob);
+        if (!when || when > horizon) continue;
+        out.push({
+          code: m.code, name: m.name, phone4: m.phone4, email: m.email,
+          planName: m.planName || "", child: c.name || c.code, childCode: c.code || "",
+          dob, turns18: when, alreadyOver: when <= today,
+          renewal: m.startDate ? nextRenewal(m.startDate, today) : null,
+          noticeSent: (m.ageUpNotified || []).indexOf(c.code) > -1,
+        });
+      }
+    }
+    out.sort((a, c2) => String(a.turns18).localeCompare(String(c2.turns18)));
+    return json({ ok: true, watchlist: out, today, horizon });
   }
 
   if (action === "member-delete") {

@@ -964,7 +964,7 @@ body.focusing details.secgroup.has-focus > summary{display:none}
       </div>
 
       <div id="pmOut" class="out" style="display:none;margin-bottom:10px"></div>
-      <b>Current members</b>
+      <div style="border:1.5px solid #e2d9cc;border-radius:14px;padding:12px;margin-bottom:12px;background:#fdfbf8"><b>🎂 Turning 18 months soon</b><p class="note" style="margin:4px 0 8px">Baby/Infant children ageing into Toddler pricing within 60 days, with their renewal date.</p><button type="button" id="pmAgeUpBtn" class="alt" style="margin:0">Check watchlist</button><div id="pmAgeUp" style="margin-top:8px"></div></div><b>Current members</b>
       <div id="pmList" style="margin-top:8px"><p class="note">Enter your key and press Load.</p></div>
       <button type="button" id="pmLoad" class="alt" style="margin-top:10px">Load members</button>
     </div>
@@ -3711,6 +3711,19 @@ $("#nlSend").onclick=async function(){
         +     '<button type="button" class="pmHist" data-code="'+esc(m.code)+'" style="margin:0;padding:5px 11px;font-size:.75rem;background:#f4ece1;color:#5c6470">Visits</button>'
         +     '<button type="button" class="pmDel" data-code="'+esc(m.code)+'" style="margin:0;padding:5px 11px;font-size:.75rem;background:#fdf1ec;color:#b8524a">Remove</button>'
         +   '</div></div>'
+        + (function(){ var st=pcStatusOf(m); return '<div style="margin-top:7px;display:flex;gap:6px;flex-wrap:wrap;align-items:center">'
+            + '<span style="border-radius:999px;padding:3px 10px;font-size:.7rem;font-weight:900;'+st.css+'">'+st.label+'</span>'
+            + (m.startDate?'<span class="note" style="margin:0">joined '+esc(m.startDate)+'</span>':'')
+            + (st.k==="cancelling"&&!m.squareCancelled
+                ? '<button type="button" onclick="pcSquareDone(\''+esc(m.code)+'\')" style="margin:0;padding:4px 10px;font-size:.72rem;background:#b8524a;color:#fff">⚠ Cancel in Square — tick when done</button>'
+                : '')
+            + (st.k==="paused"
+                ? '<button type="button" onclick="pcPause(\''+esc(m.code)+'\',true)" style="margin:0;padding:4px 10px;font-size:.72rem">Resume</button>'
+                : '<button type="button" onclick="pcPause(\''+esc(m.code)+'\',false)" style="margin:0;padding:4px 10px;font-size:.72rem;background:#f4ece1;color:#5c6470">Pause</button>')
+            + (st.k==="active"||st.k==="paused"
+                ? '<button type="button" onclick="pcCancel(\''+esc(m.code)+'\')" style="margin:0;padding:4px 10px;font-size:.72rem;background:#fdf1ec;color:#b8524a">Cancel</button>'
+                : '')
+            + '</div>'; })()
         + '<div class="pmHistBox" data-code="'+esc(m.code)+'" style="display:none;margin-top:8px;border-top:1px dashed #e7ddd0;padding-top:8px">'
         +   (hist||'<div class="note" style="margin:0">No visits recorded yet.</div>')+'</div>'
         + '</div>';
@@ -3773,6 +3786,8 @@ $("#nlSend").onclick=async function(){
     if(r){ renderList(r.members); reset(); }
   };
 
+  window.pcReload=function(){ var b=el("pmLoad"); if(b) b.click(); };
+  var _ab=el("pmAgeUpBtn"); if(_ab) _ab.onclick=function(){ pcAgeUp(); };
   el("pmLoad").onclick=async function(){
     var r=await api({action:"members"},"Loaded.");
     if(!r) return;
@@ -3780,6 +3795,94 @@ $("#nlSend").onclick=async function(){
     var sel=el("pmPlan");
     if(sel){ sel.innerHTML='<option value="">(no plan)</option>'
       + (r.plans||[]).map(function(p){ return '<option value="'+esc(p.id)+'">'+esc(p.name)+'</option>'; }).join(""); }
+  };
+})();
+
+// ---- Play Club: status, pause, cancel, renewals, age-up ----
+(function(){
+  function el(id){ return document.getElementById(id); }
+  if(!el("sec-playclub-members")) return;
+  function theKey(){
+    var i=el("pin")||el("key"); var v=i&&i.value?i.value.trim():"";
+    if(v) return v;
+    try{ if(typeof PIN!=="undefined"&&PIN) return PIN; }catch(e){}
+    try{ if(typeof KEY==="function") return KEY(); }catch(e){}
+    return "";
+  }
+  function esc2(s){ return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];}); }
+  function today(){ return new Date(new Date().toLocaleString("en-US",{timeZone:"America/Los_Angeles"})).toISOString().slice(0,10); }
+
+  async function api(body){
+    var key=theKey(); if(!key){ alert("Enter your key at the top first."); return null; }
+    try{
+      var r=await (await fetch("/api/playclub",{method:"POST",headers:{"content-type":"application/json"},
+        body:JSON.stringify(Object.assign({key:key},body))})).json();
+      if(!r.ok){ alert(r.error||"That didn't work."); return null; }
+      return r;
+    }catch(e){ alert("Network error."); return null; }
+  }
+
+  // Square owns the billing; this tool cannot stop a charge. Every action that
+  // affects money says so explicitly and tracks whether you've done the Square
+  // half, because forgetting it means charging someone who has cancelled.
+  window.pcStatusOf=function(m){
+    var t=today();
+    if(!m || m.active===false) return {k:"inactive", label:"Inactive", css:"background:#eee;color:#777"};
+    if(m.pausedUntil && m.pausedUntil>t)
+      return {k:"paused", label:"PAUSED"+(m.pausedUntil>"2099-01-01"?"":" \u2192 "+m.pausedUntil), css:"background:#e7e0f2;color:#6d4b86"};
+    if(m.endsOn && m.endsOn>=t) return {k:"cancelling", label:"ENDS "+m.endsOn, css:"background:#fdf1ec;color:#a85f59"};
+    if(m.endsOn) return {k:"ended", label:"ENDED "+m.endsOn, css:"background:#eee;color:#777"};
+    return {k:"active", label:"Active", css:"background:#e7f0df;color:#3f5d33"};
+  };
+
+  window.pcCancel=async function(code){
+    var when=prompt("Last day of access?\n\nThey've prepaid, so this should normally be their next renewal date. Leave as-is to use it.\n\nFormat YYYY-MM-DD:", "");
+    if(when===null) return;
+    var body={action:"member-cancel",code:code};
+    if(when.trim()) body.endsOn=when.trim();
+    if(!confirm("Cancel "+code+"?\n\nThey keep access until the date above, then it stops automatically.\nA cancellation email is sent.\n\nYou MUST also cancel it in Square — this tool cannot stop the billing.")) return;
+    var r=await api(body);
+    if(r){ alert(r.message); if(typeof pcReload==="function") pcReload(); }
+  };
+
+  window.pcSquareDone=async function(code){
+    var r=await api({action:"member-square-done",code:code});
+    if(r && typeof pcReload==="function") pcReload();
+  };
+
+  window.pcPause=async function(code, resume){
+    if(resume){
+      if(!confirm("Resume "+code+"?\n\nRemember to resume it in Square too, or they won't be charged.")) return;
+      var r1=await api({action:"member-pause",code:code,resume:true});
+      if(r1){ alert(r1.message); if(typeof pcReload==="function") pcReload(); }
+      return;
+    }
+    var until=prompt("Pause until when? (YYYY-MM-DD)\n\nLeave blank to pause until you resume it manually.","");
+    if(until===null) return;
+    if(!confirm("Pause "+code+"?\n\nThey can't book on the membership while paused.\n\nYou MUST also pause it in Square, or they'll keep being charged.")) return;
+    var r=await api({action:"member-pause",code:code,until:until.trim()});
+    if(r){ alert(r.message); if(typeof pcReload==="function") pcReload(); }
+  };
+
+  window.pcAgeUp=async function(){
+    var r=await api({action:"ageup"});
+    if(!r) return;
+    var box=el("pmAgeUp"); if(!box) return;
+    if(!r.watchlist.length){ box.innerHTML='<p class="note">Nobody turning 18 months in the next 60 days.</p>'; return; }
+    box.innerHTML='<div style="overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:.85rem">'
+      +'<thead><tr style="background:#f4ece1"><th style="padding:6px 8px;text-align:left">Child</th>'
+      +'<th style="padding:6px 8px;text-align:left">Turns 18mo</th><th style="padding:6px 8px;text-align:left">Renewal</th>'
+      +'<th style="padding:6px 8px;text-align:left">Member</th></tr></thead><tbody>'
+      +r.watchlist.map(function(w){
+        return '<tr'+(w.alreadyOver?' style="background:#fdf1ec"':'')+'>'
+          +'<td style="padding:6px 8px">'+esc2(w.child)+'<br><span class="note">DOB '+esc2(w.dob)+'</span></td>'
+          +'<td style="padding:6px 8px;white-space:nowrap">'+esc2(w.turns18)+(w.alreadyOver?' <b style="color:#b8524a">already</b>':'')+'</td>'
+          +'<td style="padding:6px 8px;white-space:nowrap">'+esc2(w.renewal||"\u2014")+'</td>'
+          +'<td style="padding:6px 8px">'+esc2(w.name)+'<br><span class="note">'+esc2(w.code)+' \u00b7 '+esc2(w.planName||"")+'</span></td>'
+          +'</tr>';
+      }).join('')+'</tbody></table></div>'
+      +'<p class="note" style="margin-top:8px">Rows in pink have already passed 18 months. Move them to the Toddler plan '
+      +'from their next renewal \u2014 in Square, edit the subscription if it lets you, otherwise cancel and send them the new plan link.</p>';
   };
 })();
 </script>

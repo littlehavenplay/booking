@@ -42,6 +42,31 @@
   input[type=date],input[type=text],input[type=email],input[type=tel],input[type=number],select,textarea{width:100%;border:1.5px solid #e7ddd0;border-radius:12px;
     padding:12px 13px;font-family:'Nunito';font-weight:600;font-size:.95rem;background:#fcfaf6;outline:none;color:var(--charcoal);}
   input:focus{border-color:var(--rose);box-shadow:0 0 0 3px rgba(201,125,118,.13);}
+  /* Time slots as a compact grid rather than a stacked row each. */
+  /* Terms live in a modal now — the full text was eating a screen of space on
+     a page we're trying to fit in one and a half. */
+  #termsOverlay{position:fixed;inset:0;background:rgba(42,38,34,.55);z-index:9999;display:none;
+    align-items:center;justify-content:center;padding:16px}
+  #termsOverlay.open{display:flex}
+  #termsBox{background:#fff;border-radius:18px;max-width:600px;width:100%;max-height:86vh;overflow:auto;padding:22px}
+  #termsBox h4{font-family:'Cormorant Garamond',Georgia,serif;font-weight:400;font-size:1.4rem;margin:0 0 10px}
+  #termsBox ul{padding-left:20px;color:var(--slate);font-size:.92rem}
+  #termsClose{margin-top:14px;width:100%}
+  .qty{padding:9px 0!important}
+  .qty .lab{line-height:1.35}
+  .slotgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:7px}
+  .slotbtn{font-family:'Nunito';font-weight:800;font-size:.86rem;padding:10px 6px;border-radius:12px;
+    border:1.5px solid var(--line);background:#fcfaf6;color:var(--charcoal);cursor:pointer;margin:0;
+    transition:border-color .12s,background .12s,transform .12s;white-space:nowrap}
+  .slotbtn:hover:not(.dead){border-color:var(--rose-light);transform:translateY(-1px)}
+  .slotbtn.sel{background:var(--rose);border-color:var(--rose);color:#fff}
+  .slotbtn.low:not(.sel){border-color:#e8d3a4;background:#fdf8ec}
+  .slotbtn.dead{opacity:.42;background:#f3efe9;color:var(--taupe);cursor:not-allowed;text-decoration:line-through}
+  .slotdetail{margin-top:9px;font-size:.88rem;color:var(--slate);display:flex;align-items:center;gap:9px;flex-wrap:wrap;min-height:26px}
+  .slotdetail .pill{font-size:.74rem;font-weight:900;border-radius:999px;padding:3px 10px;white-space:nowrap}
+  .slotdetail .pill.ok{background:#e4f0e7;color:#3f7d5c}
+  .slotdetail .pill.low{background:#f6ecce;color:#b9831a}
+  .slotdetail .sn{display:block;width:100%;font-size:.78rem;font-weight:700;color:var(--rose-deep)}
   /* Members don't choose admissions — their subscription covers it. */
   body.pc-member-mode #adm, body.pc-member-mode .adm-rows{opacity:.45;pointer-events:none}
   body.pc-member-mode #pcMemberCard{border:2px solid var(--sage-light);background:var(--sage-pale)}
@@ -173,21 +198,21 @@
 
     <div class="card">
       <p class="step"><span class="n">3</span> Who's coming? <span class="req">Required</span></p>
-      <div style="background:#fdf5ee;border:1px solid #f0e2d2;border-radius:12px;padding:11px 14px;margin:0 0 14px;font-size:.85rem;color:#5c6470;line-height:1.6">✨ <b>Our play area is designed for children ages 0–6 or 48" tall</b> (whichever comes first). Only children within that range may play in the play area. Older children &amp; teens are welcome to hang out in the lobby with family, but can't play in the play area or act as the supervising adult. A parent/guardian 18+ must supervise at all times.</div>
+      <div style="background:#fdf5ee;border:1px solid #f0e2d2;border-radius:12px;padding:11px 14px;margin:0 0 14px;font-size:.85rem;color:#5c6470;line-height:1.6">✨ <b>Ages 0–6 or 48" tall.</b> A parent or guardian 18+ must supervise. <a href="#" id="openTermsAges" style="color:var(--rose-deep);font-weight:800">Full details</a></div>
       <div class="qty">
-        <div><div class="lab">Regular admission <span style="color:var(--ink-soft);font-weight:700">(18 months+ · 2 adults included)</span></div><div class="pr" id="regPr">$25 each</div></div>
+        <div><div class="lab">Regular admission <span style="color:var(--ink-soft);font-weight:700;font-size:.8rem">(18 mo+ · 2 adults incl.)</span> <span class="pr" id="regPr" style="display:inline;color:var(--taupe);font-weight:700">$0 each</span></div></div>
         <div class="stepper" data-k="reg"><button data-d>–</button><span class="num">0</span><button data-i>+</button></div>
       </div>
       <div class="qty">
-        <div><div class="lab">Sibling add-on <span style="color:var(--ink-soft);font-weight:700">(18 months+ · with a regular admission)</span></div><div class="pr" id="sibPr">$21 each</div></div>
+        <div><div class="lab">Sibling add-on <span style="color:var(--ink-soft);font-weight:700;font-size:.8rem">(18 mo+ · with a regular)</span> <span class="pr" id="sibPr" style="display:inline;color:var(--taupe);font-weight:700">$0 each</span></div></div>
         <div class="stepper" data-k="sib"><button data-d>–</button><span class="num">0</span><button data-i>+</button></div>
       </div>
       <div class="qty">
-        <div><div class="lab">Baby / infant <span style="color:var(--ink-soft);font-weight:700">(6-17 months · 2 adults included)</span></div><div class="pr" id="infPr">$19 each</div></div>
+        <div><div class="lab">Baby / infant <span style="color:var(--ink-soft);font-weight:700;font-size:.8rem">(6–17 mo · 2 adults incl.)</span> <span class="pr" id="infPr" style="display:inline;color:var(--taupe);font-weight:700">$0 each</span></div></div>
         <div class="stepper" data-k="inf"><button data-d>–</button><span class="num">0</span><button data-i>+</button></div>
       </div>
       <div class="qty">
-        <div><div class="lab">Adults coming <span style="color:var(--ink-soft);font-weight:700">(18+, supervising — 2 included per Regular/Baby admission, $5 each extra)</span></div><div class="pr" id="adPr">$5 each extra adult beyond 2 per Regular/Baby admission</div></div>
+        <div><div class="lab">Adults coming <span style="color:var(--ink-soft);font-weight:700;font-size:.8rem">(18+ · 2 free per child admission)</span> <span class="pr" id="adPr" style="display:inline;color:var(--taupe);font-weight:700">$5 each extra</span></div></div>
         <div class="stepper" data-k="ad"><button data-d>–</button><span class="num">1</span><button data-i>+</button></div>
       </div>
       <div style="font-size:.78rem;color:var(--ink-soft);margin:-4px 0 4px;line-height:1.5">Adult admission is for supervising grown-ups 18+ only. Children 6 &amp; under (or 48" tall) require a child admission. Older children &amp; teens are welcome to wait in the lobby but may not play in the play area or supervise.</div>
@@ -242,15 +267,28 @@
       </div>
     </div>
 
-    <div class="card">
-      <p class="step"><span class="n">5</span> Cancellation &amp; refund policy <span class="req">Required</span></p>
-      <div class="policy" id="policy"></div>
-      <label class="agree"><input type="checkbox" id="agree"> I have read and agree to the cancellation &amp; refund policy. <span class="req">Required</span></label>
+    <div class="card" style="padding-top:14px;padding-bottom:14px">
+      <label class="agree" style="margin:0"><input type="checkbox" id="agree"> I have read and agree to the
+        <a href="#" id="openTerms" style="color:var(--rose-deep);font-weight:800">cancellation &amp; refund policy</a>.
+        <span class="req">Required</span></label>
       <p class="fieldnote" id="err-agree">Please tick the box to agree to the policy.</p>
     </div>
 
     <details class="code-collapse" style="margin:0 0 18px">
     <summary style="cursor:pointer;list-style:none;background:#fff;border-radius:16px;padding:16px 20px;font-weight:800;color:var(--ink);box-shadow:0 2px 10px rgba(0,0,0,.04)">🎟️ Have a code, gift card, or credit? <span style="font-weight:600;color:var(--ink-soft);font-size:.85rem">(tap to open)</span></summary>
+    <div class="card" id="oneCodeCard">
+      <p class="step" style="margin-bottom:6px"><span class="n">🎟️</span> Add a code <span class="opt">Optional</span></p>
+      <p class="note" style="margin-top:0">One box for everything — gift card, store credit, reward, birthday gift,
+      referral or discount code. We'll work out which it is.</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <input type="text" id="anyCode" placeholder="Enter any code" autocomplete="off"
+               style="flex:1;min-width:170px;text-transform:uppercase">
+        <button type="button" id="anyCodeAdd" style="margin:0;padding:12px 22px">Apply</button>
+      </div>
+      <p id="anyCodeMsg" class="note" style="margin-top:7px"></p>
+      <p class="note" style="margin-top:8px"><a href="#" id="showAllCodeFields" style="color:var(--rose-deep);font-weight:800">Enter codes manually instead</a></p>
+    </div>
+    <div id="allCodeFields" style="display:none">
     <div class="card">
       <p class="step"><span class="n">6</span> Legacy prepaid punch card <span class="opt">Optional</span></p>
       <div class="gc-toggle">
@@ -335,6 +373,7 @@
         <div class="note">A % off code is used on its own — it can’t be combined with the Weekday Special or a military discount (whichever is bigger automatically applies). Gift cards and store credit still apply on top, since those are payment, not a promotion.</div>
         <div id="dcLockNote" class="note" style="display:none;color:var(--sage-dark);font-weight:700">✓ Discount applied.</div>
       </div>
+    </div>
     </div>
     </details>
 
@@ -556,19 +595,47 @@ async function loadAvailability(){
     se.innerHTML='\u2728 '+data.specialEvent.message.replace('Events/Promotions tab','<a href="/events.html" style="color:#6d4b86;text-decoration:underline">Events/Promotions tab</a>');
     host.appendChild(se);
   }
+  // Compact grid: one small button per time. Unavailable times are dimmed rather
+  // than given a full row each — a whole day of slots now fits in a few lines
+  // instead of a screen of scrolling.
   const daySlots=data.slots||CFG.slots;
+  const wrap=document.createElement("div");
+  wrap.className="slotgrid";
+  let chosen=null;
   daySlots.forEach(s=>{
     const a=state.avail[s.id]||{remaining:CFG.capacity,full:false};
-    const el=document.createElement("div");
-    el.className="slot"+(a.full?" full":"")+(state.slot===s.id?" sel":"");
-    const label=a.reserved?(a.reservedReason==="private party"?"Private party":(a.reservedReason==="past"?"Passed":"Unavailable")):(a.full?"FULL":a.remaining+" left");
-    const bg=a.reserved?"#ece7f2":(a.full?"#f1dbd4":(a.remaining<=3?"#f6ecce":"#e4f0e7"));
-    const col=a.reserved?"#7a6f95":(a.full?"var(--red)":(a.remaining<=3?"#b9831a":"#3f7d5c"));
-    el.innerHTML=`<span class="t" style="display:flex;flex-direction:column;gap:2px"><span>${s.label}${a.reserved?(a.reservedReason==="private party"?' <span style="font-weight:600;color:var(--taupe)">· private party</span>':(a.reservedReason==="past"?' <span style="font-weight:600;color:var(--taupe)">· time passed</span>':' <span style="font-weight:600;color:var(--taupe)">· unavailable</span>')):(a.limited?' <span style="font-weight:600;color:#b9831a">· limited</span>':'')}</span>${s.note?`<span style="font-size:.7rem;font-weight:700;color:var(--rose-deep);max-width:230px;line-height:1.25">${s.note}</span>`:''}</span>
-      <span class="a" style="background:${bg};color:${col}">${label}</span>`;
-    if(!a.full && !a.reserved) el.onclick=()=>{state.slot=s.id;loadAvailability();updateTotals();};
-    host.appendChild(el);
+    const dead=a.full||a.reserved;
+    const b=document.createElement("button");
+    b.type="button";
+    b.className="slotbtn"+(dead?" dead":"")+(state.slot===s.id?" sel":"");
+    b.textContent=s.label;
+    if(!dead){
+      b.title=a.remaining+" spot"+(a.remaining===1?"":"s")+" left";
+      if(a.remaining<=3) b.classList.add("low");
+      b.onclick=()=>{ state.slot=s.id; loadAvailability(); updateTotals(); };
+    } else {
+      b.title=a.reserved?(a.reservedReason==="private party"?"Private party":(a.reservedReason==="past"?"Time passed":"Unavailable")):"Fully booked";
+      b.disabled=true;
+    }
+    if(state.slot===s.id) chosen={s,a};
+    wrap.appendChild(b);
   });
+  host.appendChild(wrap);
+
+  // Detail line for the selected time only.
+  const det=document.createElement("div");
+  det.className="slotdetail";
+  if(chosen){
+    const a=chosen.a;
+    const left=a.remaining;
+    const tone=left<=3?"low":"ok";
+    det.innerHTML='<span class="pill '+tone+'">'+left+' spot'+(left===1?"":"s")+' left</span>'
+      + '<b>'+chosen.s.label+'</b> \u00b7 2-hour visit'
+      + (chosen.s.note?'<span class="sn">'+chosen.s.note+'</span>':'');
+  } else {
+    det.innerHTML='<span class="note" style="margin:0">Tap a time to see how many spots are left.</span>';
+  }
+  host.appendChild(det);
   updateTotals();
 }
 
@@ -1351,6 +1418,112 @@ state.playClub = null;
     }
   });
 })();
+
+// ---- One code box for everything ----
+// Six separate code fields meant six chances to put a code in the wrong one.
+// This detects the type from the code itself and drives the existing field, so
+// all the tested validation logic underneath is unchanged.
+(function(){
+  function el(id){ return document.getElementById(id); }
+  var box=el("anyCode"), btn=el("anyCodeAdd"), msg=el("anyCodeMsg"), toggle=el("showAllCodeFields");
+  if(!box) return;
+
+  if(toggle) toggle.onclick=function(e){
+    e.preventDefault();
+    var w=el("allCodeFields");
+    var open = w.style.display!=="none";
+    w.style.display = open ? "none" : "block";
+    toggle.textContent = open ? "Enter codes manually instead" : "Hide the manual fields";
+  };
+
+  // Prefixes come from the generators: BDAY/FREE rewards, LHC credit, REF
+  // referral, FAM family, PC membership. A long run of digits is a Square gift
+  // card. Anything else is tried as a discount, then as a promo/credit code.
+  function classify(code){
+    var c=code.toUpperCase().replace(/[^A-Z0-9]/g,"");
+    var digits=code.replace(/\D/g,"");
+    if(/^BDAY/.test(c)||/^FREE/.test(c)) return {kind:"reward", field:"rewardCode", label:"Free-visit reward"};
+    if(/^REF/.test(c))                    return {kind:"referral", field:"refCode", label:"Referral code"};
+    if(/^LHC/.test(c))                    return {kind:"credit", field:"pc1", label:"Store credit"};
+    if(/^FAM/.test(c))                    return {kind:"reward", field:"rewardCode", label:"Family code"};
+    if(/^PC[A-Z0-9]{4}$/.test(c))         return {kind:"playclub", field:"pcMemberInput", label:"Play Club membership"};
+    if(digits.length>=12)                 return {kind:"gift", field:"gc1", label:"Gift card"};
+    return {kind:"unknown", field:"dc1", label:"Discount code"};
+  }
+
+  // Reveal whichever section owns the field, then fire its existing check.
+  function drive(info, raw){
+    var target=el(info.field);
+    if(!target){ say("We couldn't apply that code here — try the manual fields below.","err"); return; }
+
+    if(info.kind==="gift"){ var y=el("gcYes"); if(y) y.click(); }
+    if(info.field==="vp1"){ var v=el("vpYes"); if(v) v.click(); }
+
+    target.value = (info.kind==="gift") ? raw : raw.toUpperCase().replace(/[^A-Z0-9]/g,"");
+    target.dispatchEvent(new Event("input",{bubbles:true}));
+    target.dispatchEvent(new Event("change",{bubbles:true}));
+
+    // Press the matching check button where one exists.
+    var btnSel = {
+      gift:'.gc-check[data-gc="1"]',
+      credit:'#pcBtn', unknown:'#dcBtn'
+    }[info.kind];
+    if(btnSel){ var b=document.querySelector(btnSel); if(b) b.click(); }
+    if(info.kind==="reward" && typeof checkReward==="function"){ try{ checkReward(); }catch(e){} }
+
+    say("\u2713 Added as "+info.label+". Check your total below.","ok");
+    box.value="";
+  }
+
+  function say(t,cls){
+    msg.textContent=t;
+    msg.style.color = cls==="err" ? "var(--red)" : (cls==="ok" ? "#3f7d54" : "");
+  }
+
+  function apply(){
+    var raw=(box.value||"").trim();
+    if(!raw){ say("Type a code first.","err"); return; }
+    var info=classify(raw);
+    if(info.kind==="unknown"){
+      say("Applying \u2014 if it isn't a discount code, open the manual fields and try there.","");
+    }
+    drive(info, raw);
+  }
+
+  btn.onclick=apply;
+  box.addEventListener("keydown",function(e){ if(e.key==="Enter"){ e.preventDefault(); apply(); } });
+})();
+
+// ---- Terms modal ----
+// The tick is still required; the wording just isn't taking up a screen. The
+// full policy also goes out in the confirmation email.
+(function(){
+  var ov=document.getElementById("termsOverlay");
+  if(!ov) return;
+  function open(e){ if(e) e.preventDefault(); ov.classList.add("open"); }
+  function close(){ ov.classList.remove("open"); }
+  ["openTerms","openTermsAges"].forEach(function(id){
+    var a=document.getElementById(id); if(a) a.onclick=open;
+  });
+  var c=document.getElementById("termsClose"); if(c) c.onclick=close;
+  ov.addEventListener("click",function(e){ if(e.target===ov) close(); });
+  document.addEventListener("keydown",function(e){ if(e.key==="Escape") close(); });
+  // A "terms & conditions" link under the Pay button, as asked.
+  var pay=document.getElementById("pay");
+  if(pay && pay.parentNode && !document.getElementById("termsUnderPay")){
+    var p=document.createElement("p");
+    p.id="termsUnderPay";
+    p.className="note";
+    p.style.cssText="text-align:center;margin-top:8px";
+    p.innerHTML='<a href="#" style="color:var(--taupe);font-weight:700">Terms &amp; conditions</a>';
+    p.querySelector("a").onclick=open;
+    pay.parentNode.insertBefore(p, pay.nextSibling);
+  }
+})();
 </script>
+<div id="termsOverlay"><div id="termsBox">
+  <div class="policy" id="policy"></div>
+  <button type="button" id="termsClose">Close</button>
+</div></div>
 </body>
 </html>

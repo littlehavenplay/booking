@@ -195,6 +195,7 @@ export const POLICY_LINES = [
   "If you do not show up within one hour of your reserved time, we will automatically issue a courtesy store credit for the full amount paid to the email on file, valid for 14 days from issuance, so you can reschedule whenever works for you.",
   `If ${STUDIO_NAME} needs to cancel or close unexpectedly, guests will be offered the option to reschedule or receive store credit.`,
   "Military discount: show your military ID in person and we'll verify it and mark your child's loyalty card. 10% off automatically applies on future online bookings whenever that loyalty code is entered — no separate code needed. Can't be combined with a discount code or the Weekday Special; whichever is larger applies.",
+  "Play Club memberships are billed monthly through Square and renew automatically until cancelled. Membership visits cover admission only and are recorded in your child's visit history; they do not earn loyalty punches. Cancelling stops future billing and the current month remains active.",
   "For any questions or concerns, please contact us at hello@littlehavenplay.com and we will respond within 24 hours.",
 ];
 

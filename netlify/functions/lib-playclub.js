@@ -19,8 +19,17 @@ export async function findMemberFor({ code, phone } = {}) {
   let members = [];
   try { members = (await getStore("site").get("playclub:members", { type: "json" })) || []; }
   catch { return null; }
-  return members.find(m => m && m.active !== false &&
-    ((c && m.code === c) || (!c && p4 && m.phone4 === p4))) || null;
+  const m = members.find(x => x && x.active !== false &&
+    ((c && x.code === c) || (!c && p4 && x.phone4 === p4)));
+  if (!m) return null;
+  // Must agree with effectiveStatus() in playclub.js. A paused membership covers
+  // nothing; a cancelled one still covers until the paid period ends.
+  const today = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Los_Angeles" }))
+    .toISOString().slice(0, 10);
+  if (m.pausedUntil && m.pausedUntil > today) return null;
+  if (m.status === "paused" && !m.pausedUntil) return null;
+  if (m.endsOn && m.endsOn < today) return null;
+  return m;
 }
 
 // Record a visit against the membership, with enough detail to answer "who came,
