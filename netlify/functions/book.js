@@ -371,7 +371,7 @@ export default async (req) => {
   }
 
   // Grip socks: a physical add-on, so it is charged even when admission is free.
-  const gripSocks = Math.max(0, Math.min(GRIP_SOCK_MAX, parseInt(body.gripSocks, 10) || 0));
+  const gripSocks = (() => { try { return Math.max(0, Math.min(GRIP_SOCK_MAX, parseInt(body.gripSocks, 10) || 0)); } catch { return 0; } })();
   const gripSocksAmount = gripSocks * GRIP_SOCK_CENTS;
 
   // ---- Play Club membership --------------------------------------------
@@ -380,8 +380,13 @@ export default async (req) => {
   // shows on the roster; it just isn't charged and earns no punches.
   let member = null, memberAmount = 0;
   const pcCode = (body.playClubCode || "").toString().toUpperCase().replace(/[^A-Z0-9]/g, "");
+  // Only look up a membership when a code was typed, or when the phone matches.
+  // Wrapped so a fault in the membership store can never stop an ordinary
+  // booking — this is an optional feature sitting in the critical path.
+  let found = null;
+  try { if (pcCode || phone) found = await findMemberFor({ code: pcCode, phone }); }
+  catch { found = null; }
   if (pcCode || phone) {
-    const found = await findMemberFor({ code: pcCode, phone });
     if (found) {
       const kidCount = regular + sibling + infant;
       const cap = found.maxChildren || (found.children || []).length || 1;
@@ -402,8 +407,8 @@ export default async (req) => {
   // Re-verified here every time. The browser check only exists to show the
   // discount early; it is never trusted.
   let referral = null, referralAmount = 0;
-  const refCode = normalizeRef(body.refCode || body.referralCode || "");
-  if (refCode) {
+  const refCode = (() => { try { return normalizeRef(body.refCode || body.referralCode || ""); } catch { return ""; } })();
+  if (refCode) { try {
     const refFam = await findFamilyByCode(refCode);
     const myP4 = refLast4(phone);
     // Same rule as /api/referrals check — the page and the server must never
@@ -422,10 +427,12 @@ export default async (req) => {
     }
     // A free-admission code (loyalty, birthday or classroom) already covers a
     // child, so the referral discount doesn't stack on top of it.
+    // A free-admission code already covers a child, so the referral simply
+    // doesn't apply. Silently skip it rather than refusing the booking — a
+    // stale code in the form should never stop someone paying.
     if (rewardAmount > 0 || birthdayAmount > 0) {
-      return json({ error: "referral",
-        message: "A referral discount can't be combined with a free-admission code. Please use one or the other." }, 409);
-    }
+      referral = null; referralAmount = 0;
+    } else
     if (!famStatus.isNew) {
       return json({ error: "referral", message:
         "The referral discount is a welcome offer for families who haven't visited us before, and it looks like you've already played with us"
@@ -442,7 +449,7 @@ export default async (req) => {
       referralAmount = Math.min(FRIEND_DISCOUNT_CENTS,
         Math.max(0, subtotal - discountAmount - weekdaySpecialAmount - militaryAmount - rewardAmount - birthdayAmount));
     }
-  }
+  } catch { referral = null; referralAmount = 0; } }
 
   // The family code zeroes everything, whatever the headcount.
   // The membership covers whatever is left after any other discount.
