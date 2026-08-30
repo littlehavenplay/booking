@@ -16,7 +16,7 @@ import {
   CAPACITY, pricesFor, SLOTS, SLOT_IDS, openPlayForDate, effectivePartyBlocks, hoursFor, slotCap, slotKey, arrivalStartMin, squareApiBase, SQUARE_VERSION, BOOKING_WINDOW_DAYS,
   PARTY_SLOT_IDS, ARRIVAL_TO_LEGACY, countHourChildren, hourMatesFor,
   STUDIO_NAME, POLICY_TITLE, POLICY_LINES, CLOSED_DATES, CLOSED_MESSAGE, ADDITIONAL_ADULT, isClosedWeekday, weekdayOf,
-  additionalAdultsFor, additionalAdultCentsFor,
+  additionalAdultsFor, additionalAdultCentsFor, GRIP_SOCK_CENTS, GRIP_SOCK_MAX,
 } from "./lib-settings.js";
 import { issueCode, sendWelcome, sendFamilyPunch, PUNCHES_FOR_REWARD, cleanName, last4 as loyaltyLast4, graduateLegacyCard } from "./lib-loyalty.js";
 import { getActiveFamCode, logFamUse } from "./famcode.js";
@@ -370,6 +370,10 @@ export default async (req) => {
     }
   }
 
+  // Grip socks: a physical add-on, so it is charged even when admission is free.
+  const gripSocks = Math.max(0, Math.min(GRIP_SOCK_MAX, parseInt(body.gripSocks, 10) || 0));
+  const gripSocksAmount = gripSocks * GRIP_SOCK_CENTS;
+
   // ---- Play Club membership --------------------------------------------
   // A member's monthly subscription already covers admission, so the whole
   // admission total goes to zero. The visit still takes real capacity and still
@@ -443,7 +447,8 @@ export default async (req) => {
   const famAmount = famUsed
     ? Math.max(0, subtotal - discountAmount - weekdaySpecialAmount - militaryAmount - rewardAmount - birthdayAmount - referralAmount - memberAmount)
     : 0;
-  const taxable = Math.max(0, subtotal - discountAmount - weekdaySpecialAmount - militaryAmount - rewardAmount - birthdayAmount - referralAmount - memberAmount - famAmount);
+  // Add-ons sit outside every discount — they are goods, not admission.
+  const taxable = Math.max(0, subtotal - discountAmount - weekdaySpecialAmount - militaryAmount - rewardAmount - birthdayAmount - referralAmount - memberAmount - famAmount) + gripSocksAmount;
   // No sales tax: recreational/amusement admission is CDTFA-exempt (intangible admission),
   // so this business does not collect sales tax on any admission, party, or gift card sale.
   const tax = 0;
@@ -668,6 +673,7 @@ export default async (req) => {
     creditApplied, promoCode: creditApplied > 0 ? promoCode : null,
     // Stamped so check-in can pay the referrer. Payout happens on ARRIVAL, never
     // on booking — a no-show must not earn anyone $5.
+    gripSocks, gripSocksAmount,
     playClubCode: member ? member.code : null,
     playClubName: member ? (member.planName || "Play Club") : null,
     playClubAmount: memberAmount || 0,

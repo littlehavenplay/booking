@@ -157,6 +157,11 @@ export function passExpiryDate(base, expiryMonths, admission, dobMonth, dobYear)
   return expiry;
 }
 
+// Grip socks sold at checkout. Priced here so it can be changed in one place
+// and flows through the booking page, the total and the staff roster.
+export const GRIP_SOCK_CENTS = Number(process.env.GRIP_SOCK_CENTS || 300);
+export const GRIP_SOCK_MAX = 10;
+
 // Flat fallback (used only by older code paths). Live rule is additionalAdultCentsFor(date).
 export const ADDITIONAL_ADULT = parseInt(process.env.ADDITIONAL_ADULT_CENTS || "500", 10); // $5
 

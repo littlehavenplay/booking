@@ -45,6 +45,28 @@
   .empty{background:#fff;border:1px dashed var(--line);border-radius:20px;padding:40px 20px;text-align:center;color:var(--taupe)}
   /* Category headings — a clear break between Weekday and Any Day rather than
      one continuous wall of cards. */
+  /* Filter chips, then a compact list of names. Nothing else renders until a
+     plan is picked — thirteen full cards was a lot of scrolling for a choice
+     that's really "weekday or any day, and how many children". */
+  .filters{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:0 0 20px}
+  .filters button{font-family:'Nunito';font-weight:800;font-size:.88rem;padding:10px 20px;border-radius:999px;
+    border:1.5px solid var(--line);background:#fff;color:var(--slate);cursor:pointer;margin:0;transition:all .13s}
+  .filters button:hover{border-color:var(--rose-light)}
+  .filters button.on{background:var(--rose);border-color:var(--rose);color:#fff}
+  .planlist{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px;margin-bottom:20px}
+  .planbtn{font-family:'Nunito';font-weight:800;font-size:.9rem;padding:13px 14px;border-radius:14px;
+    border:1.5px solid var(--line);background:#fff;color:var(--charcoal);cursor:pointer;margin:0;text-align:left;
+    transition:all .13s;line-height:1.3}
+  .planbtn:hover{border-color:var(--rose-light);transform:translateY(-1px)}
+  .planbtn.on{background:var(--rose);border-color:var(--rose);color:#fff}
+  .planbtn .pp{display:block;font-weight:900;font-size:.82rem;opacity:.75;margin-top:3px}
+  .detail{background:#fff;border:1px solid var(--line);border-radius:20px;padding:26px;box-shadow:var(--shadow);
+    text-align:center;max-width:440px;margin:0 auto}
+  .detail img{width:200px;max-width:70%;height:auto;border-radius:16px;margin:0 auto 16px;display:block}
+  .detail h3{font-family:'Cormorant Garamond',Georgia,serif;font-weight:500;font-size:1.6rem;margin:0 0 8px}
+  .detail p{color:var(--slate);margin:0 0 16px}
+  .detail .price{font-size:2rem;font-weight:900;color:var(--rose-deep);line-height:1.1}
+  .detail .period{color:var(--taupe);font-size:.85rem;font-weight:700;margin-bottom:18px}
   .catwrap{margin:34px 0 0}
   .catwrap:first-of-type{margin-top:8px}
   .cathead{display:flex;align-items:center;gap:14px;margin:0 0 16px}
@@ -66,7 +88,10 @@
   <div class="banner" id="banner"><img id="bannerImg" alt=""></div>
   <h1 id="heading">Monthly Play Club</h1>
   <p class="sub" id="blurb">Loading membership plans&hellip;</p>
-  <div class="grid" id="grid"></div>
+  <div class="filters" id="filters"></div>
+  <div class="planlist" id="planlist"></div>
+  <div id="detail"></div>
+  <div class="grid" id="grid" style="display:none"></div>
   <p class="note" id="foot" style="display:none">
     Memberships are billed monthly through <b>Square</b> and renew automatically until you cancel.
     You can cancel any time from the receipt Square emails you, or just let us know and we'll help.
@@ -79,7 +104,37 @@
   var esc=function(s){ return String(s==null?"":s).replace(/[&<>"]/g,function(c){
     return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]; }); };
 
+  var DATA=null, FILTER=null, PICKED=null;
+
+  function planCard(p){
+    return '<div class="detail">'
+      + (p.hasImage?'<img src="/api/playclub-image?id='+encodeURIComponent(p.id)+'" alt="">':'')
+      + '<h3>'+esc(p.name)+'</h3>'
+      + (p.blurb?'<p>'+esc(p.blurb)+'</p>':'')
+      + (p.price?'<div class="price">'+esc(p.price)+'</div><div class="period">per '+esc(p.period||"month")+'</div>':'')
+      + '<a class="btn" href="'+esc(p.link)+'" target="_blank" rel="noopener">Join now</a>'
+      + '</div>';
+  }
+
+  function paintList(){
+    var list=document.getElementById("planlist"), det=document.getElementById("detail");
+    var plans=DATA.plans.filter(function(p){ return !FILTER || (p.category||"")===FILTER; });
+    list.innerHTML=plans.map(function(p){
+      return '<button type="button" class="planbtn'+(PICKED===p.id?" on":"")+'" data-id="'+esc(p.id)+'">'
+        + esc(p.name) + (p.price?'<span class="pp">'+esc(p.price)+' / '+esc(p.period||"month")+'</span>':'')
+        + '</button>';
+    }).join("");
+    Array.prototype.forEach.call(list.querySelectorAll(".planbtn"),function(b){
+      b.onclick=function(){ PICKED=b.getAttribute("data-id"); paintList(); };
+    });
+    var p=DATA.plans.find(function(x){ return x.id===PICKED; });
+    det.innerHTML = p ? planCard(p)
+      : '<p class="note" style="text-align:center;color:var(--taupe)">Choose a plan above to see the details.</p>';
+    if(p) det.scrollIntoView({behavior:"smooth",block:"nearest"});
+  }
+
   function render(d){
+    DATA=d;
     if(d.heading) document.getElementById("heading").textContent=d.heading;
     var blurb=document.getElementById("blurb");
     if(d.blurb){ blurb.textContent=d.blurb; } else { blurb.style.display="none"; }
@@ -88,57 +143,42 @@
       var b=document.getElementById("banner"), img=document.getElementById("bannerImg");
       img.src="/api/playclub-image?banner=1&t="+Date.now();
       img.alt=d.heading||"Play Club";
-      // Only reveal the banner once it actually loads, so a missing image can't
-      // leave an empty grey slab at the top of the page.
       img.onload=function(){ b.style.display="block"; };
     }
 
-    var grid=document.getElementById("grid");
     if(!d.plans || !d.plans.length){
-      grid.innerHTML='<div class="empty">Our Play Club plans are being set up &mdash; check back very soon!</div>';
+      document.getElementById("planlist").innerHTML=
+        '<div class="empty">Our Play Club plans are being set up &mdash; check back very soon!</div>';
       return;
     }
 
-    function card(p){
-      var icon = p.hasImage
-        ? '<img class="icon" src="/api/playclub-image?id='+encodeURIComponent(p.id)+'" alt="">'
-        : '<div class="fallback">\uD83C\uDF88</div>';
-      return '<div class="plan">'
-        + (p.badge?'<span class="badge">'+esc(p.badge)+'</span>':'')
-        + icon
-        + '<h3>'+esc(p.name)+'</h3>'
-        + (p.blurb?'<p>'+esc(p.blurb)+'</p>':'<p></p>')
-        + (p.price?'<div class="price">'+esc(p.price)+'</div>':'')
-        + (p.price?'<div class="period">per '+esc(p.period||"month")+'</div>':'')
-        + '<a class="btn" href="'+esc(p.link)+'" target="_blank" rel="noopener">Join now</a>'
-        + '</div>';
-    }
+    // One chip per category, plus "All plans". Default to the first category so
+    // the page opens with a short list rather than everything at once.
+    var cats=[];
+    d.plans.forEach(function(p){ var c=(p.category||"").trim(); if(c && cats.indexOf(c)===-1) cats.push(c); });
+    var fbox=document.getElementById("filters");
+    var chips=cats.map(function(c){ return {k:c,label:c}; });
+    chips.push({k:null,label:"All plans"});
+    FILTER = cats.length ? cats[0] : null;
 
-    // Group by category, keeping the order the plans were saved in. Anything
-    // without a category falls into one unlabelled group at the end, so an
-    // older plan can never vanish just because it predates categories.
-    var order=[], groups={};
-    d.plans.forEach(function(p){
-      var c=(p.category||"").trim();
-      if(!groups[c]){ groups[c]=[]; order.push(c); }
-      groups[c].push(p);
+    fbox.innerHTML=chips.map(function(c){
+      return '<button type="button" data-k="'+(c.k===null?"":esc(c.k))+'"'
+        + (c.k===FILTER?' class="on"':'') + '>'+esc(c.label)+'</button>';
+    }).join("");
+    Array.prototype.forEach.call(fbox.querySelectorAll("button"),function(b){
+      b.onclick=function(){
+        FILTER=b.getAttribute("data-k")||null;
+        PICKED=null;
+        Array.prototype.forEach.call(fbox.querySelectorAll("button"),function(x){ x.classList.remove("on"); });
+        b.classList.add("on");
+        paintList();
+      };
     });
-    var labelled=order.filter(function(c){ return c; });
 
-    if(!labelled.length){
-      grid.innerHTML=d.plans.map(card).join("");
-    } else {
-      // Rebuild as sections; the grid class moves onto each section's card row.
-      grid.className="";
-      grid.innerHTML=order.map(function(c){
-        return '<div class="catwrap">'
-          + (c?'<div class="cathead"><span>'+esc(c)+'</span></div>':'')
-          + '<div class="grid">'+groups[c].map(card).join("")+'</div>'
-          + '</div>';
-      }).join("");
-    }
+    paintList();
     document.getElementById("foot").style.display="block";
   }
+
 
   fetch("/api/playclub",{method:"POST",headers:{"content-type":"application/json"},
     body:JSON.stringify({action:"public"})})

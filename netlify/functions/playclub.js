@@ -177,7 +177,12 @@ export async function sendWelcomeEmail(m, plan) {
   const renewal = m.startDate ? nextRenewal(m.startDate) : null;
   const inner = `
     <h2 style="color:#a85f59;font-weight:normal;margin:0 0 6px">Welcome to the Play Club! 🎟️</h2>
-    <p style="color:#5c6470">Hi ${esc((m.name || "").split(" ")[0] || "there")}, your membership is active.</p>
+    <p style="color:#5c6470">Hi ${esc((m.name || "").split(" ")[0] || "there")} — we're so happy to have you and your
+    little ones in the club. Your membership is active and ready to use straight away.</p>
+    ${plan && plan.imageMime ? `<p style="text-align:center;margin:16px 0">
+      <img src="${site}/api/playclub-image?id=${encodeURIComponent(plan.id)}" alt="${esc(m.planName || plan.name || "Play Club")}"
+           width="340" style="width:340px;max-width:100%;height:auto;border-radius:16px;display:block;margin:0 auto">
+    </p>` : ""}
 
     <table style="width:100%;border-collapse:collapse;font-size:15px;margin:14px 0">
       <tr><td style="padding:5px 0;color:#5c6470;width:130px">Plan</td><td style="padding:5px 0;font-weight:bold">${esc(m.planName || (plan && plan.name) || "Play Club")}</td></tr>

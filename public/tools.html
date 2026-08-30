@@ -102,6 +102,51 @@ body.focusing details.secgroup.has-focus > summary{display:none}
   .qgrid{grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:8px}
   .qtile{padding:11px 12px;border-radius:14px}
 }
+
+  /* ---- Category colours on the tools pages ----------------------------------
+     Every tool used to have identical cream inputs, so with several open at once
+     there was no way to tell which field belonged to which tool. Each card now
+     tints its own inputs. */
+  .card[id^="sec-"]{border-left:5px solid var(--line)}
+
+  /* Today & check-in */
+  #sec-schedule,#sec-walkin,#sec-punch,#sec-bookings,#sec-manual,#sec-reschedule{border-left-color:#2f9e8f}
+  #sec-schedule input,#sec-schedule select,#sec-walkin input,#sec-walkin select,#sec-punch input,
+  #sec-bookings input,#sec-bookings select,#sec-manual input,#sec-manual select,
+  #sec-reschedule input,#sec-reschedule select{background:#eaf6f4;border-color:#bfe0da}
+
+  /* Loyalty & birthdays */
+  #sec-loyalty-list,#sec-legacy,#sec-punchissue,#sec-passes,#sec-grandfather,#sec-birthdays,#sec-birthdaycode{border-left-color:#c97d76}
+  #sec-loyalty-list input,#sec-loyalty-list select,#sec-legacy input,#sec-punchissue input,
+  #sec-passes input,#sec-grandfather input,#sec-birthdays input,#sec-birthdaycode input,
+  #sec-birthdaycode select{background:#fdf1ec;border-color:#efcfc4}
+
+  /* Codes, credits & discounts */
+  #sec-redeem,#sec-issue,#sec-code,#sec-discount,#sec-weekday-special,#sec-famcode,
+  #sec-credit-backfill,#sec-failed{border-left-color:#c99a2e}
+  #sec-redeem input,#sec-issue input,#sec-issue select,#sec-code input,#sec-discount input,
+  #sec-weekday-special input,#sec-weekday-special select,#sec-famcode input,
+  #sec-credit-backfill input,#sec-failed input{background:#fdf6e6;border-color:#ecd9a8}
+
+  /* Play Club */
+  #sec-playclub,#sec-playclub-members{border-left-color:#7b5ea7}
+  #sec-playclub input,#sec-playclub select,#sec-playclub textarea,
+  #sec-playclub-members input,#sec-playclub-members select{background:#f2edf9;border-color:#d5c7e8}
+
+  /* Parties & sessions */
+  #sec-parties,#sec-party,#sec-deposit,#sec-partyoff,#sec-partypromo{border-left-color:#d98a6a}
+  #sec-parties input,#sec-party input,#sec-party select,#sec-deposit input,#sec-deposit select,
+  #sec-partyoff input,#sec-partypromo input,#sec-partypromo select{background:#fdf0e9;border-color:#f0cdb8}
+
+  /* Content & marketing */
+  #sec-photos,#sec-news,#sec-newsletter,#sec-promos,#sec-events,#sec-partners,#sec-rating{border-left-color:#4a7fb5}
+  #sec-photos input,#sec-news input,#sec-news textarea,#sec-newsletter input,#sec-newsletter textarea,
+  #sec-promos input,#sec-events input,#sec-partners input,#sec-rating input{background:#ecf2f9;border-color:#c4d6ea}
+
+  /* Settings */
+  #sec-prices,#sec-weekly,#sec-seasonal,#sec-closures{border-left-color:#7a8290}
+  #sec-prices input,#sec-weekly input,#sec-weekly select,#sec-seasonal input,
+  #sec-closures input,#sec-closures select{background:#eef0f3;border-color:#ccd2da}
 </style>
 <link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#7a6253"><link rel="apple-touch-icon" href="/assets/icons/apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="Little Haven"><link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32.png"></head>
 <body>
@@ -1242,7 +1287,7 @@ $("#rosView").onclick=async()=>{
           const arrived=p.id&&arr[p.id];
           html+='<tr style="border-top:1px solid #f0e9df'+(arrived?';background:#eaf3e4':'')+'">'
               +'<td style="padding:6px 0;width:30px;text-align:center">'+(p.id?'<input type="checkbox" data-id="'+p.id+'" data-email="'+(p.email||'')+'" '+(arrived?'checked':'')+' onchange="markArrived(this)" title="Mark arrived" style="width:auto;transform:scale(1.35);cursor:pointer">':'')+'</td>'
-              +'<td style="padding:6px 0;font-weight:700">'+(arrived?'\u2705 ':'')+esc(p.name)+(p.arrivalLabel?' <span style="font-size:.68rem;font-weight:800;color:#7a6f95;background:#efeaf3;border-radius:6px;padding:1px 6px;white-space:nowrap">\u23F1 '+esc(p.arrivalLabel)+'</span>':'')+(p.legacy?' <span style="font-size:.7rem;color:var(--taupe)">(2-hr session)</span>':'')+(p.playClub?' <span style="font-size:.68rem;font-weight:800;color:#3f5d33;background:#e7f0df;border-radius:6px;padding:1px 6px;white-space:nowrap">\uD83C\uDF9F\uFE0F PLAY CLUB '+esc(p.playClub)+'</span>':'')+'</td>'
+              +'<td style="padding:6px 0;font-weight:700">'+(arrived?'\u2705 ':'')+esc(p.name)+(p.arrivalLabel?' <span style="font-size:.68rem;font-weight:800;color:#7a6f95;background:#efeaf3;border-radius:6px;padding:1px 6px;white-space:nowrap">\u23F1 '+esc(p.arrivalLabel)+'</span>':'')+(p.legacy?' <span style="font-size:.7rem;color:var(--taupe)">(2-hr session)</span>':'')+(p.playClub?' <span style="font-size:.68rem;font-weight:800;color:#3f5d33;background:#e7f0df;border-radius:6px;padding:1px 6px;white-space:nowrap">\uD83C\uDF9F\uFE0F PLAY CLUB '+esc(p.playClub)+'</span>':'')+(p.gripSocks>0?' <span style="font-size:.68rem;font-weight:900;color:#8a5a12;background:#fdf3dc;border:1px solid #f0dfae;border-radius:6px;padding:1px 7px;white-space:nowrap">\uD83E\uDDE6 '+p.gripSocks+' GRIP SOCK'+(p.gripSocks===1?'':'S')+' PAID</span>':'')+'</td>'
               +'<td style="padding:6px 0;color:var(--slate)">'+parts.join(", ")+' · '+p.adults+' adult'+(p.adults===1?'':'s')+'</td>'
               +'<td style="padding:6px 0;color:var(--taupe);text-align:right">'+esc(p.paid)+'</td></tr>';
           if(p.email) html+='<tr'+(arrived?' style="background:#eaf3e4"':'')+'><td colspan="4" style="padding:0 0 6px 30px;color:var(--taupe);font-size:.78rem">'+esc(p.email)+'</td></tr>';
