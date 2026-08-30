@@ -420,6 +420,12 @@ export default async (req) => {
     if (myP4 && myP4 === refFam.phone4) {
       return json({ error: "referral", message: "That's your own referral code — it can't be used on your own booking. Please remove it." }, 409);
     }
+    // A free-admission code (loyalty, birthday or classroom) already covers a
+    // child, so the referral discount doesn't stack on top of it.
+    if (rewardAmount > 0 || birthdayAmount > 0) {
+      return json({ error: "referral",
+        message: "A referral discount can't be combined with a free-admission code. Please use one or the other." }, 409);
+    }
     if (!famStatus.isNew) {
       return json({ error: "referral", message:
         "The referral discount is a welcome offer for families who haven't visited us before, and it looks like you've already played with us"

@@ -53,6 +53,15 @@
   #termsBox ul{padding-left:20px;color:var(--slate);font-size:.92rem}
   #termsClose{margin-top:14px;width:100%}
   .qty{padding:9px 0!important}
+  /* Desktop had a narrow column of cards down the middle with the rest of the
+     screen empty. Above 1100px the form runs in two columns so the whole
+     booking fits without long scrolling. */
+  @media (min-width:1100px){
+    .wrap,main,#bookWrap{max-width:1180px!important}
+    #bookGrid{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start}
+    #bookGrid > .card{margin:0}
+    #bookGrid > .card.full{grid-column:1 / -1}
+  }
   .qty .lab{line-height:1.35}
   .slotgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:7px}
   .slotbtn{font-family:'Nunito';font-weight:800;font-size:.86rem;padding:10px 6px;border-radius:12px;
@@ -161,6 +170,7 @@
 <body>
 <div class="topbar"><a class="name" href="/index.html" style="text-decoration:none;color:inherit">Little <em>Haven</em> Play Studio</a><a href="/index.html">← Back to site</a></div>
 <div class="wrap">
+<div id="bookGrid">
   <div class="brand">
     <div class="logo">🎈</div>
     <div><h1 id="studio">Little Haven Play Studio</h1></div>
@@ -182,10 +192,9 @@
 
     
 
-    <div class="card" id="pcMemberCard">
+    <div class="card full" id="pcMemberCard">
       <p class="step"><span class="n">🎟️</span> Play Club member? <span class="opt">Optional</span></p>
-      <p class="note" style="margin-top:0">If you have a monthly Play Club membership, enter your phone number or
-      membership code and your admission is already covered.</p>
+      <p class="note" style="margin-top:0"><a href="/playclub.html" target="_blank" style="color:var(--sage-dark);font-weight:800">See plans &amp; details &rarr;</a></p>
       <label class="fld">Membership code or phone number</label>
       <input type="text" id="pcMemberInput" placeholder="PC7K2M  or  760-555-1234" autocomplete="off">
       <p id="pcMemberMsg" class="note" style="margin-top:6px"></p>
@@ -216,7 +225,7 @@
         <div><div class="lab">Adults coming <span style="color:var(--ink-soft);font-weight:700;font-size:.8rem">(18+ · 2 free per child admission)</span> <span class="pr" id="adPr" style="display:inline;color:var(--taupe);font-weight:700">$5 each extra</span></div></div>
         <div class="stepper" data-k="ad"><button data-d>–</button><span class="num">1</span><button data-i>+</button></div>
       <div class="qty" style="border-top:1px dashed #e7ddd0">
-        <div><div class="lab">🧦 Grip socks <span style="color:var(--ink-soft);font-weight:700;font-size:.8rem">(required for play &middot; add-on)</span> <span class="pr" id="gsPr" style="display:inline;color:var(--taupe);font-weight:700">$3 each</span></div></div>
+        <div><div class="lab">🧦 Grip socks <span class="pr" id="gsPr" style="display:inline;color:var(--taupe);font-weight:700">$3 each</span></div></div>
         <div class="stepper" data-k="gs"><button type="button" data-d="-1">&minus;</button><span id="gsN">0</span><button type="button" data-d="1">+</button></div>
       </div>
       </div>
@@ -297,19 +306,22 @@
 
     <details class="code-collapse" style="margin:0 0 18px">
     <summary style="cursor:pointer;list-style:none;background:#fff;border-radius:16px;padding:16px 20px;font-weight:800;color:var(--ink);box-shadow:0 2px 10px rgba(0,0,0,.04)">🎟️ Have a code, gift card, or credit? <span style="font-weight:600;color:var(--ink-soft);font-size:.85rem">(tap to open)</span></summary>
-    <div class="card" id="oneCodeCard">
-      <p class="step" style="margin-bottom:6px"><span class="n">🎟️</span> Add a code <span class="opt">Optional</span></p>
-      <p class="note" style="margin-top:0">One box for everything — gift card, store credit, reward, birthday gift,
-      referral or discount code. We'll work out which it is.</p>
+    <div class="card full" id="oneCodeCard">
+      <p class="step"><span class="n">&#127903;</span> Have a code? <span class="opt">Optional</span></p>
+      <p class="note" style="margin-top:0">Gift card, store credit, reward, birthday gift, classroom code, discount or
+      legacy punch card &mdash; all go here.</p>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <input type="text" id="anyCode" placeholder="Enter any code" autocomplete="off"
+        <input type="text" id="anyCode" placeholder="Enter your code" autocomplete="off"
                style="flex:1;min-width:170px;text-transform:uppercase">
         <button type="button" id="anyCodeAdd" style="margin:0;padding:12px 22px">Apply</button>
       </div>
       <p id="anyCodeMsg" class="note" style="margin-top:7px"></p>
-      <p class="note" style="margin-top:8px"><a href="#" id="showAllCodeFields" style="color:var(--rose-deep);font-weight:800">Enter codes manually instead</a></p>
-    </div>
-    <div id="allCodeFields" style="display:none">
+      <div id="codeChips" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px"></div>
+
+      <!-- The real fields still exist and still run their own validated checks;
+           they're just driven by the single box above instead of shown. -->
+      <div id="allCodeFields" style="display:none">
+
     <div class="card">
       <p class="step"><span class="n">6</span> Legacy prepaid punch card <span class="opt">Optional</span></p>
       <div class="gc-toggle">
@@ -406,16 +418,20 @@
       <div class="note" style="margin-top:6px">Applied automatically at checkout — you'll see it subtracted from your total below. One-time use · can't be combined with a % off discount code.</div>
     </div>
 
+    </div>
+
     <div class="card" id="referCard">
-      <p class="step"><span class="n">🤝</span> Referred by a friend? <span class="opt">Optional</span></p>
-      <p class="note" style="margin-top:0">New to Little Haven? Enter your friend's referral code for <b>$5 off</b> your first visit.</p>
-      <label class="fld">Referral code</label>
-      <input type="text" id="refCode" placeholder="REF1234" autocomplete="off" style="text-transform:uppercase">
+      <p class="step"><span class="n">&#129309;</span> Referred by a friend? <span class="opt">Optional</span></p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <input type="text" id="refCode" placeholder="REF1234" autocomplete="off"
+               style="flex:1;min-width:150px;text-transform:uppercase">
+        <span class="note" style="margin:0">New families get $5 off</span>
+      </div>
       <p class="fieldnote" id="err-refCode"></p>
       <p id="refMsg" class="note" style="margin-top:6px"></p>
     </div>
 
-    <div class="card">
+    <div class="card full">
       <p class="step"><span class="n">9</span> Payment <span class="req">Required</span></p>
       <div id="paySummary" class="pay-summary hidden"></div>
       <div id="wallets" style="display:none;margin-bottom:10px">
@@ -433,7 +449,8 @@
     </div>
   </div>
 
-  <div id="done" class="card hidden">
+  <div </div>
+id="done" class="card hidden">
     <div class="success">
       <div class="big">🎉</div>
       <h2>You're booked!</h2>

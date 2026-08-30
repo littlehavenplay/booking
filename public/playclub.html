@@ -59,6 +59,14 @@
     transition:all .13s;line-height:1.3}
   .planbtn:hover{border-color:var(--rose-light);transform:translateY(-1px)}
   .planbtn.on{background:var(--rose);border-color:var(--rose);color:#fff}
+  /* Weekday and Any Day stay visually distinct, including in the All view. */
+  .planbtn.cat-weekday{border-left:5px solid #7ba676;background:#f4f8f2}
+  .planbtn.cat-anyday{border-left:5px solid #c98a4b;background:#fdf6ee}
+  .planbtn.cat-weekday.on{background:#5f8a5a;border-color:#5f8a5a;color:#fff}
+  .planbtn.cat-anyday.on{background:#b8783c;border-color:#b8783c;color:#fff}
+  .filters button.f-weekday.on{background:#5f8a5a;border-color:#5f8a5a}
+  .filters button.f-anyday.on{background:#b8783c;border-color:#b8783c}
+  .cattag{display:block;font-size:.66rem;font-weight:900;letter-spacing:.06em;text-transform:uppercase;opacity:.6;margin-bottom:2px}
   .planbtn .pp{display:block;font-weight:900;font-size:.82rem;opacity:.75;margin-top:3px}
   .detail{background:#fff;border:1px solid var(--line);border-radius:20px;padding:26px;box-shadow:var(--shadow);
     text-align:center;max-width:440px;margin:0 auto}
@@ -120,8 +128,13 @@
     var list=document.getElementById("planlist"), det=document.getElementById("detail");
     var plans=DATA.plans.filter(function(p){ return !FILTER || (p.category||"")===FILTER; });
     list.innerHTML=plans.map(function(p){
-      return '<button type="button" class="planbtn'+(PICKED===p.id?" on":"")+'" data-id="'+esc(p.id)+'">'
-        + esc(p.name) + (p.price?'<span class="pp">'+esc(p.price)+' / '+esc(p.period||"month")+'</span>':'')
+      var c=(p.category||"").toLowerCase();
+      var cls = c.indexOf("weekday")>-1 ? " cat-weekday" : (c.indexOf("any day")>-1 ? " cat-anyday" : "");
+      // Short name: the category is already shown, so don't repeat it.
+      var short=(p.name||"").replace(/^(any day|weekday)\s*play club\s*[-–]?\s*/i,"");
+      return '<button type="button" class="planbtn'+cls+(PICKED===p.id?" on":"")+'" data-id="'+esc(p.id)+'">'
+        + (!FILTER && p.category ? '<span class="cattag">'+esc(p.category.replace(/ play club/i,""))+'</span>' : '')
+        + esc(short||p.name) + (p.price?'<span class="pp">'+esc(p.price)+' / '+esc(p.period||"month")+'</span>':'')
         + '</button>';
     }).join("");
     Array.prototype.forEach.call(list.querySelectorAll(".planbtn"),function(b){
@@ -154,16 +167,27 @@
 
     // One chip per category, plus "All plans". Default to the first category so
     // the page opens with a short list rather than everything at once.
+    // Fall back to the plan name so Weekday/Any Day split correctly even for
+    // plans saved before the category field existed.
+    d.plans.forEach(function(p){
+      if((p.category||"").trim()) return;
+      var n=(p.name||"").toLowerCase();
+      p.category = n.indexOf("any day")>-1 ? "Any Day Play Club"
+                 : n.indexOf("weekday")>-1 ? "Weekday Play Club" : "";
+    });
     var cats=[];
     d.plans.forEach(function(p){ var c=(p.category||"").trim(); if(c && cats.indexOf(c)===-1) cats.push(c); });
+    cats.sort(function(a,b){ return a.toLowerCase().indexOf("weekday")>-1 ? -1 : 1; });
     var fbox=document.getElementById("filters");
     var chips=cats.map(function(c){ return {k:c,label:c}; });
     chips.push({k:null,label:"All plans"});
     FILTER = cats.length ? cats[0] : null;
 
     fbox.innerHTML=chips.map(function(c){
-      return '<button type="button" data-k="'+(c.k===null?"":esc(c.k))+'"'
-        + (c.k===FILTER?' class="on"':'') + '>'+esc(c.label)+'</button>';
+      var f = (c.k||"").toLowerCase().indexOf("weekday")>-1 ? "f-weekday"
+            : ((c.k||"").toLowerCase().indexOf("any day")>-1 ? "f-anyday" : "");
+      return '<button type="button" class="'+f+(c.k===FILTER?" on":"")+'" data-k="'+(c.k===null?"":esc(c.k))+'">'
+        + esc(c.label)+'</button>';
     }).join("");
     Array.prototype.forEach.call(fbox.querySelectorAll("button"),function(b){
       b.onclick=function(){

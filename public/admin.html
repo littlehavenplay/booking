@@ -821,6 +821,7 @@
     <textarea id="prmCaption" rows="2" style="width:100%;border:1.5px solid #e7ddd0;border-radius:11px;padding:10px 12px;font-family:'Nunito';font-weight:600;background:#f3ebe0" placeholder="e.g. 25% off any admission every Monday &amp; Tuesday!"></textarea>
     <button id="prmPost">Post it</button>
     <div class="out" id="prmOut"></div>
+    <button type="button" id="prmRefresh" class="alt" style="margin:10px 0 0">🔄 Show current posts</button>
     <div id="prmList" style="margin-top:14px;display:flex;flex-direction:column;gap:10px"></div>
   </div>
 
@@ -1212,7 +1213,12 @@ $("#nwSave").onclick=()=>nwCall("save");
 $("#nwClear").onclick=()=>nwCall("clear");
 // ---- Promotions & Flyers ----
 async function prmLoad(){
-  var key=$("#key").value.trim(); if(!key) return;
+  // staff.html stores the key in #pin, tools/admin in #key. Reading only one
+  // meant the list silently never loaded on the other page.
+  var _k=document.getElementById("pin")||document.getElementById("key");
+  var key=_k&&_k.value?_k.value.trim():"";
+  if(!key){ try{ if(typeof PIN!=="undefined"&&PIN) key=PIN; }catch(e){} }
+  if(!key){ var l=document.getElementById("prmList"); if(l) l.innerHTML='<div class="note">Enter your key, then press Show current posts.</div>'; return; }
   try{
     var r=await (await fetch("/api/promo-admin",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key,action:"list"})})).json();
     if(!r.ok){ $("#prmList").innerHTML=""; return; }
@@ -1257,7 +1263,8 @@ window.prmDelete=async function(id){
     if(r.ok) prmLoad(); else alert(r.error||"Couldn't remove.");
   }catch(e){ alert("Network error."); }
 };
-if($("#key")) $("#key").addEventListener("change",prmLoad);
+["key","pin"].forEach(function(id){ var e=document.getElementById(id); if(e){ e.addEventListener("change",prmLoad); e.addEventListener("blur",prmLoad); } });
+if(document.getElementById("prmRefresh")) document.getElementById("prmRefresh").onclick=prmLoad;
 prmLoad();
 
 // ---- Events manager ----
@@ -2428,6 +2435,7 @@ if($("#wsSave")) $("#wsSave").onclick=async function(){
     {t:"\uD83C\uDF82 Birthday Club", c:"#c97d76", bg:"#fdf1ec", ids:["sec-birthdays","sec-birthdaycode"]},
     {t:"\uD83C\uDF9B\uFE0F Capacity Control", c:"#8a94c9", bg:"#eef0f9", ids:["sec-party","sec-reschedule","sec-partyoff"]},
     {t:"\uD83D\uDCB3 Credits, Codes & Bookings", c:"#7ba6a0", bg:"#e9f3f1", ids:["sec-issue","sec-redeem","sec-credit-backfill","sec-code","sec-failed","sec-discount","sec-deposit","sec-grandfather"]},
+    {t:"\uD83C\uDF9F\uFE0F Play Club", c:"#7b5ea7", bg:"#f2edf9", ids:["sec-playclub","sec-playclub-members"]},
     {t:"\uD83C\uDF89 Parties & Events", c:"#d9a441", bg:"#fbf3e1", ids:["sec-parties","sec-events","sec-promos","sec-partners"]},
     {t:"\uD83D\uDCF8 Website Photos", c:"#b48ec2", bg:"#f4eef7", ids:["sec-photos","sec-rating"]},
     {t:"\u2699\uFE0F Hours & Settings", c:"#a89a89", bg:"#f2ede7", ids:["sec-prices","sec-closures","sec-weekly","sec-seasonal","sec-weekday-special","sec-news","sec-newsletter"]}

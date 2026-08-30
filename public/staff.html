@@ -225,6 +225,7 @@
     <textarea id="prmCaption" rows="2" style="width:100%;border:1.5px solid #e7ddd0;border-radius:11px;padding:10px 12px;font-family:'Nunito';font-weight:600;background:#f3ebe0" placeholder="e.g. 25% off any admission every Monday &amp; Tuesday!"></textarea>
     <button id="prmPost">Post it</button>
     <div class="out" id="prmOut"></div>
+    <button type="button" id="prmRefresh" class="alt" style="margin:10px 0 0">🔄 Show current posts</button>
     <div id="prmList" style="margin-top:14px;display:flex;flex-direction:column;gap:10px"></div>
   </div>
 
@@ -1504,7 +1505,8 @@ async function ledLoad(){
 $("#ledLoad").onclick=ledLoad;
 // ---- Promotions & Flyers ----
 async function prmLoad(){
-  var key=PIN; if(!key) return;
+  var key=PIN;
+  if(!key){ var l=document.getElementById("prmList"); if(l) l.innerHTML='<div class="note">Enter your PIN, then press Show current posts.</div>'; return; }
   try{
     var r=await (await fetch("/api/promo-admin",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key,action:"list"})})).json();
     if(!r.ok){ $("#prmList").innerHTML=""; return; }
@@ -2490,7 +2492,8 @@ if($("#wsSave")) $("#wsSave").onclick=async function(){
     {t:"\u2600\uFE0F Today \u2014 Check-in & Walk-ins", open:true, c:"#7ba676", bg:"#eef4e8", ids:["sec-bookings","sec-schedule","sec-walkin","sec-punch"]},
     {t:"\uD83C\uDF88 Loyalty & Punch Cards", c:"#c97d76", bg:"#fdf1ec", ids:["sec-loyalty-list","sec-birthdays","sec-punchissue","sec-passes"]},
     {t:"\uD83D\uDCB3 Credits, Codes & Bookings", c:"#8a94c9", bg:"#eef0f9", ids:["sec-issue","sec-birthdaycode","sec-redeem","sec-credit-backfill","sec-code","sec-weekday-special","sec-discount","sec-reschedule","sec-deposit"]},
-    {t:"\uD83C\uDF89 Parties & Events", c:"#d9a441", bg:"#fbf3e1", ids:["sec-party","sec-parties","sec-promos","sec-events","sec-newsletter"]},
+        {t:"\uD83C\uDF9F\uFE0F Play Club", c:"#7b5ea7", bg:"#f2edf9", ids:["sec-playclub","sec-playclub-members"]},
+{t:"\uD83C\uDF89 Parties & Events", c:"#d9a441", bg:"#fbf3e1", ids:["sec-party","sec-parties","sec-promos","sec-events","sec-newsletter"]},
     {t:"\u2699\uFE0F Hours & Settings", c:"#a89a89", bg:"#f2ede7", ids:["sec-prices","sec-closures","sec-weekly","sec-seasonal","sec-news","sec-rating","sec-photos"]}
   ];
   var TABSETS=[
@@ -3356,5 +3359,7 @@ if($("#wsSave")) $("#wsSave").onclick=async function(){
       +'from their next renewal \u2014 in Square, edit the subscription if it lets you, otherwise cancel and send them the new plan link.</p>';
   };
 })();
+
+(function(){ var b=document.getElementById("prmRefresh"); if(b) b.onclick=function(){ try{ prmLoad(); }catch(e){} }; })();
 </script></body>
 </html>
