@@ -614,8 +614,17 @@ async function loadAvailability(){
   state.closed=false;
   host.innerHTML='<div class="note">Loading…</div>';
   let data;
-  try{ data=await (await fetch("/api/capacity?date="+encodeURIComponent(state.date))).json(); }
-  catch(e){ host.innerHTML='<div class="note">Couldn\u2019t load availability.</div>'; return; }
+  try{
+    const _r = await fetch("/api/capacity?date="+encodeURIComponent(state.date));
+    if(!_r.ok) throw new Error("HTTP "+_r.status);
+    data = await _r.json();
+  }
+  catch(e){
+    host.innerHTML='<div class="note" style="background:#fdf1ec;color:#b8524a;border-radius:11px;padding:12px 14px;font-weight:700">'
+      + 'We couldn\u2019t load the times just now \u2014 please refresh the page. '
+      + '<span style="font-weight:400">(' + (e && e.message ? e.message : "network error") + ')</span></div>';
+    return;
+  }
   state.avail=data.availability||{};
   { const cl=document.getElementById('closeLine'); if(cl && data.hoursLabel) cl.textContent=data.hoursLabel; }
   host.innerHTML="";
@@ -638,7 +647,13 @@ async function loadAvailability(){
   // Compact grid: one small button per time. Unavailable times are dimmed rather
   // than given a full row each — a whole day of slots now fits in a few lines
   // instead of a screen of scrolling.
-  const daySlots=data.slots||CFG.slots;
+  try {
+  const daySlots = (Array.isArray(data.slots) && data.slots.length) ? data.slots
+                 : (Array.isArray(CFG.slots) ? CFG.slots : []);
+  if(!daySlots.length){
+    host.innerHTML='<div class="note">No times available for this date. Please choose another day.</div>';
+    state.slot=null; updateTotals(); return;
+  }
   const wrap=document.createElement("div");
   wrap.className="slotgrid";
   let chosen=null;
@@ -676,6 +691,11 @@ async function loadAvailability(){
     det.innerHTML='<span class="note" style="margin:0">Tap a time to see how many spots are left.</span>';
   }
   host.appendChild(det);
+  } catch(err){
+    host.innerHTML='<div class="note" style="background:#fdf1ec;color:#b8524a;border-radius:11px;padding:12px 14px;font-weight:700">'
+      + 'Something went wrong showing the times \u2014 please refresh. '
+      + '<span style="font-weight:400">(' + (err && err.message ? err.message : "error") + ')</span></div>';
+  }
   updateTotals();
 }
 
