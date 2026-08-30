@@ -228,7 +228,7 @@
       </div>
       <div class="qty">
         <div><div class="lab">🧦 Grip socks <span class="pr" id="gsPr" style="display:inline;color:var(--taupe);font-weight:700">$3 each</span></div></div>
-        <div class="stepper" data-k="gs"><button type="button" data-d="-1">&minus;</button><span id="gsN">0</span><button type="button" data-d="1">+</button></div>
+        <div class="stepper" data-k="gs"><button type="button" data-d>&minus;</button><span class="num" id="gsN">0</span><button type="button" data-i>+</button></div>
       </div>
       <div style="font-size:.78rem;color:var(--ink-soft);margin:-4px 0 4px;line-height:1.5">Adult admission is for supervising grown-ups 18+ only. Children 6 &amp; under (or 48" tall) require a child admission. Older children &amp; teens are welcome to wait in the lobby but may not play in the play area or supervise.</div>
       <div style="margin-top:16px;padding-top:16px;border-top:1px solid #efe7da">
@@ -501,7 +501,7 @@ async function init(){
   renderPolicy();
   if(!CFG.configured) $("#setupBanner").classList.remove("hidden");
 
-  wireSteppers();
+  try { wireSteppers(); } catch(e){ console.warn("wireSteppers:", e); }
   $("#date").onchange=()=>{state.date=$("#date").value;state.slot="";loadAvailability();
     if(($("#rewardCode")||{}).value) checkReward();
   };
@@ -702,8 +702,14 @@ async function loadAvailability(){
 function wireSteppers(){
   document.querySelectorAll(".stepper").forEach(st=>{
     const k=st.getAttribute("data-k"), num=st.querySelector(".num");
-    st.querySelector("[data-d]").onclick=()=>{const min=(k==="ad")?1:0;state[k]=Math.max(min,state[k]-1);num.textContent=state[k];syncSibling();updateTotals();};
-    st.querySelector("[data-i]").onclick=()=>{
+    // A stepper missing a button used to throw here and abort the whole of
+    // init() — including the date listener, so no times ever loaded and no
+    // error appeared. One bad control must never take the page down.
+    const dec=st.querySelector("[data-d]"), inc=st.querySelector("[data-i]");
+    if(!k || !num || !dec || !inc){ console.warn("stepper skipped:", k); return; }
+    if(state[k]===undefined) state[k]=0;
+    dec.onclick=()=>{const min=(k==="ad")?1:0;state[k]=Math.max(min,state[k]-1);num.textContent=state[k];syncSibling();updateTotals();};
+    inc.onclick=()=>{
       // Sibling add-on can't be added without at least one regular admission
       if(k==="sib" && state.reg<1){ flashSiblingNote(); return; }
       state[k]=state[k]+1;num.textContent=state[k];syncSibling();updateTotals();
@@ -1474,13 +1480,8 @@ state.playClub = null;
 
   input.addEventListener("input",function(){ clearTimeout(t); t=setTimeout(check,500); });
 
-  // If they type their phone further down and it matches a membership, offer it.
-  var ph=el("phone");
-  if(ph) ph.addEventListener("change",function(){
-    if(!state.playClub && !input.value && (ph.value||"").replace(/\D/g,"").length>=10){
-      input.value=ph.value; check();
-    }
-  });
+  // Deliberately NOT wired to the customer's phone field. Play Club is for
+  // members only — copying every customer's number in here was wrong.
 })();
 
 // ---- One code box for everything ----
@@ -1586,28 +1587,20 @@ state.playClub = null;
 })();
 
 // ---- Grip socks add-on ----
-// A physical item, so it's charged on top of everything — including for Play
-// Club members, whose subscription covers admission but not merchandise.
+// The +/- buttons are driven by the shared wireSteppers(), same as the other
+// admission rows — a second handler here fought with it. This only sets the
+// price label and the starting count.
 state.gs = 0;
 (function(){
-  var wrap=document.querySelector('.stepper[data-k="gs"]');
-  if(!wrap) return;
-  var out=document.getElementById("gsN"), pr=document.getElementById("gsPr");
-  function price(){ return (CFG && CFG.gripSocks!=null) ? CFG.gripSocks : 300; }
-  function max(){ return (CFG && CFG.gripSocksMax) ? CFG.gripSocksMax : 10; }
   function paint(){
-    out.textContent = state.gs;
-    if(pr) pr.textContent = "$" + (price()/100).toFixed(0) + " each";
-    try{ updateTotals(); }catch(e){}
+    var pr=document.getElementById("gsPr");
+    var cents=(typeof CFG!=="undefined" && CFG && CFG.gripSocks!=null) ? CFG.gripSocks : 300;
+    if(pr) pr.textContent = "$" + (cents/100).toFixed(0) + " each";
+    var n=document.getElementById("gsN");
+    if(n) n.textContent = state.gs || 0;
   }
-  wrap.querySelectorAll("button").forEach(function(b){
-    b.onclick=function(){
-      var d=parseInt(b.getAttribute("data-d"),10)||0;
-      state.gs=Math.max(0,Math.min(max(),(state.gs||0)+d));
-      paint();
-    };
-  });
-  paint();
+  if(document.readyState==="loading") document.addEventListener("DOMContentLoaded",paint);
+  else setTimeout(paint, 0);
 })();
 </script>
 <div id="termsOverlay"><div id="termsBox">
