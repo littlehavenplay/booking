@@ -58,6 +58,7 @@
      booking fits without long scrolling. */
   @media (min-width:1100px){
     .wrap,main,#bookWrap{max-width:1180px!important}
+    .brand,.sub{justify-content:center;text-align:center}
     #bookGrid{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start}
     #bookGrid > .card{margin:0}
     #bookGrid > .card.full{grid-column:1 / -1}
@@ -170,7 +171,6 @@
 <body>
 <div class="topbar"><a class="name" href="/index.html" style="text-decoration:none;color:inherit">Little <em>Haven</em> Play Studio</a><a href="/index.html">← Back to site</a></div>
 <div class="wrap">
-<div id="bookGrid">
   <div class="brand">
     <div class="logo">🎈</div>
     <div><h1 id="studio">Little Haven Play Studio</h1></div>
@@ -192,7 +192,8 @@
 
     
 
-    <div class="card full" id="pcMemberCard">
+    <div id="bookGrid">
+  <div class="card full" id="pcMemberCard">
       <p class="step"><span class="n">🎟️</span> Play Club member? <span class="opt">Optional</span></p>
       <p class="note" style="margin-top:0"><a href="/playclub.html" target="_blank" style="color:var(--sage-dark);font-weight:800">See plans &amp; details &rarr;</a></p>
       <label class="fld">Membership code or phone number</label>
@@ -224,10 +225,10 @@
       <div class="qty">
         <div><div class="lab">Adults coming <span style="color:var(--ink-soft);font-weight:700;font-size:.8rem">(18+ · 2 free per child admission)</span> <span class="pr" id="adPr" style="display:inline;color:var(--taupe);font-weight:700">$5 each extra</span></div></div>
         <div class="stepper" data-k="ad"><button data-d>–</button><span class="num">1</span><button data-i>+</button></div>
-      <div class="qty" style="border-top:1px dashed #e7ddd0">
+      </div>
+      <div class="qty">
         <div><div class="lab">🧦 Grip socks <span class="pr" id="gsPr" style="display:inline;color:var(--taupe);font-weight:700">$3 each</span></div></div>
         <div class="stepper" data-k="gs"><button type="button" data-d="-1">&minus;</button><span id="gsN">0</span><button type="button" data-d="1">+</button></div>
-      </div>
       </div>
       <div style="font-size:.78rem;color:var(--ink-soft);margin:-4px 0 4px;line-height:1.5">Adult admission is for supervising grown-ups 18+ only. Children 6 &amp; under (or 48" tall) require a child admission. Older children &amp; teens are welcome to wait in the lobby but may not play in the play area or supervise.</div>
       <div style="margin-top:16px;padding-top:16px;border-top:1px solid #efe7da">
@@ -449,8 +450,9 @@
     </div>
   </div>
 
-  <div </div>
-id="done" class="card hidden">
+  </div>
+
+  <div id="done" class="card hidden">
     <div class="success">
       <div class="big">🎉</div>
       <h2>You're booked!</h2>
