@@ -385,6 +385,24 @@
           <div style="flex:1;min-width:110px"><label>Children covered</label><input type="number" id="pmMax" min="1" max="10" value="2"></div>
         </div>
 
+         <div id="pmCustomWrap" style="display:none;background:#f4f0fa;border:1px solid #ddd2ee;border-radius:10px;padding:10px 12px;margin-top:8px">
+           <label>Custom plan name</label>
+           <input type="text" id="pmCustomName" maxlength="80" placeholder="Private Play Club - 4 grandchildren">
+           <p class="note" style="margin:6px 0 0">A private arrangement with no public plan &mdash; e.g. a grandparent covering four grandchildren from four different families. Set <b>Children covered</b> above to the number allowed; anything beyond that is charged at normal admission.</p>
+         </div>
+
+         <div class="row" style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px">
+           <div style="flex:1;min-width:150px"><label>Signed up / start date</label>
+             <input type="date" id="pmStart">
+             <p class="note" style="margin:4px 0 0">Drives the renewal date. Edit it if they joined earlier.</p></div>
+           <div style="flex:1;min-width:150px"><label>Days covered</label>
+             <select id="pmKind">
+               <option value="anyday">Any day</option>
+               <option value="weekday">Weekday only (Mon&ndash;Fri)</option>
+             </select>
+             <p class="note" style="margin:4px 0 0">A weekday plan will not cover a Sat/Sun booking.</p></div>
+         </div>
+
         <label style="margin-top:10px">Find the family &amp; tick their children</label>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
           <input type="text" id="pmSearch" placeholder="Search by phone, child, or parent name" style="flex:1;min-width:180px">
@@ -3170,6 +3188,17 @@ if($("#wsSave")) $("#wsSave").onclick=async function(){
   // handler, so the <select> sat completely empty until you pressed Load --
   // which nothing told you to do. Now it is seeded immediately and filled the
   // first time it is needed.
+  function pmTodayISO(){
+    try{ return new Date(new Date().toLocaleString("en-US",{timeZone:"America/Los_Angeles"})).toISOString().slice(0,10); }
+    catch(e){ return new Date().toISOString().slice(0,10); }
+  }
+  // "(no plan)" means a private arrangement, so reveal the custom-name box.
+  // Picking a real plan hides it again.
+  function syncCustom(){
+    var sel=el("pmPlan"), wrap=el("pmCustomWrap");
+    if(!sel||!wrap) return;
+    wrap.style.display = sel.value ? "none" : "block";
+  }
   var PLANS_LOADED=false;
   function fillPlans(plans){
     var sel=el("pmPlan"); if(!sel) return;
@@ -3262,6 +3291,13 @@ if($("#wsSave")) $("#wsSave").onclick=async function(){
         + (function(){ var st=pcStatusOf(m); return '<div style="margin-top:7px;display:flex;gap:6px;flex-wrap:wrap;align-items:center">'
             + '<span style="border-radius:999px;padding:3px 10px;font-size:.7rem;font-weight:900;'+st.css+'">'+st.label+'</span>'
             + (m.startDate?'<span class="note" style="margin:0">joined '+esc(m.startDate)+'</span>':'')
+            + (m.planKind==="weekday"
+                ? '<span style="border-radius:999px;padding:3px 10px;font-size:.7rem;font-weight:900;background:#eae4f5;color:#5b4a80">WEEKDAY ONLY</span>'
+                : '')
+            + (m.custom
+                ? '<span style="border-radius:999px;padding:3px 10px;font-size:.7rem;font-weight:900;background:#f4f0fa;color:#6d4b86">CUSTOM</span>'
+                : '')
+            + '<span class="note" style="margin:0">covers '+(m.maxChildren||1)+' child'+((m.maxChildren||1)===1?'':'ren')+'/visit</span>'
             + (st.k==="cancelling"&&!m.squareCancelled
                 ? '<button type="button" onclick="pcSquareDone(\''+esc(m.code)+'\')" style="margin:0;padding:4px 10px;font-size:.72rem;background:#b8524a;color:#fff">⚠ Cancel in Square — tick when done</button>'
                 : '')
@@ -3287,6 +3323,10 @@ if($("#wsSave")) $("#wsSave").onclick=async function(){
         el("pmPhone").value=m.phone4?("\u00b7\u00b7\u00b7"+m.phone4):"";
         el("pmEmail").value=m.email||""; el("pmMax").value=m.maxChildren||2;
         if(el("pmPlan")) el("pmPlan").value=m.planId||"";
+        if(el("pmStart")) el("pmStart").value=m.startDate||"";
+        if(el("pmKind")) el("pmKind").value=m.planKind||"anyday";
+        if(el("pmCustomName")) el("pmCustomName").value=(m.planId?"":(m.planName||""));
+        syncCustom();
         PICKED=(m.children||[]).slice();
         el("pmKids").innerHTML=PICKED.map(function(c){
           return '<label class="agree" style="align-items:center"><input type="checkbox" class="pmKid" checked data-code="'
@@ -3316,6 +3356,10 @@ if($("#wsSave")) $("#wsSave").onclick=async function(){
   function reset(){
     ["pmCode","pmName","pmPhone","pmEmail","pmSearch"].forEach(function(i){ el(i).value=""; });
     el("pmMax").value=2; el("pmKids").innerHTML=""; PICKED=[]; renderPicked();
+    if(el("pmStart")) el("pmStart").value=pmTodayISO();
+    if(el("pmKind")) el("pmKind").value="anyday";
+    if(el("pmCustomName")) el("pmCustomName").value="";
+    syncCustom();
     el("pmTitle").textContent="Add a member";
   }
   el("pmReset").onclick=reset;
@@ -3329,6 +3373,9 @@ if($("#wsSave")) $("#wsSave").onclick=async function(){
              sel.addEventListener("focus",function(){ ensurePlans(); }); }
     var k=el("pin")||el("key");
     if(k) k.addEventListener("change",function(){ ensurePlans(true); });
+    if(sel) sel.addEventListener("change",syncCustom);
+    if(el("pmStart") && !el("pmStart").value) el("pmStart").value=pmTodayISO();
+    syncCustom();
     setTimeout(function(){ ensurePlans(); },300);
   })();
 
@@ -3336,10 +3383,22 @@ if($("#wsSave")) $("#wsSave").onclick=async function(){
     var phone=el("pmPhone").value.trim();
     if(phone.indexOf("\u00b7")>-1){ out("Retype the full phone number \u2014 only the last 4 are stored.","err"); return; }
     var sel=el("pmPlan");
+    var isCustom = !sel || !sel.value;
+    var customName = (el("pmCustomName")&&el("pmCustomName").value.trim())||"";
+    if(isCustom && !customName){ out("Pick a plan, or give the custom plan a name.","err"); return; }
     var member={
       code:el("pmCode").value||undefined,
       name:el("pmName").value.trim(), phone:phone, email:el("pmEmail").value.trim(),
-      planId:sel?sel.value:"", planName:(sel&&sel.selectedIndex>=0)?sel.options[sel.selectedIndex].text:"",
+      planId:sel?sel.value:"",
+      // A custom membership has no public plan behind it, so the name typed in
+      // the custom box IS the plan name on the welcome email and booking page.
+      planName: isCustom ? customName
+        : ((sel&&sel.selectedIndex>=0)?sel.options[sel.selectedIndex].text:""),
+      custom: isCustom,
+      // Stored explicitly rather than guessed from the plan name, because this
+      // is what gets enforced when someone tries to book a weekend.
+      planKind: (el("pmKind")&&el("pmKind").value)||"anyday",
+      startDate: (el("pmStart")&&el("pmStart").value)||"",
       maxChildren:parseInt(el("pmMax").value,10)||PICKED.length||1,
       children:PICKED,
     };

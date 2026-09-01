@@ -19,6 +19,8 @@
 // on an external host.
 import { getStore } from "@netlify/blobs";
 import { listAllKeys } from "./lib-blobs.js";
+import { isWeekend, memberCoversDate } from "./lib-playclub.js";
+import { resendEmail } from "./lib-email.js";
 
 const STORE = "site";
 const PLANS = "playclub:plans";
@@ -156,39 +158,43 @@ async function sendMemberEmail(to, subject, inner) {
   if (!key || !to) return false;
   const html = `<div style="font-family:Nunito,Arial,sans-serif;max-width:560px;margin:0 auto;color:#2a2622;line-height:1.6">${inner}
     <p style="color:#8a8276;font-size:13px;margin-top:20px">${esc(studio)} &middot; hello@littlehavenplay.com</p></div>`;
-  try {
-    const res = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        from: from.indexOf("<") > -1 ? from : `${studio} <${from}>`,
-        to: [to], bcc: bcc ? [bcc] : undefined, subject, html,
-      }),
-    });
-    return res.ok;
-  } catch { return false; }
+  // Play Club membership emails are one-to-one, so they stay on the transactional
+  // API (this is not bulk mail). What changed: this used to be a single fetch with
+  // no retry, and a rate-limit or transient 5xx meant the family never got a
+  // welcome email with no sign anything had gone wrong — exactly what happened
+  // the day the transactional quota was hit. resendEmail() retries once on a
+  // 429/5xx/network hiccup, the same helper booking confirmations already rely on.
+  return resendEmail({
+    from: from.indexOf("<") > -1 ? from : `${studio} <${from}>`,
+    to: [to], bcc: bcc ? [bcc] : undefined, subject, html,
+  });
 }
 
 // Welcome: what they bought, how to use it, and the terms — in that order,
 // because the "how do I book" question is the one that generates the emails.
 export async function sendWelcomeEmail(m, plan) {
   const site = (process.env.SITE_URL || "https://littlehavenplay.com").replace(/\/$/, "");
-  const kids = (m.children || []).map(c => esc(c.name || c.code)).join(", ");
+  const kidList = (m.children || []).map(c => esc(c.name || c.code));
+  const kids = kidList.join(", ");
   const renewal = m.startDate ? nextRenewal(m.startDate) : null;
+  const cap = m.maxChildren || (m.children || []).length || 1;
+  const weekdayOnly = m.planKind === "weekday";
   const inner = `
     <h2 style="color:#a85f59;font-weight:normal;margin:0 0 6px">Welcome to the Play Club! 🎟️</h2>
     <p style="color:#5c6470">Hi ${esc((m.name || "").split(" ")[0] || "there")} — we're so happy to have you and your
-    little ones in the club. Your membership is active and ready to use straight away.</p>
+    little ones in the club. Your membership is set up and <b>ready to use right now</b>.</p>
     ${plan && plan.imageMime ? `<p style="text-align:center;margin:16px 0">
       <img src="${site}/api/playclub-image?id=${encodeURIComponent(plan.id)}" alt="${esc(m.planName || plan.name || "Play Club")}"
            width="340" style="width:340px;max-width:100%;height:auto;border-radius:16px;display:block;margin:0 auto">
     </p>` : ""}
 
     <table style="width:100%;border-collapse:collapse;font-size:15px;margin:14px 0">
-      <tr><td style="padding:5px 0;color:#5c6470;width:130px">Plan</td><td style="padding:5px 0;font-weight:bold">${esc(m.planName || (plan && plan.name) || "Play Club")}</td></tr>
+      <tr><td style="padding:5px 0;color:#5c6470;width:150px">Plan</td><td style="padding:5px 0;font-weight:bold">${esc(m.planName || (plan && plan.name) || "Play Club")}</td></tr>
       <tr><td style="padding:5px 0;color:#5c6470">Covers</td><td style="padding:5px 0;font-weight:bold">${kids || "your children"}</td></tr>
+      <tr><td style="padding:5px 0;color:#5c6470">Children per visit</td><td style="padding:5px 0;font-weight:bold">Up to ${cap}</td></tr>
+      <tr><td style="padding:5px 0;color:#5c6470">Days covered</td><td style="padding:5px 0;font-weight:bold">${weekdayOnly ? "Monday to Friday" : "Any day we're open"}</td></tr>
       <tr><td style="padding:5px 0;color:#5c6470">Membership no.</td><td style="padding:5px 0;font-weight:bold;font-family:monospace">${esc(m.code)}</td></tr>
-      ${m.startDate ? `<tr><td style="padding:5px 0;color:#5c6470">Started</td><td style="padding:5px 0">${esc(m.startDate)}</td></tr>` : ""}
+      ${m.startDate ? `<tr><td style="padding:5px 0;color:#5c6470">Membership begins</td><td style="padding:5px 0;font-weight:bold">${esc(m.startDate)}</td></tr>` : ""}
       ${renewal ? `<tr><td style="padding:5px 0;color:#5c6470">Next renewal</td><td style="padding:5px 0">${esc(renewal)}</td></tr>` : ""}
     </table>
 
@@ -196,29 +202,55 @@ export async function sendWelcomeEmail(m, plan) {
       <p style="margin:0 0 8px;font-weight:bold;color:#3f5d33">How to book</p>
       <table style="width:100%;border-collapse:collapse;font-size:15px">
         <tr><td style="vertical-align:top;padding:4px 10px 4px 0;width:22px"><b style="color:#3f5d33">1</b></td>
-          <td style="padding:4px 0">Go to <a href="${site}/book" style="color:#a85f59">${esc(site.replace(/^https?:\/\//, ""))}/book</a> and pick your date and time.</td></tr>
+          <td style="padding:4px 0">Go to <a href="${site}/book.html" style="color:#a85f59">${esc(site.replace(/^https?:\/\//, ""))}/book.html</a> and pick your date and time.</td></tr>
         <tr><td style="vertical-align:top;padding:4px 10px 4px 0"><b style="color:#3f5d33">2</b></td>
-          <td style="padding:4px 0">In the <b>Play Club member</b> box at the top, enter the phone number you book with — or your membership number above.</td></tr>
+          <td style="padding:4px 0">In the <b>Play Club member</b> box at the top, enter <b>the phone number your membership is registered to</b> — or your membership number above.</td></tr>
         <tr><td style="vertical-align:top;padding:4px 10px 4px 0"><b style="color:#3f5d33">3</b></td>
-          <td style="padding:4px 0">Tick which children are coming.</td></tr>
+          <td style="padding:4px 0">Tick which children are coming. Admission for up to ${cap} of them is covered automatically.</td></tr>
         <tr><td style="vertical-align:top;padding:4px 10px 4px 0"><b style="color:#3f5d33">4</b></td>
-          <td style="padding:4px 0">Your total shows <b>$0</b>. Complete the booking as normal — there's nothing to pay.</td></tr>
+          <td style="padding:4px 0">Your total shows <b>$0</b>. Finish the booking as normal — there's nothing to pay.</td></tr>
       </table>
       <p style="margin:10px 0 0;font-size:14px;color:#5c6470">Please still book ahead. Membership covers admission, not a reserved place, and sessions do fill.</p>
+    </div>
+
+    <div style="background:#fdf5ee;border:1px solid #f0e2d2;border-radius:12px;padding:14px 16px;margin:16px 0">
+      <p style="margin:0 0 6px;font-weight:bold;color:#8a5c30">👵 Someone else bringing them?</p>
+      <p style="margin:0;color:#5c6470;font-size:14px">Your membership is linked to <b>the children, not the adult</b>, so grandma,
+      dad or an aunt can bring them just as easily. Whoever books simply enters <b>their own</b> name, email and contact details at
+      checkout — but they must still use <b>the membership phone number</b> in the Play Club box, since that's what we match on.</p>
+    </div>
+
+    <div style="background:#fdf1ec;border:1px solid #efcfc4;border-radius:12px;padding:14px 16px;margin:16px 0">
+      <p style="margin:0 0 6px;font-weight:bold;color:#a85f59">⏳ Joined after hours?</p>
+      <p style="margin:0 0 8px;color:#5c6470;font-size:14px">Subscribing in Square is step one. We then have to issue your
+      membership card at our end before the booking page will recognise you — <b>and that's done by hand</b>. If you joined
+      while we were closed, it may not be issued until the next day we're open, occasionally a little longer.</p>
+      <p style="margin:0;color:#5c6470;font-size:14px"><b>You're reading this email, so yours is already active</b> — this is
+      just so you know for the future. If you ever need a spot before your membership is live, go ahead and book and pay as
+      normal, then email us and we'll refund that booking once the membership is confirmed.</p>
     </div>
 
     <p style="font-weight:bold;margin:18px 0 6px">Membership terms</p>
     <ul style="color:#5c6470;font-size:14px;padding-left:20px;margin:0">
       <li>Billed monthly through Square on the same date each month, renewing automatically until cancelled. Where that date doesn't exist in a shorter month, billing falls on the last day.</li>
-      <li>Memberships are prepaid. Cancelling stops future billing; access continues to the end of the period already paid for. Part-months are not refunded.</li>
+      <li>Covers open play admission for <b>up to ${cap} child${cap === 1 ? "" : "ren"} per visit</b>, for the named children above. Any additional child on the same visit is charged at normal admission and their details are entered at checkout.</li>
+      ${weekdayOnly
+        ? `<li><b>This is a Weekday plan: it covers Monday to Friday only.</b> Weekend visits are charged at normal admission. You can upgrade to an Any Day plan any time — just email us.</li>`
+        : `<li>Covers any day we're open, weekends included.</li>`}
+      <li>Memberships are prepaid. Cancelling stops future billing; access continues to the end of the period already paid for, and stops automatically after that date. Part-months are not refunded.</li>
       <li>To cancel, pause or update your card, use the <b>Manage Subscription</b> link in any Square receipt, or email us and we'll take care of it.</li>
-      <li>Membership covers open play admission for the named children only, and does not include private parties, events or ticketed sessions.</li>
+      <li>Membership covers open play admission only, and does not include private parties, events or ticketed sessions.</li>
       <li>Membership visits are recorded in your child's visit history but do not earn loyalty punches, as admission is already covered.</li>
       <li>Baby/Infant plans apply to children aged 6–17 months. When a child turns 18 months the Toddler rate applies from the next renewal; we'll contact you a month beforehand.</li>
       <li>Studio rules apply as usual — grip socks, a signed waiver, and a supervising adult 18+.</li>
     </ul>
 
-    <p style="color:#5c6470;margin-top:16px">Any questions, just reply to this email. We're glad to have you with us!</p>`;
+    <p style="margin:16px 0 0;font-size:14px;color:#5c6470">
+      Full <a href="${site}/book.html?terms=1" style="color:#a85f59;font-weight:700">terms &amp; conditions</a> are on our booking page.
+      For anything else, contact us at <a href="mailto:hello@littlehavenplay.com" style="color:#a85f59;font-weight:700">hello@littlehavenplay.com</a>
+      and we'll get back to you within 24 hours.
+    </p>
+    <p style="color:#5c6470;margin-top:14px">We're so glad to have you with us — see you at the studio! 🎈</p>`;
   return sendMemberEmail(m.email, `Welcome to the Play Club — ${m.code}`, inner);
 }
 
@@ -287,11 +319,26 @@ export default async (req) => {
     if (st === "inactive") return json({ member: false, reason: "inactive" });
     const plans = await readPlans(store);
     const plan = plans.find(p => p.id === m.planId);
+    // A Weekday plan on a weekend is a real membership that simply doesn't cover
+    // THIS date. Say so plainly rather than "we can't find your membership",
+    // which would send someone hunting for a problem that doesn't exist.
+    const forDate = (b.date || "").toString();
+    const dateOk = !forDate || memberCoversDate(m, forDate);
     return json({
       member: true, code: m.code, name: m.name || "",
       planName: (plan && plan.name) || m.planName || "Play Club",
+      planKind: m.planKind || "anyday",
       maxChildren: m.maxChildren || (m.children || []).length || 1,
       children: (m.children || []).map(c => ({ code: c.code || "", name: c.name || "" })),
+      // Prefills the booker's details so a member isn't retyping what we already
+      // hold. Stays editable — the membership belongs to the CHILDREN, so
+      // grandma or dad may well be the one bringing them today.
+      contact: { name: m.name || "", email: m.email || "", phone4: m.phone4 || "" },
+      endsOn: m.endsOn || null,
+      status: st,
+      coversDate: dateOk,
+      dateNote: dateOk ? "" :
+        `${(plan && plan.name) || m.planName || "This plan"} covers Monday to Friday only — weekend visits are charged at normal admission.`,
     });
   }
 
@@ -396,11 +443,26 @@ export default async (req) => {
     const clash = members.find(x => x.phone4 === p4 && x.code !== code && x.active !== false);
     if (clash) return json({ error: `That phone already has membership ${clash.code}. Edit that one instead.` }, 409);
 
+    // A private arrangement (e.g. a grandparent covering four grandchildren from
+    // four different families) has no public plan to point at, so the name and
+    // the child allowance are typed in directly. planKind is what actually gets
+    // enforced at booking, so it must be stored explicitly rather than guessed
+    // from a plan name that a custom membership may not have.
+    const plans = await readPlans(store);
+    const chosenPlan = plans.find(p2 => p2.id === (m.planId || ""));
+    const rawKind = (m.planKind || "").toString().toLowerCase();
+    const planKind = (rawKind === "weekday" || rawKind === "anyday")
+      ? rawKind
+      : /week\s*day/i.test((m.planName || (chosenPlan && chosenPlan.name) || (chosenPlan && chosenPlan.category) || ""))
+        ? "weekday" : "anyday";
+
     const rec = {
       code, name, phone4: p4,
       email: (m.email || "").toString().slice(0, 160).trim(),
       planId: (m.planId || "").toString(),
-      planName: (m.planName || "").toString().slice(0, 80),
+      planName: (m.planName || (chosenPlan && chosenPlan.name) || "").toString().slice(0, 80),
+      planKind,
+      custom: !!m.custom || !m.planId,
       children: kids,
       maxChildren: Math.max(1, Math.min(10, parseInt(m.maxChildren, 10) || kids.length)),
       active: m.active === false ? false : true,
@@ -418,13 +480,13 @@ export default async (req) => {
     // Welcome email on creation, or on request when editing.
     let emailed = false;
     if ((!existing || b.sendWelcome) && rec.email) {
-      const plans = await readPlans(store);
-      emailed = await sendWelcomeEmail(rec, plans.find(p2 => p2.id === rec.planId));
+      emailed = await sendWelcomeEmail(rec, chosenPlan);
     }
     return json({ ok: true, member: rec, members: next, emailed,
       renewal: nextRenewal(rec.startDate),
       message: (existing ? `Membership ${code} updated.` : `Membership ${code} created for ${name}.`)
-        + (emailed ? " Welcome email sent." : "") });
+        + (emailed ? " Welcome email sent." : (rec.email ? " NOTE: the welcome email did not send — check Resend." : " No email on file, so no welcome email was sent."))
+        + (rec.planKind === "weekday" ? " Weekday plan: weekends are not covered." : "") });
   }
 
   // Cancel: access runs to the end of the paid period, then stops by itself.

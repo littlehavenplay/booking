@@ -78,7 +78,11 @@
   .slotdetail .pill.low{background:#f6ecce;color:#b9831a}
   .slotdetail .sn{display:block;width:100%;font-size:.78rem;font-weight:700;color:var(--rose-deep)}
   /* Members don't choose admissions — their subscription covers it. */
-  body.pc-member-mode #adm, body.pc-member-mode .adm-rows{opacity:.45;pointer-events:none}
+  /* Member mode used to disable the admission steppers entirely, which is why
+     pressing + did nothing. Extra children ARE allowed alongside a membership
+     (they're simply charged), so the controls stay live and only the covered
+     count is managed for you. */
+  body.pc-member-mode #adm, body.pc-member-mode .adm-rows{opacity:1;pointer-events:auto}
   /* The membership box is a different path through the page, so it looks
      different from the outset rather than only once it's filled in. */
   #pcMemberCard{background:linear-gradient(180deg,#eef4ea,#f7faf5);border:2px solid var(--sage-light)}
@@ -489,8 +493,7 @@ async function init(){
     // "I agree to the cancellation & refund policy" having been shown a version
     // missing the Play Club billing terms, the grip-sock rule and the
     // free-admission code rules. The policy has exactly one source of truth --
-    // POLICY_LINES in netlify/functions/lib-settings.js -- and renderPolicy()
-    // now says so plainly rather than showing a partial version.
+    // POLICY_LINES in netlify/functions/lib-settings.js.
     policyLines:[],
     slots:[{id:"arr09",label:"9:00 AM"},{id:"arr10",label:"10:00 AM"},{id:"arr11",label:"11:00 AM"},{id:"arr12",label:"12:00 PM"},{id:"arr13",label:"1:00 PM"}]}; }
 
@@ -725,7 +728,12 @@ function wireSteppers(){
     const dec=st.querySelector("[data-d]"), inc=st.querySelector("[data-i]");
     if(!k || !num || !dec || !inc){ console.warn("stepper skipped:", k); return; }
     if(state[k]===undefined) state[k]=0;
-    dec.onclick=()=>{const min=(k==="ad")?1:0;state[k]=Math.max(min,state[k]-1);num.textContent=state[k];syncSibling();updateTotals();};
+    dec.onclick=()=>{
+      // Never let the stepper drop Regular below the children a membership is
+      // already covering — those seats are taken whether or not they were paid for.
+      const covered=(k==="reg"&&state.playClub)?(state.playClub.coveredReg||0):0;
+      const min=(k==="ad")?1:covered;
+      state[k]=Math.max(min,state[k]-1);num.textContent=state[k];syncSibling();updateTotals();};
     inc.onclick=()=>{
       // Sibling add-on can't be added without at least one regular admission
       if(k==="sib" && state.reg<1){ flashSiblingNote(); return; }
@@ -920,8 +928,14 @@ function updateTotals(){
   // with the discount code, same as the server enforces. Zeroes one admission, recomputed
   // live in case admission counts changed since the code was checked. Stacks with the
   // weekday special.
-  // A membership covers the whole admission total.
-  var pcCovered = !!state.playClub;
+  // A membership covers only the admissions it actually applies to. This used to
+  // zero the whole total, so an extra child appeared free on screen and then the
+  // server refused the booking. The two now compute coverage the same way:
+  // covered count × Regular rate, capped at what's left.
+  var pcCoveredN = state.playClub ? Math.min(state.playClub.coveredReg||0, state.playClub.maxChildren||0) : 0;
+  // A Weekday plan doesn't cover a weekend date — charge normally and let the
+  // message under the membership box explain why.
+  if(state.playClub && state.playClub.coversDate===false) pcCoveredN = 0;
   // Add-ons are goods, so they sit outside every discount and outside membership.
   const gsAmt = (state.gs||0) * ((CFG.gripSocks!=null)?CFG.gripSocks:300);
   const refAmt = (state.referral && state.referral.ok) ? Math.min(state.referral.amount, Math.max(0, subtotal-discAmt-wdAmt-milAmt)) : 0;
@@ -939,7 +953,11 @@ function updateTotals(){
   if($("#gsRow")){ if(gsAmt>0){ $("#gsRow").style.display="flex"; $("#gsAmtTxt").textContent="+"+money(gsAmt); } else { $("#gsRow").style.display="none"; } }
   if($("#refRow")){ if(refAmt>0){ $("#refRow").style.display="flex"; $("#refAmtTxt").textContent="\u2212"+money(refAmt); } else { $("#refRow").style.display="none"; } }
   if($("#wdRow")){ if(wdAmt>0){ $("#wdRow").style.display="flex"; $("#wdLabel").textContent="\uD83D\uDDD3\uFE0F "+wdLabel; $("#wdAmtTxt").textContent="\u2212"+money(wdAmt); } else { $("#wdRow").style.display="none"; } }
-  const taxable = (pcCovered ? 0 : Math.max(0, subtotal - discAmt - wdAmt - milAmt - rewardAmt - refAmt)) + gsAmt;
+  const pcAmt = pcCoveredN > 0
+    ? Math.min(pcCoveredN * (CFG.prices.regular||0),
+               Math.max(0, subtotal - discAmt - wdAmt - milAmt - rewardAmt - refAmt))
+    : 0;
+  const taxable = Math.max(0, subtotal - discAmt - wdAmt - milAmt - rewardAmt - refAmt - pcAmt) + gsAmt;
   const amt=taxable;
   $("#kidCount").textContent=kids;
   $("#subtotal").textContent=money(subtotal);
@@ -1420,23 +1438,61 @@ state.playClub = null;
     kidsWrap.style.display="none";
     kidList.innerHTML="";
     document.body.classList.remove("pc-member-mode");
+    try{ syncStepperNums(); }catch(e){}
     try{ updateTotals(); }catch(e){}
   }
+
+  // The steppers keep their own visible number, so changing state.reg in code
+  // used to leave the "+ / 0 / –" control reading 0 while the booking really
+  // held two children. That's what made adding an extra child look broken and
+  // put the wrong headcount on the daily schedule.
+  function syncStepperNums(){
+    [["reg",state.reg],["sib",state.sib],["inf",state.inf]].forEach(function(p){
+      var n=document.querySelector('.stepper[data-k="'+p[0]+'"] .num');
+      if(n) n.textContent=p[1]||0;
+    });
+  }
+  window.pcSyncStepperNums=syncStepperNums;
 
   function applyKids(){
     if(!state.playClub) return;
     var boxes=[].slice.call(kidList.querySelectorAll("input[type=checkbox]"));
     var chosen=boxes.filter(function(b){ return b.checked; });
-    // A member's children all count as regular admissions for capacity — the
-    // room fills up the same whether or not anyone paid today.
-    state.reg=chosen.length; state.sib=0; state.inf=0;
+    var cap=state.playClub.maxChildren||chosen.length||1;
+
+    // Ticking more children than the plan covers is allowed — the extras are
+    // simply charged. Previously the server rejected the whole booking, so a
+    // member bringing one friend couldn't book at all.
+    if(chosen.length>cap){
+      chosen.slice(cap).forEach(function(b){ b.checked=false; });
+      chosen=chosen.slice(0,cap);
+      msgExtra("Your plan covers "+cap+" child"+(cap===1?"":"ren")+" per visit. Add anyone else using the admissions below and we'll charge for them.");
+    }
+
     state.playClub.selected=chosen.map(function(b){
       return { code:b.getAttribute("data-code")||"", name:b.getAttribute("data-name")||"" };
     });
-    // Mirror the choice into the child-name rows the booking already uses.
+    // Covered children are Regular admissions for capacity — the room fills up
+    // the same whether or not anyone paid today. Anything the family added on
+    // top of the covered count is preserved rather than wiped.
+    var extraReg=Math.max(0,(state.reg||0)-(state.playClub.coveredReg||0));
+    state.playClub.coveredReg=chosen.length;
+    state.reg=chosen.length+extraReg;
+    syncStepperNums();
     try{ if(typeof renderChildNames==="function") renderChildNames(); }catch(e){}
     try{ syncMemberChildRows(); }catch(e){}
     try{ updateTotals(); }catch(e){}
+  }
+
+  function msgExtra(txt){
+    var n=document.getElementById("pcExtraNote");
+    if(!n){
+      n=document.createElement("p");
+      n.id="pcExtraNote"; n.className="note";
+      n.style.cssText="margin-top:6px;color:#8a5c30;font-weight:700";
+      kidsWrap.appendChild(n);
+    }
+    n.textContent=txt;
   }
 
   // Fill the "Who's playing?" rows from the ticked members so the roster still
@@ -1462,6 +1518,9 @@ state.playClub = null;
     var digits=raw.replace(/\D/g,"");
     var body={action:"member-check"};
     if(digits.length>=10) body.phone=raw; else body.code=raw;
+    // Send the chosen date so a Weekday plan can warn about a weekend BEFORE
+    // they fill the whole form in and get refused at payment.
+    try{ var d=el("date"); if(d && d.value) body.date=d.value; }catch(e){}
     try{
       var r=await (await fetch("/api/playclub",{method:"POST",headers:{"content-type":"application/json"},
         body:JSON.stringify(body)})).json();
@@ -1469,13 +1528,35 @@ state.playClub = null;
       if(!r.member){
         clearMember();
         msg.style.color="var(--red)";
-        msg.textContent="We couldn't find a Play Club membership for that. Check the code, or leave this blank and book normally.";
+        msg.textContent = r.reason==="paused"
+          ? "That membership is paused"+(r.resumesOn?" until "+r.resumesOn:"")+". You can still book normally in the meantime."
+          : r.reason==="ended"
+          ? "That membership ended"+(r.endedOn?" on "+r.endedOn:"")+", so admission isn't covered. You can still book normally, or rejoin from our Play Club page."
+          : "We couldn't find a Play Club membership for that. Check the code, or leave this blank and book normally.";
         return;
       }
-      state.playClub={ code:r.code, planName:r.planName, maxChildren:r.maxChildren, children:r.children||[], selected:[] };
+      state.playClub={ code:r.code, planName:r.planName, planKind:r.planKind||"anyday",
+        maxChildren:r.maxChildren, children:r.children||[], selected:[], coveredReg:0,
+        coversDate:r.coversDate!==false };
+
+      // Prefill the booker's details from the membership so a member isn't
+      // retyping what we already hold. Only fills EMPTY fields, so whoever is
+      // actually bringing the children today — grandma, dad, an aunt — can put
+      // their own details in and they won't be overwritten.
+      try{
+        var c=r.contact||{};
+        var nEl=el("name"), eEl=el("email");
+        if(nEl && !nEl.value.trim() && c.name)  nEl.value=c.name;
+        if(eEl && !eEl.value.trim() && c.email) eEl.value=c.email;
+      }catch(e){}
+
       msg.style.color="#3f7d54";
       msg.textContent="\u2713 "+(r.name?r.name+" \u2014 ":"")+r.planName+". Admission is covered for up to "
         + r.maxChildren + " child" + (r.maxChildren===1?"":"ren") + " per visit.";
+      if(r.coversDate===false && r.dateNote){
+        msg.style.color="#a5452f";
+        msg.textContent="\u26A0 "+r.dateNote;
+      }
       kidList.innerHTML=(r.children||[]).map(function(c,i){
         return '<label class="agree" style="align-items:center"><input type="checkbox" data-code="'
           + (c.code||"") + '" data-name="' + (c.name||"").replace(/"/g,"&quot;") + '"'
@@ -1589,6 +1670,17 @@ state.playClub = null;
   });
   var c=document.getElementById("termsClose"); if(c) c.onclick=close;
   ov.addEventListener("click",function(e){ if(e.target===ov) close(); });
+  // A welcome/cancellation email links straight to the policy with ?terms=1,
+  // so someone reading it on their phone doesn't have to hunt for the link
+  // themselves. Opens once CFG has loaded so the policy text is actually there.
+  try{
+    if(new URLSearchParams(location.search).get("terms")==="1"){
+      var tryOpen=setInterval(function(){
+        if(window.CFG && CFG.policyLines && CFG.policyLines.length){ clearInterval(tryOpen); open(); }
+      },150);
+      setTimeout(function(){ clearInterval(tryOpen); },8000);
+    }
+  }catch(e){}
   document.addEventListener("keydown",function(e){ if(e.key==="Escape") close(); });
   // A "terms & conditions" link under the Pay button, as asked.
   var pay=document.getElementById("pay");

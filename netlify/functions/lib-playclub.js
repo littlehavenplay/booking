@@ -10,6 +10,26 @@ export function memberLast4(phone) {
   return d.length >= 4 ? d.slice(-4) : "";
 }
 
+// Sunday(0) and Saturday(6), by UTC day-of-week on the naive Y-M-D string —
+// matches weekdayOf() in lib-settings.js exactly, so the two never disagree
+// about which day a booking falls on.
+export function isWeekend(dateStr) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr || "")) return false;
+  const d = new Date(dateStr + "T00:00:00Z").getUTCDay();
+  return d === 0 || d === 6;
+}
+
+// Does this membership's plan actually cover the day being booked? A Weekday
+// plan is deliberately cheaper than Any Day, so letting it quietly cover a
+// Saturday would undercut the whole pricing tier — this is the one place that
+// distinction is enforced, and both book.js (authoritative) and the booking
+// page (early warning) call it so they can never disagree.
+export function memberCoversDate(m, dateStr) {
+  if (!m) return false;
+  if (m.planKind === "weekday" && isWeekend(dateStr)) return false;
+  return true;
+}
+
 // Matched on the membership code when given, otherwise on the phone they book
 // with — most members won't remember a code and shouldn't have to.
 export async function findMemberFor({ code, phone } = {}) {

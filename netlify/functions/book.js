@@ -378,7 +378,7 @@ export default async (req) => {
   // A member's monthly subscription already covers admission, so the whole
   // admission total goes to zero. The visit still takes real capacity and still
   // shows on the roster; it just isn't charged and earns no punches.
-  let member = null, memberAmount = 0;
+  let member = null, memberAmount = 0, memberCoveredKids = [], memberCoveredCount = 0;
   const pcCode = (body.playClubCode || "").toString().toUpperCase().replace(/[^A-Z0-9]/g, "");
   // Only look up a membership when a code was typed, or when the phone matches.
   // Wrapped so a fault in the membership store can never stop an ordinary
@@ -389,15 +389,63 @@ export default async (req) => {
   if (pcCode || phone) {
     if (found) {
       const kidCount = regular + sibling + infant;
-      const cap = found.maxChildren || (found.children || []).length || 1;
       if (kidCount < 1) return json({ error: "playclub", message: "Choose which children are coming." }, 409);
-      if (kidCount > cap) {
+
+      // A Weekday plan is priced below Any Day precisely because it excludes
+      // weekends. Refuse rather than quietly covering it, so the total the page
+      // showed and the total we charge can never disagree.
+      if (!memberCoversDate(found, date)) {
         return json({ error: "playclub",
-          message: `Your Play Club membership covers up to ${cap} child${cap === 1 ? "" : "ren"} per visit. Remove one, or book the extra child as a normal admission.` }, 409);
+          message: `${found.planName || "Your Weekday Play Club"} covers Monday to Friday only. `
+            + `Please pick a weekday, or book this visit as normal admission — upgrade to an Any Day plan any time.` }, 409);
+      }
+
+      const cap = Math.max(1, found.maxChildren || (found.children || []).length || 1);
+
+      // Work out WHICH children are covered rather than treating the booking as
+      // all-or-nothing. Previously anything over the cap was rejected outright,
+      // so a member bringing one extra friend couldn't book at all; now the
+      // membership covers its own children and the extras are simply charged.
+      const normName = s => String(s || "").toLowerCase().replace(/[^a-z]/g, "");
+      const memKids  = found.children || [];
+      const memCodes = new Set(memKids.map(c => String(c.code || "").toUpperCase()).filter(Boolean));
+      const memNames = new Set(memKids.map(c => normName(c.name)).filter(Boolean));
+
+      // One entry per admission actually being booked, so coverage is decided
+      // per admission and priced with that admission's own rate.
+      const admSlots = [];
+      for (let i = 0; i < regular; i++) admSlots.push({ admission: "regular", price: PRICES.regular });
+      for (let i = 0; i < sibling; i++) admSlots.push({ admission: "sibling", price: PRICES.sibling });
+      for (let i = 0; i < infant;  i++) admSlots.push({ admission: "infant",  price: PRICES.infant  });
+      for (const ch of childNames) {
+        const s = admSlots.find(x => !x.child && x.admission === (ch.admission || "regular"));
+        if (s) s.child = ch;
+      }
+
+      const onMembership = s => !!(s.child && (
+        (s.child.code && memCodes.has(String(s.child.code).toUpperCase())) ||
+        memNames.has(normName((s.child.first || "") + (s.child.last || "")))
+      ));
+
+      let pool = admSlots.filter(onMembership);
+      // No names given at all (bookings don't strictly require them) — fall back
+      // to covering up to the cap so a member is never worse off for skipping
+      // the name fields.
+      if (!pool.length && !childNames.length) pool = admSlots.slice();
+      // Dearest first, so a mixed booking always resolves in the family's favour.
+      pool.sort((a, b) => b.price - a.price);
+      const coveredSlots = pool.slice(0, cap);
+
+      for (const s of coveredSlots) {
+        memberAmount += s.price;
+        memberCoveredCount++;
+        if (s.child) {
+          // Covered admissions earn no punch — same rule as the family code.
+          s.child._freeAdmission = true;
+          memberCoveredKids.push(cleanName(s.child.first, s.child.last));
+        }
       }
       member = found;
-      // No punches on a covered visit — same rule as the family code.
-      for (const ch of childNames) ch._freeAdmission = true;
     } else if (pcCode) {
       return json({ error: "playclub", message: "We don't recognise that membership code. Please check it or leave it blank." }, 409);
     }
@@ -452,9 +500,13 @@ export default async (req) => {
   } catch { referral = null; referralAmount = 0; } }
 
   // The family code zeroes everything, whatever the headcount.
-  // The membership covers whatever is left after any other discount.
+  // The membership covers ONLY the admissions it actually applies to (worked out
+  // above), so an extra child booked alongside a membership still gets charged.
+  // Clamped to what's left after other discounts so it can never push a total
+  // negative or double-discount an admission a reward already covered.
   memberAmount = member
-    ? Math.max(0, subtotal - discountAmount - weekdaySpecialAmount - militaryAmount - rewardAmount - birthdayAmount - referralAmount)
+    ? Math.min(memberAmount,
+        Math.max(0, subtotal - discountAmount - weekdaySpecialAmount - militaryAmount - rewardAmount - birthdayAmount - referralAmount))
     : 0;
 
   const famAmount = famUsed
@@ -690,6 +742,11 @@ export default async (req) => {
     playClubCode: member ? member.code : null,
     playClubName: member ? (member.planName || "Play Club") : null,
     playClubAmount: memberAmount || 0,
+    // How many admissions the membership actually covered on this booking, and
+    // who they were. A member bringing an extra child pays for that child, so
+    // "covered" is no longer the same as "everyone on the booking".
+    playClubCovered: member ? memberCoveredCount : 0,
+    playClubCoveredKids: member ? memberCoveredKids : [],
     referredBy: referral ? referral.code : null,
     referralAmount: referralAmount || 0,
     referralPaid: false,
@@ -761,8 +818,14 @@ export default async (req) => {
       await recordMemberVisit(member.code, {
         date, slot,
         slotLabel: (SLOTS.find(s => s.id === slot) || {}).label || slot,
-        count: regular + sibling + infant,
-        children: childNames.map(c => cleanName(c.first, c.last)).filter(Boolean),
+        // Count what the MEMBERSHIP covered, not the whole booking. A member who
+        // brings a paying friend hasn't used two of their allowance, and the
+        // usage figures decide whether a tier is priced right.
+        count: memberCoveredCount,
+        total: regular + sibling + infant,
+        children: memberCoveredKids.length
+          ? memberCoveredKids
+          : childNames.map(c => cleanName(c.first, c.last)).filter(Boolean),
         bookedBy: name,
       });
     } catch {}
