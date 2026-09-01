@@ -1000,6 +1000,7 @@ body.focusing details.secgroup.has-focus > summary{display:none}
           <button type="button" id="pmFind" class="alt" style="margin:0">Find</button>
         </div>
         <div id="pmKids" style="margin-top:8px"></div>
+        <div id="pmPicked" style="margin-top:8px"></div>
         <p class="note" style="margin:4px 0 0">Ticked children are linked to this membership. Their loyalty cards keep
         working normally &mdash; a covered visit is recorded but earns no punch.</p>
 
@@ -1050,8 +1051,9 @@ body.focusing details.secgroup.has-focus > summary{display:none}
     <div style="margin-top:18px;border-top:1px solid #efe4d5;padding-top:12px">
       <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
         <b id="nlCount">Subscribers</b>
-        <span><button id="nlRefresh" class="ghost" style="background:#eee;color:var(--charcoal);margin:0">🔄 Refresh</button> <button id="nlExport" class="alt" style="margin:0">📤 Export CSV</button></span>
+        <span><button id="nlRefresh" class="ghost" style="background:#eee;color:var(--charcoal);margin:0">🔄 Refresh</button> <button id="nlSync" class="ghost" style="background:#e8eef6;color:#3c5a80;margin:0">☁️ Sync to Resend</button> <button id="nlExport" class="alt" style="margin:0">📤 Export CSV</button></span>
       </div>
+      <div id="nlCapWarn" style="display:none;margin-top:8px;background:#fdf0ec;border:1px solid #f2cfc6;color:#a5452f;border-radius:9px;padding:8px 11px;font-size:.8rem;line-height:1.5"></div>
       <div id="nlSubs" style="margin-top:10px;max-height:280px;overflow:auto"></div>
     </div>
 
@@ -1100,6 +1102,34 @@ body.focusing details.secgroup.has-focus > summary{display:none}
 <script>
 const $=s=>document.querySelector(s);
 const money=c=>"$"+(c/100).toFixed(2);
+
+// GLOBAL KEY() — do not move this inside a wrapper.
+//
+// Three IIFEs further down each declare their own local function KEY(). That is
+// fine and they still shadow this one. The problem was that several top-level
+// functions — loadDay(), nlLoad(), the party and check-in handlers — sit OUTSIDE
+// those wrappers and also call KEY(), so they threw "KEY is not defined" the
+// moment they ran. That is why the daily schedule and the newsletter subscriber
+// list looked dead. Declaring it once here at global scope fixes every orphaned
+// call site at once without changing anything that already worked.
+function KEY(){ var k=document.getElementById("key"); return k ? k.value.trim() : ""; }
+
+// coffeePopup() — the loyalty "free coffee" prompt.
+//
+// Both pages already had the #coffeePop element and two unguarded calls to this
+// function, but the function itself only ever existed in staff.html. So the
+// moment a punch-card holder earned a coffee, the check-in threw "coffeePopup is
+// not defined" instead of showing the prompt. Ported verbatim from staff.html;
+// every element lookup is guarded, so it works on pages that only have the
+// message element and no icon/sub-heading.
+function coffeePopup(msg,sub,icon){
+  var m=document.getElementById("coffeePopMsg"); if(m&&msg) m.textContent=msg;
+  var s=document.getElementById("coffeePopSub"); if(s) s.textContent=(sub!==undefined?sub:"Punch-card holders get a free coffee for the grown-up.");
+  var ic=document.getElementById("coffeePopIcon"); if(ic) ic.textContent=(icon!==undefined?icon:"\u2615");
+  var p=document.getElementById("coffeePop"); if(p) p.style.display="flex";
+}
+
+
 
 (async function(){
   let CFG={};
@@ -3033,6 +3063,18 @@ async function nlLoad(){
     if(!r.ok){ return; }
     var c=r.counts||{active:0,unsubscribed:0};
     var cnt=$("#nlCount"); if(cnt) cnt.textContent="Subscribers — "+c.active+" active"+(c.unsubscribed?(" · "+c.unsubscribed+" unsubscribed"):"");
+    // Campaigns go out through Resend's marketing side, which is free but caps
+    // how many CONTACTS it will store. Warn before a send silently drops people.
+    var mk=r.marketing||{}, warn=$("#nlCapWarn");
+    if(warn){
+      if(mk.overCap){
+        warn.style.display="block";
+        warn.innerHTML="<b>Over the Resend contact limit.</b> Your list holds "+mk.contacts+" contacts (active + unsubscribed) but the free marketing plan stores "+mk.cap+". Campaigns will stop rather than send a partial list. Remove old contacts or raise the plan.";
+      } else if(mk.cap && mk.contacts >= mk.cap*0.9){
+        warn.style.display="block";
+        warn.innerHTML="<b>Approaching the Resend contact limit</b> — "+mk.contacts+" of "+mk.cap+" used.";
+      } else { warn.style.display="none"; warn.innerHTML=""; }
+    }
     var subs=r.subscribers||[];
     $("#nlSubs").innerHTML = subs.length ? subs.map(function(s){
       var when=s.subscribedAt?(new Date(s.subscribedAt)).toLocaleDateString():"";
@@ -3046,20 +3088,38 @@ async function nlLoad(){
     var camps=r.campaigns||[];
     $("#nlCampaigns").innerHTML = camps.length ? camps.map(function(m){
       var st=m.status, badge="", when="";
+      // Campaigns move: scheduled -> syncing -> ready -> queued -> sent.
+      // Say which step it's on in plain language, rather than a bare "sending…"
+      // that never explains why nothing has landed yet.
       if(st==="scheduled"){ badge='<span style="color:#b9831a;font-weight:800">⏳ Scheduled</span>'; when=m.scheduledAt?(" for "+new Date(m.scheduledAt).toLocaleString()):""; }
-      else if(st==="sending"){ badge='<span style="color:#4d7848;font-weight:800">📤 Sending…</span>'; when=" ("+(m.stats.sent||0)+"/"+(m.stats.total||0)+")"; }
-      else if(st==="sent"){ badge='<span style="color:#4d7848;font-weight:800">✅ Sent</span>'; when=" to "+(m.stats.sent||0)+(m.sentAt?(" · "+new Date(m.sentAt).toLocaleDateString()):""); }
+      else if(st==="syncing"){ badge='<span style="color:#7a6cc4;font-weight:800">🔄 Preparing your list…</span>'; when=" (uploading subscribers to Resend)"; }
+      else if(st==="ready"){ badge='<span style="color:#7a6cc4;font-weight:800">🔄 Preparing to send…</span>'; }
+      else if(st==="queued"||st==="sending"){ badge='<span style="color:#4d7848;font-weight:800">📤 Going out now…</span>'; when=" to "+(m.stats.total||0)+" subscribers"; }
+      else if(st==="sent"){ badge='<span style="color:#4d7848;font-weight:800">✅ Sent</span>'; when=" to "+(m.stats.sent||m.stats.total||0)+(m.sentAt?(" · "+new Date(m.sentAt).toLocaleDateString()):""); }
+      else if(st==="failed"){ badge='<span style="color:#b5382f;font-weight:800">⚠️ Stopped</span>'; }
       else { badge='<span class="note" style="margin:0">'+esc(st)+'</span>'; }
       var canCancel=(st==="scheduled");
-      return '<div style="display:flex;align-items:center;gap:8px;background:#faf7f2;border:1px solid #efe4d5;border-radius:9px;padding:7px 10px;margin-bottom:6px;font-size:.82rem">'
+      // A parked campaign shows WHY, plus the retry that resumes it from
+      // wherever it stopped (never from the beginning — that could double-send).
+      var err = (st==="failed" && m.lastError)
+        ? '<div style="margin-top:5px;color:#b5382f;font-size:.75rem;line-height:1.45">'+esc(m.lastError)
+          +' <button type="button" onclick="nlRetryCampaign(\''+esc(m.id)+'\')" style="border:none;background:#f6e9c8;color:#7a5c12;border-radius:6px;cursor:pointer;font-weight:800;font-size:.72rem;padding:3px 9px;margin-left:4px">Retry</button></div>'
+        : '';
+      return '<div style="background:#faf7f2;border:1px solid #efe4d5;border-radius:9px;padding:7px 10px;margin-bottom:6px;font-size:.82rem">'
+        +'<div style="display:flex;align-items:center;gap:8px">'
         +'<div style="flex:1;min-width:0"><b>'+esc(m.subject||"(no subject)")+'</b><br>'+badge+'<span style="color:var(--slate)">'+esc(when)+'</span></div>'
         +'<button type="button" onclick="nlDeleteCampaign(\''+esc(m.id)+'\','+(canCancel?"true":"false")+')" style="border:none;background:'+(canCancel?'#fbe6e2;color:#b5382f':'#eee;color:#777')+';border-radius:6px;cursor:pointer;font-weight:800;font-size:.72rem;padding:5px 9px">'+(canCancel?"Cancel":"Delete")+'</button>'
+        +'</div>'+err
       +'</div>';
     }).join("") : '<div class="note">Nothing sent yet.</div>';
   }catch(e){}
 }
 
-async 
+// NOTE: a stray "async" keyword used to sit here. It parsed fine, so nothing
+// looked broken, but at runtime it read as a call to an undefined function
+// named "async" and threw a ReferenceError — which killed the rest of this
+// script block. That meant the wiring below never ran: the daily schedule's
+// Load button was dead and the date never defaulted to today. Leave it out.
 
 // Daily schedule is the most-used tool, so wire its Load button and default the
 // date to today the moment the page opens.
@@ -3504,42 +3564,150 @@ async
   window.__lhBookLabel=function(){ return (label.value||"").trim(); };
 })();
 
-// ---- newsletter send (ported from the old staff page during the merge;
-//      the card was here but its handler never came across) ----
-$("#nlSend").onclick=async function(){
-  var key=KEY(), out=$("#nlOut"); out.style.display="block";
-  if(!key){ out.className="out err"; out.textContent="Enter your staff KEY() first."; return; }
-  var subject=$("#nlSubject").value.trim(), message=$("#nlMessage").value.trim();
-  if(!subject){ out.className="out err"; out.textContent="Add a subject line."; return; }
-  if(!message){ out.className="out err"; out.textContent="Write a message first."; return; }
-  var when=(document.querySelector('input[name="nlWhen"]:checked')||{}).value||"now";
-  var sendNow=(when==="now"), scheduledAt=null;
-  if(!sendNow){
-    var v=$("#nlSchedAt").value;
-    if(!v){ out.className="out err"; out.textContent="Pick a date & time to schedule."; return; }
-    scheduledAt=new Date(v).getTime();
-    if(!scheduledAt||scheduledAt<Date.now()-60000){ out.className="out err"; out.textContent="Pick a future date & time."; return; }
+// ---- Newsletter tool: send, sync, and the row actions -----------------------
+//
+// SELF-CONTAINED ON PURPOSE. The previous version called KEY(), which is
+// declared inside three different IIFEs and therefore does not exist in this
+// script block's scope — so pressing Send threw "KEY is not defined" and the
+// campaign never left the page. Same reason the Play Club block below reads the
+// key straight from the DOM. Everything this tool needs is defined right here.
+//
+// The row buttons (Remove / Delete / Retry) are written into HTML strings as
+// onclick="..." attributes, which the browser resolves against WINDOW at click
+// time. A function tucked inside this IIFE would be invisible to them, so the
+// three of them are explicitly hung on window at the bottom.
+(function(){
+  var $=function(s){ return document.querySelector(s); };
+  function KEY(){ var k=document.getElementById("key"); return k?k.value.trim():""; }
+  function esc(t){ return (t||"").toString().replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+  function reload(){ try{ if(typeof nlLoad==="function") nlLoad(); }catch(e){} }
+
+  function say(msg, bad){
+    var out=$("#nlOut"); if(!out) return;
+    out.style.display="block"; out.className="out "+(bad?"err":"ok"); out.textContent=msg;
   }
-  var bookLink = $("#nlBook").checked ? ($("#nlBookLink").value.trim()||"https://littlehavenplay.com/book.html") : false;
-  var active = parseInt(($("#nlCount").textContent.match(/(\d+) active/)||[])[1]||"0",10);
-  var verb = sendNow ? ("Send this to "+(active||"all")+" subscriber"+(active===1?"":"s")+" now?") : "Schedule this newsletter?";
-  if(!confirm(verb)) return;
-  $("#nlSend").disabled=true; out.className="out"; out.textContent=sendNow?"Sending…":"Scheduling…";
-  try{
-    var image=null;
-    var f=($("#nlImage").files||[])[0];
-    if(f){ image=await shrinkImage(f); }
-    var body={ key:key, subject:subject, message:message, sendNow:sendNow, scheduledAt:scheduledAt, bookLink:bookLink,bookLabel:(typeof __lhBookLabel==="function"?__lhBookLabel():"") };
-    if(image) body.image=image;
-    var r=await (await fetch("/api/newsletter-send",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)})).json();
-    if(r.ok){
-      out.className="out ok"; out.textContent="\u2705 "+(r.message||"Done!");
-      $("#nlSubject").value=""; $("#nlMessage").value=""; $("#nlImage").value="";
-      nlLoad();
-    } else { out.className="out err"; out.textContent=r.error||"Couldn't send."; }
-  }catch(e){ out.className="out err"; out.textContent="Network error — please try again."; }
-  $("#nlSend").disabled=false;
-};
+
+  async function post(action, extra){
+    var body=Object.assign({ key:KEY(), action:action }, extra||{});
+    var res=await fetch("/api/newsletter-admin",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)});
+    return await res.json();
+  }
+
+  // ---- Send / schedule ------------------------------------------------------
+  var sendBtn=$("#nlSend");
+  if(sendBtn) sendBtn.onclick=async function(){
+    var key=KEY();
+    if(!key){ say("Enter your admin key at the top of the page first.", true); return; }
+    var subject=$("#nlSubject").value.trim(), message=$("#nlMessage").value.trim();
+    if(!subject){ say("Add a subject line.", true); return; }
+    if(!message){ say("Write a message first.", true); return; }
+
+    var when=(document.querySelector('input[name="nlWhen"]:checked')||{}).value||"now";
+    var sendNow=(when==="now"), scheduledAt=null;
+    if(!sendNow){
+      var v=$("#nlSchedAt").value;
+      if(!v){ say("Pick a date & time to schedule.", true); return; }
+      scheduledAt=new Date(v).getTime();
+      if(!scheduledAt||scheduledAt<Date.now()-60000){ say("Pick a future date & time.", true); return; }
+    }
+    var bookLink = $("#nlBook").checked ? ($("#nlBookLink").value.trim()||"https://littlehavenplay.com/book.html") : false;
+    var m=((($("#nlCount")||{}).textContent)||"").match(/(\d+) active/);
+    var active = m ? parseInt(m[1],10) : 0;
+    var verb = sendNow ? ("Send this to "+(active||"all")+" subscriber"+(active===1?"":"s")+" now?") : "Schedule this newsletter?";
+    if(!confirm(verb)) return;
+
+    sendBtn.disabled=true;
+    say(sendNow?"Sending…":"Scheduling…");
+    try{
+      var image=null;
+      var f=($("#nlImage").files||[])[0];
+      if(f && typeof shrinkImage==="function"){ image=await shrinkImage(f); }
+      var body={ key:key, subject:subject, message:message, sendNow:sendNow, scheduledAt:scheduledAt,
+                 bookLink:bookLink, bookLabel:(typeof __lhBookLabel==="function"?__lhBookLabel():"") };
+      if(image) body.image=image;
+      var r=await (await fetch("/api/newsletter-send",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)})).json();
+      if(r.ok){
+        say("\u2705 "+(r.message||"Done!"));
+        $("#nlSubject").value=""; $("#nlMessage").value=""; $("#nlImage").value="";
+        reload();
+      } else { say(r.error||"Couldn't send.", true); }
+    }catch(e){ say("Network error — please try again.", true); }
+    sendBtn.disabled=false;
+  };
+
+  // ---- Refresh --------------------------------------------------------------
+  var refBtn=$("#nlRefresh");
+  if(refBtn) refBtn.onclick=function(){ reload(); };
+
+  // ---- Sync contacts to Resend (no send) ------------------------------------
+  // Campaigns need the subscriber list to exist on Resend's marketing side.
+  // A send does this automatically; this button lets you do it up front and see
+  // that the connection works before trusting it with a real campaign.
+  var syncBtn=$("#nlSync");
+  if(syncBtn) syncBtn.onclick=async function(){
+    if(!KEY()){ say("Enter your admin key at the top of the page first.", true); return; }
+    if(!confirm("Upload your subscriber list to Resend now? This does not send anything.")) return;
+    syncBtn.disabled=true; say("Uploading…");
+    try{
+      var r=await post("sync-now");
+      if(r.ok){ say("\u2705 "+(r.message||"Synced.")); reload(); }
+      else { say(r.error||"Couldn't sync.", true); }
+    }catch(e){ say("Network error — please try again.", true); }
+    syncBtn.disabled=false;
+  };
+
+  // ---- Export CSV -----------------------------------------------------------
+  var expBtn=$("#nlExport");
+  if(expBtn) expBtn.onclick=async function(){
+    if(!KEY()){ say("Enter your admin key at the top of the page first.", true); return; }
+    expBtn.disabled=true;
+    try{
+      var r=await post("export");
+      if(r.ok && r.csv){
+        var blob=new Blob([r.csv],{type:"text/csv;charset=utf-8"});
+        var a=document.createElement("a");
+        a.href=URL.createObjectURL(blob);
+        a.download="newsletter-subscribers-"+new Date().toISOString().slice(0,10)+".csv";
+        document.body.appendChild(a); a.click();
+        setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); },500);
+        say("\u2705 Downloaded "+(r.total||0)+" subscriber"+(r.total===1?"":"s")+".");
+      } else { say(r.error||"Couldn't export.", true); }
+    }catch(e){ say("Network error — please try again.", true); }
+    expBtn.disabled=false;
+  };
+
+  // ---- Row actions (must be global — see note at the top) -------------------
+  window.nlRemoveSub=async function(email){
+    if(!KEY()){ say("Enter your admin key at the top of the page first.", true); return; }
+    if(!confirm("Remove "+email+" from the newsletter?\n\nThey'll also be marked unsubscribed at Resend so future campaigns skip them.")) return;
+    try{
+      var r=await post("remove-sub",{ email:email });
+      if(r.ok){ say("\u2705 "+(r.message||"Removed.")); reload(); }
+      else { say(r.error||"Couldn't remove.", true); }
+    }catch(e){ say("Network error — please try again.", true); }
+  };
+
+  window.nlDeleteCampaign=async function(id, isCancel){
+    if(!KEY()){ say("Enter your admin key at the top of the page first.", true); return; }
+    var q = isCancel ? "Cancel this scheduled newsletter? It won't be sent." : "Delete this campaign from the list?";
+    if(!confirm(q)) return;
+    try{
+      var r=await post("delete-campaign",{ id:id });
+      if(r.ok){ say("\u2705 "+(isCancel?"Cancelled.":"Deleted.")); reload(); }
+      else { say(r.error||"Couldn't delete.", true); }
+    }catch(e){ say("Network error — please try again.", true); }
+  };
+
+  window.nlRetryCampaign=async function(id){
+    if(!KEY()){ say("Enter your admin key at the top of the page first.", true); return; }
+    if(!confirm("Try this campaign again?\n\nIt resumes from wherever it stopped — nobody who already received it will get a second copy.")) return;
+    try{
+      var r=await post("retry-campaign",{ id:id });
+      if(r.ok){ say("\u2705 "+(r.message||"Queued again.")); reload(); }
+      else { say(r.error||"Couldn't retry.", true); }
+    }catch(e){ say("Network error — please try again.", true); }
+  };
+})();
 
 // ---- Play Club memberships (admin) ----
 // Self-contained: reads the key straight from the DOM rather than depending on
@@ -3699,6 +3867,61 @@ $("#nlSend").onclick=async function(){
 
   var PICKED=[];
 
+  // Running list of everyone ticked so far, shown under the search results and
+  // kept across searches until the membership is saved or the form is cleared.
+  // Without this you had to trust that a tick from a previous search survived --
+  // and it didn't.
+  function renderPicked(){
+    var box=el("pmPicked"); if(!box) return;
+    if(!PICKED.length){ box.innerHTML=""; return; }
+    var max=parseInt(el("pmMax")&&el("pmMax").value,10)||0;
+    var over=(max>0 && PICKED.length>max);
+    box.innerHTML='<div style="background:#eef3ea;border:1px solid #cfe0c6;border-radius:10px;padding:9px 11px">'
+      +'<div style="font-weight:800;font-size:.8rem;color:#4f6b43;margin-bottom:6px">Linked to this membership ('+PICKED.length+')</div>'
+      + PICKED.map(function(c){
+          return '<span style="display:inline-flex;align-items:center;gap:6px;background:#fff;border:1px solid #d7e4d0;'
+            +'border-radius:20px;padding:3px 6px 3px 11px;margin:0 5px 5px 0;font-size:.78rem;font-weight:700">'
+            + esc(c.name||c.code) + ' <span class="note" style="margin:0;font-weight:600">'+esc(c.code)+'</span>'
+            + '<button type="button" onclick="pmUnpick(\''+esc(c.code)+'\')" title="Remove" '
+            + 'style="border:none;background:#f7e3df;color:#b8524a;border-radius:50%;width:18px;height:18px;'
+            + 'line-height:1;cursor:pointer;font-weight:900;padding:0">\u00d7</button></span>';
+        }).join("")
+      + (over?'<div style="color:#a5452f;font-size:.75rem;margin-top:4px">That\'s more children than this membership covers ('+max+'). Raise "Children covered" or untick one.</div>':'')
+      + '</div>';
+  }
+
+  // Untick from the running list. Global because the chips are rendered as HTML.
+  window.pmUnpick=function(code){
+    PICKED=PICKED.filter(function(k){return k.code!==code;});
+    var cb=document.querySelector('.pmKid[data-code="'+code+'"]');
+    if(cb) cb.checked=false;
+    renderPicked();
+  };
+
+  // Plans for the dropdown. This used to happen ONLY inside the pmLoad click
+  // handler, so the <select> sat completely empty until you pressed Load --
+  // which nothing told you to do. Now it is seeded immediately and filled the
+  // first time it is needed.
+  var PLANS_LOADED=false;
+  function fillPlans(plans){
+    var sel=el("pmPlan"); if(!sel) return;
+    var keep=sel.value;
+    plans=plans||[];
+    sel.innerHTML='<option value="">(no plan)</option>'
+      + plans.map(function(p){ return '<option value="'+esc(p.id)+'">'+esc(p.name)+'</option>'; }).join("");
+    if(!plans.length){
+      sel.innerHTML+='<option value="" disabled>(no plans set up yet \u2014 add them in Play Club plans)</option>';
+    }
+    if(keep) sel.value=keep;
+    PLANS_LOADED=true;
+  }
+  async function ensurePlans(force){
+    if(PLANS_LOADED && !force) return;
+    if(!theKey()) return;              // nothing to authenticate with yet
+    var r=await api({action:"members"});
+    if(r) fillPlans(r.plans||[]);
+  }
+
   async function api(body, okMsg){
     var key=theKey();
     if(!key){ out("Enter your staff PIN or admin key at the top first.","err"); return null; }
@@ -3734,10 +3957,14 @@ $("#nlSend").onclick=async function(){
           var rec={code:b.getAttribute("data-code"),name:b.getAttribute("data-name")};
           PICKED=PICKED.filter(function(k){return k.code!==rec.code;});
           if(b.checked) PICKED.push(rec);
+          renderPicked();
         });
       });
-      PICKED=[].slice.call(document.querySelectorAll(".pmKid")).filter(function(b){return b.checked;})
-        .map(function(b){return {code:b.getAttribute("data-code"),name:b.getAttribute("data-name")};});
+      // NOTE: this used to rebuild PICKED from only the checkboxes currently on
+      // screen, which wiped any child ticked during an EARLIER search -- exactly
+      // what happened when a sibling had a different surname. PICKED is already
+      // maintained by the change handlers above, so it must not be touched here.
+      renderPicked();
     }catch(e){ out("Network error.","err"); }
   };
 
@@ -3797,6 +4024,7 @@ $("#nlSend").onclick=async function(){
           return '<label class="agree" style="align-items:center"><input type="checkbox" class="pmKid" checked data-code="'
             +esc(c.code)+'" data-name="'+esc(c.name||"")+'"> '+esc(c.name||c.code)+'</label>';
         }).join("")||'<p class="note">Search above to link children.</p>';
+        renderPicked();
         el("pmTitle").textContent="Editing: "+m.name;
         el("pmTitle").scrollIntoView({behavior:"smooth",block:"center"});
         out("Editing "+m.code+". Phone shows only the last 4 \u2014 retype the full number if you change it.","ok");
@@ -3819,10 +4047,22 @@ $("#nlSend").onclick=async function(){
 
   function reset(){
     ["pmCode","pmName","pmPhone","pmEmail","pmSearch"].forEach(function(i){ el(i).value=""; });
-    el("pmMax").value=2; el("pmKids").innerHTML=""; PICKED=[];
+    el("pmMax").value=2; el("pmKids").innerHTML=""; PICKED=[]; renderPicked();
     el("pmTitle").textContent="Add a member";
   }
   el("pmReset").onclick=reset;
+
+  // Never leave the dropdown blank: seed it now, fill it as soon as there's a
+  // key, and top it up the moment someone actually opens it.
+  fillPlans([]); PLANS_LOADED=false;
+  (function(){
+    var sel=el("pmPlan");
+    if(sel){ sel.addEventListener("mousedown",function(){ ensurePlans(); });
+             sel.addEventListener("focus",function(){ ensurePlans(); }); }
+    var k=el("pin")||el("key");
+    if(k) k.addEventListener("change",function(){ ensurePlans(true); });
+    setTimeout(function(){ ensurePlans(); },300);
+  })();
 
   el("pmSave").onclick=async function(){
     var phone=el("pmPhone").value.trim();
@@ -3845,9 +4085,7 @@ $("#nlSend").onclick=async function(){
     var r=await api({action:"members"},"Loaded.");
     if(!r) return;
     renderList(r.members||[]);
-    var sel=el("pmPlan");
-    if(sel){ sel.innerHTML='<option value="">(no plan)</option>'
-      + (r.plans||[]).map(function(p){ return '<option value="'+esc(p.id)+'">'+esc(p.name)+'</option>'; }).join(""); }
+    fillPlans(r.plans||[]);
   };
 })();
 
@@ -3936,6 +4174,109 @@ $("#nlSend").onclick=async function(){
       }).join('')+'</tbody></table></div>'
       +'<p class="note" style="margin-top:8px">Rows in pink have already passed 18 months. Move them to the Toddler plan '
       +'from their next renewal \u2014 in Square, edit the subscription if it lets you, otherwise cancel and send them the new plan link.</p>';
+  };
+})();
+</script>
+<script>
+/* ===== Party, payment-record and check-in handlers =====
+   These three were referenced by onclick="..." attributes in generated HTML but
+   never actually defined anywhere, so the buttons threw "X is not defined" on
+   click. They hang on window deliberately: an onclick attribute is resolved
+   against the global object at click time, so a function tucked inside an IIFE
+   would still be invisible to it.
+
+   All three drive endpoints that already existed — no new backend. */
+(function(){
+  function theDate(){ var d=document.getElementById("date"); return d ? d.value : ""; }
+  function needKey(){
+    var k = (typeof KEY === "function") ? KEY() : "";
+    if(!k) alert("Enter your key/PIN at the top of the page first.");
+    return k;
+  }
+  function refresh(){ try{ if(typeof loadDay === "function") loadDay(); }catch(e){} }
+  // loadDay(true) reloads without the "Loading…" flash — matches staff.html.
+  function refreshQuiet(){ try{ if(typeof loadDay === "function") loadDay(true); }catch(e){} }
+
+  // ---- Party: confirm a deposit, or release the slot ------------------------
+  // POST /api/party-status already does the real work. "confirm" marks the party
+  // confirmed, locks in any promo, and emails the customer their confirmation —
+  // which is exactly the in-store deposit flow. "release" deletes the party so
+  // the slot reopens for both parties AND the overlapping open-play session.
+  window.partyAction = async function(partySlot, action){
+    var key = needKey(); if(!key) return;
+    var date = theDate();
+    if(!date){ alert("Pick a date first."); return; }
+
+    var q = (action === "confirm")
+      ? "Confirm this party as deposit paid?\n\nIt gets marked confirmed, any promo is locked in, and the customer is emailed their confirmation."
+      : "Release this party?\n\nThe booking is removed and the slot reopens for parties and open play.\n\nThis can't be undone.";
+    if(!confirm(q)) return;
+
+    try{
+      var r = await (await fetch("/api/party-status",{
+        method:"POST", headers:{"content-type":"application/json"},
+        body: JSON.stringify({ pin:key, date:date, partySlot:partySlot, action:action })
+      })).json();
+      if(r.ok){ alert("\u2705 " + (r.message || "Done.")); refresh(); }
+      else { alert(r.error || "Couldn't update that party."); }
+    }catch(e){ alert("Network error — please try again."); }
+  };
+
+  // ---- Payment record -------------------------------------------------------
+  // Pure display: everything needed is already sitting on the button as data
+  // attributes, so there's nothing to fetch. Shows when it was paid, the card's
+  // last 4 and how it was paid — what you need to find it in Square.
+  // This is the same popup staff.html uses, so both pages behave identically.
+  window.showPayRec = function(btn){
+    if(!btn) return;
+    var old=document.getElementById("payRecPop"); if(old) old.remove();
+    if(window.__payRecFor===btn){ window.__payRecFor=null; return; }   // click again to close
+    window.__payRecFor=btn;
+
+    var at=btn.getAttribute("data-at")||"", last4=btn.getAttribute("data-last4")||"", paid=btn.getAttribute("data-paid")||"";
+    var when="—";
+    if(at){
+      try{ when=new Date(at).toLocaleString("en-US",{ timeZone:"America/Los_Angeles", weekday:"short", month:"short", day:"numeric", year:"numeric", hour:"numeric", minute:"2-digit" }); }
+      catch(e){ when=at; }
+    }
+    var E=function(s){ return (s||"").toString().replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); };
+
+    var pop=document.createElement("div"); pop.id="payRecPop";
+    pop.style.cssText="position:absolute;z-index:9999;background:#fff;border:1px solid #e7ddd0;border-radius:12px;box-shadow:0 12px 34px rgba(0,0,0,.16);padding:12px 14px;font-size:.8rem;line-height:1.5;max-width:280px;color:#2a2622";
+    pop.innerHTML='<div style="font-weight:800;margin-bottom:7px;color:#4f6b43">💳 Payment record</div>'
+      +'<div style="margin-bottom:5px"><span style="color:#9a8d80">Booked &amp; paid</span><br><b>'+E(when)+'</b></div>'
+      +'<div style="margin-bottom:5px"><span style="color:#9a8d80">Card used</span><br><b>'+(last4?("•••• "+E(last4)):'<span style="font-weight:600;color:#9a8d80">not on file for this booking</span>')+'</b></div>'
+      +(paid?'<div style="margin-bottom:5px"><span style="color:#9a8d80">Paid with</span><br><b>'+E(paid)+'</b></div>':'')
+      +'<div style="color:#9a8d80;font-size:.72rem;margin-top:7px;border-top:1px solid #f0e9de;padding-top:6px">Match this to the transaction in Square by date/time'+(last4?" and the last 4":"")+'.</div>';
+    document.body.appendChild(pop);
+
+    var r=btn.getBoundingClientRect();
+    pop.style.top=(window.scrollY+r.bottom+6)+"px";
+    pop.style.left=Math.max(8, window.scrollX+Math.min(r.left, window.innerWidth-300))+"px";
+
+    var close=function(e){ if(e.target!==btn && !pop.contains(e.target)){ done(); } };
+    var onEsc=function(e){ if(e.key==="Escape"){ done(); } };
+    function done(){ pop.remove(); window.__payRecFor=null;
+      document.removeEventListener("click",close,true); document.removeEventListener("keydown",onEsc,true); }
+    setTimeout(function(){ document.addEventListener("click",close,true); document.addEventListener("keydown",onEsc,true); },0);
+  };
+
+  // ---- Remove a check-in ----------------------------------------------------
+  // Undoes a WALK-IN or PUNCH-CARD check-in and frees the spot back up — for
+  // when the wrong person was ticked in. The backend only permits entries typed
+  // "walkin" or "pass", so this can never cancel an online reservation; that's
+  // what Reschedule & cancel is for.
+  window.removeCheckin = async function(date, slot, entryId){
+    var key = needKey(); if(!key) return;
+    if(!confirm("Remove this check-in?\n\nIt frees the spot back up.\n\nThis does NOT cancel an online booking — use Reschedule & cancel for that.")) return;
+    try{
+      var r = await (await fetch("/api/checkin",{
+        method:"POST", headers:{"content-type":"application/json"},
+        body: JSON.stringify({ key:key, action:"remove", date:date, slot:slot, entryId:entryId })
+      })).json();
+      if(r.ok){ refreshQuiet(); }
+      else { alert(r.error || "Couldn't remove that check-in."); }
+    }catch(e){ alert("Network error — please try again."); }
   };
 })();
 </script>

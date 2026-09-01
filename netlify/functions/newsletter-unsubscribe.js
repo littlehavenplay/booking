@@ -6,11 +6,12 @@
 // in the admin's active list right away (no manual step needed).
 import { newsletterStore, cleanEmail, subKey, suppress } from "./lib-newsletter.js";
 import { sendOwnerAlert } from "./lib-email.js";
+import { setContactUnsubscribed } from "./lib-resend-marketing.js";
 
 async function doUnsub(email, token) {
   const store = newsletterStore();
   let rec = null;
-  try { rec = await store.get(subKey(email), { type: "json" }); } catch {}
+  try { rec = await store.get(subKey(email), { type: "json", consistency: "strong" }); } catch {}
   if (!rec) return { ok: true, alreadyGone: true };
   // token check (skip only if the record never had one, for older entries)
   if (rec.token && token && rec.token !== token) return { ok: false, badToken: true };
@@ -21,6 +22,11 @@ async function doUnsub(email, token) {
     try { await store.setJSON(subKey(email), rec); } catch {}
     // Permanent block, so a future CSV import can't quietly put them back.
     await suppress(store, email, "unsubscribed");
+    // Campaigns now go out as Resend Broadcasts, so Resend holds its own copy of
+    // the list. Flip their contact there too — otherwise someone who unsubscribes
+    // just after a sync would still be included in the very next broadcast.
+    // Best-effort: a Resend hiccup must never make the unsubscribe itself fail.
+    setContactUnsubscribed(email, true).catch(() => {});
     // Heads-up to the owner (best-effort; never blocks the unsubscribe).
     sendOwnerAlert(
       "📭 Newsletter unsubscribe",

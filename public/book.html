@@ -484,7 +484,14 @@ async function init(){
     studioName:"Little Haven Play Studio",
     closedDates:[],closedMessage:"Temporarily closed for improvements",
     policyTitle:"Open Play Booking Cancellation & Refund Policy",
-    policyLines:["Open Play bookings are prepaid.","If you do not show up within one hour of your reserved time, we will automatically issue a courtesy store credit for the full amount paid, valid for 14 days from issuance."],
+    // Deliberately EMPTY. This used to hold a 2-line summary of a policy that is
+    // actually 10 lines, so whenever /api/config failed the customer ticked
+    // "I agree to the cancellation & refund policy" having been shown a version
+    // missing the Play Club billing terms, the grip-sock rule and the
+    // free-admission code rules. The policy has exactly one source of truth --
+    // POLICY_LINES in netlify/functions/lib-settings.js -- and renderPolicy()
+    // now says so plainly rather than showing a partial version.
+    policyLines:[],
     slots:[{id:"arr09",label:"9:00 AM"},{id:"arr10",label:"10:00 AM"},{id:"arr11",label:"11:00 AM"},{id:"arr12",label:"12:00 PM"},{id:"arr13",label:"1:00 PM"}]}; }
 
   $("#date").min=todayStr();   // no booking in the past
@@ -598,8 +605,18 @@ async function checkGiftCard(n){
 }
 
 function renderPolicy(){
-  const lines=(CFG.policyLines||[]).map(l=>`<li>${l}</li>`).join("");
-  $("#policy").innerHTML=`<h4>${CFG.policyTitle||""}</h4><ul>${lines}</ul>`;
+  const src=CFG.policyLines||[];
+  // Never present a partial policy as the thing being agreed to. If the config
+  // fetch failed there is nothing trustworthy to show, so say that instead.
+  if(!src.length){
+    $("#policy").innerHTML='<h4>Cancellation &amp; Refund Policy</h4>'
+      +'<p style="margin:0;color:#a5452f;font-weight:700">We couldn\'t load the current policy just now.</p>'
+      +'<p style="margin:6px 0 0">Please refresh the page before booking so you can read the full terms. '
+      +'If it keeps happening, email <a href="mailto:hello@littlehavenplay.com">hello@littlehavenplay.com</a> and we\'ll help you book.</p>';
+    return;
+  }
+  const lines=src.map(l=>`<li>${l}</li>`).join("");
+  $("#policy").innerHTML=`<h4>${CFG.policyTitle||"Cancellation &amp; Refund Policy"}</h4><ul>${lines}</ul>`;
 }
 
 async function loadAvailability(){

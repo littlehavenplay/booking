@@ -1,11 +1,18 @@
 // POST /api/newsletter-admin  (admin key or staff PIN)
-//   action "list"            -> { subscribers:[…active…], counts, campaigns:[…] }
+//   action "list"            -> { subscribers:[…active…], counts, campaigns:[…], marketing }
 //   action "remove-sub"      -> { email }  hard-delete one subscriber
 //   action "delete-campaign" -> { id }     remove a scheduled/sent campaign
 //   action "export"          -> { csv }    CSV of active subscribers
+//   action "sync-now"        -> push the subscriber list to Resend without sending
 import { getStore } from "@netlify/blobs";
 import { listAllKeys } from "./lib-blobs.js";
-import { STORE, cleanEmail, validEmail, subKey } from "./lib-newsletter.js";
+import {
+  STORE, cleanEmail, validEmail, subKey, suppress,
+  buildSubscriberCsv, pullResendUnsubscribes, CONTACT_CAP,
+} from "./lib-newsletter.js";
+import {
+  resolveSegmentId, importContactsCsv, setContactUnsubscribed, marketingConfigured,
+} from "./lib-resend-marketing.js";
 
 export default async (req) => {
   if (req.method !== "POST") return json({ error: "Use POST." }, 405);
@@ -22,14 +29,51 @@ export default async (req) => {
   // preview first so nothing is saved until you've seen the numbers.
   // { key, action:"import", text, commit:false|true, source }
   // Clear the error and put a parked campaign back in the queue.
+  //
+  // Resume at the RIGHT stage. Sending is the one irreversible step, so if the
+  // send was already requested we only ever go back to polling — never to a
+  // state that would hand Resend a second copy of the same broadcast.
   if (action === "retry-campaign") {
     const id = (b.id || "").toString();
     if (!id) return json({ error: "Missing campaign id." }, 400);
-    let c = null; try { c = await store.get("campaign:" + id, { type: "json" }); } catch {}
+    let c = null; try { c = await store.get("campaign:" + id, { type: "json", consistency: "strong" }); } catch {}
     if (!c) return json({ error: "Campaign not found." }, 404);
-    c.status = "sending"; c.lastError = ""; c.errorCount = 0; c.errorAlerted = false;
+    if (c.status === "sent") return json({ error: "That campaign already went out." }, 400);
+
+    let where;
+    if (c.sendRequestedAt)   { c.status = "queued";  where = "checking delivery with Resend"; }
+    else if (c.broadcastId)  { c.status = "ready";   where = "sending the broadcast that's already prepared"; }
+    else                     { c.status = "syncing"; c.importId = null; c.importStartedAt = null;
+                               where = "re-uploading your subscriber list"; }
+
+    c.lastError = ""; c.errorCount = 0; c.errorAlerted = false;
     try { await store.setJSON("campaign:" + id, c); } catch { return json({ error: "Couldn't save." }, 502); }
-    return json({ ok: true, message: "Queued again — it'll pick up within 15 minutes from where it stopped." });
+    return json({ ok: true, message: `Queued again — picking up at ${where}. It'll run within 15 minutes.` });
+  }
+
+  // Upload the current subscriber list to Resend without sending anything.
+  // Useful as a first-time setup step and for checking the marketing side is
+  // wired up before trusting it with a real campaign.
+  if (action === "sync-now") {
+    if (!marketingConfigured()) return json({ error: "RESEND_API_KEY isn't set." }, 502);
+    const seg = await resolveSegmentId();
+    if (!seg.ok) return json({ error: seg.error || "Couldn't resolve a Resend segment." }, 502);
+
+    const pull = await pullResendUnsubscribes(store, seg.id);
+    const built = await buildSubscriberCsv(store);
+    const cap = CONTACT_CAP();
+    if (built.total > cap) {
+      return json({ error: `Your list holds ${built.total} contacts but the Resend marketing plan allows ${cap}. Nothing was uploaded.` }, 400);
+    }
+    if (!built.total) return json({ error: "There are no subscribers to sync yet." }, 400);
+
+    const imp = await importContactsCsv(built.csv, seg.id);
+    if (!imp.ok) return json({ error: imp.error }, 502);
+
+    return json({ ok: true, importId: imp.id, segmentId: seg.id,
+      active: built.active, optedOut: built.optedOut, total: built.total,
+      pulled: pull.ok ? pull.pulled : 0,
+      message: `Uploading ${built.total} contact${built.total === 1 ? "" : "s"} to Resend (${built.active} subscribed, ${built.optedOut} opted out)${pull.ok && pull.pulled ? ` · pulled ${pull.pulled} unsubscribe${pull.pulled === 1 ? "" : "s"} back from Resend` : ""}. It finishes in the background.` });
   }
 
   if (action === "import") {
@@ -106,7 +150,7 @@ export default async (req) => {
     const subKeys = await listAllKeys(store, { prefix: "sub:" });
     const subscribers = []; let unsubscribed = 0;
     for (const k of subKeys) {
-      let s = null; try { s = await store.get(k, { type: "json" }); } catch {}
+      let s = null; try { s = await store.get(k, { type: "json", consistency: "strong" }); } catch {}
       if (!s || !s.email) continue;
       if (s.active === false) { unsubscribed++; continue; }
       subscribers.push({ email: s.email, name: s.name || "", subscribedAt: s.subscribedAt || "", source: s.source || "" });
@@ -116,7 +160,7 @@ export default async (req) => {
     const campKeys = await listAllKeys(store, { prefix: "campaign:" });
     const campaigns = [];
     for (const k of campKeys) {
-      let c = null; try { c = await store.get(k, { type: "json" }); } catch {}
+      let c = null; try { c = await store.get(k, { type: "json", consistency: "strong" }); } catch {}
       if (!c) continue;
       campaigns.push({
         id: c.id, subject: c.subject || "", status: c.status || "",
@@ -124,18 +168,32 @@ export default async (req) => {
         createdAt: c.createdAt || null, hasImage: !!c.imageMime,
         stats: c.stats || { sent: 0, total: 0 },
         lastError: c.lastError || "", errorCount: c.errorCount || 0,
+        // Pipeline detail, so the tool can say WHICH step a campaign is on
+        // instead of a bare "sending…" that never explains itself.
+        broadcastId: c.broadcastId || null, sendRequestedAt: c.sendRequestedAt || null,
       });
     }
     campaigns.sort((a, c) => String(c.createdAt || "").localeCompare(String(a.createdAt || "")));
 
-    return json({ ok: true, subscribers, counts: { active: subscribers.length, unsubscribed }, campaigns });
+    const total = subscribers.length + unsubscribed;
+    return json({ ok: true, subscribers, counts: { active: subscribers.length, unsubscribed }, campaigns,
+      marketing: {
+        configured: marketingConfigured(),
+        contacts: total, cap: CONTACT_CAP(), overCap: total > CONTACT_CAP(),
+      } });
   }
 
   if (action === "remove-sub") {
     const email = cleanEmail(b.email);
     if (!email) return json({ error: "No email given." }, 400);
     try { await store.delete(subKey(email)); } catch {}
-    return json({ ok: true, message: "Removed." });
+    // Deleting the local record is no longer enough. Resend keeps its own copy
+    // of the list for broadcasts, and a contact we simply stop uploading is
+    // still a contact Resend will happily mail. Suppress locally AND flip them
+    // off at Resend, so "Remove" actually means removed.
+    await suppress(store, email, "removed-by-studio");
+    setContactUnsubscribed(email, true).catch(() => {});
+    return json({ ok: true, message: "Removed — they won't be included in future sends." });
   }
 
   if (action === "delete-campaign") {
@@ -150,7 +208,7 @@ export default async (req) => {
     const subKeys = await listAllKeys(store, { prefix: "sub:" });
     const rows = [["name", "email", "subscribed_at", "source"]];
     for (const k of subKeys) {
-      let s = null; try { s = await store.get(k, { type: "json" }); } catch {}
+      let s = null; try { s = await store.get(k, { type: "json", consistency: "strong" }); } catch {}
       if (!s || !s.email || s.active === false) continue;
       rows.push([s.name || "", s.email, s.subscribedAt || "", s.source || ""]);
     }

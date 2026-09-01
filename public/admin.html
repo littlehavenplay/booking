@@ -935,6 +935,7 @@
           <button type="button" id="pmFind" class="alt" style="margin:0">Find</button>
         </div>
         <div id="pmKids" style="margin-top:8px"></div>
+        <div id="pmPicked" style="margin-top:8px"></div>
         <p class="note" style="margin:4px 0 0">Ticked children are linked to this membership. Their loyalty cards keep
         working normally &mdash; a covered visit is recorded but earns no punch.</p>
 
@@ -983,6 +984,34 @@
 <script>
 const $=s=>document.querySelector(s);
 const money=c=>"$"+(c/100).toFixed(2);
+
+// GLOBAL KEY() — do not move this inside a wrapper.
+//
+// Three IIFEs further down each declare their own local function KEY(). That is
+// fine and they still shadow this one. The problem was that several top-level
+// functions — loadDay(), nlLoad(), the party and check-in handlers — sit OUTSIDE
+// those wrappers and also call KEY(), so they threw "KEY is not defined" the
+// moment they ran. That is why the daily schedule and the newsletter subscriber
+// list looked dead. Declaring it once here at global scope fixes every orphaned
+// call site at once without changing anything that already worked.
+function KEY(){ var k=document.getElementById("key"); return k ? k.value.trim() : ""; }
+
+// coffeePopup() — the loyalty "free coffee" prompt.
+//
+// Both pages already had the #coffeePop element and two unguarded calls to this
+// function, but the function itself only ever existed in staff.html. So the
+// moment a punch-card holder earned a coffee, the check-in threw "coffeePopup is
+// not defined" instead of showing the prompt. Ported verbatim from staff.html;
+// every element lookup is guarded, so it works on pages that only have the
+// message element and no icon/sub-heading.
+function coffeePopup(msg,sub,icon){
+  var m=document.getElementById("coffeePopMsg"); if(m&&msg) m.textContent=msg;
+  var s=document.getElementById("coffeePopSub"); if(s) s.textContent=(sub!==undefined?sub:"Punch-card holders get a free coffee for the grown-up.");
+  var ic=document.getElementById("coffeePopIcon"); if(ic) ic.textContent=(icon!==undefined?icon:"\u2615");
+  var p=document.getElementById("coffeePop"); if(p) p.style.display="flex";
+}
+
+
 
 (async function(){
   let CFG={};
@@ -3124,6 +3153,61 @@ if($("#wsSave")) $("#wsSave").onclick=async function(){
 
   var PICKED=[];
 
+  // Running list of everyone ticked so far, shown under the search results and
+  // kept across searches until the membership is saved or the form is cleared.
+  // Without this you had to trust that a tick from a previous search survived --
+  // and it didn't.
+  function renderPicked(){
+    var box=el("pmPicked"); if(!box) return;
+    if(!PICKED.length){ box.innerHTML=""; return; }
+    var max=parseInt(el("pmMax")&&el("pmMax").value,10)||0;
+    var over=(max>0 && PICKED.length>max);
+    box.innerHTML='<div style="background:#eef3ea;border:1px solid #cfe0c6;border-radius:10px;padding:9px 11px">'
+      +'<div style="font-weight:800;font-size:.8rem;color:#4f6b43;margin-bottom:6px">Linked to this membership ('+PICKED.length+')</div>'
+      + PICKED.map(function(c){
+          return '<span style="display:inline-flex;align-items:center;gap:6px;background:#fff;border:1px solid #d7e4d0;'
+            +'border-radius:20px;padding:3px 6px 3px 11px;margin:0 5px 5px 0;font-size:.78rem;font-weight:700">'
+            + esc(c.name||c.code) + ' <span class="note" style="margin:0;font-weight:600">'+esc(c.code)+'</span>'
+            + '<button type="button" onclick="pmUnpick(\''+esc(c.code)+'\')" title="Remove" '
+            + 'style="border:none;background:#f7e3df;color:#b8524a;border-radius:50%;width:18px;height:18px;'
+            + 'line-height:1;cursor:pointer;font-weight:900;padding:0">\u00d7</button></span>';
+        }).join("")
+      + (over?'<div style="color:#a5452f;font-size:.75rem;margin-top:4px">That\'s more children than this membership covers ('+max+'). Raise "Children covered" or untick one.</div>':'')
+      + '</div>';
+  }
+
+  // Untick from the running list. Global because the chips are rendered as HTML.
+  window.pmUnpick=function(code){
+    PICKED=PICKED.filter(function(k){return k.code!==code;});
+    var cb=document.querySelector('.pmKid[data-code="'+code+'"]');
+    if(cb) cb.checked=false;
+    renderPicked();
+  };
+
+  // Plans for the dropdown. This used to happen ONLY inside the pmLoad click
+  // handler, so the <select> sat completely empty until you pressed Load --
+  // which nothing told you to do. Now it is seeded immediately and filled the
+  // first time it is needed.
+  var PLANS_LOADED=false;
+  function fillPlans(plans){
+    var sel=el("pmPlan"); if(!sel) return;
+    var keep=sel.value;
+    plans=plans||[];
+    sel.innerHTML='<option value="">(no plan)</option>'
+      + plans.map(function(p){ return '<option value="'+esc(p.id)+'">'+esc(p.name)+'</option>'; }).join("");
+    if(!plans.length){
+      sel.innerHTML+='<option value="" disabled>(no plans set up yet \u2014 add them in Play Club plans)</option>';
+    }
+    if(keep) sel.value=keep;
+    PLANS_LOADED=true;
+  }
+  async function ensurePlans(force){
+    if(PLANS_LOADED && !force) return;
+    if(!theKey()) return;              // nothing to authenticate with yet
+    var r=await api({action:"members"});
+    if(r) fillPlans(r.plans||[]);
+  }
+
   async function api(body, okMsg){
     var key=theKey();
     if(!key){ out("Enter your staff PIN or admin key at the top first.","err"); return null; }
@@ -3159,10 +3243,14 @@ if($("#wsSave")) $("#wsSave").onclick=async function(){
           var rec={code:b.getAttribute("data-code"),name:b.getAttribute("data-name")};
           PICKED=PICKED.filter(function(k){return k.code!==rec.code;});
           if(b.checked) PICKED.push(rec);
+          renderPicked();
         });
       });
-      PICKED=[].slice.call(document.querySelectorAll(".pmKid")).filter(function(b){return b.checked;})
-        .map(function(b){return {code:b.getAttribute("data-code"),name:b.getAttribute("data-name")};});
+      // NOTE: this used to rebuild PICKED from only the checkboxes currently on
+      // screen, which wiped any child ticked during an EARLIER search -- exactly
+      // what happened when a sibling had a different surname. PICKED is already
+      // maintained by the change handlers above, so it must not be touched here.
+      renderPicked();
     }catch(e){ out("Network error.","err"); }
   };
 
@@ -3222,6 +3310,7 @@ if($("#wsSave")) $("#wsSave").onclick=async function(){
           return '<label class="agree" style="align-items:center"><input type="checkbox" class="pmKid" checked data-code="'
             +esc(c.code)+'" data-name="'+esc(c.name||"")+'"> '+esc(c.name||c.code)+'</label>';
         }).join("")||'<p class="note">Search above to link children.</p>';
+        renderPicked();
         el("pmTitle").textContent="Editing: "+m.name;
         el("pmTitle").scrollIntoView({behavior:"smooth",block:"center"});
         out("Editing "+m.code+". Phone shows only the last 4 \u2014 retype the full number if you change it.","ok");
@@ -3244,10 +3333,22 @@ if($("#wsSave")) $("#wsSave").onclick=async function(){
 
   function reset(){
     ["pmCode","pmName","pmPhone","pmEmail","pmSearch"].forEach(function(i){ el(i).value=""; });
-    el("pmMax").value=2; el("pmKids").innerHTML=""; PICKED=[];
+    el("pmMax").value=2; el("pmKids").innerHTML=""; PICKED=[]; renderPicked();
     el("pmTitle").textContent="Add a member";
   }
   el("pmReset").onclick=reset;
+
+  // Never leave the dropdown blank: seed it now, fill it as soon as there's a
+  // key, and top it up the moment someone actually opens it.
+  fillPlans([]); PLANS_LOADED=false;
+  (function(){
+    var sel=el("pmPlan");
+    if(sel){ sel.addEventListener("mousedown",function(){ ensurePlans(); });
+             sel.addEventListener("focus",function(){ ensurePlans(); }); }
+    var k=el("pin")||el("key");
+    if(k) k.addEventListener("change",function(){ ensurePlans(true); });
+    setTimeout(function(){ ensurePlans(); },300);
+  })();
 
   el("pmSave").onclick=async function(){
     var phone=el("pmPhone").value.trim();
@@ -3270,9 +3371,7 @@ if($("#wsSave")) $("#wsSave").onclick=async function(){
     var r=await api({action:"members"},"Loaded.");
     if(!r) return;
     renderList(r.members||[]);
-    var sel=el("pmPlan");
-    if(sel){ sel.innerHTML='<option value="">(no plan)</option>'
-      + (r.plans||[]).map(function(p){ return '<option value="'+esc(p.id)+'">'+esc(p.name)+'</option>'; }).join(""); }
+    fillPlans(r.plans||[]);
   };
 })();
 
