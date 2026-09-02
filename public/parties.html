@@ -98,11 +98,15 @@
 
     <div class="card policy">
       <div class="step"><div class="n">5</div><h2>Deposit & cancellation policy</h2></div>
-      <div id="policyBox" style="max-height:230px;overflow:auto;border:1px solid #efe7da;border-radius:12px;padding:12px;background:#fcfaf6"></div>
+      <div style="border:1px solid #efe7da;border-radius:12px;padding:11px 13px;background:#fcfaf6;font-size:.85rem;color:var(--slate);line-height:1.6">
+        Book at least <b>2 weeks ahead</b>. A deposit reserves your date &mdash; it's refundable if you cancel
+        at least 2 weeks before, and the balance is due on the day.
+        <a href="/terms.html#parties" target="_blank" rel="noopener" style="color:var(--rose-deep);font-weight:800;white-space:nowrap">Read the full policy &rarr;</a>
+      </div>
       <div class="agree"><input type="checkbox" id="agree"><label for="agree" style="text-transform:none;letter-spacing:0;color:var(--charcoal);font-weight:700;font-size:.85rem;margin:0">I have read and agree to the deposit & cancellation policy. I understand my party is not confirmed until the deposit is paid, and the remaining balance is due the day of the party.</label></div>
       <button class="pay" id="pay" disabled>Continue to deposit</button>
       <div class="msg" id="msg"></div>
-      <div class="note">💳 At checkout you can pay with Apple Pay, Google Pay, or any major credit &amp; debit card.<button type="button" class="hlp" data-help="💳 At checkout you can pay with <b>Apple Pay</b>, <b>Google Pay</b>, or any major credit &amp; debit card. Paying the deposit holds your reservation. We'll follow up to finalize the details (including your color selections, due at least 1 week before your party).">?</button></div>
+      <div class="note">💳 At checkout you can pay with Apple Pay, Google Pay, or any major credit &amp;amp; debit card.<button type="button" class="hlp" data-help="💳 At checkout you can pay with <b>Apple Pay</b>, <b>Google Pay</b>, or any major credit &amp; debit card. Paying the deposit holds your reservation. We'll follow up to finalize the details (including your color selections, due at least 1 week before your party).">?</button></div>
     </div>
   </div>
 
@@ -116,7 +120,14 @@
   </div>
 
   <div class="card faq">
-    <div class="step"><div class="n">?</div><h2>Party FAQ</h2></div>
+    <!-- Collapsed by default. Seven open questions pushed everything below them
+         off the screen; anyone who wants them is one tap away. -->
+    <details>
+      <summary style="cursor:pointer;list-style:none;display:flex;align-items:center;gap:10px;font-weight:800;font-size:1rem;color:var(--charcoal)">
+        <span class="n" style="flex:none">?</span> Party FAQ
+        <span style="margin-left:auto;color:var(--taupe);font-weight:900">+</span>
+      </summary>
+      <div style="margin-top:10px"><h2>Party FAQ</h2></div>
     <details><summary>How far in advance do I book, and how is my date held?</summary><p>Parties must be booked at least 2 weeks in advance. A deposit reserves your date and time — your party isn't confirmed until the deposit is paid.</p></details>
     <details><summary>Is the deposit refundable?</summary><p>Deposits are non-refundable unless you cancel at least 2 weeks before the party date. Cancellations made less than 2 weeks before the party are not eligible for a deposit refund. The deposit applies toward your package total.</p></details>
     <details><summary>When is the rest of the balance due?</summary><p>The remaining balance is due on the day of the party. Any approved add-ons are charged at the end of the event.</p></details>
@@ -124,6 +135,8 @@
     <details><summary>What if I'm running late?</summary><p>Party time begins and ends at the scheduled reserved time; late arrival doesn't extend it. Extra time may be available only if approved in advance and may carry an additional fee.</p></details>
     <details><summary>What if I need to cancel for an emergency?</summary><p>For illness, emergencies, or unexpected circumstances, Little Haven may offer store credit at our discretion, usable toward a future booking, Open Play, punch card, or other eligible purchase.</p></details>
     <details><summary>What if Little Haven has to cancel?</summary><p>If we must cancel due to an emergency, facility issue, or unexpected closure, you may reschedule, receive store credit, or a refund of any amount paid.</p></details>
+  </div>
+    </details>
   </div>
 </div>
 
@@ -285,93 +298,44 @@ async function submitQuestionnaire(){
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',show); else show();
 })();
 </script>
-<!-- ============================================================================
-     HELP BUBBLE  —  <button class="hlp" data-help="...">?</button>
-     ----------------------------------------------------------------------------
-     Long paragraphs of instructions under every field made the pages exhausting
-     to read and pushed the actual controls off the screen on a phone. The text
-     still exists, it just lives behind a small (?) until someone asks for it.
-
-     Usage:  <label>Reward code <button type="button" class="hlp"
-                data-help="Earned your 8th visit? Enter it here.">?</button></label>
-
-     Behaviour: click or hover to open, click anywhere / Escape to close, only one
-     open at a time. Keyboard reachable and screen-reader labelled. No dependencies.
-     ============================================================================ -->
 <style>
-.hlp{
-  display:inline-flex;align-items:center;justify-content:center;
-  width:17px;height:17px;padding:0;margin:0 0 0 5px;vertical-align:middle;
-  border:none;border-radius:50%;cursor:pointer;
-  background:#e6ded2;color:#6b6055;
-  font:900 11px/1 Nunito,Arial,sans-serif;
-  transition:background .15s,color .15s;
-}
+.hlp{display:inline-flex;align-items:center;justify-content:center;width:17px;height:17px;padding:0;margin:0 0 0 5px;vertical-align:middle;border:none;border-radius:50%;cursor:pointer;background:#e6ded2;color:#6b6055;font:900 11px/1 Nunito,Arial,sans-serif;transition:background .15s,color .15s}
 .hlp:hover,.hlp:focus{background:#c9846f;color:#fff;outline:none}
-.hlp-bubble{
-  position:absolute;z-index:10000;max-width:290px;
-  background:#2f2a26;color:#fff;border-radius:10px;
-  padding:10px 12px;font:600 .78rem/1.5 Nunito,Arial,sans-serif;
-  box-shadow:0 10px 30px rgba(0,0,0,.22);
-}
-.hlp-bubble b{color:#ffd9a8}
-.hlp-bubble a{color:#ffc9a8}
-.hlp-bubble:after{
-  content:"";position:absolute;top:-5px;left:var(--ax,14px);
-  width:10px;height:10px;background:#2f2a26;transform:rotate(45deg);
-}
+.hlp-bubble{position:absolute;z-index:10000;max-width:290px;background:#2f2a26;color:#fff;border-radius:10px;padding:10px 12px;font:600 .78rem/1.5 Nunito,Arial,sans-serif;box-shadow:0 10px 30px rgba(0,0,0,.22)}
+.hlp-bubble b{color:#ffd9a8}.hlp-bubble a{color:#ffc9a8}
+.hlp-bubble:after{content:"";position:absolute;top:-5px;left:var(--ax,14px);width:10px;height:10px;background:#2f2a26;transform:rotate(45deg)}
 @media print{.hlp,.hlp-bubble{display:none!important}}
 </style>
 <script>
 (function(){
-  var open=null, forBtn=null;
-  function close(){
-    if(open){ open.remove(); open=null; forBtn=null; }
-  }
+  var open=null,forBtn=null;
+  function close(){ if(open){ open.remove(); open=null; forBtn=null; } }
   function show(btn){
-    close();
-    var txt=btn.getAttribute("data-help")||"";
-    if(!txt) return;
-    var b=document.createElement("div");
-    b.className="hlp-bubble";
-    b.setAttribute("role","tooltip");
-    b.innerHTML=txt;                       // authored by us, not user input
-    document.body.appendChild(b);
-    var r=btn.getBoundingClientRect();
-    var top=window.scrollY+r.bottom+8;
-    // Keep it on screen on a narrow phone rather than running off the right edge.
-    var left=window.scrollX+r.left-10;
+    close(); var txt=btn.getAttribute("data-help")||""; if(!txt) return;
+    var b=document.createElement("div"); b.className="hlp-bubble"; b.setAttribute("role","tooltip");
+    b.innerHTML=txt; document.body.appendChild(b);
+    var r=btn.getBoundingClientRect(), top=window.scrollY+r.bottom+8, left=window.scrollX+r.left-10;
     var maxLeft=window.scrollX+document.documentElement.clientWidth-b.offsetWidth-10;
     if(left>maxLeft) left=Math.max(window.scrollX+8,maxLeft);
     b.style.top=top+"px"; b.style.left=left+"px";
     b.style.setProperty("--ax",Math.max(8,Math.min(260,(window.scrollX+r.left+4)-left))+"px");
     open=b; forBtn=btn;
   }
-  // Delegated, so bubbles work on controls rendered after page load too.
   document.addEventListener("click",function(e){
     var btn=e.target.closest?e.target.closest(".hlp"):null;
-    if(btn){ e.preventDefault(); e.stopPropagation();
-             if(forBtn===btn){ close(); } else { show(btn); } return; }
+    if(btn){ e.preventDefault(); e.stopPropagation(); if(forBtn===btn){close();}else{show(btn);} return; }
     if(open && !e.target.closest(".hlp-bubble")) close();
   },true);
   document.addEventListener("keydown",function(e){ if(e.key==="Escape") close(); });
   window.addEventListener("resize",close);
   window.addEventListener("scroll",function(){ if(open) close(); },true);
   document.addEventListener("mouseover",function(e){
-    var btn=e.target.closest?e.target.closest(".hlp"):null;
-    if(btn && forBtn!==btn) show(btn);
+    var btn=e.target.closest?e.target.closest(".hlp"):null; if(btn&&forBtn!==btn) show(btn);
   });
-  // Label them for screen readers without making every author remember to.
-  function label(){
-    var list=document.querySelectorAll(".hlp:not([aria-label])");
-    for(var i=0;i<list.length;i++){
-      list[i].setAttribute("aria-label","More information");
-      list[i].setAttribute("type","button");
-    }
-  }
-  if(document.readyState==="loading") document.addEventListener("DOMContentLoaded",label);
-  else label();
-  setInterval(label,2000);   // covers dynamically rendered tools
+  function label(){ var l=document.querySelectorAll(".hlp:not([aria-label])");
+    for(var i=0;i<l.length;i++){ l[i].setAttribute("aria-label","More information"); l[i].setAttribute("type","button"); } }
+  if(document.readyState==="loading") document.addEventListener("DOMContentLoaded",label); else label();
+  setInterval(label,2000);
 })();
 </script>
 

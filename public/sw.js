@@ -1,6 +1,6 @@
 // Little Haven PWA service worker — network-first, so online visitors always
 // get fresh pages; the cache is only a fallback when the device is offline.
-const CACHE = "lh-pwa-v8";
+const CACHE = "lh-pwa-v9";
 
 self.addEventListener("install", (e) => {
   self.skipWaiting();
