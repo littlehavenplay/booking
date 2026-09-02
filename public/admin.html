@@ -151,12 +151,12 @@
     </div>
     <button id="awAdd">Log walk-in</button>
     <div class="out" id="awOut"></div>
-    <p class="note">Pick the arrival time (or leave on Auto for right now). Children and adults both count toward that time's totals, and the website's "spots left" updates instantly.</p>
+    <p class="note">Pick the arrival time (or leave on Auto for right now).<button type="button" class="hlp" data-help="Pick the arrival time (or leave on Auto for right now). Children and adults both count toward that time's totals, and the website's &quot;spots left&quot; updates instantly.">?</button></p>
       </div>
       <div class="wi-col">
       <div class="wi-loyalty">
         <h3 style="font-family:'Cormorant Garamond',serif;font-weight:600;font-size:1.3rem;color:var(--rose-deep);margin:0 0 4px">🎈 Loyalty card — find or punch</h3>
-        <p class="note" style="margin-top:0">Search by phone, child name, or parent name to pull up the family (use it to check WaiverMaster too). Punch a returning child, or create a new card below.</p>
+        <p class="note" style="margin-top:0">Search by phone, child name, or parent name to pull up the family (use it to check WaiverMaster too).<button type="button" class="hlp" data-help="Search by phone, child name, or parent name to pull up the family (use it to check WaiverMaster too). Punch a returning child, or create a new card below.">?</button></p>
         <label>Phone, child name, or parent name</label>
         <div class="row"><div><input type="text" id="lwPhone" placeholder="760-555-1234  ·  Silas  ·  Ruiz" autocomplete="off"></div><div style="flex:0 0 auto"><button id="lwFind" style="margin-top:0">Find</button></div></div>
         <div id="lwResults" style="margin:8px 0"></div>
@@ -186,7 +186,7 @@
 
   <div class="card" id="sec-punch">
     <h2>Check in a LEGACY punch card (in-store)</h2>
-    <p class="note" style="margin-top:-2px">For customers still holding a prepaid card (bought before the loyalty switch). Keeps free coffee until used up. Don't also punch their loyalty card for this visit.</p>
+    <p class="note" style="margin-top:-2px">For customers still holding a prepaid card (bought before the loyalty switch).<button type="button" class="hlp" data-help="For customers still holding a prepaid card (bought before the loyalty switch). Keeps free coffee until used up. Don't also punch their loyalty card for this visit.">?</button></p>
     <label>Pass code</label>
     <input type="text" id="acCode" placeholder="e.g. AR4655-1" style="text-transform:uppercase">
     <label>Visits to use</label>
@@ -201,7 +201,7 @@
 
   <div class="card" id="sec-legacy">
     <h2>🎟️ Legacy punch card tool</h2>
-    <p class="note" style="margin-top:-2px">For customers still holding a prepaid <b>legacy</b> card. Search by child, parent, phone, email, or code — then <b>use a visit</b> at check-in or <b>fix</b> the card's remaining visits. (We no longer sell these; new families are on the free Loyalty Punch Card.)</p>
+    <p class="note" style="margin-top:-2px">For customers still holding a prepaid legacy card.<button type="button" class="hlp" data-help="For customers still holding a prepaid <b>legacy</b> card. Search by child, parent, phone, email, or code — then <b>use a visit</b> at check-in or <b>fix</b> the card's remaining visits. (We no longer sell these; new families are on the free Loyalty Punch Card.)">?</button></p>
     <div class="row"><div style="flex:1"><input type="text" id="lgSearch" placeholder="Search child, parent, phone, email, or code…"></div><div style="flex:0 0 auto"><button id="lgLoad" style="margin-top:0">Search</button></div></div>
     <label style="display:flex;align-items:center;gap:8px;font-size:.82rem;text-transform:none;letter-spacing:0;font-weight:700;margin-top:6px"><input type="checkbox" id="lgWaiver" style="width:auto"> 📋 Everyone entering is signed on WaiverMaster (required to use a visit)</label>
     <div id="lgList" style="margin-top:8px"><div class="note">Search above, or leave blank and press Search to see everyone.</div></div>
@@ -210,13 +210,13 @@
 
   <div class="card" id="sec-loyalty-list">
     <h2>🎈 Loyalty &amp; Punch Cards</h2>
-    <p class="note" style="margin-top:-2px">Create cards, add punches, search customers, manage waivers, and set military discounts — now its own full page with room to work.</p>
+    <p class="note" style="margin-top:-2px">Create cards, add punches, search customers, manage waivers, and set military discounts — now its own full page with room to work.<button type="button" class="hlp" data-help="Create cards, add punches, search customers, manage waivers, and set military discounts — now its own full page with room to work.">?</button></p>
     <a href="/loyalty.html" style="display:inline-block;text-decoration:none;background:var(--rose);color:#fff;font-weight:800;border-radius:30px;padding:13px 24px;font-size:.85rem">Open Loyalty &amp; Punch Cards →</a>
   </div>
 
     <div class="card" id="sec-addbooking">
     <h2>➕ Manually add a booking</h2>
-    <p class="note" style="margin-top:-4px">For a phone reservation or to restore a booking. Adds them to the schedule with <b>no charge</b> and doesn't email the customer. Pick the date + arrival time and enter their info.</p>
+    <p class="note" style="margin-top:-4px">For a phone reservation or to restore a booking.<button type="button" class="hlp" data-help="For a phone reservation or to restore a booking. Adds them to the schedule with <b>no charge</b> and doesn't email the customer. Pick the date + arrival time and enter their info.">?</button></p>
     <div class="row">
       <div><label>Date</label><input type="date" id="mbDate"></div>
       <div><label>Arrival time</label><select id="mbSlot">
@@ -289,7 +289,7 @@
           <button id="cxGo" style="background:#c4524b;margin:0">Cancel &amp; refund</button>
           <button id="cxGoNoCredit" class="alt" style="margin:0">Just delete — no credit</button>
         </div>
-        <p class="note" style="margin-top:6px">"Just delete" releases the spot with no credit issued and no punch returned — for test bookings, duplicates, or anything that shouldn't get a refund.</p>
+        <p class="note" style="margin-top:6px">"Just delete" releases the spot with no credit issued and no punch returned — for test bookings, duplicates, or anything that shouldn't get a refund.<button type="button" class="hlp" data-help="&quot;Just delete&quot; releases the spot with no credit issued and no punch returned — for test bookings, duplicates, or anything that shouldn't get a refund.">?</button></p>
         <div class="out" id="cxOut"></div>
       </div>
       <p class="note">Releases the original spot and books the new one. If the new session is full, you'll be asked to confirm.</p>
@@ -303,12 +303,12 @@
     <input type="text" id="crAmount" inputmode="decimal" placeholder="e.g. 4.00">
     <button id="crGo">Deduct from balance</button>
     <div class="out" id="crOut"></div>
-    <p class="note">For standard credits used in store (snacks, retail, etc.). Deducts from the balance and logs it so the online balance stays accurate. Courtesy credits can't be redeemed in store.</p>
+    <p class="note">For standard credits used in store (snacks, retail, etc.).<button type="button" class="hlp" data-help="For standard credits used in store (snacks, retail, etc.). Deducts from the balance and logs it so the online balance stays accurate. Courtesy credits can't be redeemed in store.">?</button></p>
   </div>
 
   <div class="card" id="sec-credit-backfill">
     <h2>📧 Backfill missing emails on old credits</h2>
-    <p class="note" style="margin-top:-2px">Credits issued before we started tracking who they belong to have no email on file, so the automatic "your credit is expiring" reminders can't reach them. Find and attach an email to any of these, one at a time — check Square, your email history, or search the customer's name in Loyalty customers to find it.</p>
+    <p class="note" style="margin-top:-2px">Credits issued before we started tracking who they belong to have no email on file, so the automatic "your cre…<button type="button" class="hlp" data-help="Credits issued before we started tracking who they belong to have no email on file, so the automatic &quot;your credit is expiring&quot; reminders can't reach them. Find and attach an email to any of these, one at a time — check Square, your email history, or search the customer's name in Loyalty customers to find it.">?</button></p>
     <button id="cbfLoad">🔄 Load credits missing an email</button>
     <div class="out" id="cbfOut"></div>
     <div id="cbfList" style="margin-top:10px"></div>
@@ -358,11 +358,11 @@
         <button id="rzRangeBlock" style="margin:0;flex:1;min-width:150px">🚫 Block this range</button>
         <button id="rzRangeFree" class="alt" style="margin:0;flex:1;min-width:150px">↩️ Reopen this range</button>
       </div>
-      <p class="note" style="margin-top:6px">Uses the date above. Closes every open-play arrival that starts inside the window &mdash; 2:30 to 4:30 blocks the 2:30, 3:00, 3:30 and 4:00 arrivals. Walk-ins you log in person still work.</p>
+      <p class="note" style="margin-top:6px">Uses the date above. Closes every open-play arrival that starts inside the window &mdash; 2:30 to 4:30 blocks the 2:30, 3:00, 3:30 and 4:00 arrivals.<button type="button" class="hlp" data-help="Uses the date above. Closes every open-play arrival that starts inside the window &mdash; 2:30 to 4:30 blocks the 2:30, 3:00, 3:30 and 4:00 arrivals. Walk-ins you log in person still work.">?</button></p>
     </div>
     <button class="alt" id="rzRelease" style="margin-top:10px">↩️ Release — back to normal capacity</button>
     <div class="out" id="rzOut"></div>
-    <p class="note">Blocking hides the session from open play (shows as unavailable/"private party" if a party is booked). Limiting caps how many kids can book it. Release restores normal open-play capacity.</p>
+    <p class="note">Blocking hides the session from open play (shows as unavailable/"private party" if a party is booked).<button type="button" class="hlp" data-help="Blocking hides the session from open play (shows as unavailable/&quot;private party&quot; if a party is booked). Limiting caps how many kids can book it. Release restores normal open-play capacity.">?</button></p>
   </div>
 
   <div class="card" id="sec-partyoff">
@@ -414,12 +414,12 @@
     </select>
     <button id="issue">Generate code</button>
     <div class="out" id="issueOut"></div>
-    <p class="note">The balance carries over until it's used up or expires. The credit — and the customer's email — expire on the date you select above (default 30 days). A copy is always sent to your studio email.</p>
+    <p class="note">The balance carries over until it's used up or expires.<button type="button" class="hlp" data-help="The balance carries over until it's used up or expires. The credit — and the customer's email — expire on the date you select above (default 30 days). A copy is always sent to your studio email.">?</button></p>
   </div>
 
   <div class="card" id="sec-birthdaycode">
     <h2>🎂 Issue a birthday code (custom dates)</h2>
-    <p class="note" style="margin-top:-2px">Automatic birthday codes already cover the child's <b>whole birthday week (Sunday–Saturday)</b> and are emailed a week ahead — so a birthday on a closed day is already handled. Use this tool only for a <b>custom</b> date range (e.g. extending the window). It's a 100% free Open Play admission for that child over whatever dates you pick. Works even for a child who's never visited before; a punch card is created automatically the first time this code is used at check-in.</p>
+    <p class="note" style="margin-top:-2px">Automatic birthday codes already cover the child's whole birthday week (Sunday–Saturday) and are emailed a wee…<button type="button" class="hlp" data-help="Automatic birthday codes already cover the child's <b>whole birthday week (Sunday–Saturday)</b> and are emailed a week ahead — so a birthday on a closed day is already handled. Use this tool only for a <b>custom</b> date range (e.g. extending the window). It's a 100% free Open Play admission for that child over whatever dates you pick. Works even for a child who's never visited before; a punch card is created automatically the first time this code is used at check-in.">?</button></p>
     <div class="row">
       <div><label>Child's first name</label><input type="text" id="bcFirst" placeholder="e.g. Liliana"></div>
       <div><label>Child's last name</label><input type="text" id="bcLast" placeholder="e.g. Rivero"></div>
@@ -438,7 +438,7 @@
 
   <div class="card" id="sec-punchissue">
     <h2>Legacy card tools</h2>
-    <p class="note" style="margin-top:-2px">We no longer issue or sell prepaid punch cards — everyone is on the free Loyalty Punch Card (use the 🎈 Loyalty tool above). This is only for correcting an existing <b>legacy</b> prepaid card (e.g. Aneeka Gray's).</p>
+    <p class="note" style="margin-top:-2px">We no longer issue or sell prepaid punch cards — everyone is on the free Loyalty Punch Card (use the 🎈 Loyalty tool above).<button type="button" class="hlp" data-help="We no longer issue or sell prepaid punch cards — everyone is on the free Loyalty Punch Card (use the 🎈 Loyalty tool above). This is only for correcting an existing <b>legacy</b> prepaid card (e.g. Aneeka Gray's).">?</button></p>
     <div style="margin-top:10px">
       <label>Fix a legacy card (set exact visits &amp; refresh expiry)</label>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
@@ -460,11 +460,11 @@
       <button class="alt" id="mcDeact" style="margin:0">🚫 Deactivate</button>
     </div>
     <div class="out" id="mcOut"></div>
-    <p class="note">Look up shows the type, status, balance, and history for any code. Or use the full list below — tap a row's buttons to deactivate or delete. Gift cards are managed in Square → Gift Cards.</p>
+    <p class="note">Look up shows the type, status, balance, and history for any code.<button type="button" class="hlp" data-help="Look up shows the type, status, balance, and history for any code. Or use the full list below — tap a row's buttons to deactivate or delete. Gift cards are managed in Square → Gift Cards.">?</button></p>
 
     <div style="border-top:1px solid #efe7da;margin:16px 0 10px"></div>
     <h2 style="font-size:1.05rem">All issued codes</h2>
-    <p class="note" style="margin-top:-2px">Every store credit, discount code, and punch card that's been issued — with status, expiration, and actions. (Gift cards live in Square → Gift Cards.)</p>
+    <p class="note" style="margin-top:-2px">Every store credit, discount code, and punch card that's been issued — with status, expiration, and actions.<button type="button" class="hlp" data-help="Every store credit, discount code, and punch card that's been issued — with status, expiration, and actions. (Gift cards live in Square → Gift Cards.)">?</button></p>
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:6px 0 4px">
       <button id="ledLoad">🔄 Load all codes</button>
       <select id="ledFilter" style="width:auto;min-width:150px">
@@ -482,7 +482,7 @@
 
     <div style="border-top:1px solid #efe7da;margin:16px 0 10px"></div>
     <h2 style="font-size:1.05rem">🎒 Classroom free-admission codes</h2>
-    <p class="note" style="margin-top:-2px">Generate a batch of one-time codes for a classroom. Each code makes <b>one child's admission free</b> at the correct price automatically (baby room or preschool), and can't be combined with other discounts. Families enter the code in the "Free-visit reward code" box when booking online. Hand a unique code to each family.</p>
+    <p class="note" style="margin-top:-2px">Generate a batch of one-time codes for a classroom.<button type="button" class="hlp" data-help="Generate a batch of one-time codes for a classroom. Each code makes <b>one child's admission free</b> at the correct price automatically (baby room or preschool), and can't be combined with other discounts. Families enter the code in the &quot;Free-visit reward code&quot; box when booking online. Hand a unique code to each family.">?</button></p>
     <label>Classroom name</label>
     <input type="text" id="ccLabel" placeholder="e.g. Preschool Class or Baby Room" style="text-transform:none">
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-top:4px">
@@ -495,7 +495,7 @@
 
     <div style="border-top:1px dashed #e2d9cc;margin:14px 0 10px"></div>
     <label style="display:block;font-weight:700;font-size:.82rem;color:var(--charcoal)">🛠️ Fix codes that won't redeem</label>
-    <p class="note" style="margin-top:2px">If a batch you already printed/handed out isn't working, use this — it forces those exact codes back to valid (unused, unexpired) without changing the codes themselves, so nothing needs to be reprinted. Paste the codes one per line, or leave blank to fix every code already on file for that classroom.</p>
+    <p class="note" style="margin-top:2px">If a batch you already printed/handed out isn't working, use this — it forces those exact codes back to valid…<button type="button" class="hlp" data-help="If a batch you already printed/handed out isn't working, use this — it forces those exact codes back to valid (unused, unexpired) without changing the codes themselves, so nothing needs to be reprinted. Paste the codes one per line, or leave blank to fix every code already on file for that classroom.">?</button></p>
     <input type="text" id="ccFixLabel" placeholder="Classroom name (must match exactly)" style="text-transform:none">
     <textarea id="ccFixCodes" rows="4" placeholder="CLASSABCD&#10;CLASSEFGH&#10;(one per line — leave blank to fix the whole classroom)" style="width:100%;font-family:monospace;font-size:.9rem;border:1.5px solid #e7ddd0;border-radius:11px;padding:10px 12px;margin-top:8px"></textarea>
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-top:8px">
@@ -507,7 +507,7 @@
 
   <div class="card" id="sec-failed">
     <h2>⚠️ Codes that failed at checkout</h2>
-    <p class="note" style="margin-top:-2px">Every time a family's free-visit, birthday, or classroom code doesn't go through, it's logged here with their name/email/phone from the booking form — plus you get an email the moment it happens. Use this to follow up directly instead of guessing who tried. Dismiss an entry once you've reached out.</p>
+    <p class="note" style="margin-top:-2px">Every time a family's free-visit, birthday, or classroom code doesn't go through, it's logged here with their…<button type="button" class="hlp" data-help="Every time a family's free-visit, birthday, or classroom code doesn't go through, it's logged here with their name/email/phone from the booking form — plus you get an email the moment it happens. Use this to follow up directly instead of guessing who tried. Dismiss an entry once you've reached out.">?</button></p>
     <button id="frLoad">🔄 Load list</button>
     <div class="out" id="frOut"></div>
     <div id="frTableWrap" style="overflow-x:auto;margin-top:10px"></div>
@@ -517,7 +517,7 @@
 
     <div class="card" id="sec-weekday-special">
     <h2>🗓️ Weekday special (automatic)</h2>
-    <p class="note" style="margin-bottom:10px">An always-on discount for slow days — no code needed, applies itself the moment someone picks that date. Pick which days, which admission types it covers, and a percent or dollar amount. Turn off anytime.</p>
+    <p class="note" style="margin-bottom:10px">An always-on discount for slow days — no code needed, applies itself the moment someone picks that date.<button type="button" class="hlp" data-help="An always-on discount for slow days — no code needed, applies itself the moment someone picks that date. Pick which days, which admission types it covers, and a percent or dollar amount. Turn off anytime.">?</button></p>
     <label style="display:flex;align-items:center;gap:8px;text-transform:none;letter-spacing:0;color:var(--charcoal);font-weight:700;cursor:pointer"><input type="checkbox" id="wsEnabled" style="width:auto"> Turn this special ON</label>
     <label style="margin-top:10px">Days it applies</label>
     <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:4px">
@@ -549,10 +549,7 @@
 
     <div class="card" id="sec-partypromo">
       <h2>&#127881; Party booking promo (one-day special)</h2>
-      <p class="note" style="margin-top:0">Runs off <b>the date the party is booked</b>, not the party date &mdash;
-      book on Labor Day for a November party and it still counts. The deposit never changes; the discount comes off
-      the <b>final balance</b> you settle at the end of the party. It only locks in once you mark the deposit paid,
-      so no deposit means no discount.</p>
+      <p class="note" style="margin-top:0">Runs off the date the party is booked, not the party date &mdash; book on Labor Day for a November party and it still counts.<button type="button" class="hlp" data-help="Runs off <b>the date the party is booked</b>, not the party date &mdash; book on Labor Day for a November party and it still counts. The deposit never changes; the discount comes off the <b>final balance</b> you settle at the end of the party. It only locks in once you mark the deposit paid, so no deposit means no discount.">?</button></p>
 
       <div id="ppCurrent" class="note">Loading&hellip;</div>
 
@@ -591,13 +588,8 @@
     
   <div class="card" id="sec-famcode">
       <h2>&#128104;&#8205;&#128105;&#8205;&#128103; Family master code</h2>
-      <p class="note" style="margin-top:0"><b>Owner only.</b> One code that zeroes the entire admission
-      total on a normal online booking, whatever the headcount. Never expires, unlimited uses. The booking
-      still takes real capacity, still collects names and phone, still sends a confirmation, and still
-      records the visit &mdash; it just isn't paid for and earns no punches.</p>
-      <p class="note" style="background:#fdf1ec;border:1px solid #efcfc4;border-radius:10px;padding:9px 12px">
-      &#9888;&#65039; Treat this like a key to the front door. Anyone who has it can book free play. You get an
-      email every single time it's used, and rotating it kills the old one instantly.</p>
+      <p class="note" style="margin-top:0">Owner only. One code that zeroes the entire admission total on a normal online booking, whatever the headcount.<button type="button" class="hlp" data-help="<b>Owner only.</b> One code that zeroes the entire admission total on a normal online booking, whatever the headcount. Never expires, unlimited uses. The booking still takes real capacity, still collects names and phone, still sends a confirmation, and still records the visit &mdash; it just isn't paid for and earns no punches.">?</button></p>
+      <p class="note" style="background:#fdf1ec;border:1px solid #efcfc4;border-radius:10px;padding:9px 12px">&#9888;&#65039; Treat this like a key to the front door.<button type="button" class="hlp" data-help="&#9888;&#65039; Treat this like a key to the front door. Anyone who has it can book free play. You get an email every single time it's used, and rotating it kills the old one instantly.">?</button></p>
 
       <div id="fcCurrent" class="note">Loading&hellip;</div>
 
@@ -622,7 +614,7 @@
     
   <div class="card" id="sec-discount">
     <h2>Discount codes (% off)</h2>
-    <p class="note" style="margin-bottom:10px">Generate a one-time percent-off code and email it straight to the customer. Online-only, single use, and can't be combined with any other offer.</p>
+    <p class="note" style="margin-bottom:10px">Generate a one-time percent-off code and email it straight to the customer.<button type="button" class="hlp" data-help="Generate a one-time percent-off code and email it straight to the customer. Online-only, single use, and can't be combined with any other offer.">?</button></p>
     <div class="row">
       <div><label>% off</label><input type="number" id="dcPct" min="1" max="100" placeholder="e.g. 20"></div>
       <div><label>Valid for (expires)</label><select id="dcDays"><option value="30" selected>30 days</option><option value="60">60 days</option><option value="90">90 days</option><option value="180">6 months</option><option value="365">1 year</option></select></div>
@@ -643,7 +635,7 @@
 
   <div class="card" id="sec-passes">
     <h2>Legacy prepaid card holders</h2>
-    <div class="note" style="margin-bottom:8px">Everyone with a punch card, newest purchase first. <b>To verify a family</b> (e.g. confirm a Sibling Add-On belongs with a Toddler card), search their <b>email</b> to see every card and child under that account.</div>
+    <div class="note" style="margin-bottom:8px">Everyone with a punch card, newest purchase first.<button type="button" class="hlp" data-help="Everyone with a punch card, newest purchase first. <b>To verify a family</b> (e.g. confirm a Sibling Add-On belongs with a Toddler card), search their <b>email</b> to see every card and child under that account.">?</button></div>
     <input type="text" id="pcSearch" placeholder="Search name, child, email, or code…" oninput="renderPasses()">
     <div id="pcList"><div class="note">Click Load to pull the list.</div></div>
     <button id="pcLoad" style="margin-top:10px">Load punch card holders</button>
@@ -651,7 +643,7 @@
   </div>
   <div class="card" id="sec-grandfather">
     <h2>🎈 Grandfather note (legacy punch cards)</h2>
-    <p class="note" style="margin-top:-4px">Sends a <b>one-time</b> email to legacy punch-card holders whose prepaid card is used up: they're grandfathered in at the same prices (5 visits 15% off / 10 visits 20% off), reload in store, otherwise they roll onto the 7+1 loyalty card. Each person is emailed <b>only once, ever</b> — pressing Send again can't spam anyone. (The weekly job also sends it automatically to anyone whose card newly runs out.)</p>
+    <p class="note" style="margin-top:-4px">Sends a one-time email to legacy punch-card holders whose prepaid card is used up: they're grandfathered in at…<button type="button" class="hlp" data-help="Sends a <b>one-time</b> email to legacy punch-card holders whose prepaid card is used up: they're grandfathered in at the same prices (5 visits 15% off / 10 visits 20% off), reload in store, otherwise they roll onto the 7+1 loyalty card. Each person is emailed <b>only once, ever</b> — pressing Send again can't spam anyone. (The weekly job also sends it automatically to anyone whose card newly runs out.)">?</button></p>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
       <button class="alt" id="gfCount">🔍 Preview — how many?</button>
       <button id="gfSend">📣 Send now</button>
@@ -691,7 +683,7 @@
   </div>
   <div class="card" id="sec-prices">
     <h2>💰 Manage prices</h2>
-    <div class="note" style="margin-bottom:10px">Set the current Regular, Sibling add-on, and Baby/Infant admission prices. Saved changes take effect <b>immediately</b> — the homepage, the booking page, the live checkout total, and the actual amount charged all read from this same setting, so everything always stays in sync.</div>
+    <div class="note" style="margin-bottom:10px">Set the current Regular, Sibling add-on, and Baby/Infant admission prices.<button type="button" class="hlp" data-help="Set the current Regular, Sibling add-on, and Baby/Infant admission prices. Saved changes take effect <b>immediately</b> — the homepage, the booking page, the live checkout total, and the actual amount charged all read from this same setting, so everything always stays in sync.">?</button></div>
     <div class="row">
       <div><label>Regular admission</label><input type="text" id="prRegular" inputmode="decimal" placeholder="25.00"></div>
       <div><label>Sibling add-on</label><input type="text" id="prSibling" inputmode="decimal" placeholder="21.00"></div>
@@ -703,7 +695,7 @@
 
   <div class="card" id="sec-weekly">
     <h2>Weekly hours</h2>
-    <div class="note" style="margin-bottom:10px">Your standing hours, set day by day. Each day's last admission is automatically 1 hour before that day's close. These control bookings and show on your website.</div>
+    <div class="note" style="margin-bottom:10px">Your standing hours, set day by day. Each day's last admission is automatically 1 hour before that day's close.<button type="button" class="hlp" data-help="Your standing hours, set day by day. Each day's last admission is automatically 1 hour before that day's close. These control bookings and show on your website.">?</button></div>
     <div id="wkRows"></div>
     <div class="row">
       <div><button id="wkSave" style="margin-top:0">Save weekly hours</button></div>
@@ -726,12 +718,12 @@
       <div><button id="shClear" style="margin-top:0;background:#9aa0a6">Turn off</button></div>
     </div>
     <div class="out" id="shOut"></div>
-    <p class="note">A temporary day-by-day override for a date range (e.g. summer). Within these dates it replaces your Weekly hours and shows as seasonal hours on the website. It turns off on its own after the end date.</p>
+    <p class="note">A temporary day-by-day override for a date range (e.g.<button type="button" class="hlp" data-help="A temporary day-by-day override for a date range (e.g. summer). Within these dates it replaces your Weekly hours and shows as seasonal hours on the website. It turns off on its own after the end date.">?</button></p>
   </div>
 
 <div class="card" id="sec-closures">
     <h2>Closures &amp; hours</h2>
-    <div class="note" style="margin-bottom:10px">Closing a date <b>all day</b> automatically shows a notice on your website (banner + store hours) and blocks bookings — no separate news post needed. It clears itself once the date passes.</div>
+    <div class="note" style="margin-bottom:10px">Closing a date all day automatically shows a notice on your website (banner + store hours) and blocks bookings — no separate news post needed.<button type="button" class="hlp" data-help="Closing a date <b>all day</b> automatically shows a notice on your website (banner + store hours) and blocks bookings — no separate news post needed. It clears itself once the date passes.">?</button></div>
     <label>Date</label>
     <input type="date" id="clDate">
     <label>What's happening that day?</label>
@@ -749,12 +741,12 @@
     <button id="clSave">Save</button>
     <div class="out" id="clOut"></div>
     <div id="clList" style="margin-top:12px"></div>
-    <p class="note">Blocks online booking for that date/time automatically — no Netlify changes needed. "Last admission 12 PM" keeps the 11–1 PM session bookable (you close an hour after last admission). Existing bookings aren't cancelled; this only stops new ones. In-store walk-ins still work.</p>
+    <p class="note">Blocks online booking for that date/time automatically — no Netlify changes needed.<button type="button" class="hlp" data-help="Blocks online booking for that date/time automatically — no Netlify changes needed. &quot;Last admission 12 PM&quot; keeps the 11–1 PM session bookable (you close an hour after last admission). Existing bookings aren't cancelled; this only stops new ones. In-store walk-ins still work.">?</button></p>
   </div>
 
   <div class="card" id="sec-rating">
     <h2>⭐ Reviews rating badges</h2>
-    <p class="note">Controls the "★★★★★ 5.0 · Google · 10 reviews" and Yelp/Facebook badges on the homepage and Reviews page. Update these whenever your actual rating changes.</p>
+    <p class="note">Controls the "★★★★★ 5.0 · Google · 10 reviews" and Yelp/Facebook badges on the homepage and Reviews page.<button type="button" class="hlp" data-help="Controls the &quot;★★★★★ 5.0 · Google · 10 reviews&quot; and Yelp/Facebook badges on the homepage and Reviews page. Update these whenever your actual rating changes.">?</button></p>
     <label style="display:block;font-weight:800;font-size:.78rem;color:var(--charcoal);margin-top:4px">🔵 Google</label>
     <div class="row">
       <div><label>Star rating (0–5)</label><input type="number" id="rtStars" min="0" max="5" step="0.1" placeholder="5"></div>
@@ -782,7 +774,7 @@
 
   <div class="card" id="sec-photos">
     <h2>📸 Site photos</h2>
-    <p class="note">Upload, remove, or reorder photos shown on your website. <b>Reviews</b>, <b>Yelp reviews</b>, and <b>Facebook reviews</b> each appear in their own carousels on the Reviews page (Reviews also shows on the homepage). <b>Interior</b> appear in the homepage "Take a Look Inside" slideshow. <b>Customer photos</b> are real photos your families attached to Google reviews — they show in the smaller strip right under the review carousel. Photos marked <b>BUILT-IN</b> ship with the site — removing one hides it from the site rather than deleting it. Use ↑ / ↓ to reorder — changes save automatically.</p>
+    <p class="note">Upload, remove, or reorder photos shown on your website.<button type="button" class="hlp" data-help="Upload, remove, or reorder photos shown on your website. <b>Reviews</b>, <b>Yelp reviews</b>, and <b>Facebook reviews</b> each appear in their own carousels on the Reviews page (Reviews also shows on the homepage). <b>Interior</b> appear in the homepage &quot;Take a Look Inside&quot; slideshow. <b>Customer photos</b> are real photos your families attached to Google reviews — they show in the smaller strip right under the review carousel. Photos marked <b>BUILT-IN</b> ship with the site — removing one hides it from the site rather than deleting it. Use ↑ / ↓ to reorder — changes save automatically.">?</button></p>
     <div style="display:flex;gap:8px;margin:6px 0 12px;flex-wrap:wrap">
       <button type="button" class="phTab" data-set="reviews">🎈 Reviews</button>
       <button type="button" class="phTab alt" data-set="yelp">🟨 Yelp reviews</button>
@@ -814,7 +806,7 @@
 
   <div class="card" id="sec-promos">
     <h2>📌 Promotions &amp; Flyers</h2>
-    <p class="note" style="margin-top:-2px">A simple ongoing post — just an image and an optional caption, like a Facebook/Instagram post. No date, no requirements, nothing to expire — it stays up on the Events page until you remove it. Select more than one image at once to post them all in one go — each becomes its own separate post, sharing the same caption if you write one. Use this for a weekday discount flyer, an extended-hours graphic, anything that should just stay posted. For anything needing registration or a specific date, use "Upcoming events" below instead.</p>
+    <p class="note" style="margin-top:-2px">A simple ongoing post — just an image and an optional caption, like a Facebook/Instagram post.<button type="button" class="hlp" data-help="A simple ongoing post — just an image and an optional caption, like a Facebook/Instagram post. No date, no requirements, nothing to expire — it stays up on the Events page until you remove it. Select more than one image at once to post them all in one go — each becomes its own separate post, sharing the same caption if you write one. Use this for a weekday discount flyer, an extended-hours graphic, anything that should just stay posted. For anything needing registration or a specific date, use &quot;Upcoming events&quot; below instead.">?</button></p>
     <label>Image</label>
     <input type="file" id="prmImage" accept="image/*" multiple>
     <label>Caption (optional)</label>
@@ -856,14 +848,12 @@
     <button class="ghost" id="evReset" style="margin-left:6px;background:#eee;color:var(--charcoal)">New / clear form</button>
     <div class="out" id="evOut"></div>
     <div id="evList" style="margin-top:14px"></div>
-    <p class="note">Events automatically move to "Past events" on the site after their date (no ticket sales). Capacity can't drop below tickets already sold.</p>
+    <p class="note">Events automatically move to "Past events" on the site after their date (no ticket sales).<button type="button" class="hlp" data-help="Events automatically move to &quot;Past events&quot; on the site after their date (no ticket sales). Capacity can't drop below tickets already sold.">?</button></p>
   </div>
 
   <div class="card" id="sec-playclub">
       <h2>&#127903;&#65039; Play Club memberships</h2>
-      <p class="note" style="margin-top:0">Monthly subscription plans shown on
-      <a href="/playclub.html" target="_blank">littlehavenplay.com/playclub</a>. Square handles the billing,
-      renewals and cancellations &mdash; you just paste the subscription link here and add a name, price and icon.</p>
+      <p class="note" style="margin-top:0">Monthly subscription plans shown on littlehavenplay.com/playclub.<button type="button" class="hlp" data-help="Monthly subscription plans shown on <a href=&quot;/playclub.html&quot; target=&quot;_blank&quot;>littlehavenplay.com/playclub</a>. Square handles the billing, renewals and cancellations &mdash; you just paste the subscription link here and add a name, price and icon.">?</button></p>
 
       <div style="border:1.5px solid #e2d9cc;border-radius:14px;padding:13px;margin-bottom:14px;background:#fdfbf8">
         <b>Page banner &amp; heading</b>
@@ -912,9 +902,7 @@
 
     <div class="card" id="sec-playclub-members">
       <h2>&#127903;&#65039; Play Club members</h2>
-      <p class="note" style="margin-top:0">When someone subscribes in Square, link them here and tick which children
-      the membership covers. They can then book with just their phone number &mdash; admission is covered, the visit
-      still counts toward capacity, and it still shows on your daily schedule.</p>
+      <p class="note" style="margin-top:0">When someone subscribes in Square, link them here and tick which children the membership covers.<button type="button" class="hlp" data-help="When someone subscribes in Square, link them here and tick which children the membership covers. They can then book with just their phone number &mdash; admission is covered, the visit still counts toward capacity, and it still shows on your daily schedule.">?</button></p>
 
       <div style="border:1.5px solid #e2d9cc;border-radius:14px;padding:13px;margin-bottom:14px">
         <b id="pmTitle">Add a member</b>
@@ -932,7 +920,7 @@
          <div id="pmCustomWrap" style="display:none;background:#f4f0fa;border:1px solid #ddd2ee;border-radius:10px;padding:10px 12px;margin-top:8px">
            <label>Custom plan name</label>
            <input type="text" id="pmCustomName" maxlength="80" placeholder="Private Play Club - 4 grandchildren">
-           <p class="note" style="margin:6px 0 0">A private arrangement with no public plan &mdash; e.g. a grandparent covering four grandchildren from four different families. Set <b>Children covered</b> above to the number allowed; anything beyond that is charged at normal admission.</p>
+           <p class="note" style="margin:6px 0 0">A private arrangement with no public plan &mdash; e.g.<button type="button" class="hlp" data-help="A private arrangement with no public plan &mdash; e.g. a grandparent covering four grandchildren from four different families. Set <b>Children covered</b> above to the number allowed; anything beyond that is charged at normal admission.">?</button></p>
          </div>
 
          <div class="row" style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px">
@@ -954,8 +942,7 @@
         </div>
         <div id="pmKids" style="margin-top:8px"></div>
         <div id="pmPicked" style="margin-top:8px"></div>
-        <p class="note" style="margin:4px 0 0">Ticked children are linked to this membership. Their loyalty cards keep
-        working normally &mdash; a covered visit is recorded but earns no punch.</p>
+        <p class="note" style="margin:4px 0 0">Ticked children are linked to this membership.<button type="button" class="hlp" data-help="Ticked children are linked to this membership. Their loyalty cards keep working normally &mdash; a covered visit is recorded but earns no punch.">?</button></p>
 
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
           <button type="button" id="pmSave" style="margin:0">Save member</button>
@@ -971,7 +958,7 @@
 
     <div class="card" id="sec-partners">
     <h2>🤝 Partners page</h2>
-    <p class="note" style="margin-top:-2px">Edit the party perks shown on your public <b>Partners</b> tab. Turn a partner off to hide them without deleting. Changes go live after you save (hard-refresh to see them).</p>
+    <p class="note" style="margin-top:-2px">Edit the party perks shown on your public Partners tab.<button type="button" class="hlp" data-help="Edit the party perks shown on your public <b>Partners</b> tab. Turn a partner off to hide them without deleting. Changes go live after you save (hard-refresh to see them).">?</button></p>
     <div id="pnList"></div>
     <button id="pnAdd" class="ghost" style="background:#eee;color:var(--charcoal);margin-top:6px">➕ Add a partner</button>
     <div style="margin-top:10px"><button id="pnSave">Save partners page</button></div>
@@ -980,7 +967,7 @@
 
   <div class="card" id="sec-birthdays">
     <h2>🎂 Birthday club</h2>
-    <p class="note" style="margin-top:-2px">Children whose families shared a birthday when booking online. A festive email with a free-admission code goes out <b>automatically one week before</b> each birthday, plus a short reminder <b>on the birthday itself</b> — the code works on the birthday only, one use. Use this list to text families who have no email on file, or to resend.</p>
+    <p class="note" style="margin-top:-2px">Children whose families shared a birthday when booking online.<button type="button" class="hlp" data-help="Children whose families shared a birthday when booking online. A festive email with a free-admission code goes out <b>automatically one week before</b> each birthday, plus a short reminder <b>on the birthday itself</b> — the code works on the birthday only, one use. Use this list to text families who have no email on file, or to resend.">?</button></p>
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">
       <div><label>Birthday month</label>
         <select id="bdMonth" style="width:auto;min-width:150px">
@@ -2903,11 +2890,7 @@ if($("#wsSave")) $("#wsSave").onclick=async function(){
       '<div style="background:#fdfbf8;border:1.5px solid #e7ddd0;border-radius:14px;padding:14px">'
       + '<div style="font-size:.72rem;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:#aea298">Active code</div>'
       + '<div style="font-family:monospace;font-size:1.5rem;font-weight:800;color:#a85f59;letter-spacing:.06em;margin:4px 0 8px">'+esc2(c.code)+'</div>'
-      + '<div class="note" style="margin:0">Used <b>'+(c.useCount||0)+'</b> time'+((c.useCount||0)===1?'':'s')
-      + (c.lastUsedAt?(' · last '+esc2(String(c.lastUsedAt).slice(0,10))):'')
-      + ' · max <b>'+(c.maxChildren||6)+'</b> children per booking'
-      + (c.active===false?' · <span style="color:#b8524a;font-weight:800">DISABLED</span>':'')
-      + '</div></div>';
+      + '<div class="note" style="margin:0">Used <b>'+(c.useCount||0)+'</b> time'+((c.useCount||0)===1?'':'s') + (c.lastUsedAt?(' · last '+esc2(String(c.lastUsedAt).slice(0,10))):'') + ' · max <b>'+(c.maxChildren||6)+'</b> children per booking' + (c.active===false?' · <span style="color:#b8524a;font-weight:800">DISABLED</span>':'') + '</div></div>';
     if(el('fcMax')) el('fcMax').value = c.maxChildren||6;
     if(el('fcEmail')) el('fcEmail').value = c.notifyEmail||'';
   }
@@ -2965,8 +2948,7 @@ if($("#wsSave")) $("#wsSave").onclick=async function(){
     box.innerHTML='<div style="background:'+(live?'#e7f0df':'#fdfbf8')+';border:1.5px solid '+(live?'#c2d7bd':'#e7ddd0')+';border-radius:14px;padding:13px">'
       +'<div style="font-weight:800;color:#2a2622">'+esc3(p.name)+' &mdash; '
       +(p.kind==='percent'?(p.value+'% off'):('$'+p.value+' off'))+'</div>'
-      +'<div class="note" style="margin:4px 0 0">Bookings '+esc3(p.startDate)+(p.endDate&&p.endDate!==p.startDate?(' to '+esc3(p.endDate)):'')
-      +' &middot; '+(live?'<b style="color:#3f7d54">RUNNING NOW</b>':'not running today')+'</div></div>';
+      +'<div class="note" style="margin:4px 0 0">Bookings '+esc3(p.startDate)+(p.endDate&&p.endDate!==p.startDate?(' to '+esc3(p.endDate)):'') +' &middot; '+(live?'<b style="color:#3f7d54">RUNNING NOW</b>':'not running today')+'</div></div>';
     el('ppName').value=p.name||''; el('ppKind').value=p.kind||'amount';
     el('ppValue').value=p.kind==='percent'?(p.value||''):((p.value||0)/100);
     el('ppStart').value=p.startDate||''; el('ppEnd').value=p.endDate||''; el('ppBlurb').value=p.blurb||'';
@@ -3285,12 +3267,17 @@ if($("#wsSave")) $("#wsSave").onclick=async function(){
 
   function renderList(members){
     var box=el("pmList");
+    // Exposed under a distinct name because the plans tool has its OWN
+    // renderList in a separate IIFE — a plain global would collide.
+    window.pcRenderMembers=renderList;
+    // Address book for the re-send prompt, so it can offer the address on file.
+    window.__pcEmailOf={};
+    (members||[]).forEach(function(m){ if(m&&m.code) window.__pcEmailOf[m.code]=m.email||""; });
     if(!members||!members.length){ box.innerHTML='<p class="note">No members yet.</p>'; return; }
     box.innerHTML=members.map(function(m){
       var kids=(m.children||[]).map(function(c){return esc(c.name||c.code);}).join(", ");
       var hist=(m.history||[]).slice(0,5).map(function(v){
-        return '<div class="note" style="margin:0">'+esc(v.date||String(v.at||"").slice(0,10))+' \u00b7 '+esc(v.slot||"")
-          +' \u00b7 '+(v.count||0)+' child'+((v.count||0)===1?"":"ren")+(v.children&&v.children.length?' ('+esc(v.children.join(", "))+')':'')+'</div>';
+        return '<div class="note" style="margin:0">'+esc(v.date||String(v.at||"").slice(0,10))+' \u00b7 '+esc(v.slot||"") +' \u00b7 '+(v.count||0)+' child'+((v.count||0)===1?"":"ren")+(v.children&&v.children.length?' ('+esc(v.children.join(", "))+')':'')+'</div>';
       }).join("");
       return '<div style="border:1px solid #e7ddd0;border-radius:12px;padding:11px;margin-bottom:8px;background:#fff">'
         + '<div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:flex-start">'
@@ -3316,6 +3303,19 @@ if($("#wsSave")) $("#wsSave").onclick=async function(){
                 ? '<span style="border-radius:999px;padding:3px 10px;font-size:.7rem;font-weight:900;background:#f4f0fa;color:#6d4b86">CUSTOM</span>'
                 : '')
             + '<span class="note" style="margin:0">covers '+(m.maxChildren||1)+' child'+((m.maxChildren||1)===1?'':'ren')+'/visit</span>'
+            // Whether this family has actually been emailed. A run of sends was
+            // silently swallowed when Resend hit its daily cap, and there was no
+            // way to tell who had missed out — now it's on the row.
+            + (m.lastEmailAt
+                ? '<span class="note" style="margin:0">\u2709 emailed '+esc(String(m.lastEmailAt).slice(0,10))+'</span>'
+                : '<span style="border-radius:999px;padding:3px 10px;font-size:.7rem;font-weight:900;background:#fdf0ec;color:#a5452f">NEVER EMAILED</span>')
+            + '<span style="display:inline-flex;gap:4px;align-items:center">'
+            +   '<select id="pcMail-'+esc(m.code)+'" style="margin:0;padding:4px 8px;font-size:.72rem;font-weight:700;border-radius:8px;width:auto">'
+            +     '<option value="welcome">Membership confirmation</option>'
+            +     '<option value="cancel">Cancellation confirmation</option>'
+            +   '</select>'
+            +   '<button type="button" onclick="pcSendEmail(\''+esc(m.code)+'\')" style="border:none;background:#dfeada;color:#3f5d33;border-radius:8px;cursor:pointer;font-weight:800;font-size:.72rem;padding:5px 10px">\u2709 Send</button>'
+            + '</span>'
             + (st.k==="cancelling"&&!m.squareCancelled
                 ? '<button type="button" onclick="pcSquareDone(\''+esc(m.code)+'\')" style="margin:0;padding:4px 10px;font-size:.72rem;background:#b8524a;color:#fff">⚠ Cancel in Square — tick when done</button>'
                 : '')
@@ -3461,6 +3461,31 @@ if($("#wsSave")) $("#wsSave").onclick=async function(){
   // Square owns the billing; this tool cannot stop a charge. Every action that
   // affects money says so explicitly and tracks whether you've done the Square
   // half, because forgetting it means charging someone who has cancelled.
+  // Re-send any membership email on demand.
+  //
+  // Needed because Resend quietly dropped a batch of sends once the daily
+  // transactional cap was hit: the memberships existed, the families were never
+  // told, and nothing in the tool could put it right.
+  window.pcSendEmail=async function(code){
+    var key=(typeof KEY==="function")?KEY():"";
+    if(!key){ alert("Enter your key/PIN at the top of the page first."); return; }
+    var sel=document.getElementById("pcMail-"+code);
+    var kind=sel?sel.value:"welcome";
+    var label=(sel&&sel.selectedIndex>=0)?sel.options[sel.selectedIndex].text:"email";
+    var to=prompt("Send the "+label.toLowerCase()+" for "+code+" to:\n\n"
+      +"Leave as-is to use the address on file, or type a different one.",
+      (window.__pcEmailOf&&window.__pcEmailOf[code])||"");
+    if(to===null) return;                      // cancelled
+    if(!confirm("Send the "+label.toLowerCase()+" for "+code+(to?(" to "+to):"")+"?")) return;
+    try{
+      var r=await (await fetch("/api/playclub",{method:"POST",headers:{"content-type":"application/json"},
+        body:JSON.stringify({key:key,action:"member-email",code:code,kind:kind,to:to})})).json();
+      if(r.ok){ alert("\u2705 "+(r.message||"Sent."));
+                if(r.members && typeof window.pcRenderMembers==="function") window.pcRenderMembers(r.members); }
+      else alert(r.error||"Couldn't send that email.");
+    }catch(e){ alert("Network error \u2014 please try again."); }
+  };
+
   window.pcStatusOf=function(m){
     var t=today();
     if(!m || m.active===false) return {k:"inactive", label:"Inactive", css:"background:#eee;color:#777"};
@@ -3517,9 +3542,98 @@ if($("#wsSave")) $("#wsSave").onclick=async function(){
           +'<td style="padding:6px 8px">'+esc2(w.name)+'<br><span class="note">'+esc2(w.code)+' \u00b7 '+esc2(w.planName||"")+'</span></td>'
           +'</tr>';
       }).join('')+'</tbody></table></div>'
-      +'<p class="note" style="margin-top:8px">Rows in pink have already passed 18 months. Move them to the Toddler plan '
-      +'from their next renewal \u2014 in Square, edit the subscription if it lets you, otherwise cancel and send them the new plan link.</p>';
+      +'<p class="note" style="margin-top:8px">Rows in pink have already passed 18 months. Move them to the Toddler plan ' +'from their next renewal \u2014 in Square, edit the subscription if it lets you, otherwise cancel and send them the new plan link.</p>';
   };
 })();
-</script></body>
+</script><!-- ============================================================================
+     HELP BUBBLE  —  <button class="hlp" data-help="...">?</button>
+     ----------------------------------------------------------------------------
+     Long paragraphs of instructions under every field made the pages exhausting
+     to read and pushed the actual controls off the screen on a phone. The text
+     still exists, it just lives behind a small (?) until someone asks for it.
+
+     Usage:  <label>Reward code <button type="button" class="hlp"
+                data-help="Earned your 8th visit? Enter it here.">?</button></label>
+
+     Behaviour: click or hover to open, click anywhere / Escape to close, only one
+     open at a time. Keyboard reachable and screen-reader labelled. No dependencies.
+     ============================================================================ -->
+<style>
+.hlp{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:17px;height:17px;padding:0;margin:0 0 0 5px;vertical-align:middle;
+  border:none;border-radius:50%;cursor:pointer;
+  background:#e6ded2;color:#6b6055;
+  font:900 11px/1 Nunito,Arial,sans-serif;
+  transition:background .15s,color .15s;
+}
+.hlp:hover,.hlp:focus{background:#c9846f;color:#fff;outline:none}
+.hlp-bubble{
+  position:absolute;z-index:10000;max-width:290px;
+  background:#2f2a26;color:#fff;border-radius:10px;
+  padding:10px 12px;font:600 .78rem/1.5 Nunito,Arial,sans-serif;
+  box-shadow:0 10px 30px rgba(0,0,0,.22);
+}
+.hlp-bubble b{color:#ffd9a8}
+.hlp-bubble a{color:#ffc9a8}
+.hlp-bubble:after{
+  content:"";position:absolute;top:-5px;left:var(--ax,14px);
+  width:10px;height:10px;background:#2f2a26;transform:rotate(45deg);
+}
+@media print{.hlp,.hlp-bubble{display:none!important}}
+</style>
+<script>
+(function(){
+  var open=null, forBtn=null;
+  function close(){
+    if(open){ open.remove(); open=null; forBtn=null; }
+  }
+  function show(btn){
+    close();
+    var txt=btn.getAttribute("data-help")||"";
+    if(!txt) return;
+    var b=document.createElement("div");
+    b.className="hlp-bubble";
+    b.setAttribute("role","tooltip");
+    b.innerHTML=txt;                       // authored by us, not user input
+    document.body.appendChild(b);
+    var r=btn.getBoundingClientRect();
+    var top=window.scrollY+r.bottom+8;
+    // Keep it on screen on a narrow phone rather than running off the right edge.
+    var left=window.scrollX+r.left-10;
+    var maxLeft=window.scrollX+document.documentElement.clientWidth-b.offsetWidth-10;
+    if(left>maxLeft) left=Math.max(window.scrollX+8,maxLeft);
+    b.style.top=top+"px"; b.style.left=left+"px";
+    b.style.setProperty("--ax",Math.max(8,Math.min(260,(window.scrollX+r.left+4)-left))+"px");
+    open=b; forBtn=btn;
+  }
+  // Delegated, so bubbles work on controls rendered after page load too.
+  document.addEventListener("click",function(e){
+    var btn=e.target.closest?e.target.closest(".hlp"):null;
+    if(btn){ e.preventDefault(); e.stopPropagation();
+             if(forBtn===btn){ close(); } else { show(btn); } return; }
+    if(open && !e.target.closest(".hlp-bubble")) close();
+  },true);
+  document.addEventListener("keydown",function(e){ if(e.key==="Escape") close(); });
+  window.addEventListener("resize",close);
+  window.addEventListener("scroll",function(){ if(open) close(); },true);
+  document.addEventListener("mouseover",function(e){
+    var btn=e.target.closest?e.target.closest(".hlp"):null;
+    if(btn && forBtn!==btn) show(btn);
+  });
+  // Label them for screen readers without making every author remember to.
+  function label(){
+    var list=document.querySelectorAll(".hlp:not([aria-label])");
+    for(var i=0;i<list.length;i++){
+      list[i].setAttribute("aria-label","More information");
+      list[i].setAttribute("type","button");
+    }
+  }
+  if(document.readyState==="loading") document.addEventListener("DOMContentLoaded",label);
+  else label();
+  setInterval(label,2000);   // covers dynamically rendered tools
+})();
+</script>
+
+</body>
 </html>

@@ -102,7 +102,7 @@
       <div class="agree"><input type="checkbox" id="agree"><label for="agree" style="text-transform:none;letter-spacing:0;color:var(--charcoal);font-weight:700;font-size:.85rem;margin:0">I have read and agree to the deposit & cancellation policy. I understand my party is not confirmed until the deposit is paid, and the remaining balance is due the day of the party.</label></div>
       <button class="pay" id="pay" disabled>Continue to deposit</button>
       <div class="msg" id="msg"></div>
-      <div class="note">💳 At checkout you can pay with <b>Apple Pay</b>, <b>Google Pay</b>, or any major credit &amp; debit card. Paying the deposit holds your reservation. We'll follow up to finalize the details (including your color selections, due at least 1 week before your party).</div>
+      <div class="note">💳 At checkout you can pay with Apple Pay, Google Pay, or any major credit &amp; debit card.<button type="button" class="hlp" data-help="💳 At checkout you can pay with <b>Apple Pay</b>, <b>Google Pay</b>, or any major credit &amp; debit card. Paying the deposit holds your reservation. We'll follow up to finalize the details (including your color selections, due at least 1 week before your party).">?</button></div>
     </div>
   </div>
 
@@ -112,7 +112,7 @@
     <p style="color:var(--slate);font-weight:700" id="doneMsg"></p>
     <a class="pay" id="depositBtn" style="display:block;text-decoration:none;text-align:center;max-width:300px;margin:16px auto 0" href="#" target="_blank" rel="noopener">Pay deposit now</a>
     <div id="qWrap" style="max-width:480px;margin:22px auto 0;text-align:left"></div>
-    <p class="note" style="text-align:center">After paying, you'll get a Square receipt. We'll confirm your reservation and follow up with details. Questions? Email hello@littlehavenplay.com.</p>
+    <p class="note" style="text-align:center">After paying, you'll get a Square receipt.<button type="button" class="hlp" data-help="After paying, you'll get a Square receipt. We'll confirm your reservation and follow up with details. Questions? Email hello@littlehavenplay.com.">?</button></p>
   </div>
 
   <div class="card faq">
@@ -285,5 +285,95 @@ async function submitQuestionnaire(){
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',show); else show();
 })();
 </script>
+<!-- ============================================================================
+     HELP BUBBLE  —  <button class="hlp" data-help="...">?</button>
+     ----------------------------------------------------------------------------
+     Long paragraphs of instructions under every field made the pages exhausting
+     to read and pushed the actual controls off the screen on a phone. The text
+     still exists, it just lives behind a small (?) until someone asks for it.
+
+     Usage:  <label>Reward code <button type="button" class="hlp"
+                data-help="Earned your 8th visit? Enter it here.">?</button></label>
+
+     Behaviour: click or hover to open, click anywhere / Escape to close, only one
+     open at a time. Keyboard reachable and screen-reader labelled. No dependencies.
+     ============================================================================ -->
+<style>
+.hlp{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:17px;height:17px;padding:0;margin:0 0 0 5px;vertical-align:middle;
+  border:none;border-radius:50%;cursor:pointer;
+  background:#e6ded2;color:#6b6055;
+  font:900 11px/1 Nunito,Arial,sans-serif;
+  transition:background .15s,color .15s;
+}
+.hlp:hover,.hlp:focus{background:#c9846f;color:#fff;outline:none}
+.hlp-bubble{
+  position:absolute;z-index:10000;max-width:290px;
+  background:#2f2a26;color:#fff;border-radius:10px;
+  padding:10px 12px;font:600 .78rem/1.5 Nunito,Arial,sans-serif;
+  box-shadow:0 10px 30px rgba(0,0,0,.22);
+}
+.hlp-bubble b{color:#ffd9a8}
+.hlp-bubble a{color:#ffc9a8}
+.hlp-bubble:after{
+  content:"";position:absolute;top:-5px;left:var(--ax,14px);
+  width:10px;height:10px;background:#2f2a26;transform:rotate(45deg);
+}
+@media print{.hlp,.hlp-bubble{display:none!important}}
+</style>
+<script>
+(function(){
+  var open=null, forBtn=null;
+  function close(){
+    if(open){ open.remove(); open=null; forBtn=null; }
+  }
+  function show(btn){
+    close();
+    var txt=btn.getAttribute("data-help")||"";
+    if(!txt) return;
+    var b=document.createElement("div");
+    b.className="hlp-bubble";
+    b.setAttribute("role","tooltip");
+    b.innerHTML=txt;                       // authored by us, not user input
+    document.body.appendChild(b);
+    var r=btn.getBoundingClientRect();
+    var top=window.scrollY+r.bottom+8;
+    // Keep it on screen on a narrow phone rather than running off the right edge.
+    var left=window.scrollX+r.left-10;
+    var maxLeft=window.scrollX+document.documentElement.clientWidth-b.offsetWidth-10;
+    if(left>maxLeft) left=Math.max(window.scrollX+8,maxLeft);
+    b.style.top=top+"px"; b.style.left=left+"px";
+    b.style.setProperty("--ax",Math.max(8,Math.min(260,(window.scrollX+r.left+4)-left))+"px");
+    open=b; forBtn=btn;
+  }
+  // Delegated, so bubbles work on controls rendered after page load too.
+  document.addEventListener("click",function(e){
+    var btn=e.target.closest?e.target.closest(".hlp"):null;
+    if(btn){ e.preventDefault(); e.stopPropagation();
+             if(forBtn===btn){ close(); } else { show(btn); } return; }
+    if(open && !e.target.closest(".hlp-bubble")) close();
+  },true);
+  document.addEventListener("keydown",function(e){ if(e.key==="Escape") close(); });
+  window.addEventListener("resize",close);
+  window.addEventListener("scroll",function(){ if(open) close(); },true);
+  document.addEventListener("mouseover",function(e){
+    var btn=e.target.closest?e.target.closest(".hlp"):null;
+    if(btn && forBtn!==btn) show(btn);
+  });
+  // Label them for screen readers without making every author remember to.
+  function label(){
+    var list=document.querySelectorAll(".hlp:not([aria-label])");
+    for(var i=0;i<list.length;i++){
+      list[i].setAttribute("aria-label","More information");
+      list[i].setAttribute("type","button");
+    }
+  }
+  if(document.readyState==="loading") document.addEventListener("DOMContentLoaded",label);
+  else label();
+  setInterval(label,2000);   // covers dynamically rendered tools
+})();
+</script>
+
 </body>
 </html>

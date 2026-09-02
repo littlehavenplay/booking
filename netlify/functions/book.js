@@ -20,7 +20,14 @@ import {
 } from "./lib-settings.js";
 import { issueCode, sendWelcome, sendFamilyPunch, PUNCHES_FOR_REWARD, cleanName, last4 as loyaltyLast4, graduateLegacyCard } from "./lib-loyalty.js";
 import { getActiveFamCode, logFamUse } from "./famcode.js";
-import { findMemberFor, recordMemberVisit } from "./lib-playclub.js";
+// memberCoversDate was used below but NOT imported, so every Play Club member's
+// checkout died with "memberCoversDate is not defined" — a hard 500 at payment.
+// It cost a real customer a booking. The audit missed it because a syntax check
+// and an import-resolve check both pass on a module that references an undefined
+// global; only actually CALLING the code catches it. There is now a booking
+// smoke test (test-booking-smoke.mjs) that posts a real booking through this
+// handler, including a member booking, so this class of fault cannot ship again.
+import { findMemberFor, recordMemberVisit, memberCoversDate } from "./lib-playclub.js";
 import { FRIEND_DISCOUNT_CENTS, findFamilyByCode, familyStatus, normalizeRef, last4 as refLast4 } from "./lib-referral.js";
 import { loadSeasonal, loadWeekly } from "./lib-hours.js";
 import { getClosure, slotBlockedByClosure, getEventHold } from "./lib-closures.js";

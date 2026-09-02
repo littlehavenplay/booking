@@ -48,7 +48,7 @@
   <div id="main">
 <div class="card" id="sec-waiver-import">
     <h2>📄 Import waiver info from WaiverMaster</h2>
-    <p class="note" style="margin-top:-2px">Upload a WaiverMaster CSV export to reconcile waiver-signed dates and adult names onto <b>existing</b> loyalty cards, matched by phone number AND the child's name. If a child appears in more than one submission, every guardian from every submission is combined onto their card — nobody's name gets dropped. Never creates a new card. Flags (without touching) any card whose phone number appears in the file but whose child doesn't match any submission for that number — a sign the card may be linked to the wrong family. Also shows every card in the whole system with no waiver on file at all, so nothing gets missed.</p>
+    <p class="note" style="margin-top:-2px">Upload a WaiverMaster CSV export to reconcile waiver-signed dates and adult names onto existing loyalty cards,…<button type="button" class="hlp" data-help="Upload a WaiverMaster CSV export to reconcile waiver-signed dates and adult names onto <b>existing</b> loyalty cards, matched by phone number AND the child's name. If a child appears in more than one submission, every guardian from every submission is combined onto their card — nobody's name gets dropped. Never creates a new card. Flags (without touching) any card whose phone number appears in the file but whose child doesn't match any submission for that number — a sign the card may be linked to the wrong family. Also shows every card in the whole system with no waiver on file at all, so nothing gets missed.">?</button></p>
     <input type="file" id="wiFile" accept=".csv">
     <button id="wiPreview">Preview import</button>
     <div class="out" id="wiOut"></div>
@@ -57,7 +57,7 @@
 
   <div class="card" id="sec-backfill">
     <h2>📅 Backfill visit history from past bookings</h2>
-    <p class="note" style="margin-top:-2px">One-time tool (safe to run more than once — it never adds the same visit twice). Scans every past booking that was actually checked in and adds it to that child's <b>existing</b> loyalty card. Never creates a new card, never touches waiver info — only adds visit history.</p>
+    <p class="note" style="margin-top:-2px">One-time tool (safe to run more than once — it never adds the same visit twice).<button type="button" class="hlp" data-help="One-time tool (safe to run more than once — it never adds the same visit twice). Scans every past booking that was actually checked in and adds it to that child's <b>existing</b> loyalty card. Never creates a new card, never touches waiver info — only adds visit history.">?</button></p>
     <button id="bfPreview">Preview (no changes made)</button>
     <button id="bfRun" class="alt" style="display:none">Run backfill now</button>
     <div class="out" id="bfOut"></div>
@@ -65,8 +65,8 @@
 
   <div class="card" id="sec-loyalty">
     <h2>🎈 New loyalty card / punch</h2>
-    <div class="note" style="margin:-2px 0 10px;color:var(--rose-deep)">Already have a card? Just search their name in <b>Loyalty customers</b> below and tap <b>➕ Punch</b> — no code lookup needed. Use this box only for a <b>new</b> regular (it creates their card).</div>
-    <p class="note" style="margin-top:-2px">One punch per PAID visit, per child (confirm the name on WaiverMaster first). After 7 punches the 8th is free — a reward code emails automatically. Don't punch legacy prepaid redemptions.</p>
+    <div class="note" style="margin:-2px 0 10px;color:var(--rose-deep)">Already have a card? Just search their name in Loyalty customers below and tap ➕ Punch — no code lookup needed.<button type="button" class="hlp" data-help="Already have a card? Just search their name in <b>Loyalty customers</b> below and tap <b>➕ Punch</b> — no code lookup needed. Use this box only for a <b>new</b> regular (it creates their card).">?</button></div>
+    <p class="note" style="margin-top:-2px">One punch per PAID visit, per child (confirm the name on WaiverMaster first).<button type="button" class="hlp" data-help="One punch per PAID visit, per child (confirm the name on WaiverMaster first). After 7 punches the 8th is free — a reward code emails automatically. Don't punch legacy prepaid redemptions.">?</button></p>
     <div id="loKids">
       <div class="row lo-kid">
         <div><label>Child first name</label><input type="text" class="lokF" id="loFirst" placeholder="e.g. Liliana"></div>
@@ -85,7 +85,7 @@
       <p class="note" style="margin-top:6px">If they signed on WaiverMaster today, set today's date here to save it with their card — no need to enter it separately below.</p>
       <label style="display:block;font-weight:700;font-size:.82rem;color:var(--charcoal);margin:10px 0 6px">👥 Adult(s)/supervisor(s) who signed <span style="font-weight:600;color:var(--taupe)">(optional — comma-separate if more than one)</span></label>
       <input type="text" id="loWaiverAdults" placeholder="e.g. Maria Gomez, John Gomez">
-      <p class="note" style="margin-top:6px">Every adult entering must be signed on WaiverMaster too — track who's already covered for this family here, so a new adult showing up later is easy to spot.</p>
+      <p class="note" style="margin-top:6px">Every adult entering must be signed on WaiverMaster too — track who's already covered for this family here, so…<button type="button" class="hlp" data-help="Every adult entering must be signed on WaiverMaster too — track who's already covered for this family here, so a new adult showing up later is easy to spot.">?</button></p>
       <label style="display:flex;align-items:center;gap:8px;font-weight:700;font-size:.82rem;color:var(--charcoal);margin:14px 0 0;cursor:pointer;text-transform:none;letter-spacing:0"><input type="checkbox" id="loMilitary" style="width:auto"> 🎖️ Verified military family (checked ID in person) — 10% off admission going forward</label>
     </div>
     <button id="loPunch">Add a punch</button>
@@ -95,7 +95,7 @@
   <div class="card" id="sec-loyalty-list">
     <h2>👑 Loyalty customers — search &amp; punch</h2>
     <div class="note" style="margin:-2px 0 10px">Type a child's name, then tap <b>➕ Punch</b> to add a visit instantly. 🗑️ removes a card.</div>
-    <p class="note" style="margin-top:-2px">Everyone on the loyalty punch card, sorted by family name. Search a name to find someone's code when they ask. Use the loyalty tool above to adjust punches.</p>
+    <p class="note" style="margin-top:-2px">Everyone on the loyalty punch card, sorted by family name.<button type="button" class="hlp" data-help="Everyone on the loyalty punch card, sorted by family name. Search a name to find someone's code when they ask. Use the loyalty tool above to adjust punches.">?</button></p>
     <input type="text" id="llSearch" placeholder="Search name or code…" oninput="renderLoyaltyList()">
     <div id="llList"><div class="note">Click Load to pull the list.</div></div>
 <div style="border:1.5px dashed #e7ddd0;border-radius:14px;padding:12px;margin:0 0 12px;background:#fdfbf8">
@@ -769,5 +769,95 @@ async function hkRun(action, confirmMsg, btn){
     "Add every punch-card email to your newsletter list?\n\nAnyone who previously unsubscribed is skipped. Nothing is emailed now \u2014 this only builds the list.", b); };
 })();
 </script>
+<!-- ============================================================================
+     HELP BUBBLE  —  <button class="hlp" data-help="...">?</button>
+     ----------------------------------------------------------------------------
+     Long paragraphs of instructions under every field made the pages exhausting
+     to read and pushed the actual controls off the screen on a phone. The text
+     still exists, it just lives behind a small (?) until someone asks for it.
+
+     Usage:  <label>Reward code <button type="button" class="hlp"
+                data-help="Earned your 8th visit? Enter it here.">?</button></label>
+
+     Behaviour: click or hover to open, click anywhere / Escape to close, only one
+     open at a time. Keyboard reachable and screen-reader labelled. No dependencies.
+     ============================================================================ -->
+<style>
+.hlp{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:17px;height:17px;padding:0;margin:0 0 0 5px;vertical-align:middle;
+  border:none;border-radius:50%;cursor:pointer;
+  background:#e6ded2;color:#6b6055;
+  font:900 11px/1 Nunito,Arial,sans-serif;
+  transition:background .15s,color .15s;
+}
+.hlp:hover,.hlp:focus{background:#c9846f;color:#fff;outline:none}
+.hlp-bubble{
+  position:absolute;z-index:10000;max-width:290px;
+  background:#2f2a26;color:#fff;border-radius:10px;
+  padding:10px 12px;font:600 .78rem/1.5 Nunito,Arial,sans-serif;
+  box-shadow:0 10px 30px rgba(0,0,0,.22);
+}
+.hlp-bubble b{color:#ffd9a8}
+.hlp-bubble a{color:#ffc9a8}
+.hlp-bubble:after{
+  content:"";position:absolute;top:-5px;left:var(--ax,14px);
+  width:10px;height:10px;background:#2f2a26;transform:rotate(45deg);
+}
+@media print{.hlp,.hlp-bubble{display:none!important}}
+</style>
+<script>
+(function(){
+  var open=null, forBtn=null;
+  function close(){
+    if(open){ open.remove(); open=null; forBtn=null; }
+  }
+  function show(btn){
+    close();
+    var txt=btn.getAttribute("data-help")||"";
+    if(!txt) return;
+    var b=document.createElement("div");
+    b.className="hlp-bubble";
+    b.setAttribute("role","tooltip");
+    b.innerHTML=txt;                       // authored by us, not user input
+    document.body.appendChild(b);
+    var r=btn.getBoundingClientRect();
+    var top=window.scrollY+r.bottom+8;
+    // Keep it on screen on a narrow phone rather than running off the right edge.
+    var left=window.scrollX+r.left-10;
+    var maxLeft=window.scrollX+document.documentElement.clientWidth-b.offsetWidth-10;
+    if(left>maxLeft) left=Math.max(window.scrollX+8,maxLeft);
+    b.style.top=top+"px"; b.style.left=left+"px";
+    b.style.setProperty("--ax",Math.max(8,Math.min(260,(window.scrollX+r.left+4)-left))+"px");
+    open=b; forBtn=btn;
+  }
+  // Delegated, so bubbles work on controls rendered after page load too.
+  document.addEventListener("click",function(e){
+    var btn=e.target.closest?e.target.closest(".hlp"):null;
+    if(btn){ e.preventDefault(); e.stopPropagation();
+             if(forBtn===btn){ close(); } else { show(btn); } return; }
+    if(open && !e.target.closest(".hlp-bubble")) close();
+  },true);
+  document.addEventListener("keydown",function(e){ if(e.key==="Escape") close(); });
+  window.addEventListener("resize",close);
+  window.addEventListener("scroll",function(){ if(open) close(); },true);
+  document.addEventListener("mouseover",function(e){
+    var btn=e.target.closest?e.target.closest(".hlp"):null;
+    if(btn && forBtn!==btn) show(btn);
+  });
+  // Label them for screen readers without making every author remember to.
+  function label(){
+    var list=document.querySelectorAll(".hlp:not([aria-label])");
+    for(var i=0;i<list.length;i++){
+      list[i].setAttribute("aria-label","More information");
+      list[i].setAttribute("type","button");
+    }
+  }
+  if(document.readyState==="loading") document.addEventListener("DOMContentLoaded",label);
+  else label();
+  setInterval(label,2000);   // covers dynamically rendered tools
+})();
+</script>
+
 </body>
 </html>

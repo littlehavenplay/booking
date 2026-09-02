@@ -489,6 +489,54 @@ export default async (req) => {
         + (rec.planKind === "weekday" ? " Weekday plan: weekends are not covered." : "") });
   }
 
+  // Manually (re)send a membership email.
+  //
+  // Exists because Resend silently swallowed a run of sends when the daily
+  // transactional quota was hit — the memberships were created correctly but the
+  // families never heard, and there was no way to put that right from the tool.
+  // Now any membership email can be re-sent on demand, to the address on file or
+  // to a one-off address typed in at the time.
+  if (action === "member-email") {
+    const code = (b.code || "").toString().toUpperCase();
+    const kind = (b.kind || "welcome").toString();
+    const members = await readMembers(store);
+    const m = members.find(x => x.code === code);
+    if (!m) return json({ error: "Membership not found." }, 404);
+
+    // A one-off override for a typo'd address, without editing the membership.
+    const to = (b.to || "").toString().trim() || m.email || "";
+    if (!to) return json({ error: "No email address on file for this membership. Add one, or type an address to send to." }, 400);
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)) return json({ error: "That doesn't look like a valid email address." }, 400);
+    if (!process.env.RESEND_API_KEY) return json({ error: "Email isn't configured (RESEND_API_KEY)." }, 502);
+
+    const target = to === m.email ? m : Object.assign({}, m, { email: to });
+    let sent = false, label = "";
+    if (kind === "welcome") {
+      const plans = await readPlans(store);
+      sent = await sendWelcomeEmail(target, plans.find(p => p.id === m.planId));
+      label = "Welcome / membership confirmation";
+    } else if (kind === "cancel") {
+      // Uses the real end date when one exists, so the email can't promise access
+      // past the paid period — or state a date that contradicts the record.
+      sent = await sendCancelEmail(target, m.endsOn || nextRenewal(m.startDate));
+      label = "Cancellation confirmation";
+    } else {
+      return json({ error: "Unknown email type." }, 400);
+    }
+
+    if (!sent) {
+      return json({ error: `${label} could not be sent. Check the Resend dashboard — you may have hit the daily send limit.` }, 502);
+    }
+    // Recorded so the list can show when each family was last contacted, and so a
+    // repeat of this problem is visible rather than guessed at.
+    m.lastEmailAt = new Date().toISOString();
+    m.lastEmailKind = kind;
+    m.lastEmailTo = to;
+    try { await store.setJSON(MEMBERS, members); } catch {}
+    return json({ ok: true, members, sentTo: to,
+      message: `${label} sent to ${to}.` });
+  }
+
   // Cancel: access runs to the end of the paid period, then stops by itself.
   if (action === "member-cancel") {
     const code = (b.code || "").toString().toUpperCase();
