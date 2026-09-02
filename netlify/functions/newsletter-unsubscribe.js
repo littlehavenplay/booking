@@ -6,7 +6,7 @@
 // in the admin's active list right away (no manual step needed).
 import { newsletterStore, cleanEmail, subKey, suppress } from "./lib-newsletter.js";
 import { sendOwnerAlert } from "./lib-email.js";
-import { setContactUnsubscribed } from "./lib-resend-marketing.js";
+import { setContactUnsubscribed, deleteContact } from "./lib-resend-marketing.js";
 
 async function doUnsub(email, token) {
   const store = newsletterStore();
@@ -26,7 +26,12 @@ async function doUnsub(email, token) {
     // the list. Flip their contact there too — otherwise someone who unsubscribes
     // just after a sync would still be included in the very next broadcast.
     // Best-effort: a Resend hiccup must never make the unsubscribe itself fail.
-    setContactUnsubscribed(email, true).catch(() => {});
+    // Fully automatic on the marketing side: flag them unsubscribed first (which
+    // stops mail immediately even if the delete fails), then remove the contact
+    // so they aren't holding a slot on the plan. Nothing left to do by hand.
+    setContactUnsubscribed(email, true)
+      .then(() => deleteContact(email))
+      .catch(() => {});
     // Heads-up to the owner (best-effort; never blocks the unsubscribe).
     sendOwnerAlert(
       "📭 Newsletter unsubscribe",

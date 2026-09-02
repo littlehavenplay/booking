@@ -157,6 +157,19 @@ export async function setContactUnsubscribed(email, unsubscribed = true) {
   return r.ok ? { ok: true } : { ok: false, error: r.error };
 }
 
+// DELETE a contact from the marketing side entirely.
+//
+// Unsubscribing should require nothing from the studio afterwards. Flagging the
+// contact as unsubscribed is enough to stop mail, but it still occupies one of
+// the 1,000 free contact slots forever, which would slowly fill the plan with
+// people who asked to be left alone. Their address stays on our own permanent
+// suppression list, so a later import can never re-add them.
+export async function deleteContact(email) {
+  const r = await rq("DELETE", "/contacts/" + encodeURIComponent(email));
+  if (!r.ok && r.status === 404) return { ok: true, missing: true };
+  return r.ok ? { ok: true } : { ok: false, error: r.error };
+}
+
 // Every contact in the segment, following pagination. Used to pull unsubscribes
 // that happened on Resend's side (their hosted unsubscribe page, or a spam
 // complaint) back down into our own suppression list.

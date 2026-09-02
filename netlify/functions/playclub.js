@@ -156,8 +156,19 @@ async function sendMemberEmail(to, subject, inner) {
   const studio = process.env.STUDIO_NAME || "Little Haven Play Studio";
   const bcc = process.env.STUDIO_EMAIL || "";
   if (!key || !to) return false;
+  const site = (process.env.SITE_URL || "https://littlehavenplay.com").replace(/\/$/, "");
+  // Everything that isn't the point of the email lives down here: contact, terms,
+  // and a one-click unsubscribe. The unsubscribe removes them from marketing
+  // automatically — no one has to go and do it by hand afterwards.
+  const unsub = `${site}/api/newsletter-unsubscribe?e=${encodeURIComponent(to)}`;
   const html = `<div style="font-family:Nunito,Arial,sans-serif;max-width:560px;margin:0 auto;color:#2a2622;line-height:1.6">${inner}
-    <p style="color:#8a8276;font-size:13px;margin-top:20px">${esc(studio)} &middot; hello@littlehavenplay.com</p></div>`;
+    <hr style="border:none;border-top:1px solid #efe4d5;margin:22px 0 12px">
+    <p style="color:#8a8276;font-size:12px;margin:0;line-height:1.7">
+      ${esc(studio)} &middot; <a href="mailto:hello@littlehavenplay.com" style="color:#8a8276">hello@littlehavenplay.com</a><br>
+      <a href="${site}/playclub.html#terms" style="color:#8a8276">Membership terms</a> &middot;
+      <a href="${site}/book.html?terms=1" style="color:#8a8276">Booking policy</a> &middot;
+      <a href="${unsub}" style="color:#8a8276">Unsubscribe</a>
+    </p></div>`;
   // Play Club membership emails are one-to-one, so they stay on the transactional
   // API (this is not bulk mail). What changed: this used to be a single fetch with
   // no retry, and a rate-limit or transient 5xx meant the family never got a
@@ -174,104 +185,77 @@ async function sendMemberEmail(to, subject, inner) {
 // because the "how do I book" question is the one that generates the emails.
 export async function sendWelcomeEmail(m, plan) {
   const site = (process.env.SITE_URL || "https://littlehavenplay.com").replace(/\/$/, "");
-  const kidList = (m.children || []).map(c => esc(c.name || c.code));
-  const kids = kidList.join(", ");
-  const renewal = m.startDate ? nextRenewal(m.startDate) : null;
+  const kids = (m.children || []).map(c => esc(c.name || c.code)).join(", ");
   const cap = m.maxChildren || (m.children || []).length || 1;
-  const weekdayOnly = m.planKind === "weekday";
-  const inner = `
-    <h2 style="color:#a85f59;font-weight:normal;margin:0 0 6px">Welcome to the Play Club! 🎟️</h2>
-    <p style="color:#5c6470">Hi ${esc((m.name || "").split(" ")[0] || "there")} — we're so happy to have you and your
-    little ones in the club. Your membership is set up and <b>ready to use right now</b>.</p>
-    ${plan && plan.imageMime ? `<p style="text-align:center;margin:16px 0">
-      <img src="${site}/api/playclub-image?id=${encodeURIComponent(plan.id)}" alt="${esc(m.planName || plan.name || "Play Club")}"
-           width="340" style="width:340px;max-width:100%;height:auto;border-radius:16px;display:block;margin:0 auto">
-    </p>` : ""}
+  const days = m.planKind === "weekday" ? "Weekday only (Mon\u2013Fri)" : "Any day we're open";
 
-    <table style="width:100%;border-collapse:collapse;font-size:15px;margin:14px 0">
-      <tr><td style="padding:5px 0;color:#5c6470;width:150px">Plan</td><td style="padding:5px 0;font-weight:bold">${esc(m.planName || (plan && plan.name) || "Play Club")}</td></tr>
-      <tr><td style="padding:5px 0;color:#5c6470">Covers</td><td style="padding:5px 0;font-weight:bold">${kids || "your children"}</td></tr>
-      <tr><td style="padding:5px 0;color:#5c6470">Children per visit</td><td style="padding:5px 0;font-weight:bold">Up to ${cap}</td></tr>
-      <tr><td style="padding:5px 0;color:#5c6470">Days covered</td><td style="padding:5px 0;font-weight:bold">${weekdayOnly ? "Monday to Friday" : "Any day we're open"}</td></tr>
-      <tr><td style="padding:5px 0;color:#5c6470">Membership no.</td><td style="padding:5px 0;font-weight:bold;font-family:monospace">${esc(m.code)}</td></tr>
-      ${m.startDate ? `<tr><td style="padding:5px 0;color:#5c6470">Membership begins</td><td style="padding:5px 0;font-weight:bold">${esc(m.startDate)}</td></tr>` : ""}
-      ${renewal ? `<tr><td style="padding:5px 0;color:#5c6470">Next renewal</td><td style="padding:5px 0">${esc(renewal)}</td></tr>` : ""}
+  // KEPT DELIBERATELY SHORT.
+  //
+  // The previous version ran to roughly 7,000 characters: the full terms list,
+  // a four-step how-to, and two explainer panels. On a phone that is endless
+  // scrolling for what is really four facts and one link.
+  //
+  // Note on "expandable" sections: <details>/<summary> does NOT work in Gmail,
+  // Outlook or Yahoo — they strip it, so the content either dumps out in full or
+  // vanishes. There is no reliable way to make an email collapsible. The honest
+  // answer is a SHORT email that links out, which is what this is. The full terms
+  // live in exactly one place: ${site}/playclub.html#terms
+  const inner = `
+    <h2 style="color:#a85f59;font-weight:normal;margin:0 0 10px">You're in the Play Club \uD83C\uDF9F\uFE0F</h2>
+    <p style="color:#5c6470;margin:0 0 16px">Hi ${esc((m.name || "").split(" ")[0] || "there")} \u2014 your membership is active and ready to use right now.</p>
+
+    <table style="width:100%;border-collapse:collapse;font-size:15px;margin:0 0 18px">
+      <tr><td style="padding:6px 0;color:#5c6470;width:135px">Plan</td>
+          <td style="padding:6px 0"><b style="font-size:16px">${esc(m.planName || (plan && plan.name) || "Play Club")}</b></td></tr>
+      <tr><td style="padding:6px 0;color:#5c6470">Days covered</td>
+          <td style="padding:6px 0"><b style="font-size:16px">${esc(days)}</b></td></tr>
+      <tr><td style="padding:6px 0;color:#5c6470">Children per visit</td>
+          <td style="padding:6px 0"><b>Up to ${cap}</b></td></tr>
+      <tr><td style="padding:6px 0;color:#5c6470">Covers</td>
+          <td style="padding:6px 0">${kids || "your children"}</td></tr>
+      <tr><td style="padding:6px 0;color:#5c6470">Membership no.</td>
+          <td style="padding:6px 0;font-family:monospace"><b>${esc(m.code)}</b></td></tr>
+      ${m.startDate ? `<tr><td style="padding:6px 0;color:#5c6470">Begins</td><td style="padding:6px 0">${esc(m.startDate)}</td></tr>` : ""}
     </table>
 
-    <div style="background:#e7f0df;border:1px solid #c2d7bd;border-radius:12px;padding:16px;margin:16px 0">
-      <p style="margin:0 0 8px;font-weight:bold;color:#3f5d33">How to book</p>
-      <table style="width:100%;border-collapse:collapse;font-size:15px">
-        <tr><td style="vertical-align:top;padding:4px 10px 4px 0;width:22px"><b style="color:#3f5d33">1</b></td>
-          <td style="padding:4px 0">Go to <a href="${site}/book.html" style="color:#a85f59">${esc(site.replace(/^https?:\/\//, ""))}/book.html</a> and pick your date and time.</td></tr>
-        <tr><td style="vertical-align:top;padding:4px 10px 4px 0"><b style="color:#3f5d33">2</b></td>
-          <td style="padding:4px 0">In the <b>Play Club member</b> box at the top, enter <b>the phone number your membership is registered to</b> — or your membership number above.</td></tr>
-        <tr><td style="vertical-align:top;padding:4px 10px 4px 0"><b style="color:#3f5d33">3</b></td>
-          <td style="padding:4px 0">Tick which children are coming. Admission for up to ${cap} of them is covered automatically.</td></tr>
-        <tr><td style="vertical-align:top;padding:4px 10px 4px 0"><b style="color:#3f5d33">4</b></td>
-          <td style="padding:4px 0">Your total shows <b>$0</b>. Finish the booking as normal — there's nothing to pay.</td></tr>
-      </table>
-      <p style="margin:10px 0 0;font-size:14px;color:#5c6470">Please still book ahead. Membership covers admission, not a reserved place, and sessions do fill.</p>
+    <div style="background:#e7f0df;border:1px solid #c2d7bd;border-radius:12px;padding:14px 16px;margin:0 0 16px">
+      <p style="margin:0;color:#3f5d33;font-size:15px">
+        <b>To book:</b> enter your membership phone number in the <b>Play Club</b> box at
+        <a href="${site}/book.html" style="color:#a85f59;font-weight:700">${esc(site.replace(/^https?:\/\//, ""))}/book.html</a>,
+        tick who's coming, and your total shows <b>$0</b>.
+      </p>
     </div>
 
-    <div style="background:#fdf5ee;border:1px solid #f0e2d2;border-radius:12px;padding:14px 16px;margin:16px 0">
-      <p style="margin:0 0 6px;font-weight:bold;color:#8a5c30">👵 Someone else bringing them?</p>
-      <p style="margin:0;color:#5c6470;font-size:14px">Your membership is linked to <b>the children, not the adult</b>, so grandma,
-      dad or an aunt can bring them just as easily. Whoever books simply enters <b>their own</b> name, email and contact details at
-      checkout — but they must still use <b>the membership phone number</b> in the Play Club box, since that's what we match on.</p>
-    </div>
-
-    <div style="background:#fdf1ec;border:1px solid #efcfc4;border-radius:12px;padding:14px 16px;margin:16px 0">
-      <p style="margin:0 0 6px;font-weight:bold;color:#a85f59">⏳ Joined after hours?</p>
-      <p style="margin:0 0 8px;color:#5c6470;font-size:14px">Subscribing in Square is step one. We then have to issue your
-      membership card at our end before the booking page will recognise you — <b>and that's done by hand</b>. If you joined
-      while we were closed, it may not be issued until the next day we're open, occasionally a little longer.</p>
-      <p style="margin:0;color:#5c6470;font-size:14px"><b>You're reading this email, so yours is already active</b> — this is
-      just so you know for the future. If you ever need a spot before your membership is live, go ahead and book and pay as
-      normal, then email us and we'll refund that booking once the membership is confirmed.</p>
-    </div>
-
-    <p style="font-weight:bold;margin:18px 0 6px">Membership terms</p>
-    <ul style="color:#5c6470;font-size:14px;padding-left:20px;margin:0">
-      <li>Billed monthly through Square on the same date each month, renewing automatically until cancelled. Where that date doesn't exist in a shorter month, billing falls on the last day.</li>
-      <li>Covers open play admission for <b>up to ${cap} child${cap === 1 ? "" : "ren"} per visit</b>, for the named children above. Any additional child on the same visit is charged at normal admission and their details are entered at checkout.</li>
-      ${weekdayOnly
-        ? `<li><b>This is a Weekday plan: it covers Monday to Friday only.</b> Weekend visits are charged at normal admission. You can upgrade to an Any Day plan any time — just email us.</li>`
-        : `<li>Covers any day we're open, weekends included.</li>`}
-      <li>Memberships are prepaid. Cancelling stops future billing; access continues to the end of the period already paid for, and stops automatically after that date. Part-months are not refunded.</li>
-      <li>To cancel, pause or update your card, use the <b>Manage Subscription</b> link in any Square receipt, or email us and we'll take care of it.</li>
-      <li>Membership covers open play admission only, and does not include private parties, events or ticketed sessions.</li>
-      <li>Membership visits are recorded in your child's visit history but do not earn loyalty punches, as admission is already covered.</li>
-      <li>Baby/Infant plans apply to children aged 6–17 months. When a child turns 18 months the Toddler rate applies from the next renewal; we'll contact you a month beforehand.</li>
-      <li>Studio rules apply as usual — grip socks, a signed waiver, and a supervising adult 18+.</li>
-    </ul>
-
-    <p style="margin:16px 0 0;font-size:14px;color:#5c6470">
-      Full <a href="${site}/book.html?terms=1" style="color:#a85f59;font-weight:700">terms &amp; conditions</a> are on our booking page.
-      For anything else, contact us at <a href="mailto:hello@littlehavenplay.com" style="color:#a85f59;font-weight:700">hello@littlehavenplay.com</a>
-      and we'll get back to you within 24 hours.
-    </p>
-    <p style="color:#5c6470;margin-top:14px">We're so glad to have you with us — see you at the studio! 🎈</p>`;
-  return sendMemberEmail(m.email, `Welcome to the Play Club — ${m.code}`, inner);
+    <p style="color:#5c6470;font-size:14px;margin:0">
+      Anyone can bring the children &mdash; just use the membership phone number when booking.
+      <a href="${site}/playclub.html#terms" style="color:#a85f59;font-weight:700">Membership terms &amp; conditions</a>
+    </p>`;
+  return sendMemberEmail(m.email, `You're in the Play Club \u2014 ${m.code}`, inner);
 }
+
 
 // Cancellation: no ambiguity about the last day.
 async function sendCancelEmail(m, endsOn) {
+  const site = (process.env.SITE_URL || "https://littlehavenplay.com").replace(/\/$/, "");
   const kids = (m.children || []).map(c => esc(c.name || c.code)).join(", ");
+  // Short on purpose: the one thing that matters here is the last day they can play.
   const inner = `
-    <h2 style="color:#a85f59;font-weight:normal;margin:0 0 6px">Your Play Club membership has been cancelled</h2>
-    <p style="color:#5c6470">Hi ${esc((m.name || "").split(" ")[0] || "there")}, we've cancelled your membership as requested. No further payments will be taken.</p>
-    <div style="background:#fdf1ec;border:1px solid #efcfc4;border-radius:12px;padding:14px 16px;margin:14px 0">
-      <p style="margin:0;font-weight:bold;color:#a85f59">You can still play until ${esc(endsOn)}</p>
-      <p style="margin:6px 0 0;color:#5c6470;font-size:14px">Your membership is prepaid, so ${kids || "your children"} keep unlimited access
-      for the rest of the period you've already paid for. After that date, normal admission rates apply.</p>
+    <h2 style="color:#a85f59;font-weight:normal;margin:0 0 10px">Your Play Club membership is cancelled</h2>
+    <p style="color:#5c6470;margin:0 0 16px">Hi ${esc((m.name || "").split(" ")[0] || "there")} \u2014 no further payments will be taken.</p>
+
+    <div style="background:#fdf1ec;border:1px solid #efcfc4;border-radius:12px;padding:14px 16px;margin:0 0 16px">
+      <p style="margin:0;color:#a85f59;font-size:16px"><b>You can still play until ${esc(endsOn)}</b></p>
+      <p style="margin:6px 0 0;color:#5c6470;font-size:14px">${kids || "Your children"} keep full access until then. After that, normal admission applies.</p>
     </div>
-    <p style="color:#5c6470;font-size:14px">As set out when you joined, prepaid periods aren't refunded in part. Everything else stays
-    as it is — your children's loyalty cards, visit history and any credit are unaffected.</p>
-    <p style="color:#5c6470">You're welcome back at any time; just rejoin from
-    <a href="${(process.env.SITE_URL || "https://littlehavenplay.com").replace(/\/$/, "")}/playclub" style="color:#a85f59">our Play Club page</a>.</p>
-    <p style="color:#5c6470">Thank you for playing with us.</p>`;
-  return sendMemberEmail(m.email, `Play Club membership cancelled — access until ${endsOn}`, inner);
+
+    <p style="color:#5c6470;font-size:14px;margin:0">
+      Loyalty cards, visit history and any credit are unaffected. You're welcome back any time \u2014
+      <a href="${site}/playclub.html" style="color:#a85f59;font-weight:700">see plans</a> &middot;
+      <a href="${site}/playclub.html#terms" style="color:#a85f59;font-weight:700">terms</a>
+    </p>`;
+  return sendMemberEmail(m.email, `Play Club cancelled \u2014 you can play until ${endsOn}`, inner);
 }
+
 
 export default async (req) => {
   if (req.method !== "POST") return json({ error: "Use POST." }, 405);
