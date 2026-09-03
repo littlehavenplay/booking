@@ -23,13 +23,15 @@ export default async (req) => {
       ok: true, code: rec.code || code, admission: rec.admission, label: rec.label,
       visits: rec.visits || null, visitsRemaining: rec.visitsRemaining,
       expiry: rec.expiry, childName: rec.childName || "",
-      active: !!rec.active, expired: !!expired,
+      active: rec.active !== false, expired: !!expired,
     });
   }
 
   if (expired)              return json({ ok: false, error: "That pass has expired." }, 409);
-  if (!rec.active)          return json({ ok: false, error: "That pass isn't active." }, 409);
-  if (rec.visitsRemaining < 1) return json({ ok: false, error: "That pass has no visits left." }, 409);
+  // Active unless explicitly deactivated — legacy cards have no `active` field.
+  // Must stay in step with book.js, checkin.js and passes-list.js.
+  if (rec.active === false) return json({ ok: false, error: "That pass isn't active." }, 409);
+  if ((rec.visitsRemaining || 0) < 1) return json({ ok: false, error: "That pass has no visits left." }, 409);
 
   return json({
     ok: true,

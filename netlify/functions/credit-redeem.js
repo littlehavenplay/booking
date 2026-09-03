@@ -27,7 +27,9 @@ export default async (req) => {
   if (!rec) return json({ error: "That credit code wasn't found." }, 404);
   if (rec.scope === "openplay" || rec.channel === "online")
     return json({ error: "This credit is valid online for open play only and can't be redeemed in store." }, 400);
-  if (!rec.active || (rec.amount || 0) < 1) return json({ error: "That credit has no balance left." }, 400);
+  // Active unless EXPLICITLY deactivated (see book.js pass note). Records from
+  // older/backfill paths may carry no `active` field at all.
+  if (rec.active === false || (rec.amount || 0) < 1) return json({ error: "That credit has no balance left." }, 400);
   const today = new Date().toISOString().slice(0, 10);
   if (rec.expiry && rec.expiry < today) return json({ error: `That credit expired on ${rec.expiry}.` }, 400);
   if (cents > rec.amount) return json({ error: `Only $${(rec.amount / 100).toFixed(2)} left on this credit.` }, 400);

@@ -44,7 +44,7 @@ export default async (req) => {
     const code = normalize(b.code);
     const rec = await getRec(store, code);
     if (!rec) return json({ error: "Code not found." }, 404);
-    if (!rec.active) return json({ ok: true, code, type: "Discount", alreadyOff: true, message: "That discount code was already deactivated." });
+    if (rec.active === false) return json({ ok: true, code, type: "Discount", alreadyOff: true, message: "That discount code was already deactivated." });
     rec.active = false;
     rec.deactivatedAt = new Date().toISOString();
     try { await store.setJSON("disc:" + code, rec); }
@@ -104,7 +104,9 @@ async function getRec(store, code) {
 
 function validity(rec) {
   if (!rec) return { ok: false, message: "That code wasn't found." };
-  if (!rec.active) return { ok: false, message: "This discount code is no longer active." };
+  // Discount codes are always written with active:true, but use the same
+  // contract as passes and credits so no reader can drift out of step.
+  if (rec.active === false) return { ok: false, message: "This discount code is no longer active." };
   if (rec.used) return { ok: false, message: "That code has already been used." };
   if (rec.expiry && rec.expiry < new Date().toISOString().slice(0, 10)) return { ok: false, message: "That code has expired." };
   return { ok: true };

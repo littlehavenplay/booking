@@ -57,7 +57,8 @@ export default async (req) => {
     if (!creditRec)                    return json({ error: "credit", message: `Store credit ${creditCode} wasn't found.` }, 409);
     if (creditRec.expiry && creditRec.expiry < new Date().toISOString().slice(0, 10))
                                        return json({ error: "credit", message: `Store credit ${creditCode} has expired.` }, 409);
-    if (!creditRec.active || creditRec.amount < 1)
+    // Same contract as book.js.
+    if (creditRec.active === false || (creditRec.amount || 0) < 1)
                                        return json({ error: "credit", message: `Store credit ${creditCode} has no balance left.` }, 409);
     creditApplied = Math.min(subtotal, creditRec.amount);
   }

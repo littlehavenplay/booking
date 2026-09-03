@@ -156,7 +156,14 @@ export default async (req) => {
     if (!prec)                 return json({ error: "pass", message: `Pass ${code} wasn't found.` }, 409);
     if (prec.expiry && prec.expiry < new Date().toISOString().slice(0, 10))
                                return json({ error: "pass", message: `Pass ${code} has expired.` }, 409);
-    if (!prec.active || prec.visitsRemaining < 1)
+    // A punch card is active unless EXPLICITLY deactivated. Legacy cards were
+    // written without an `active` field, so the old `!prec.active` test rejected
+    // them outright — while passes-list.js (which uses `active === false`) still
+    // showed them as Active in staff tools. That mismatch is exactly why a
+    // customer with a visit clearly remaining was told her card had none.
+    if (prec.active === false)
+                               return json({ error: "pass", message: `Pass ${code} has been deactivated — please ask us at the desk.` }, 409);
+    if ((prec.visitsRemaining || 0) < 1)
                                return json({ error: "pass", message: `Pass ${code} has no visits left.` }, 409);
     usablePasses.push({ code, admission: prec.admission, rec: prec });
   }
@@ -212,7 +219,8 @@ export default async (req) => {
     const discStore = getStore("discounts");
     try { discRec = await discStore.get("disc:" + discountCode, { type: "json" }); } catch { discRec = null; }
     if (!discRec)                                   return json({ error: "discount", message: `Discount code ${discountCode} wasn't found.` }, 409);
-    if (discRec.used || !discRec.active)            return json({ error: "discount", message: `Discount code ${discountCode} has already been used.` }, 409);
+    // Same active-flag contract as passes and credits.
+    if (discRec.used || discRec.active === false)   return json({ error: "discount", message: `Discount code ${discountCode} has already been used.` }, 409);
     if (discRec.expiry && discRec.expiry < today)   return json({ error: "discount", message: `Discount code ${discountCode} has expired.` }, 409);
     discountPct = Math.max(0, Math.min(100, discRec.percent || 0));
     discountAmount = Math.round(subtotal * discountPct / 100);
@@ -584,7 +592,8 @@ export default async (req) => {
     if (!creditRec) return json({ error: "promo", message: `Promo code ${promoCode} wasn't found.` }, 409);
     if (creditRec.expiry && creditRec.expiry < new Date().toISOString().slice(0, 10))
       return json({ error: "promo", message: `Promo code ${promoCode} has expired.` }, 409);
-    if (!creditRec.active || creditRec.amount < 1)
+    // Same contract as punch cards: only an explicit false means deactivated.
+    if (creditRec.active === false || (creditRec.amount || 0) < 1)
       return json({ error: "promo", message: `Promo code ${promoCode} has no balance left.` }, 409);
     creditApplied = Math.min(due, creditRec.amount);
     due -= creditApplied;

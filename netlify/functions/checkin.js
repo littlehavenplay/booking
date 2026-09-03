@@ -86,7 +86,9 @@ export default async (req) => {
     const passes = getStore("passes");
     let p = null; try { p = await passes.get("pass:" + code, { type: "json" }); } catch {}
     if (!p)               return json({ error: "That pass code wasn't found." }, 404);
-    if (!p.active)        return json({ error: "That pass is no longer active." }, 400);
+    // Same contract as book.js / pass-balance.js: legacy cards carry no `active`
+    // field and must still punch at the desk.
+    if (p.active === false) return json({ error: "That pass is no longer active." }, 400);
     if ((p.visitsRemaining || 0) < count) return json({ error: `That pass only has ${p.visitsRemaining || 0} visit(s) left.` }, 400);
     if (p.expiry && p.expiry < date)      return json({ error: `That pass expired on ${p.expiry}.` }, 400);
 

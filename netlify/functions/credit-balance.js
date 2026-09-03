@@ -15,7 +15,9 @@ export default async (req) => {
 
   const expired = rec.expiry && rec.expiry < new Date().toISOString().slice(0, 10);
   if (expired)             return json({ ok: false, error: "That promo code has expired." }, 409);
-  if (!rec.active || rec.amount < 1) return json({ ok: false, error: "That promo code has no balance left." }, 409);
+  // Active unless EXPLICITLY deactivated (see book.js pass note). Records written
+  // by older/backfill paths may have no `active` field at all.
+  if (rec.active === false || (rec.amount || 0) < 1) return json({ ok: false, error: "That promo code has no balance left." }, 409);
 
   return json({ ok: true, balance: rec.amount, expiry: rec.expiry });
 };

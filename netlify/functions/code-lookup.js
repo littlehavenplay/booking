@@ -25,7 +25,8 @@ export default async (req) => {
   try { pass = await getStore("passes").get("pass:" + code, { type: "json" }); } catch {}
   if (pass) {
     const expired = pass.expiry && pass.expiry < today;
-    const status = !pass.active ? "Deactivated" : expired ? "Expired" : (pass.visitsRemaining < 1 ? "No visits left" : "Active");
+    // Legacy cards carry no `active` field; only an explicit false is deactivated.
+    const status = pass.active === false ? "Deactivated" : expired ? "Expired" : (pass.visitsRemaining < 1 ? "No visits left" : "Active");
     return json({
       ok: true, kind: "pass", code, status,
       label: pass.label || "", admission: pass.admission || "",
@@ -40,7 +41,7 @@ export default async (req) => {
   try { credit = await getStore("credits").get("credit:" + code, { type: "json" }); } catch {}
   if (credit) {
     const expired = credit.expiry && credit.expiry < today;
-    const status = !credit.active ? "Used / inactive" : expired ? "Expired" : (credit.amount < 1 ? "Used up" : "Active");
+    const status = credit.active === false ? "Used / inactive" : expired ? "Expired" : (credit.amount < 1 ? "Used up" : "Active");
     return json({
       ok: true, kind: "credit", code, status,
       creditType: credit.type || "standard",
