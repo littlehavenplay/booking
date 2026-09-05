@@ -1,0 +1,418 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Booking Health Check — Little Haven Play Studio</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,500&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root{--cream:#faf7f3;--blush-pale:#fdf1ec;--rose:#c97d76;--rose-deep:#a85f59;--sage:#7ba676;--sage-dark:#4d7848;--slate:#5c6470;--charcoal:#2a2622;--taupe:#aea298;
+        --pass:#3f7d5c;--pass-bg:#e4f0e7;--fail:#b8524a;--fail-bg:#f7e3df;--warn:#8a6a1f;--warn-bg:#faf0d6;}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Nunito',sans-serif;color:var(--charcoal);line-height:1.6;
+       background:radial-gradient(1100px 480px at 110% -8%,var(--blush-pale) 0,transparent 55%),var(--cream);min-height:100vh}
+  .topbar{position:sticky;top:0;z-index:10;background:rgba(250,247,243,.95);backdrop-filter:blur(16px);
+          border-bottom:1px solid rgba(0,0,0,.05);display:flex;align-items:center;justify-content:space-between;padding:.85rem 1.4rem}
+  .topbar .name{font-family:'Cormorant Garamond',serif;font-weight:500;font-size:1.25rem;text-decoration:none;color:inherit}
+  .topbar .name em{font-style:italic;color:var(--rose)}
+  .topbar a.back{font-size:.66rem;letter-spacing:.09em;text-transform:uppercase;color:var(--slate);text-decoration:none;font-weight:700}
+  .wrap{max-width:620px;margin:0 auto;padding:22px 18px 80px}
+  h1{font-family:'Cormorant Garamond',serif;font-weight:300;font-size:clamp(1.9rem,6vw,2.5rem);text-align:center}
+  .sub{text-align:center;color:var(--slate);font-weight:600;font-size:.88rem;margin:4px 0 20px}
+
+  .verdict{border-radius:20px;padding:20px 18px;text-align:center;margin-bottom:18px;border:1px solid rgba(0,0,0,.06);
+           box-shadow:0 4px 24px rgba(0,0,0,.07);background:#fff}
+  .verdict .big{font-size:44px;line-height:1.1}
+  .verdict .hl{font-family:'Cormorant Garamond',serif;font-size:1.7rem;font-weight:500;margin-top:2px}
+  .verdict .sl{font-size:.88rem;font-weight:700;color:var(--slate);margin-top:4px}
+  .verdict.ok{background:var(--pass-bg);border-color:#cfe5d3}
+  .verdict.ok .hl{color:var(--pass)}
+  .verdict.bad{background:var(--fail-bg);border-color:#ecccc5}
+  .verdict.bad .hl{color:var(--fail)}
+  .verdict.warn{background:var(--warn-bg);border-color:#e8d7a8}
+  .verdict.warn .hl{color:var(--warn)}
+
+  .card{background:#fff;border:1px solid rgba(0,0,0,.05);border-radius:20px;padding:16px 18px;
+        box-shadow:0 4px 24px rgba(0,0,0,.07);margin-bottom:16px}
+  .card h2{font-family:'Cormorant Garamond',serif;font-weight:500;font-size:1.3rem;margin-bottom:2px}
+  .card .hint{font-size:.76rem;color:var(--taupe);font-weight:700;margin-bottom:6px}
+
+  .row{display:flex;gap:11px;align-items:flex-start;padding:11px 0;border-top:1px solid #f2eae0}
+  .row:first-of-type{border-top:none}
+  .badge{flex:none;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+         font-size:.78rem;font-weight:900;margin-top:1px}
+  .badge.pass{background:var(--pass-bg);color:var(--pass)}
+  .badge.fail{background:var(--fail-bg);color:var(--fail)}
+  .badge.warn{background:var(--warn-bg);color:var(--warn)}
+  .badge.run{background:#eee8e0;color:var(--taupe)}
+  .rt{flex:1;min-width:0}
+  .rt .lbl{font-weight:800;font-size:.92rem}
+  .rt .dtl{font-size:.8rem;color:var(--slate);font-weight:600;word-break:break-word}
+  .rt .fix{font-size:.8rem;color:var(--fail);font-weight:800;margin-top:3px}
+
+  .btn{width:100%;border:none;border-radius:40px;padding:15px;font-family:'Nunito';font-weight:800;font-size:.78rem;
+       letter-spacing:.08em;text-transform:uppercase;color:#fff;background:var(--rose);cursor:pointer;
+       box-shadow:0 8px 20px -8px var(--rose-deep);margin-top:6px}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+  .btn.ghost{background:#fff;color:var(--rose-deep);border:1.5px solid #e7ddd0;box-shadow:none;margin-top:10px}
+  .note{font-size:.76rem;color:var(--taupe);font-weight:700;margin-top:10px;text-align:center;line-height:1.5}
+  .stage{position:absolute;left:-10000px;top:0;width:400px;height:900px;border:0}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <a class="name" href="/index.html">Little <em>Haven</em> Play Studio</a>
+  <a class="back" href="/index.html">← Back to site</a>
+</div>
+
+<div class="wrap">
+  <h1>Booking Health Check</h1>
+  <div class="sub">Tap after every deploy. Nothing here books, charges, or changes anything — it only looks. 🩺</div>
+
+  <div class="verdict" id="verdict">
+    <div class="big" id="vIcon">⏳</div>
+    <div class="hl" id="vHead">Checking…</div>
+    <div class="sl" id="vSub">This takes about 15 seconds.</div>
+  </div>
+
+  <div class="card">
+    <h2>Can a customer book a party?</h2>
+    <div class="hint">Loads the real party page and drives it like a customer would.</div>
+    <div id="gParty"></div>
+  </div>
+
+  <div class="card">
+    <h2>Can a customer book open play?</h2>
+    <div class="hint">Loads the real booking page and checks it came up alive.</div>
+    <div id="gBook"></div>
+  </div>
+
+  <div class="card">
+    <h2>Can we take their money?</h2>
+    <div class="hint">Square connection and deposit amounts.</div>
+    <div id="gPay"></div>
+  </div>
+
+  <div class="card">
+    <h2>Are the back-end services answering?</h2>
+    <div class="hint">The endpoints the booking pages depend on.</div>
+    <div id="gApi"></div>
+  </div>
+
+  <button class="btn" id="again">Run the check again</button>
+  <button class="btn ghost" id="copy">Copy report</button>
+  <div class="note">Run this right after you upload files to GitHub, once Netlify says the deploy is published.<br>
+  Green across the board means a customer can get all the way to paying.</div>
+</div>
+
+<div id="stage"></div>
+
+<script>
+/* ============================================================================
+   Booking health check.
+   Read-only by design: every request below is a GET, and the two pages are
+   loaded in hidden frames and inspected, never submitted. Running this a
+   hundred times creates zero bookings and zero charges.
+   ========================================================================== */
+
+var $ = function(s){ return document.querySelector(s); };
+var CFG = null;              // /api/config, fetched once and shared by later checks
+var PARTY_DATE = "";         // the date the party check will try
+var report = [];             // plain-text lines for the Copy report button
+
+function localDate(offsetDays){
+  var d = new Date();
+  d.setMinutes(d.getMinutes() - d.getTimezoneOffset());   // shift so UTC fields == local date
+  d.setDate(d.getDate() + (offsetDays || 0));
+  return d;
+}
+function iso(d){ return d.toISOString().slice(0,10); }
+
+// First Fri/Sat/Sun that is far enough out to be bookable.
+function nextPartyDate(minDays){
+  var d = localDate(minDays || 14);
+  for (var i = 0; i < 8; i++){
+    var wd = d.getUTCDay();
+    if (wd === 5 || wd === 6 || wd === 0) break;
+    d.setDate(d.getDate() + 1);
+  }
+  return iso(d);
+}
+
+function getJSON(url, ms){
+  var ctl = ("AbortController" in window) ? new AbortController() : null;
+  var t = setTimeout(function(){ try{ ctl && ctl.abort(); }catch(e){} }, ms || 12000);
+  return fetch(url, ctl ? { signal: ctl.signal, cache: "no-store" } : { cache: "no-store" })
+    .then(function(r){
+      if (!r.ok) throw new Error("returned HTTP " + r.status);
+      return r.json();
+    })
+    .then(function(j){ clearTimeout(t); return j; })
+    .catch(function(e){ clearTimeout(t); throw new Error(e && e.name === "AbortError" ? "no answer after " + ((ms||12000)/1000) + "s" : (e.message || "unreachable")); });
+}
+
+// Load a real page in a hidden frame and give its scripts time to finish.
+function loadPage(src, settleMs){
+  return new Promise(function(resolve, reject){
+    var f = document.createElement("iframe");
+    f.className = "stage";
+    var done = false;
+    var to = setTimeout(function(){
+      if (done) return; done = true;
+      reject(new Error("the page never finished loading (20s)"));
+    }, 20000);
+    f.onload = function(){
+      setTimeout(function(){
+        if (done) return; done = true;
+        clearTimeout(to);
+        if (!f.contentDocument) { reject(new Error("could not read the page")); return; }
+        resolve(f);
+      }, settleMs || 1500);
+    };
+    f.onerror = function(){ if (!done){ done = true; clearTimeout(to); reject(new Error("the page failed to load")); } };
+    f.src = src;
+    $("#stage").appendChild(f);
+  });
+}
+function wait(ms){ return new Promise(function(r){ setTimeout(r, ms); }); }
+
+/* ---- rendering -------------------------------------------------------- */
+var ICON = { pass:"✓", fail:"✕", warn:"!", run:"…" };
+function addRow(host, label){
+  var el = document.createElement("div");
+  el.className = "row";
+  el.innerHTML = '<div class="badge run">…</div><div class="rt"><div class="lbl"></div><div class="dtl">checking…</div></div>';
+  el.querySelector(".lbl").textContent = label;
+  $(host).appendChild(el);
+  return el;
+}
+function setRow(el, state, detail, fix){
+  el.querySelector(".badge").className = "badge " + state;
+  el.querySelector(".badge").textContent = ICON[state];
+  el.querySelector(".dtl").textContent = detail || "";
+  var old = el.querySelector(".fix"); if (old) old.remove();
+  if (fix){
+    var f = document.createElement("div");
+    f.className = "fix"; f.textContent = "→ " + fix;
+    el.querySelector(".rt").appendChild(f);
+  }
+  report.push((state === "pass" ? "PASS  " : state === "warn" ? "WARN  " : "FAIL  ")
+    + el.querySelector(".lbl").textContent + " — " + (detail || "") + (fix ? " | " + fix : ""));
+}
+
+var results = [];
+async function check(host, label, fn){
+  var el = addRow(host, label);
+  var out;
+  try {
+    out = await fn();
+    if (!out) out = { state:"pass" };
+  } catch (e) {
+    out = { state:"fail", detail:(e && e.message) || "unexpected error" };
+  }
+  setRow(el, out.state || "pass", out.detail, out.fix);
+  results.push(out.state || "pass");
+  return out;
+}
+
+/* ---- the checks ------------------------------------------------------- */
+async function runAll(){
+  results = []; report = [];
+  ["#gParty","#gBook","#gPay","#gApi"].forEach(function(s){ $(s).innerHTML = ""; });
+  $("#stage").innerHTML = "";
+  $("#again").disabled = true;
+  $("#verdict").className = "verdict";
+  $("#vIcon").textContent = "⏳"; $("#vHead").textContent = "Checking…";
+  $("#vSub").textContent = "This takes about 15 seconds.";
+
+  // --- Back-end services first: everything else depends on them ---
+  await check("#gApi", "Settings service", async function(){
+    CFG = await getJSON("/api/config");
+    if (!CFG || !CFG.prices || !CFG.prices.regular)
+      return { state:"fail", detail:"answered, but sent no prices", fix:"Check Manage prices in admin, then re-run." };
+    if (!CFG.partyPackages || !CFG.partyPackages.length)
+      return { state:"fail", detail:"answered, but sent no party packages", fix:"Check PARTY_PACKAGES in lib-settings.js." };
+    return { state:"pass", detail:"OK — " + CFG.partyPackages.length + " party packages, " + (CFG.slots ? CFG.slots.length : 0) + " arrival times" };
+  });
+
+  PARTY_DATE = nextPartyDate(CFG && CFG.partyMinDays);
+
+  await check("#gApi", "Open-play availability service", async function(){
+    var d = localDate(1), tries = 0, j = null;
+    // Walk forward past closed days so a normal closure doesn't read as a fault.
+    while (tries < 8){
+      j = await getJSON("/api/capacity?date=" + iso(d));
+      if (!j.closed) break;
+      d.setDate(d.getDate() + 1); tries++;
+    }
+    if (!j) return { state:"fail", detail:"no answer" };
+    if (j.closed) return { state:"warn", detail:"answering fine, but the studio is marked closed for the next 8 days", fix:"If that's wrong, check Closures & Hours in admin." };
+    if (!Array.isArray(j.slots)) return { state:"fail", detail:"answered in an unexpected format" };
+    if (!j.slots.length) return { state:"warn", detail:"answering, but " + iso(d) + " has no open arrival times", fix:"Check hours and party holds for that day." };
+    return { state:"pass", detail:"OK — " + j.slots.length + " arrival times open on " + iso(d) };
+  });
+
+  await check("#gApi", "Party availability service", async function(){
+    var j = await getJSON("/api/party-availability?date=" + PARTY_DATE);
+    if (j.error) return { state:"fail", detail:j.error };
+    if (!j.partyDay) return { state:"fail", detail:PARTY_DATE + " should be a party day but the server says it isn't", fix:"Check PARTY_DAYS in lib-settings.js." };
+    if (!Array.isArray(j.slots) || !j.slots.length) return { state:"fail", detail:"sent no party time slots", fix:"Check PARTY_SLOTS in lib-settings.js." };
+    var open = j.slots.filter(function(s){ return s.available; }).length;
+    if (j.partiesOff) return { state:"warn", detail:PARTY_DATE + " has parties switched off (open play only)", fix:"Normal if you set that. Otherwise clear it in admin." };
+    if (!open) return { state:"warn", detail:"all " + j.slots.length + " times on " + PARTY_DATE + " are already booked" };
+    return { state:"pass", detail:"OK — " + open + " of " + j.slots.length + " times open on " + PARTY_DATE };
+  });
+
+  // --- The party page, driven like a customer ---
+  var pf = null;
+  await check("#gParty", "Party page loads without crashing", async function(){
+    pf = await loadPage("/parties.html", 1800);
+    var d = pf.contentDocument;
+    if (!d.getElementById("date")) return { state:"fail", detail:"the date field is missing from the page" };
+    return { state:"pass", detail:"loaded" };
+  });
+
+  await check("#gParty", "Party packages appear", async function(){
+    if (!pf) return { state:"fail", detail:"skipped — the page didn't load" };
+    var n = pf.contentDocument.querySelectorAll("#pkg .opt").length;
+    if (!n) return { state:"fail", detail:"no packages rendered — the page's setup script died before finishing",
+                     fix:"This is the exact symptom of a broken startup script. Send me this report." };
+    return { state:"pass", detail:n + " packages shown" };
+  });
+
+  await check("#gParty", "Picking a date shows party times", async function(){
+    if (!pf) return { state:"fail", detail:"skipped — the page didn't load" };
+    var d = pf.contentDocument, w = pf.contentWindow;
+    var el = d.getElementById("date");
+    // Judged on behaviour, not on internals: set a real date, fire the same
+    // event a phone fires, and see whether times actually turn up.
+    el.value = PARTY_DATE;
+    el.dispatchEvent(new w.Event("change", { bubbles:true }));
+    for (var i = 0; i < 30; i++){                       // up to ~6s for the server
+      await wait(200);
+      if (d.querySelectorAll("#slots .slot").length) break;
+      if (d.querySelector("#slots .msg.err")) break;
+    }
+    var slots = d.querySelectorAll("#slots .slot").length;
+    if (slots) return { state:"pass", detail:PARTY_DATE + " → " + slots + " times shown" };
+    var err = d.querySelector("#slots .msg");
+    if (err) return { state:"warn", detail:"page says: " + err.textContent.trim().slice(0,110) };
+    var stuck = d.querySelector("#slots .note");
+    return { state:"fail",
+             detail:"picked " + PARTY_DATE + " and no times ever appeared"
+                    + (stuck ? ' — still says "' + stuck.textContent.trim().slice(0,60) + '"' : ""),
+             fix:"This is the bug customers were hitting. Send me this report." };
+  });
+
+  await check("#gParty", "Deposit button unlocks when the form is filled", async function(){
+    if (!pf) return { state:"fail", detail:"skipped — the page didn't load" };
+    var d = pf.contentDocument, w = pf.contentWindow;
+    var slot = d.querySelector("#slots .slot:not(.taken)");
+    if (!slot) return { state:"warn", detail:"skipped — no open time to select on " + PARTY_DATE };
+    slot.dispatchEvent(new w.Event("click", { bubbles:true }));
+    var pkg = d.querySelector("#pkg .opt");
+    if (pkg) pkg.dispatchEvent(new w.Event("click", { bubbles:true }));
+    [["childName","Test Child"],["name","Health Check"],["phone","(760) 555-0100"],["email","healthcheck@example.com"]]
+      .forEach(function(p){
+        var f = d.getElementById(p[0]); if (!f) return;
+        f.value = p[1]; f.dispatchEvent(new w.Event("input", { bubbles:true }));
+      });
+    var ag = d.getElementById("agree");
+    if (ag){ ag.checked = true; ag.dispatchEvent(new w.Event("change", { bubbles:true })); }
+    await wait(250);
+    var pay = d.getElementById("pay");
+    if (!pay) return { state:"fail", detail:"the deposit button is missing" };
+    if (pay.disabled) return { state:"fail", detail:"form filled in completely but the button stayed greyed out",
+                               fix:"Customers can't check out. Send me this report." };
+    return { state:"pass", detail:"unlocked — a customer can reach checkout (nothing was submitted)" };
+  });
+
+  // --- The open-play page ---
+  await check("#gBook", "Open-play page loads and is wired up", async function(){
+    var f = await loadPage("/book.html", 1800);
+    var d = f.contentDocument;
+    var el = d.getElementById("date"), pay = d.getElementById("pay");
+    if (!el) return { state:"fail", detail:"the date field is missing from the page" };
+    if (!el.value) return { state:"fail", detail:"the date never got filled in — the page's setup script died early",
+                            fix:"Send me this report." };
+    if (typeof el.onchange !== "function") return { state:"fail", detail:"the date field has no handler — choosing a date will do nothing",
+                                                    fix:"Send me this report." };
+    if (!pay || typeof pay.onclick !== "function") return { state:"fail", detail:"the Pay button has no handler attached",
+                                                            fix:"Customers can't check out. Send me this report." };
+    var kids = d.querySelectorAll(".stepper, [data-step]").length;
+    return { state:"pass", detail:"date, times and Pay button all wired" };
+  });
+
+  // --- Payments ---
+  await check("#gPay", "Square is connected", async function(){
+    if (!CFG) return { state:"fail", detail:"skipped — settings service didn't answer" };
+    if (!CFG.configured) return { state:"fail", detail:"Square application/location keys are missing",
+                                  fix:"Set SQUARE_APPLICATION_ID and SQUARE_LOCATION_ID in Netlify, then redeploy." };
+    return { state:"pass", detail:"keys present" };
+  });
+
+  await check("#gPay", "Square is taking real money", async function(){
+    if (!CFG) return { state:"fail", detail:"skipped — settings service didn't answer" };
+    if (CFG.environment !== "production")
+      return { state:"fail", detail:"Square is in " + (CFG.environment || "unknown") + " mode — payments are NOT reaching your account",
+               fix:"Set SQUARE_ENVIRONMENT to production in Netlify, then redeploy." };
+    return { state:"pass", detail:"production mode" };
+  });
+
+  await check("#gPay", "Deposit amounts look right", async function(){
+    if (!CFG || !CFG.partyPackages) return { state:"fail", detail:"skipped — settings service didn't answer" };
+    var bad = CFG.partyPackages.filter(function(p){ return !p.deposit || p.deposit < 100; });
+    if (bad.length) return { state:"fail", detail:bad.map(function(p){ return p.label; }).join(", ") + " has a $0 deposit",
+                             fix:"Check PARTY_PACKAGES in lib-settings.js." };
+    return { state:"pass", detail:CFG.partyPackages.map(function(p){ return p.label.replace(" Party","") + " $" + (p.deposit/100); }).join(" · ") };
+  });
+
+  await check("#gPay", "Admission prices are set", async function(){
+    if (!CFG || !CFG.prices) return { state:"fail", detail:"skipped — settings service didn't answer" };
+    var p = CFG.prices;
+    if (!p.regular || !p.sibling || !p.infant) return { state:"fail", detail:"one or more prices are missing or zero",
+                                                        fix:"Set them in Manage prices in admin." };
+    return { state:"pass", detail:"$" + (p.regular/100) + " · sibling $" + (p.sibling/100) + " · baby $" + (p.infant/100) };
+  });
+
+  finish();
+}
+
+function finish(){
+  $("#stage").innerHTML = "";                 // tear down the hidden pages
+  $("#again").disabled = false;
+  var fails = results.filter(function(r){ return r === "fail"; }).length;
+  var warns = results.filter(function(r){ return r === "warn"; }).length;
+  var v = $("#verdict");
+  if (fails){
+    v.className = "verdict bad";
+    $("#vIcon").textContent = "🚫";
+    $("#vHead").textContent = fails + (fails === 1 ? " problem found" : " problems found");
+    $("#vSub").textContent = "Customers may not be able to book. Tap Copy report and send it to me.";
+  } else if (warns){
+    v.className = "verdict warn";
+    $("#vIcon").textContent = "⚠️";
+    $("#vHead").textContent = "Working, with " + warns + (warns === 1 ? " note" : " notes");
+    $("#vSub").textContent = "Nothing is broken — just check the notes are things you meant to set.";
+  } else {
+    v.className = "verdict ok";
+    $("#vIcon").textContent = "🎈";
+    $("#vHead").textContent = "All clear";
+    $("#vSub").textContent = "A customer can book a party, book open play, and pay.";
+  }
+}
+
+$("#again").onclick = function(){ runAll(); };
+$("#copy").onclick = function(){
+  var txt = "Little Haven booking health check\n" + new Date().toString() + "\n\n" + report.join("\n");
+  function done(){ $("#copy").textContent = "Copied ✓"; setTimeout(function(){ $("#copy").textContent = "Copy report"; }, 2000); }
+  if (navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(txt).then(done, function(){ window.prompt("Copy this:", txt); });
+  } else { window.prompt("Copy this:", txt); }
+};
+
+runAll();
+</script>
+</body>
+</html>
