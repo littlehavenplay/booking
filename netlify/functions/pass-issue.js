@@ -48,6 +48,10 @@ export default async (req) => {
 
     // reload-confirm — staff has already collected reloadPriceCents in Square in store.
     rec.visitsRemaining = visitsBefore + RELOAD_VISITS;
+    // Keep the pack total in step with the reload. Without this, a 5-visit card
+    // reloaded with 10 kept `visits: 5` while holding 15, so the booking page
+    // and the confirmation email read "9 of 5 visits left".
+    rec.visits = (rec.visits || 0) + RELOAD_VISITS;
     rec.active = true;
     rec.expiry = null;   // grandfathered reloads never expire, per studio policy
     rec.reloadCount = (rec.reloadCount || 0) + 1;
@@ -79,6 +83,9 @@ export default async (req) => {
   const tF = PASSES[tId] || {};
   const expF = passExpiryDate(nowF, tF.expiryMonths, rec.admission, rec.dobMonth, rec.dobYear);
   rec.visitsRemaining = setVisits;
+  // A correction can raise the remaining count above the original pack size;
+  // never let the total read lower than what is actually on the card.
+  rec.visits = Math.max(rec.visits || 0, setVisits);
   rec.active = true;
   rec.expiry = expF.toISOString().slice(0, 10);
   rec.reminderSentAt = null;

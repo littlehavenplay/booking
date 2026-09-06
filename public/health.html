@@ -344,6 +344,40 @@ async function runAll(){
     return { state:"pass", detail:"date, times and Pay button all wired" };
   });
 
+  // --- Codes: punch cards, gift cards, credit, discounts ---
+  await check("#gBook", "Every code type has a working Check button", async function(){
+    var f = await loadPage("/book.html", 1600);
+    var d = f.contentDocument;
+    var need = [
+      ['.gc-check[data-gc="1"]', "gift card"],
+      ['.pc-check',              "store credit"],
+      ['.dc-check',              "discount code"],
+      ['.vp-check[data-vp="1"]', "legacy punch card"]
+    ];
+    var missing = need.filter(function(n){ return !d.querySelector(n[0]); }).map(function(n){ return n[1]; });
+    if (missing.length) return { state:"fail", detail:"no working Check control for: " + missing.join(", "),
+                                 fix:"Codes typed in the single box will silently do nothing. Send me this report." };
+    return { state:"pass", detail:"gift card, store credit, discount and punch card all wired" };
+  });
+
+  await check("#gBook", "A bad code is rejected, not falsely accepted", async function(){
+    var f = await loadPage("/book.html", 1600);
+    var d = f.contentDocument, w = f.contentWindow;
+    var box = d.getElementById("anyCode"), btn = d.getElementById("anyCodeAdd"), msg = d.getElementById("anyCodeMsg");
+    if (!box || !btn || !msg) return { state:"fail", detail:"the single code box is missing from the page" };
+    box.value = "HEALTHCHECK0000";
+    btn.dispatchEvent(new w.Event("click", { bubbles:true }));
+    for (var i = 0; i < 50; i++){
+      await wait(200);
+      if (/\u2713|\u2717/.test(msg.textContent || "")) break;
+    }
+    var t = (msg.textContent || "").trim();
+    if (/\u2713/.test(t)) return { state:"fail", detail:'a deliberately invalid code was reported as accepted: "' + t.slice(0,70) + '"',
+                                   fix:"Customers are told a code worked when it didn't. Send me this report." };
+    if (/\u2717/.test(t)) return { state:"pass", detail:"invalid code correctly refused" };
+    return { state:"warn", detail:"no verdict after 10s — the code check may be slow" };
+  });
+
   // --- Payments ---
   await check("#gPay", "Square is connected", async function(){
     if (!CFG) return { state:"fail", detail:"skipped — settings service didn't answer" };

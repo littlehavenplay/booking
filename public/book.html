@@ -633,7 +633,11 @@ async function checkPass(n){
     if(r.ok){
       state.vp[idx]={code,admission:r.admission,visits:r.visitsRemaining,ok:true};
       const type=r.admission==="infant"?"Baby/Infant":"Regular";
-      el.className="gc-bal ok"; el.textContent=r.visits?(`${type} pass · ${r.visitsRemaining} of ${r.visits} visits left`):(`${type} pass · ${r.visitsRemaining} visit${r.visitsRemaining===1?"":"s"} left`);
+      // A grandfathered reload can leave more visits on the card than the pack it
+      // was originally sold as, so "9 of 5 visits left" was possible. Only show
+      // the "of N" form when N is actually the larger number.
+      const showOf = r.visits && r.visits >= r.visitsRemaining;
+      el.className="gc-bal ok"; el.textContent=showOf?(`${type} pass · ${r.visitsRemaining} of ${r.visits} visits left`):(`${type} pass · ${r.visitsRemaining} visit${r.visitsRemaining===1?"":"s"} left`);
     }else{
       el.className="gc-bal bad"; el.textContent=r.error||"Not valid.";
     }
@@ -1363,20 +1367,20 @@ async function checkDiscount(){
   const code=$("#dc1").value.trim().toUpperCase().replace(/\s+/g,"");
   const bal=$("#dc1bal");
   if(!code){ bal.textContent="Enter a code."; bal.style.color="var(--red)"; return; }
-  bal.textContent="Checking…"; bal.style.color="var(--ink-soft)";
+  bal.className="gc-bal"; bal.textContent="Checking…"; bal.style.color="var(--ink-soft)";
   try{
     const r=await (await fetch("/api/discount",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({action:"check",code})})).json();
     if(r.valid){
       state.disc={code:r.code,percent:r.percent,ok:true}; state.useDisc=true;
-      bal.textContent="✓ "+r.percent+"% off applied."; bal.style.color="var(--sage-dark)";
+      bal.className="gc-bal ok"; bal.textContent="✓ "+r.percent+"% off applied."; bal.style.color="var(--sage-dark)";
       $("#gcNo").click(); $("#vpNo").click(); $("#pcNo").click();   // clear other offers (can't combine)
       updateTotals();
     } else {
       state.disc={code:"",percent:0,ok:false};
-      bal.textContent="✗ "+(r.message||"That code can't be used."); bal.style.color="var(--red)";
+      bal.className="gc-bal bad"; bal.textContent="✗ "+(r.message||"That code can't be used."); bal.style.color="var(--red)";
       updateTotals();
     }
-  }catch(e){ bal.textContent="Couldn't check that code — try again."; bal.style.color="var(--red)"; }
+  }catch(e){ bal.className="gc-bal bad"; bal.textContent="Couldn't check that code — try again."; bal.style.color="var(--red)"; }
 }
 function lockOtherOffers(lock){
   // Gift cards & store credit are PAYMENT, not a promotion — they always combine
@@ -1716,27 +1720,104 @@ state.playClub = null;
     return {kind:"unknown", field:"dc1", label:"Discount code"};
   }
 
+  // ---- Legacy punch cards ------------------------------------------------
+  // classify() can only match codes by prefix, and legacy prepaid cards have no
+  // prefix at all -- they are whatever was printed on the physical card
+  // ("MS7014-2"). So they fell through to the `unknown` branch and were driven
+  // into the DISCOUNT field, where they are meaningless. The customer was told
+  // "Added as Discount code", nothing came off the total, and she was asked to
+  // pay for a visit she had already bought. Unknown codes are now asked about
+  // server-side before being assumed to be a discount.
+  //
+  // Note the code is NOT stripped of punctuation here. Punch cards are stored
+  // under exactly the code that was issued, hyphens included, so "MS7014-2"
+  // must stay "MS7014-2". Both forms are tried in case an older card was
+  // stored stripped.
+  async function findPass(raw){
+    var a=(raw||"").trim().toUpperCase();
+    var b=a.replace(/[^A-Z0-9]/g,"");
+    var tries = (a===b) ? [a] : [a,b];
+    for (var i=0;i<tries.length;i++){
+      try{
+        var r=await (await fetch("/api/pass-balance?code="+encodeURIComponent(tries[i]),{cache:"no-store"})).json();
+        if(r && r.ok) return { code:tries[i], info:r };
+      }catch(e){}
+    }
+    return null;
+  }
+
+  // Which punch-card slot to use: reuse the one already holding this code,
+  // otherwise the first empty one. Two cards max, same as the manual fields.
+  function passSlot(code){
+    var v1=el("vp1"), v2=el("vp2");
+    if(!v1) return null;
+    var c1=(v1.value||"").trim().toUpperCase();
+    if(!c1 || c1===code) return "1";
+    if(v2){ var c2=(v2.value||"").trim().toUpperCase(); if(!c2 || c2===code) return "2"; }
+    return null;
+  }
+
+  // Wait for the real answer instead of claiming success straight away.
+  // Every one of these fields reports through a .gc-bal element that gains
+  // `ok` or `bad` once its check comes back.
+  function watch(statusId, ms){
+    return new Promise(function(resolve){
+      var host=el(statusId);
+      if(!host) return resolve(null);
+      var t0=Date.now();
+      (function poll(){
+        if(host.classList.contains("ok"))  return resolve({ ok:true,  text:(host.textContent||"").trim() });
+        if(host.classList.contains("bad")) return resolve({ ok:false, text:(host.textContent||"").trim() });
+        if(Date.now()-t0 > (ms||9000)) return resolve(null);
+        setTimeout(poll,120);
+      })();
+    });
+  }
+
+  var STATUS = { gift:"gc1bal", credit:"pc1bal", unknown:"dc1bal", pass:"vp1bal" };
+
   // Reveal whichever section owns the field, then fire its existing check.
-  function drive(info, raw){
+  async function drive(info, raw){
     var target=el(info.field);
     if(!target){ say("We couldn't apply that code here — try the manual fields below.","err"); return; }
 
-    if(info.kind==="gift"){ var y=el("gcYes"); if(y) y.click(); }
-    if(info.field==="vp1"){ var v=el("vpYes"); if(v) v.click(); }
+    var opener = { gift:"gcYes", pass:"vpYes", credit:"pcYes", unknown:"dcYes" }[info.kind];
+    if(opener){ var o=el(opener); if(o) o.click(); }
 
-    target.value = (info.kind==="gift") ? raw : raw.toUpperCase().replace(/[^A-Z0-9]/g,"");
+    // Punch-card codes keep their punctuation; everything else is normalised.
+    target.value = (info.kind==="gift"||info.kind==="pass") ? raw : raw.toUpperCase().replace(/[^A-Z0-9]/g,"");
     target.dispatchEvent(new Event("input",{bubbles:true}));
     target.dispatchEvent(new Event("change",{bubbles:true}));
 
-    // Press the matching check button where one exists.
+    // Press the matching check button where one exists. The punch-card check is
+    // bound to its Check BUTTON, not to input events, so without this entry the
+    // card was never actually looked up even once it reached the right field.
     var btnSel = {
       gift:'.gc-check[data-gc="1"]',
-      credit:'#pcBtn', unknown:'#dcBtn'
+      credit:'.pc-check',
+      unknown:'.dc-check',
+      pass:'.vp-check[data-vp="'+(info.slot||"1")+'"]'
     }[info.kind];
     if(btnSel){ var b=document.querySelector(btnSel); if(b) b.click(); }
     if(info.kind==="reward" && typeof checkReward==="function"){ try{ checkReward(); }catch(e){} }
 
-    say("\u2713 Added as "+info.label+". Check your total below.","ok");
+    var statusId = STATUS[info.kind];
+    if(info.kind==="pass" && info.slot==="2") statusId="vp2bal";
+
+    if(statusId){
+      say("Checking\u2026","");
+      var res = await watch(statusId, 9000);
+      // The field's own message may already start with a tick/cross and end in
+      // a full stop; don't double them up.
+      var tidy = function(t){ return (t||"").replace(/^[\u2713\u2717]\s*/,"").replace(/[.\s]+$/,""); };
+      if(res && res.ok){       say("\u2713 "+info.label+" applied \u2014 "+tidy(res.text)+". Check your total below.","ok"); box.value=""; return; }
+      if(res && !res.ok){      say("\u2717 "+tidy(res.text)+" (entered as a "+info.label.toLowerCase()+")","err"); return; }
+      say("Still checking that code \u2014 see the "+info.label.toLowerCase()+" section below.","");
+      return;
+    }
+
+    // Reward / referral / membership report in their own sections.
+    say("Sent to the "+info.label.toLowerCase()+" field below \u2014 check the result there.","");
     box.value="";
   }
 
@@ -1745,14 +1826,41 @@ state.playClub = null;
     msg.style.color = cls==="err" ? "var(--red)" : (cls==="ok" ? "#3f7d54" : "");
   }
 
-  function apply(){
+  var busy=false;
+  async function apply(){
+    if(busy) return;
     var raw=(box.value||"").trim();
     if(!raw){ say("Type a code first.","err"); return; }
-    var info=classify(raw);
-    if(info.kind==="unknown"){
-      say("Applying \u2014 if it isn't a discount code, open the manual fields and try there.","");
+    busy=true;
+    if(btn) btn.disabled=true;
+    try{
+      var info=classify(raw);
+
+      // No prefix matched. Before assuming "discount", ask whether it is a
+      // prepaid punch card -- that is a code the customer has already paid for.
+      if(info.kind==="unknown"){
+        say("Checking\u2026","");
+        var found=await findPass(raw);
+        if(found){
+          var slot=passSlot(found.code);
+          if(!slot){ say("Both punch-card slots are already in use. Remove one below to add another.","err"); return; }
+          // If this code was previously mis-filed as a discount, clear it out --
+          // a punch card and a discount code can't be combined at checkout.
+          var dc=el("dc1");
+          if(dc && (dc.value||"").trim().toUpperCase()===found.code.replace(/[^A-Z0-9]/g,"")){
+            dc.value=""; dc.dispatchEvent(new Event("input",{bubbles:true}));
+            var db=document.querySelector(".dc-check"); if(db) db.click();
+          }
+          await drive({ kind:"pass", field:"vp"+slot, label:"Legacy punch card", slot:slot }, found.code);
+          return;
+        }
+      }
+
+      await drive(info, raw);
+    } finally {
+      busy=false;
+      if(btn) btn.disabled=false;
     }
-    drive(info, raw);
   }
 
   btn.onclick=apply;

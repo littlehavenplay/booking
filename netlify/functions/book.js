@@ -1099,7 +1099,7 @@ async function sendConfirmation({ email, name, date, slotLabel, regular, sibling
 
   // Punch card rows (visits remaining after this booking)
   const passLines = passesUsed.map(p =>
-    `<tr><td style="padding:2px 0;color:#5c6470">Prepaid pass ${p.code} used (1 visit)</td><td style="padding:2px 0;text-align:right;font-weight:bold">${p.total ? `${p.visitsRemaining} of ${p.total} left` : `${p.visitsRemaining} left`}</td></tr>`
+    `<tr><td style="padding:2px 0;color:#5c6470">Prepaid pass ${p.code} used (1 visit)</td><td style="padding:2px 0;text-align:right;font-weight:bold">${(p.total && p.total >= p.visitsRemaining) ? `${p.visitsRemaining} of ${p.total} left` : `${p.visitsRemaining} left`}</td></tr>`
   ).join("");
 
   // Combined punch-card section — folds the old separate "welcome" email into this one.
