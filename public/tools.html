@@ -2992,7 +2992,13 @@ if($("#wsSave")) $("#wsSave").onclick=async function(){
 
 
 /* ---- merged in from the old staff page ---- */
-function money(c){return "$"+(c/100).toFixed(2);}
+/* money() is ALREADY defined near the top of this page as `const money`.
+   Re-declaring it here as a function threw
+     SyntaxError: Identifier 'money' has already been declared
+   at parse time, which killed this ENTIRE <script> block -- taking out the
+   punch-card ledger, the newsletter loader, the day loader, tool search and
+   focus, and the results renderer. Both definitions were identical, so this
+   one is simply removed and the one above is used. Do not re-add it. */
 
 async function loadDay(silent){
   const date=$("#date").value; if(!date) return false;

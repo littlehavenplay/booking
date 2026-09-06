@@ -532,7 +532,14 @@ function tomorrowStr(){const d=new Date();d.setMinutes(d.getMinutes()-d.getTimez
 async function init(){
   $("#date").value=todayStr(); state.date=$("#date").value;
   try{
-    CFG=await (await fetch("/api/config")).json();
+    // Timeout guard: without it a hung /api/config leaves the whole page
+    // unwired -- no date handler, no Pay button -- with no error shown.
+    const _c=("AbortController" in window)?new AbortController():null;
+    const _t=setTimeout(()=>{try{_c&&_c.abort();}catch(e){}},8000);
+    const _r=await fetch("/api/config",_c?{signal:_c.signal}:undefined);
+    clearTimeout(_t);
+    if(!_r.ok) throw new Error("HTTP "+_r.status);
+    CFG=await _r.json();
   }catch(e){ CFG={configured:false,capacity:6,prices:{regular:2500,sibling:2100,infant:1900},
     studioName:"Little Haven Play Studio",
     closedDates:[],closedMessage:"Temporarily closed for improvements",
@@ -551,14 +558,21 @@ async function init(){
   const _mx=new Date(); _mx.setMinutes(_mx.getMinutes()-_mx.getTimezoneOffset()); _mx.setDate(_mx.getDate()+_win);
   $("#date").max=_mx.toISOString().slice(0,10);   // open play only up to the window
 
-  if(CFG.studioName) $("#studio").textContent=CFG.studioName;
-  $("#capTxt").textContent=CFG.capacity;
-  $("#regPr").textContent=money(CFG.prices.regular)+" each";
-  $("#sibPr").textContent=money(CFG.prices.sibling)+" each";
-  $("#infPr").textContent=money(CFG.prices.infant)+" each";
+  // Display only. Isolated on purpose: a malformed (but 200 OK) config used to
+  // throw on CFG.prices here, which silently stopped every event handler below
+  // this point from ever being attached. Cosmetics must never block booking.
+  CFG=CFG||{};
+  if(!CFG.prices||typeof CFG.prices!=="object") CFG.prices={regular:2500,sibling:2100,infant:1900};
+  try{
+  if(CFG.studioName) { const _s=$("#studio"); if(_s) _s.textContent=CFG.studioName; }
+  { const _c=$("#capTxt"); if(_c) _c.textContent=CFG.capacity; }
+  { const _r=$("#regPr"); if(_r) _r.textContent=money(CFG.prices.regular)+" each"; }
+  { const _b=$("#sibPr"); if(_b) _b.textContent=money(CFG.prices.sibling)+" each"; }
+  { const _i=$("#infPr"); if(_i) _i.textContent=money(CFG.prices.infant)+" each"; }
   try{ var _ad=$("#adPr"); if(_ad) _ad.textContent=money(CFG.additionalAdult||500)+" each extra adult beyond "+(CFG.adultsIncludedPerChild||2)+" per Regular/Baby admission"; }catch(e){}
   renderPolicy();
-  if(!CFG.configured) $("#setupBanner").classList.remove("hidden");
+  if(!CFG.configured) { const _sb=$("#setupBanner"); if(_sb) _sb.classList.remove("hidden"); }
+  }catch(e){ console.warn("config display:",e); }
 
   try { wireSteppers(); } catch(e){ console.warn("wireSteppers:", e); }
   $("#date").onchange=()=>{state.date=$("#date").value;state.slot="";loadAvailability();

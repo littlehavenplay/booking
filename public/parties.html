@@ -159,45 +159,148 @@ const POLICY=[
 
 function money(c){return "$"+(c/100).toFixed(2);}
 
+/* ---------------------------------------------------------------------------
+   ORDER MATTERS. Everything a customer needs in order to actually book — the
+   date handler, the package tiles, the field listeners — is wired FIRST and
+   each step is isolated. Previously this block began with an unguarded write
+   to #policyBox; that element was removed from the markup when the policy card
+   was replaced with a summary + link, so the very first line threw and NOTHING
+   below it ever ran. The date picker had no change handler, the package tiles
+   never rendered, and picking a date silently did nothing. One missing element
+   must never be able to take the booking flow down again.
+--------------------------------------------------------------------------- */
+const PKG_FALLBACK=[{id:"sweet",label:"Sweet Party",deposit:10000},{id:"haven",label:"Haven Party",deposit:15000},{id:"dream",label:"Dream Party",deposit:20000}];
+
+function renderPackages(pk){
+  const host=$("#pkg"); if(!host) return;
+  host.innerHTML=(pk&&pk.length?pk:PKG_FALLBACK).map(p=>`<div class="opt" data-pkg="${p.id}"><div class="pl">${p.label}</div><div class="pd">${money(p.deposit)} deposit</div></div>`).join("");
+  host.querySelectorAll(".opt").forEach(o=>{
+    o.onclick=()=>{
+      state.pkg=o.dataset.pkg;
+      host.querySelectorAll(".opt").forEach(x=>x.classList.remove("sel"));
+      o.classList.add("sel");
+      const nd=document.getElementById("pkgNudge");
+      if(nd){
+        if(state.pkg==="sweet"){ nd.style.display=""; nd.innerHTML="\u2728 Adding extra guests? The <b>Haven Party</b> may be a better value \u2014 it includes 3 more kids, 2 large pizzas, an ice chest, bubble time, and extra d\u00e9cor for just $120 more."; }
+        else { nd.style.display="none"; }
+      }
+      check();
+    };
+  });
+  // Keep a selection alive across a re-render (config arriving after fallback).
+  if(state.pkg){ const sel=host.querySelector('.opt[data-pkg="'+state.pkg+'"]'); if(sel) sel.classList.add("sel"); else state.pkg=""; }
+  check();
+}
+
+function bindDate(){
+  const el=$("#date"); if(!el||el.__lhBound) return; el.__lhBound=true;
+  // Listen to BOTH: some mobile date pickers commit via input, not change.
+  // loadSlots de-duplicates, so double-firing is harmless.
+  el.addEventListener("change",loadSlots);
+  el.addEventListener("input",loadSlots);
+}
+
+// A hung /api/config must never stall the wiring below it.
+function fetchJSON(url,ms){
+  const ctl=("AbortController" in window)?new AbortController():null;
+  const t=setTimeout(()=>{ try{ ctl&&ctl.abort(); }catch(e){} },ms||8000);
+  return fetch(url,ctl?{signal:ctl.signal}:undefined)
+    .then(r=>{ if(!r.ok) throw new Error("HTTP "+r.status); return r.json(); })
+    .finally(()=>clearTimeout(t));
+}
+
 (async function init(){
-  $("#policyBox").innerHTML=POLICY.filter(p=>p[1]).map(p=>`<div style="margin-bottom:8px"><b>${p[0]}</b><br><span style="font-size:.84rem;color:var(--slate)">${p[1]}</span></div>`).join("");
-  try{ CFG=await (await fetch("/api/config")).json(); }catch(e){ CFG={}; }
-  // packages
-  const pk=(CFG.partyPackages||[{id:"sweet",label:"Sweet Party",deposit:10000},{id:"haven",label:"Haven Party",deposit:15000},{id:"dream",label:"Dream Party",deposit:20000}]);
-  $("#pkg").innerHTML=pk.map(p=>`<div class="opt" data-pkg="${p.id}"><div class="pl">${p.label}</div><div class="pd">${money(p.deposit)} deposit</div></div>`).join("");
-  document.querySelectorAll(".opt").forEach(o=>o.onclick=()=>{state.pkg=o.dataset.pkg;document.querySelectorAll(".opt").forEach(x=>x.classList.remove("sel"));o.classList.add("sel");var nd=document.getElementById("pkgNudge");if(nd){if(state.pkg==="sweet"){nd.style.display="";nd.innerHTML="\u2728 Adding extra guests? The <b>Haven Party</b> may be a better value \u2014 it includes 3 more kids, 2 large pizzas, an ice chest, bubble time, and extra d\u00e9cor for just $120 more.";}else{nd.style.display="none";}}check();});
-  // min date = today + party min days
-  const min=new Date(); min.setMinutes(min.getMinutes()-min.getTimezoneOffset()); min.setDate(min.getDate()+(CFG.partyMinDays||14));
-  $("#date").min=min.toISOString().slice(0,10);
-  $("#date").onchange=loadSlots;
-  ["childName","name","phone","email","agree"].forEach(id=>{ const el=$("#"+id); el.addEventListener(el.type==="checkbox"?"change":"input",check); });
+  // 1. Bookable immediately, with built-in defaults. Nothing here can throw.
+  try{ bindDate(); }catch(e){ console.warn("bindDate",e); }
+  try{ renderPackages(PKG_FALLBACK); }catch(e){ console.warn("packages",e); }
+  try{
+    ["childName","name","phone","email","agree"].forEach(id=>{
+      const el=$("#"+id); if(!el) return;
+      el.addEventListener(el.type==="checkbox"?"change":"input",check);
+    });
+  }catch(e){ console.warn("fields",e); }
+  try{
+    const min=new Date(); min.setMinutes(min.getMinutes()-min.getTimezoneOffset()); min.setDate(min.getDate()+14);
+    if($("#date")) $("#date").min=min.toISOString().slice(0,10);
+  }catch(e){ console.warn("mindate",e); }
+
+  // 2. Cosmetic. Optional element — guarded, and last in line either way.
+  try{
+    const pb=$("#policyBox");
+    if(pb) pb.innerHTML=POLICY.filter(p=>p[1]).map(p=>`<div style="margin-bottom:8px"><b>${p[0]}</b><br><span style="font-size:.84rem;color:var(--slate)">${p[1]}</span></div>`).join("");
+  }catch(e){ console.warn("policyBox",e); }
+
+  // 3. Live config refines what is already on screen. Failure changes nothing.
+  try{ CFG=await fetchJSON("/api/config",8000); }catch(e){ CFG={}; console.warn("config",e); }
+  try{ if(CFG && CFG.partyPackages && CFG.partyPackages.length) renderPackages(CFG.partyPackages); }catch(e){ console.warn("packages2",e); }
+  try{
+    const min=new Date(); min.setMinutes(min.getMinutes()-min.getTimezoneOffset()); min.setDate(min.getDate()+((CFG&&CFG.partyMinDays)||14));
+    if($("#date")) $("#date").min=min.toISOString().slice(0,10);
+  }catch(e){ console.warn("mindate2",e); }
+
+  // 4. Browser restored a date (back button / autofill) before we were wired.
+  try{ bindDate(); if($("#date") && $("#date").value) loadSlots(); }catch(e){ console.warn("rehydrate",e); }
 })();
 
-async function loadSlots(){
-  state.date=$("#date").value; state.slot=""; const host=$("#slots");
-  if(!state.date){ host.innerHTML='<div class="note">Pick a date to see available party times.</div>'; check(); return; }
-  host.innerHTML='<div class="note">Loading…</div>';
+let _slotSeq=0, _slotLast=null;
+
+async function loadSlots(force){
+  const el=$("#date"), host=$("#slots");
+  if(!host) return;
+  const date=el?el.value:"";
+  // Both `input` and `change` can fire for one pick. Ignore the repeat.
+  if(!force && date===_slotLast) return;
+  _slotLast=date;
+  state.date=date; state.slot="";
+  if(!date){ host.innerHTML='<div class="note">Pick a date to see available party times.</div>'; check(); return; }
+  host.innerHTML='<div class="note">Loading\u2026</div>';
+
+  const seq=++_slotSeq;
   let d;
   try{
-    const res=await fetch("/api/party-availability?date="+encodeURIComponent(state.date));
+    const res=await fetch("/api/party-availability?date="+encodeURIComponent(date),{cache:"no-store"});
+    if(!res.ok) throw new Error("HTTP "+res.status);
     d=await res.json();
   }catch(e){
-    host.innerHTML='<div class="msg err" style="display:block">We couldn\u2019t load party times right now. Please refresh the page and try again, or email hello@littlehavenplay.com.</div>';
+    if(seq!==_slotSeq) return;               // a newer pick already took over
+    slotError(host,"We couldn\u2019t load party times right now.");
     return;
   }
-  if(d && d.error){ host.innerHTML='<div class="msg err" style="display:block">'+d.error+'</div>'; check(); return; }
-  if(!d.partyDay){ host.innerHTML='<div class="msg err" style="display:block">Parties are available Friday, Saturday & Sunday only.</div>'; check(); return; }
+  if(seq!==_slotSeq) return;
+
+  if(d && d.error){ slotError(host,d.error); check(); return; }
+  if(!d || !Array.isArray(d.slots)){ slotError(host,"We couldn\u2019t load party times right now."); return; }
+  if(!d.partyDay){ host.innerHTML='<div class="msg err" style="display:block">Parties are available Friday, Saturday &amp; Sunday only.</div>'; check(); return; }
   if(d.tooSoon){ host.innerHTML='<div class="msg err" style="display:block">Please choose a date at least 2 weeks away.</div>'; check(); return; }
-  if(d.partiesOff){ host.innerHTML='<div class="msg" style="display:block;background:#eef5ee;color:#2f6a4a;border:1px solid #cfe5d3;line-height:1.5">✨ <b>Open play session only on this day!</b><br>We\u2019re not hosting private parties on this date \u2014 but we\u2019d love for you to come join us for an <a href="/book.html" style="color:#2f6a4a;text-decoration:underline;font-weight:800">open play session</a> instead! And if it\u2019s your little one\u2019s birthday, ask us about a birthday admission. 🎂🎈</div>'; check(); return; }
+  if(d.partiesOff){ host.innerHTML='<div class="msg" style="display:block;background:#eef5ee;color:#2f6a4a;border:1px solid #cfe5d3;line-height:1.5">\u2728 <b>Open play session only on this day!</b><br>We\u2019re not hosting private parties on this date \u2014 but we\u2019d love for you to come join us for an <a href="/book.html" style="color:#2f6a4a;text-decoration:underline;font-weight:800">open play session</a> instead! And if it\u2019s your little one\u2019s birthday, ask us about a birthday admission. \ud83c\udf82\ud83c\udf88</div>'; check(); return; }
+
   host.innerHTML="";
+  let anyOpen=false;
   d.slots.forEach(s=>{
-    const el=document.createElement("div");
-    el.className="slot"+(s.available?"":" taken");
-    el.innerHTML=`<span class="t">${s.label}</span><span class="tag" style="background:${s.available?'#e4f0e7':'#f1dbd4'};color:${s.available?'#3f7d5c':'#b8524a'}">${s.available?'Available':'Booked'}</span>`;
-    if(s.available) el.onclick=()=>{ state.slot=s.id; document.querySelectorAll(".slot").forEach(x=>x.classList.remove("sel")); el.classList.add("sel"); check(); };
-    host.appendChild(el);
+    if(s.available) anyOpen=true;
+    const el2=document.createElement("div");
+    el2.className="slot"+(s.available?"":" taken");
+    el2.innerHTML='<span class="t">'+s.label+'</span><span class="tag" style="background:'+(s.available?'#e4f0e7':'#f1dbd4')+';color:'+(s.available?'#3f7d5c':'#b8524a')+'">'+(s.available?'Available':'Booked')+'</span>';
+    if(s.available) el2.onclick=()=>{ state.slot=s.id; host.querySelectorAll(".slot").forEach(x=>x.classList.remove("sel")); el2.classList.add("sel"); check(); };
+    host.appendChild(el2);
   });
+  if(!anyOpen){
+    const n=document.createElement("div");
+    n.className="note";
+    n.innerHTML='Every party time on this date is booked. Try another Friday, Saturday or Sunday \u2014 or email <a href="mailto:hello@littlehavenplay.com" style="color:var(--rose-deep);font-weight:800">hello@littlehavenplay.com</a> and we\u2019ll see what we can do.';
+    host.appendChild(n);
+  }
   check();
+}
+
+// Never leave a customer at a dead end: always offer a retry and a way to reach us.
+function slotError(host,text){
+  host.innerHTML='<div class="msg err" style="display:block">'+text+'</div>'+
+    '<button type="button" id="slotRetry" style="width:auto;margin-top:10px;border:none;border-radius:40px;padding:10px 18px;font-family:\'Nunito\';font-weight:800;font-size:.75rem;letter-spacing:.06em;text-transform:uppercase;color:#fff;background:var(--rose);cursor:pointer">Try again</button>'+
+    '<div class="note">Still stuck? Email <a href="mailto:hello@littlehavenplay.com" style="color:var(--rose-deep);font-weight:800">hello@littlehavenplay.com</a> and we\u2019ll book you in by hand.</div>';
+  const b=document.getElementById("slotRetry");
+  if(b) b.onclick=()=>loadSlots(true);
+  state.slot=""; check();
 }
 
 function check(){
@@ -228,7 +331,7 @@ $("#pay").onclick=async()=>{
     } else {
       m.className="msg err"; m.textContent=r.message||r.error||"Couldn't save. Please try again.";
       $("#pay").disabled=false; $("#pay").textContent="Continue to deposit";
-      if(r.error==="taken") loadSlots();
+      if(r.error==="taken") loadSlots(true);   // force: same date, must re-check
     }
   }catch(e){ m.className="msg err"; m.textContent="Network error. Please try again."; $("#pay").disabled=false; $("#pay").textContent="Continue to deposit"; }
 };

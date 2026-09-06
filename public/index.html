@@ -548,8 +548,14 @@ nav, .wbar, .ticker, footer{text-align:left}
 <div class="fc">© 2026 Little Haven Play Studio · littlehavenplay.com</div>
 </footer>
 <script>
-const ob=new IntersectionObserver((e)=>{e.forEach((el,i)=>{if(el.isIntersecting){setTimeout(()=>el.target.classList.add('visible'),i*70);ob.unobserve(el.target);}});},{threshold:.08});
-document.querySelectorAll('.reveal').forEach(el=>ob.observe(el));
+if(typeof IntersectionObserver==="function"){
+  const ob=new IntersectionObserver((e)=>{e.forEach((el,i)=>{if(el.isIntersecting){setTimeout(()=>el.target.classList.add('visible'),i*70);ob.unobserve(el.target);}});},{threshold:.08});
+  document.querySelectorAll('.reveal').forEach(el=>ob.observe(el));
+} else {
+  // Older browser: skip the fade-in and just show everything, rather than
+  // throwing and leaving sections invisible.
+  document.querySelectorAll('.reveal').forEach(el=>el.classList.add('visible'));
+}
 </script>
 <script>
 (async function(){try{const n=await (await fetch("/api/news")).json();
