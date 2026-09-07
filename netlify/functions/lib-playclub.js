@@ -30,6 +30,29 @@ export function memberCoversDate(m, dateStr) {
   return true;
 }
 
+// Which admission tier a plan actually pays for.
+//
+// A "Weekday Play Club - Baby/Infant" is priced against a $19 baby admission,
+// not a $25 regular one, so it must not hand out $25 of cover. Before this
+// existed, every plan credited the REGULAR price whatever tier it was sold at,
+// and a Baby/Infant member booking a regular admission was covered in full.
+//
+// Resolution order: an explicit planTier saved on the membership or its plan
+// wins; otherwise it is read from the plan name, which is where the tier has
+// always been written ("... - Baby/Infant"). Anything unrecognised stays
+// "regular", which is what every plan did before, so nothing changes for plans
+// that don't name a tier.
+export function coverAdmissionFor(m, plan) {
+  const explicit = String((m && m.planTier) || (plan && plan.tier) || "").toLowerCase();
+  if (explicit === "infant" || explicit === "sibling" || explicit === "regular") return explicit;
+  const text = [
+    m && m.planName, plan && plan.name, plan && plan.category,
+  ].filter(Boolean).join(" ").toLowerCase();
+  if (/\b(baby|infant)\b/.test(text)) return "infant";
+  if (/\bsibling\b/.test(text))       return "sibling";
+  return "regular";
+}
+
 // Matched on the membership code when given, otherwise on the phone they book
 // with — most members won't remember a code and shouldn't have to.
 export async function findMemberFor({ code, phone } = {}) {

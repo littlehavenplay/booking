@@ -796,7 +796,7 @@ function wireSteppers(){
     dec.onclick=()=>{
       // Never let the stepper drop Regular below the children a membership is
       // already covering — those seats are taken whether or not they were paid for.
-      const covered=(k==="reg"&&state.playClub)?(state.playClub.coveredReg||0):0;
+      const covered=(state.playClub && state.playClub.coverKey===k)?(state.playClub.coveredN||0):0;
       const min=(k==="ad")?1:covered;
       state[k]=Math.max(min,state[k]-1);num.textContent=state[k];syncSibling();updateTotals();};
     inc.onclick=()=>{
@@ -988,7 +988,7 @@ function updateTotals(){
   // — the saving is shown as the Play Club line instead. Verified status is still
   // surfaced as a badge, and the discount still applies to any EXTRA child on the
   // same booking who is being paid for.
-  var pcCoverN = state.playClub ? Math.min(state.playClub.coveredReg||0, state.playClub.maxChildren||0) : 0;
+  var pcCoverN = state.playClub ? Math.min(state.playClub.coveredN||0, state.playClub.maxChildren||0) : 0;
   if(state.playClub && state.playClub.coversDate===false) pcCoverN = 0;
   var pcCodes = {};
   if(pcCoverN>0 && state.playClub && state.playClub.selected){
@@ -1039,8 +1039,13 @@ function updateTotals(){
   if($("#gsRow")){ if(gsAmt>0){ $("#gsRow").style.display="flex"; $("#gsAmtTxt").textContent="+"+money(gsAmt); } else { $("#gsRow").style.display="none"; } }
   if($("#refRow")){ if(refAmt>0){ $("#refRow").style.display="flex"; $("#refAmtTxt").textContent="\u2212"+money(refAmt); } else { $("#refRow").style.display="none"; } }
   if($("#wdRow")){ if(wdAmt>0){ $("#wdRow").style.display="flex"; $("#wdLabel").textContent="\uD83D\uDDD3\uFE0F "+wdLabel; $("#wdAmtTxt").textContent="\u2212"+money(wdAmt); } else { $("#wdRow").style.display="none"; } }
+  // Credit the tier the plan was sold at. This used to always use the regular
+  // price, so a Baby/Infant plan took $25 off a $25 admission instead of $19 —
+  // and the server agreed with it, so the studio simply lost the difference.
+  const pcTier = (state.playClub && state.playClub.coverAdmission) || "regular";
+  const pcUnit = (CFG.prices && CFG.prices[pcTier]) || (CFG.prices && CFG.prices.regular) || 0;
   const pcAmt = pcCoveredN > 0
-    ? Math.min(pcCoveredN * (CFG.prices.regular||0),
+    ? Math.min(pcCoveredN * pcUnit,
                Math.max(0, subtotal - discAmt - wdAmt - milAmt - rewardAmt - refAmt))
     : 0;
   // Show the membership as a saving rather than silently zeroing the total, so
@@ -1079,7 +1084,7 @@ function updateTotals(){
   const agreed=$("#agree").checked;
   let ok=true, note="";
   if(state.closed){ ok=false; note=CFG.closedMessage||"Temporarily closed"; }
-  else if(!state.slot){ ok=false; note="Choose an arrival time above."; }
+  else if(!state.slot){ ok=false; note="Choose an arrival time to continue \u2192 tap here to jump to it."; }
   else if(kids<1){ ok=false; note="Add at least one child."; }
   else if(state.sib>0 && state.reg<1){ ok=false; note="Sibling add-on requires at least one regular admission."; }
   else if(a && kids>a.remaining){ ok=false; note=`Only ${a.remaining} spot${a.remaining===1?"":"s"} left at that time.`; }
@@ -1089,6 +1094,19 @@ function updateTotals(){
   else if(!agreed){ ok=false; note="Please agree to the policy to continue."; }
   $("#leftNote").textContent=note;
   $("#leftNote").style.color = ok ? "var(--ink-soft)" : "var(--red)";
+  // On a phone the totals card stacks ABOVE the date and arrival-time steps, so
+  // "choose an arrival time above" pointed people the wrong way up the page.
+  // Make the note itself the way there.
+  (function(){
+    var ln=$("#leftNote"); if(!ln) return;
+    var jump = !ok && !state.slot && !state.closed;
+    ln.style.cursor = jump ? "pointer" : "";
+    ln.style.textDecoration = jump ? "underline" : "";
+    ln.onclick = jump ? function(){
+      var t=document.getElementById("slots")||document.getElementById("date");
+      if(t && t.scrollIntoView) t.scrollIntoView({behavior:"smooth",block:"center"});
+    } : null;
+  })();
   // Card only required when there's a remaining balance to charge.
   state.cardDue=cardDue;
   if(window.__lhWallets){
@@ -1206,7 +1224,7 @@ function checkoutFormValid(){
 
   if(state.closed){ showMsg(CFG.closedMessage||"Temporarily closed","err"); return false; }
   if(!state.date){ flagField("#date","Pick a date to get started."); return false; }
-  if(!state.slot){ flagField("#slots","Choose an arrival time above."); return false; }
+  if(!state.slot){ flagField("#slots","Choose an arrival time to continue."); return false; }
   if(kids<1){ flagField("#regPr","Add at least one child."); return false; }
   if(state.sib>0 && state.reg<1){ flagField("#regPr","A sibling add-on needs at least one regular admission."); return false; }
   if(a && kids>a.remaining){ flagField("#slots",`Only ${a.remaining} spot${a.remaining===1?"":"s"} left at that time.`); return false; }
@@ -1529,6 +1547,13 @@ state.playClub = null;
   if(!input) return;
 
   function clearMember(){
+    // Give back whatever the membership was holding, or removing the code would
+    // leave paid-for admissions in the cart that nobody added.
+    try{
+      if(state.playClub && state.playClub.coverKey){
+        state[state.playClub.coverKey]=Math.max(0,(state[state.playClub.coverKey]||0)-(state.playClub.coveredN||0));
+      }
+    }catch(e){}
     state.playClub=null;
     kidsWrap.style.display="none";
     kidList.innerHTML="";
@@ -1571,12 +1596,20 @@ state.playClub = null;
     state.playClub.selected=chosen.map(function(b){
       return { code:b.getAttribute("data-code")||"", name:b.getAttribute("data-name")||"" };
     });
-    // Covered children are Regular admissions for capacity — the room fills up
-    // the same whether or not anyone paid today. Anything the family added on
-    // top of the covered count is preserved rather than wiped.
-    var extraReg=Math.max(0,(state.reg||0)-(state.playClub.coveredReg||0));
-    state.playClub.coveredReg=chosen.length;
-    state.reg=chosen.length+extraReg;
+    // Covered children are booked as the admission the PLAN pays for, so a
+    // Baby/Infant member's covered child is a $19 baby admission -- not the $25
+    // regular one it used to be forced into. Anything the family added on top
+    // is preserved rather than wiped, and extras keep their own tier and price
+    // (an older sibling added alongside still costs the regular rate).
+    var tier=state.playClub.coverAdmission||"regular";
+    var key = tier==="infant" ? "inf" : tier==="sibling" ? "sib" : "reg";
+    // Take the previous coverage back out of whichever bucket held it first,
+    // so re-ticking or switching plans can't leave a phantom admission behind.
+    var prev=state.playClub.coverKey;
+    if(prev) state[prev]=Math.max(0,(state[prev]||0)-(state.playClub.coveredN||0));
+    state.playClub.coverKey=key;
+    state.playClub.coveredN=chosen.length;
+    state[key]=(state[key]||0)+chosen.length;
     syncStepperNums();
     try{ if(typeof renderChildNames==="function") renderChildNames(); }catch(e){}
     try{ syncMemberChildRows(); }catch(e){}
@@ -1636,8 +1669,13 @@ state.playClub = null;
           : "We couldn't find a Play Club membership for that. Check the code, or leave this blank and book normally.";
         return;
       }
+      // coverAdmission is the tier the plan was SOLD at ("regular" | "sibling" |
+      // "infant"). A Baby/Infant plan credits the $19 baby admission, not the
+      // $25 regular one, and its covered children are booked as baby admissions.
+      var tier = r.coverAdmission==="infant" || r.coverAdmission==="sibling" ? r.coverAdmission : "regular";
       state.playClub={ code:r.code, planName:r.planName, planKind:r.planKind||"anyday",
-        maxChildren:r.maxChildren, children:r.children||[], selected:[], coveredReg:0,
+        coverAdmission:tier, coverKey:null,
+        maxChildren:r.maxChildren, children:r.children||[], selected:[], coveredN:0,
         coversDate:r.coversDate!==false };
 
       // Prefill the booker's details from the membership so a member isn't
@@ -1646,9 +1684,18 @@ state.playClub = null;
       // their own details in and they won't be overwritten.
       try{
         var c=r.contact||{};
-        var nEl=el("name"), eEl=el("email");
+        var nEl=el("name"), eEl=el("email"), pEl=el("phone");
         if(nEl && !nEl.value.trim() && c.name)  nEl.value=c.name;
         if(eEl && !eEl.value.trim() && c.email) eEl.value=c.email;
+        // If they looked the membership up BY phone, that is their phone --
+        // asking them to type the same ten digits again two fields later is
+        // just a second chance to get it wrong. Only fills an empty field, so
+        // whoever is actually bringing the children can still use their own.
+        if(pEl && !pEl.value.trim() && digits.length>=10){
+          pEl.value=raw;
+          pEl.dispatchEvent(new Event("input",{bubbles:true}));
+          pEl.dispatchEvent(new Event("change",{bubbles:true}));
+        }
       }catch(e){}
 
       msg.style.color="#3f7d54";

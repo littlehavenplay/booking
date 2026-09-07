@@ -27,7 +27,7 @@ import { getActiveFamCode, logFamUse } from "./famcode.js";
 // global; only actually CALLING the code catches it. There is now a booking
 // smoke test (test-booking-smoke.mjs) that posts a real booking through this
 // handler, including a member booking, so this class of fault cannot ship again.
-import { findMemberFor, recordMemberVisit, memberCoversDate } from "./lib-playclub.js";
+import { findMemberFor, recordMemberVisit, memberCoversDate, coverAdmissionFor } from "./lib-playclub.js";
 import { FRIEND_DISCOUNT_CENTS, findFamilyByCode, familyStatus, normalizeRef, last4 as refLast4 } from "./lib-referral.js";
 import { loadSeasonal, loadWeekly } from "./lib-hours.js";
 import { getClosure, slotBlockedByClosure, getEventHold } from "./lib-closures.js";
@@ -451,8 +451,17 @@ export default async (req) => {
       pool.sort((a, b) => b.price - a.price);
       const coveredSlots = pool.slice(0, cap);
 
+      // A membership credits the price of the admission tier it was SOLD at,
+      // not whatever the family happens to book. A Baby/Infant plan is priced
+      // against the $19 baby admission, so covering a $25 regular admission in
+      // full was giving away $6 a visit -- and disagreeing with nothing, because
+      // the booking page was doing the same thing. The cover is now capped at
+      // the plan's own tier price and the family pays any difference.
+      const coverTier  = coverAdmissionFor(found, null);
+      const coverPrice = PRICES[coverTier] || PRICES.regular;
+
       for (const s of coveredSlots) {
-        memberAmount += s.price;
+        memberAmount += Math.min(s.price, coverPrice);
         memberCoveredCount++;
         if (s.child) {
           // Covered admissions earn no punch — same rule as the family code.

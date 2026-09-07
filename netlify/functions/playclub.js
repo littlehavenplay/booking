@@ -19,7 +19,7 @@
 // on an external host.
 import { getStore } from "@netlify/blobs";
 import { listAllKeys } from "./lib-blobs.js";
-import { isWeekend, memberCoversDate } from "./lib-playclub.js";
+import { isWeekend, memberCoversDate, coverAdmissionFor } from "./lib-playclub.js";
 import { resendEmail } from "./lib-email.js";
 
 const STORE = "site";
@@ -312,6 +312,9 @@ export default async (req) => {
       member: true, code: m.code, name: m.name || "",
       planName: (plan && plan.name) || m.planName || "Play Club",
       planKind: m.planKind || "anyday",
+      // Which admission the plan is priced against. The booking page credits
+      // THIS tier's price, so a Baby/Infant plan can't hand out regular cover.
+      coverAdmission: coverAdmissionFor(m, plan),
       maxChildren: m.maxChildren || (m.children || []).length || 1,
       children: (m.children || []).map(c => ({ code: c.code || "", name: c.name || "" })),
       // Prefills the booker's details so a member isn't retyping what we already
@@ -446,6 +449,12 @@ export default async (req) => {
       planId: (m.planId || "").toString(),
       planName: (m.planName || (chosenPlan && chosenPlan.name) || "").toString().slice(0, 80),
       planKind,
+      // Stored explicitly so an oddly-named plan can be corrected without
+      // renaming it; blank means "work it out from the name".
+      planTier: (() => {
+        const t = String(m.planTier || "").toLowerCase();
+        return (t === "infant" || t === "sibling" || t === "regular") ? t : "";
+      })(),
       custom: !!m.custom || !m.planId,
       children: kids,
       maxChildren: Math.max(1, Math.min(10, parseInt(m.maxChildren, 10) || kids.length)),

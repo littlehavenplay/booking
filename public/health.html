@@ -328,6 +328,16 @@ async function runAll(){
     return { state:"pass", detail:"unlocked — a customer can reach checkout (nothing was submitted)" };
   });
 
+  await check("#gApi", "Play Club membership service", async function(){
+    var res = await fetch("/api/playclub", { method:"POST", headers:{"content-type":"application/json"},
+      body: JSON.stringify({ action:"member-check", code:"HEALTHCHECK" }), cache:"no-store" });
+    if (!res.ok) return { state:"fail", detail:"returned HTTP " + res.status,
+                          fix:"Members will be charged full admission until this answers." };
+    var j = await res.json();
+    if (j.member === true) return { state:"warn", detail:"answered, but matched a membership to a dummy code" };
+    return { state:"pass", detail:"answering — unknown codes correctly refused" };
+  });
+
   // --- The open-play page ---
   await check("#gBook", "Open-play page loads and is wired up", async function(){
     var f = await loadPage("/book.html", 1800);
