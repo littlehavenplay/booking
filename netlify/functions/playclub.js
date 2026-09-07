@@ -314,7 +314,11 @@ export default async (req) => {
       planKind: m.planKind || "anyday",
       // Which admission the plan is priced against. The booking page credits
       // THIS tier's price, so a Baby/Infant plan can't hand out regular cover.
-      coverAdmission: coverAdmissionFor(m, plan),
+      // Deliberately resolved from the MEMBERSHIP alone, with no plan record.
+      // book.js is authoritative and cannot load plans, so if this passed the
+      // plan the page could show a tier the charge disagreed with. m.planName
+      // is copied from the plan at save time, so nothing is lost.
+      coverAdmission: coverAdmissionFor(m, null),
       maxChildren: m.maxChildren || (m.children || []).length || 1,
       children: (m.children || []).map(c => ({ code: c.code || "", name: c.name || "" })),
       // Prefills the booker's details so a member isn't retyping what we already

@@ -395,6 +395,14 @@
                <option value="weekday">Weekday only (Mon&ndash;Fri)</option>
              </select>
              <p class="note" style="margin:4px 0 0">A weekday plan will not cover a Sat/Sun booking.</p></div>
+           <div style="flex:1;min-width:150px"><label>Admission covered</label>
+             <select id="pmTier">
+               <option value="">Auto &mdash; from the plan name</option>
+               <option value="regular">Regular admission</option>
+               <option value="infant">Baby / infant</option>
+               <option value="sibling">Sibling add-on</option>
+             </select>
+             <p class="note" style="margin:4px 0 0" id="pmTierHint"></p></div>
          </div>
 
         <label style="margin-top:10px">Find the family &amp; tick their children</label>
@@ -3296,6 +3304,15 @@ if($("#wsSave")) $("#wsSave").onclick=async function(){
                 ? '<span style="border-radius:999px;padding:3px 10px;font-size:.7rem;font-weight:900;background:#f4f0fa;color:#6d4b86">CUSTOM</span>'
                 : '')
             + '<span class="note" style="margin:0">covers '+(m.maxChildren||1)+' child'+((m.maxChildren||1)===1?'':'ren')+'/visit</span>'
+            // Which admission this plan actually credits. Shown on every row so
+            // a wrongly-read custom plan is obvious at a glance, not at checkout.
+            + (function(){
+                var t=m.planTier||pcTierGuess(m.planName||"");
+                var set=!!m.planTier;
+                return '<span style="border-radius:999px;padding:3px 10px;font-size:.7rem;font-weight:900;background:'
+                  +(t==="infant"?"#e8f0e6;color:#3f6b3a":t==="sibling"?"#fdf0e4;color:#8a5c30":"#eef1f6;color:#4a566b")+'">'
+                  + pcTierLabel(t).toUpperCase() + (set?'':' (auto)') + '</span>';
+              })()
             // Whether this family has actually been emailed. A run of sends was
             // silently swallowed when Resend hit its daily cap, and there was no
             // way to tell who had missed out — now it's on the row.
@@ -3336,6 +3353,8 @@ if($("#wsSave")) $("#wsSave").onclick=async function(){
         if(el("pmPlan")) el("pmPlan").value=m.planId||"";
         if(el("pmStart")) el("pmStart").value=m.startDate||"";
         if(el("pmKind")) el("pmKind").value=m.planKind||"anyday";
+        if(el("pmTier")) el("pmTier").value=m.planTier||"";
+        try{ pmTierHint(); }catch(e){}
         if(el("pmCustomName")) el("pmCustomName").value=(m.planId?"":(m.planName||""));
         syncCustom();
         PICKED=(m.children||[]).slice();
@@ -3409,6 +3428,9 @@ if($("#wsSave")) $("#wsSave").onclick=async function(){
       // Stored explicitly rather than guessed from the plan name, because this
       // is what gets enforced when someone tries to book a weekend.
       planKind: (el("pmKind")&&el("pmKind").value)||"anyday",
+      // Blank means "work it out from the plan name". Set it explicitly for a
+      // custom plan whose name doesn't say the tier, e.g. "Little Explorers".
+      planTier: (el("pmTier")&&el("pmTier").value)||"",
       startDate: (el("pmStart")&&el("pmStart").value)||"",
       maxChildren:parseInt(el("pmMax").value,10)||PICKED.length||1,
       children:PICKED,
@@ -3540,6 +3562,59 @@ if($("#wsSave")) $("#wsSave").onclick=async function(){
 })();
 
 (function(){ var b=document.getElementById("prmRefresh"); if(b) b.onclick=function(){ try{ prmLoad(); }catch(e){} }; })();
+
+// ---- Which admission a membership's plan is priced against ----
+// A Baby/Infant plan credits the $19 baby admission, not the $25 regular one.
+// Normally that's read from the plan name; this dropdown is the override for a
+// custom plan whose name doesn't say ("Little Explorers", "Grandparent Pass").
+// pcTierGuess MUST stay identical to coverAdmissionFor() in lib-playclub.js,
+// or the hint here would promise something the booking page doesn't do.
+function pcTierGuess(planName){
+  var text=String(planName||"").toLowerCase();
+  if(/\b(baby|infant)\b/.test(text)) return "infant";
+  if(/\bsibling\b/.test(text))       return "sibling";
+  return "regular";
+}
+function pcTierLabel(t){
+  return t==="infant" ? "Baby / infant" : t==="sibling" ? "Sibling add-on" : "Regular admission";
+}
+// The plan name is either the chosen plan's option text, or -- for a custom
+// membership -- whatever was typed in the custom name box. Same rule the save
+// handler uses to build planName, so the hint matches what actually gets stored.
+function pcPlanNameNow(){
+  var custom=document.getElementById("pmCustomName");
+  var sel=document.getElementById("pmPlan");
+  var isCustom = !sel || !sel.value;
+  if(isCustom) return (custom&&custom.value.trim())||"";
+  return (sel.selectedIndex>=0) ? sel.options[sel.selectedIndex].text : "";
+}
+function pmTierHint(){
+  var sel=document.getElementById("pmTier"), hint=document.getElementById("pmTierHint");
+  if(!sel||!hint) return;
+  if(sel.value){
+    // A sibling add-on only exists alongside a regular admission, so a plan set
+    // to that tier can't be booked on its own -- worth saying here rather than
+    // letting the member hit "Sibling add-on requires a regular admission".
+    hint.textContent = sel.value==="sibling"
+      ? "Always covers the sibling add-on price. Note: the booking still needs a regular admission alongside it."
+      : "Always covers the "+pcTierLabel(sel.value).toLowerCase()+" price.";
+    hint.style.color = sel.value==="sibling" ? "#8a5c30" : "var(--sage-dark)";
+  } else {
+    var name=pcPlanNameNow();
+    var g=pcTierGuess(name);
+    hint.textContent = name
+      ? "From \u201c"+name+"\u201d: "+pcTierLabel(g)+". Set it here if that's wrong."
+      : "Pick a plan, or set the tier here for a custom plan.";
+    hint.style.color="";
+  }
+}
+document.addEventListener("change",function(e){
+  if(e.target && (e.target.id==="pmTier"||e.target.id==="pmPlan")) pmTierHint();
+});
+document.addEventListener("input",function(e){
+  if(e.target && e.target.id==="pmCustomName") pmTierHint();
+});
+
 </script><!-- ============================================================================
      HELP BUBBLE  —  <button class="hlp" data-help="...">?</button>
      ----------------------------------------------------------------------------
