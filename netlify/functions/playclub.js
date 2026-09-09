@@ -165,8 +165,8 @@ async function sendMemberEmail(to, subject, inner) {
     <hr style="border:none;border-top:1px solid #efe4d5;margin:22px 0 12px">
     <p style="color:#8a8276;font-size:12px;margin:0;line-height:1.7">
       ${esc(studio)} &middot; <a href="mailto:hello@littlehavenplay.com" style="color:#8a8276">hello@littlehavenplay.com</a><br>
-      <a href="${site}/playclub.html#terms" style="color:#8a8276">Membership terms</a> &middot;
-      <a href="${site}/book.html?terms=1" style="color:#8a8276">Booking policy</a> &middot;
+      <a href="${site}/#faq" style="color:#8a8276">FAQ</a> &middot;
+      <a href="${site}/terms.html#playclub" style="color:#8a8276">Terms &amp; policies</a> &middot;
       <a href="${unsub}" style="color:#8a8276">Unsubscribe</a>
     </p></div>`;
   // Play Club membership emails are one-to-one, so they stay on the transactional

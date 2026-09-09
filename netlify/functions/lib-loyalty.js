@@ -1,7 +1,7 @@
 // Shared loyalty punch-card logic, used by loyalty.js (staff tool), book.js
 // (auto-issue codes at booking), and checkin.js (punch at check-in).
 import { getStore } from "@netlify/blobs";
-import { SIGNATURE_HTML, fromHeader } from "./lib-email.js";
+import { SIGNATURE_HTML, fromHeader, TERMS } from "./lib-email.js";
 
 export const PUNCHES_FOR_REWARD = 7;      // 7 paid visits → 8th is free
 export const REWARD_EXPIRY_DAYS = 30;
@@ -297,7 +297,7 @@ export async function sendWelcome(rec) {
   const militaryBlock = rec.militaryVerified ? `
     <div style="background:#f3f7ee;border:1px solid #dce8cf;border-radius:12px;padding:14px 16px;margin:14px 0">
       <div style="font-weight:800;color:#4d7848;margin-bottom:4px">🎖️ Thank you for your service!</div>
-      <p style="margin:0;font-size:14px;color:#4d6b3e">We've verified your military ID, and this card is marked as a military family. <b>10% off admission</b> will apply automatically every time you book Open Play online — just keep the code above handy and enter it at checkout, same as always. No separate discount code needed.</p>
+      <p style="margin:0;font-size:14px;color:#4d6b3e">Your card is marked as a military family &mdash; <b>10% off admission</b> applies automatically whenever you book online with this code.</p>
     </div>` : "";
   const html = `<div style="font-family:Arial,Helvetica,sans-serif;color:#2a2622;max-width:560px;margin:0 auto;line-height:1.6">
     <img src="${HERO_IMG}" alt="Little Haven Punch Card" style="width:100%;border-radius:16px;display:block;margin:0 0 16px">
@@ -428,11 +428,8 @@ export async function sendMilitaryVerifiedEmail(to, cards) {
       in the <b>Loyalty card number</b> box under &ldquo;Who's playing?&rdquo; &mdash; the same box that fills in your child's name.</p>
     </div>
 
-    <p style="font-size:14px;color:#8a8276">A couple of things to know: the discount applies to the child's admission only (not extra adults),
-    and it can't be stacked with a discount code or the Weekday Special &mdash; whichever saves you more applies automatically.
-    Gift cards and store credit still come off on top, because those are payment rather than a discount.</p>
-
-    <p style="margin-top:14px">Stuck at checkout? Just reply to this email or use the chat on our website and we'll sort it out.</p>
+    <p style="font-size:14px;color:#8a8276">It applies automatically at checkout, and we always use whichever saving is larger.
+    Full details are on our <a href="${TERMS.openplay}" style="color:#a85f59">terms &amp; policies</a> page.</p>
     <p style="margin-top:14px">Thank you again for your service &mdash; we're glad to have your family with us!</p>
     <p style="font-size:14px;color:#5c6470">— ${esc(studio)}</p></div>`;
   try {

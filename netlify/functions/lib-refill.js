@@ -2,6 +2,7 @@
 // card is used up. Each holder is emailed EXACTLY ONCE, ever (tracked in site/grandfatherSent).
 import { getStore } from "@netlify/blobs";
 import { createHash } from "node:crypto";
+import { signatureFor, TERMS } from "./lib-email.js";
 
 const STUDIO = "Little Haven Play Studio";
 const BOOK_URL = "https://littlehavenplay.com/book.html";
@@ -83,7 +84,7 @@ async function sendRefill(email, e, key, from, studioEmail) {
   try {
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST", headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ from: `${STUDIO} <${from}>`, to: [email], bcc: studioEmail ? [studioEmail] : undefined, subject: `You're grandfathered in — keep your Little Haven punch card benefits 🎈`, html }),
+      body: JSON.stringify({ from: `${STUDIO} <${from}>`, to: [email], bcc: studioEmail ? [studioEmail] : undefined, subject: `You're grandfathered in — keep your Little Haven punch card benefits 🎈`, html: html + signatureFor(TERMS.punchcards) }),
     });
     return res.ok;
   } catch { return false; }

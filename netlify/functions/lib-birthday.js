@@ -5,7 +5,7 @@
 // Single-use. `when` may be a single "YYYY-MM-DD" or a { validFrom, validUntil } range.
 import { getStore } from "@netlify/blobs";
 import { listAllKeys } from "./lib-blobs.js";
-import { fromHeader } from "./lib-email.js";
+import { fromHeader, SIGNATURE_HTML } from "./lib-email.js";
 
 const ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no I/O/0/1
 
@@ -174,7 +174,7 @@ export async function sendBirthdayEmail(rec, code, when) {
     headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
     body: JSON.stringify({
       from: fromHeader(from, studio), to: [rec.email], bcc: bcc ? [bcc] : undefined,
-      subject: `🎂 Happy Birthday ${rec.first}! A free visit is waiting`, html,
+      subject: `🎂 Happy Birthday ${rec.first}! A free visit is waiting`, html: html + SIGNATURE_HTML,
     }),
   });
   return res.ok;
@@ -221,7 +221,7 @@ export async function sendBirthdayDayOfEmail(rec, code, when, validUntil) {
     headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
     body: JSON.stringify({
       from: fromHeader(from, studio), to: [rec.email], bcc: bcc ? [bcc] : undefined,
-      subject: `🎉 Happy Birthday ${rec.first}! Your free visit is good all week`, html,
+      subject: `🎉 Happy Birthday ${rec.first}! Your free visit is good all week`, html: html + SIGNATURE_HTML,
     }),
   });
   return res.ok;

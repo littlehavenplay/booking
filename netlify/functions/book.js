@@ -11,11 +11,11 @@
 
 import { getStore } from "@netlify/blobs";
 import { createHash } from "node:crypto";
-import { SIGNATURE_HTML, sendOwnerAlert, resendEmail } from "./lib-email.js";
+import { SIGNATURE_HTML, sendOwnerAlert, resendEmail, waiverButtonHtml, footerText, TERMS } from "./lib-email.js";
 import {
   CAPACITY, pricesFor, SLOTS, SLOT_IDS, openPlayForDate, effectivePartyBlocks, hoursFor, slotCap, slotKey, arrivalStartMin, squareApiBase, SQUARE_VERSION, BOOKING_WINDOW_DAYS,
   PARTY_SLOT_IDS, ARRIVAL_TO_LEGACY, countHourChildren, hourMatesFor,
-  STUDIO_NAME, POLICY_TITLE, POLICY_LINES, CLOSED_DATES, CLOSED_MESSAGE, ADDITIONAL_ADULT, isClosedWeekday, weekdayOf,
+  STUDIO_NAME, CLOSED_DATES, CLOSED_MESSAGE, ADDITIONAL_ADULT, isClosedWeekday, weekdayOf,
   additionalAdultsFor, additionalAdultCentsFor, GRIP_SOCK_CENTS, GRIP_SOCK_MAX,
 } from "./lib-settings.js";
 import { issueCode, sendWelcome, sendFamilyPunch, PUNCHES_FOR_REWARD, cleanName, last4 as loyaltyLast4, graduateLegacyCard } from "./lib-loyalty.js";
@@ -940,7 +940,13 @@ export default async (req) => {
   try {
     await sendConfirmation({ email, name, date, slotLabel, regular, sibling, infant, adults: totalAdults, additionalAdults,
       coveredRegular, coveredInfant, coveredSibling, paidRegular, paidInfant, paidSibling, subtotal, tax, amount,
-      giftApplied, giftTotal, creditApplied, creditRemaining, cardAmount, passesUsed, discountPct, discountAmount, weekdaySpecialAmount, weekdaySpecialLabel, militaryAmount, militaryChildren, loyaltyCards });
+      giftApplied, giftTotal, creditApplied, creditRemaining, cardAmount, passesUsed, discountPct, discountAmount, weekdaySpecialAmount, weekdaySpecialLabel, militaryAmount, militaryChildren, loyaltyCards,
+      // The email builder was never told about the membership, so a member saw
+      // "Subtotal $19.00 / Total paid $0.00" with nothing in between explaining
+      // why. All three were already calculated here and thrown away.
+      playClubName: member ? (member.planName || "Play Club") : null,
+      playClubAmount: memberAmount || 0,
+      playClubKids: member ? memberCoveredKids : [] });
   } catch (e) { /* ignore email errors */ }
 
   return json({
@@ -1092,7 +1098,7 @@ function validDob(s) {
 
 // Sends the customer a confirmation + policy email via Resend.
 // If RESEND_API_KEY isn't set, this quietly does nothing.
-async function sendConfirmation({ email, name, date, slotLabel, regular, sibling, infant, adults = 0, additionalAdults = 0, coveredRegular = 0, coveredInfant = 0, paidRegular = regular, paidInfant = infant, subtotal, tax, amount, giftApplied = [], giftTotal = 0, creditApplied = 0, creditRemaining = null, cardAmount = 0, passesUsed = [], discountPct = 0, discountAmount = 0, weekdaySpecialAmount = 0, weekdaySpecialLabel = "", militaryAmount = 0, militaryChildren = [], loyaltyCards = [] }) {
+async function sendConfirmation({ email, name, date, slotLabel, regular, sibling, infant, adults = 0, additionalAdults = 0, coveredRegular = 0, coveredInfant = 0, paidRegular = regular, paidInfant = infant, subtotal, tax, amount, giftApplied = [], giftTotal = 0, creditApplied = 0, creditRemaining = null, cardAmount = 0, passesUsed = [], discountPct = 0, discountAmount = 0, weekdaySpecialAmount = 0, weekdaySpecialLabel = "", militaryAmount = 0, militaryChildren = [], loyaltyCards = [] , playClubName = null, playClubAmount = 0, playClubKids = []}) {
   const key = process.env.RESEND_API_KEY;
   if (!key || !email) return;
 
@@ -1119,18 +1125,33 @@ async function sendConfirmation({ email, name, date, slotLabel, regular, sibling
     + `<td style="padding:6px 9px;border-top:1px solid #e6eee2;text-align:center;font-family:monospace;font-weight:bold;color:#a85f59;letter-spacing:1px">${esc(c.code)}</td>`
     + `<td style="padding:6px 9px;border-top:1px solid #e6eee2;text-align:right;color:#5c6470">${c.punches}/${c.needed} visits</td></tr>`
   ).join("");
-  const loyaltySection = loyaltyCards.length ? `
-    <div style="background:#f3f7f2;border-radius:14px;padding:16px 18px;margin:20px 0">
-      <h3 style="margin:0 0 6px;color:#5f8060;font-weight:bold;font-size:15px">Your punch card${loyaltyCards.length > 1 ? "s" : ""} 🎈</h3>
-      <p style="margin:0 0 10px;font-size:14px;color:#5c6470">${anyNew
-        ? `Here ${loyaltyCards.length > 1 ? "are your codes" : "is your code"} — next time, enter ${loyaltyCards.length > 1 ? "a code" : "it"} on the booking page to <b>auto-fill your child's information</b> and book faster.`
-        : `Enter your code on the booking page next time to <b>auto-fill your child's information</b> and book faster.`}</p>
+  // Play Club members book on a membership, not a punch card -- the card block
+  // is noise to them. Non-members keep the table (child, code, progress) but
+  // lose the paragraphs that used to wrap it.
+  const isMember = !!playClubName;
+  const loyaltySection = (loyaltyCards.length && !isMember) ? `
+    <div style="background:#f3f7f2;border-radius:14px;padding:14px 16px;margin:18px 0">
+      <p style="margin:0 0 8px;color:#5f8060;font-weight:bold;font-size:14px">Your punch card${loyaltyCards.length > 1 ? "s" : ""} \u2014 enter the code next time to book faster</p>
       <table style="width:100%;border-collapse:collapse;font-size:14px">
         <tr><td style="padding:0 9px 4px;color:#8a8276;font-size:12px">Child</td><td style="padding:0 9px 4px;text-align:center;color:#8a8276;font-size:12px">Code</td><td style="padding:0 9px 4px;text-align:right;color:#8a8276;font-size:12px">Progress</td></tr>
         ${cardRows}
       </table>
-      <p style="margin:10px 0 0;font-size:13px;color:#5c6470">We keep track of your visits automatically — after 7 visits each, the 8th is free. Nothing else to do! 💛</p>
     </div>` : "";
+
+  // ---- Play Club: a soft pastel gold band, so a membership booking reads as a
+  // membership booking rather than an ordinary one that happened to cost $0.
+  // The banner deliberately says only "PLAY CLUB" -- the tier lives in the plan
+  // name on the coverage row below, not up here.
+  const memberBanner = isMember ? `
+    <div style="background:linear-gradient(135deg,#f7ecd2 0%,#f2e2c0 55%,#efdcb4 100%);border:1px solid #e6d3a8;border-radius:14px;padding:11px 16px;margin:0 0 14px;text-align:center">
+      <div style="font-size:12px;letter-spacing:.2em;font-weight:bold;color:#8a6b2f">\u2726 PLAY CLUB MEMBER \u2726</div>
+    </div>` : "";
+
+  // Names the children the membership actually covered, so the drop to $0 is
+  // self-explanatory and the family can see their membership working.
+  const kidList = (playClubKids || []).filter(Boolean).join(", ");
+  const memberRow = (isMember && playClubAmount > 0) ? `
+      <tr><td style="padding:2px 0;color:#8a6b2f">\u{1F39F}\uFE0F ${esc(playClubName)}${kidList ? ` \u2014 ${esc(kidList)}` : ""}</td><td style="padding:2px 0;text-align:right;font-weight:bold;color:#8a6b2f">\u2212${dollars(playClubAmount)}</td></tr>` : "";
 
   // Payment breakdown rows (shown when a gift card or store credit was used)
   let payRows = `<tr><td style="padding:6px 0 0;color:#5c6470">Total paid</td><td style="padding:6px 0 0;text-align:right;font-weight:bold;font-size:18px;color:#7ba676">${dollars(amount)}</td></tr>`;
@@ -1145,17 +1166,17 @@ async function sendConfirmation({ email, name, date, slotLabel, regular, sibling
       + `<tr><td style="padding:6px 0 0;color:#5c6470">Paid by card</td><td style="padding:6px 0 0;text-align:right;font-weight:bold;font-size:18px;color:#7ba676">${dollars(cardAmount)}</td></tr>`;
   }
 
-  const policyHtml = POLICY_LINES.map(l => `<li style="margin:0 0 6px">${l}</li>`).join("");
   const waiverUrl = process.env.WAIVER_URL || "https://waivermaster.com/sign.html?q=DU3F7C23VNX8D";
 
   const html = `
   <div style="font-family:Arial,Helvetica,sans-serif;color:#2a2622;max-width:560px;margin:0 auto;line-height:1.6">
+    ${memberBanner}
     <h2 style="color:#a85f59;font-weight:normal;margin:0 0 4px">Your reservation is confirmed 🌿</h2>
-    <p style="margin:0 0 16px;color:#5c6470">Thank you${name ? ", " + name : ""} — your reservation is confirmed and we can't wait to welcome you to ${STUDIO_NAME}. Here are your details:</p>
+    <p style="margin:0 0 14px;color:#5c6470">Thank you${name ? ", " + name : ""} — here are your details. We can't wait to see you! 💛</p>
     <table style="width:100%;border-collapse:collapse;font-size:15px">
       <tr><td style="padding:6px 0;color:#5c6470">Date</td><td style="padding:6px 0;text-align:right;font-weight:bold">${date}</td></tr>
       <tr><td style="padding:6px 0;color:#5c6470">Session</td><td style="padding:6px 0;text-align:right;font-weight:bold">${slotLabel}</td></tr>
-      <tr><td colspan="2" style="padding:2px 0 6px;color:#8a8276;font-size:12px">💛 No need to rush — your 2 hours start when you arrive. The session times just help us manage space, so a few minutes late is always okay.</td></tr>
+      <tr><td colspan="2" style="padding:2px 0 6px;color:#8a8276;font-size:12px">Your 2 hours start when you arrive — a few minutes late is always fine.</td></tr>
       <tr><td style="padding:6px 0;color:#5c6470">Children</td><td style="padding:6px 0;text-align:right;font-weight:bold">${total}</td></tr>
       <tr><td style="padding:6px 0;color:#5c6470">Admissions</td><td style="padding:6px 0;text-align:right;font-weight:bold">${lines.join("<br>")}</td></tr>
       ${passLines}
@@ -1163,49 +1184,41 @@ async function sendConfirmation({ email, name, date, slotLabel, regular, sibling
       ${discountAmount > 0 ? `<tr><td style="padding:2px 0;color:#7ba676">Discount (${discountPct}% off)</td><td style="padding:2px 0;text-align:right;font-weight:bold;color:#7ba676">−${dollars(discountAmount)}</td></tr>` : ""}
       ${weekdaySpecialAmount > 0 ? `<tr><td style="padding:2px 0;color:#7ba676">🗓️ ${weekdaySpecialLabel}</td><td style="padding:2px 0;text-align:right;font-weight:bold;color:#7ba676">−${dollars(weekdaySpecialAmount)}</td></tr>` : ""}
       ${militaryAmount > 0 ? `<tr><td style="padding:2px 0;color:#7ba676">🎖️ Military discount (10% off)</td><td style="padding:2px 0;text-align:right;font-weight:bold;color:#7ba676">−${dollars(militaryAmount)}</td></tr>` : ""}
+      ${memberRow}
       ${payRows}
     </table>
     ${loyaltySection}
 
-    <div style="background:#fdf1ec;border-radius:14px;padding:16px 18px;margin:20px 0">
-      <h3 style="margin:0 0 8px;color:#a85f59;font-weight:bold;font-size:15px">One quick thing before you arrive — your waiver 💛</h3>
-      <p style="margin:0 0 10px;font-size:14px;color:#5c6470">A signed waiver is required for every visit, and it stays valid for <b>365 days</b> from the date it was first signed.</p>
-      <ul style="margin:0 0 12px;padding-left:18px;font-size:14px;color:#5c6470">
-        <li style="margin:0 0 6px">If you're the parent or guardian who signed within the last year, you're all set — no need to sign again.</li>
-        <li style="margin:0 0 6px">If you've never signed with us, or a different parent or guardian is bringing the child(ren) this time, we'll simply need a fresh waiver from whoever is accompanying them that day.</li>
-      </ul>
-      <a href="${waiverUrl}" style="display:inline-block;background:#c97d76;color:#fff;text-decoration:none;font-weight:bold;font-size:13px;letter-spacing:.04em;text-transform:uppercase;padding:11px 22px;border-radius:40px">Sign your waiver</a>
-    </div>
-
-    <hr style="border:none;border-top:1px solid #efe7da;margin:18px 0">
-    <h3 style="margin:0 0 8px;font-size:14px;color:#2a2622">${POLICY_TITLE}</h3>
-    <ul style="margin:0;padding-left:18px;font-size:13px;color:#8a8276">${policyHtml}</ul>
-    <p style="margin:18px 0 0;font-size:13px;color:#aea298">We can't wait to see you at ${STUDIO_NAME}! 💛</p>
-    <p style="margin:14px 0 0;background:#fcfaf6;border:1px solid #efe7da;border-radius:10px;padding:11px 13px;font-size:13px;color:#5c6470"><b>📩 Don't see this email?</b> Please check your junk/spam folder and mark it "not spam" so you receive future confirmations.</p>
+    ${waiverButtonHtml(waiverUrl)}
+    <p style="margin:4px 0 0;font-size:12px;color:#aea298;text-align:center">🧦 Grip socks are required for children entering the play area.</p>
   </div>`;
 
-  const cardText = loyaltyCards.length
+  const cardText = (loyaltyCards.length && !isMember)
     ? `YOUR PUNCH CARD${loyaltyCards.length > 1 ? "S" : ""}\n`
       + loyaltyCards.map(c => `- ${c.childName}: ${c.code} (${c.punches}/${c.needed} visits)`).join("\n")
       + `\nEnter your code on the booking page next time to auto-fill your child's information and book faster. We track your visits automatically — after 7 visits each, the 8th is free.\n\n`
     : "";
   const text = `Your ${STUDIO_NAME} reservation is confirmed!\n\n`
     + `Date: ${date}\nSession: ${slotLabel}\nChildren: ${total}\n`
-    + `Admissions: ${lines.join(", ")}\nSubtotal: ${dollars(subtotal)}\nTotal paid: ${dollars(amount)}\n\n`
+    + `Admissions: ${lines.join(", ")}\nSubtotal: ${dollars(subtotal)}\n`
+    + (isMember && playClubAmount > 0
+        ? `${playClubName}${kidList ? ` — ${kidList}` : ""}: −${dollars(playClubAmount)}\n` : "")
+    + `Total paid: ${dollars(amount)}\n\n`
     + cardText
-    + `YOUR WAIVER\nA signed waiver is required for every visit and stays valid for 365 days from the date it was first signed.\n`
-    + `- If you're the parent/guardian who signed within the last year, you're all set.\n`
-    + `- If you've never signed, or a different parent/guardian is bringing the child(ren) this time, please sign a fresh waiver.\n`
-    + `Sign here: ${waiverUrl}\n\n`
-    + `${POLICY_TITLE}\n` + POLICY_LINES.map(l => "- " + l).join("\n")
-    + `\n\nWe can't wait to see you at ${STUDIO_NAME}!`;
+    + `Sign your waiver: ${waiverUrl}\n`
+    + `Grip socks are required for children entering the play area.\n`
+    + `\nWe can't wait to see you at ${STUDIO_NAME}!`
+    + footerText(TERMS.openplay);
 
   await resendEmail({
     from: `${STUDIO_NAME} <${from}>`,
     to: [email],
     bcc: bcc ? [bcc] : undefined,
-    subject: `Your ${STUDIO_NAME} reservation is confirmed${loyaltyCards.length ? ` + punch card code${loyaltyCards.length > 1 ? "s" : ""}` : ""} 🎈 — ${date}`,
-    html, text,
+    // One subject line for every confirmation. The punch-card suffix made the
+    // subject long and put a detail most people don't act on in front of the
+    // thing they opened the email for.
+    subject: `Your ${STUDIO_NAME} reservation is confirmed 🎈 — ${date}`,
+    html: html + SIGNATURE_HTML, text,
   });
 }
 

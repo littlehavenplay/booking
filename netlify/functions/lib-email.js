@@ -1,6 +1,61 @@
 // Shared email signature (business card) appended to every outgoing email.
 export const SITE = "https://littlehavenplay.com";
-export const SIGNATURE_HTML = `<div style="margin-top:24px;border-top:1px solid #eee4d6;padding-top:16px">
+
+// ---- One place for policies ----------------------------------------------
+// Policies used to be pasted into the emails themselves, which made a booking
+// confirmation several screens long and buried the two things the customer
+// actually needed: their reservation details and the waiver button. Everything
+// now points at /terms.html, which already renders the live policy text pulled
+// from /api/config -- so a policy change updates the page, not fifteen emails.
+export const TERMS_URL = `${SITE}/terms.html`;
+export const FAQ_URL   = `${SITE}/#faq`;
+export const STUDIO_EMAIL_PUBLIC = "hello@littlehavenplay.com";
+
+// Deep links into the individual sections of the terms page, so an email about
+// a party or a punch card lands on the part that applies to it.
+export const TERMS = {
+  all:        TERMS_URL,
+  openplay:   `${TERMS_URL}#openplay`,
+  parties:    `${TERMS_URL}#parties`,
+  playclub:   `${TERMS_URL}#playclub`,
+  punchcards: `${TERMS_URL}#punchcards`,
+  waiver:     `${TERMS_URL}#waiver`,
+  giftcards:  `${TERMS_URL}#giftcards`,
+};
+
+// The small print, and the only small print. Three links on one line.
+export function footerHtml(termsUrl) {
+  const t = termsUrl || TERMS_URL;
+  return `<p style="margin:18px 0 0;padding-top:14px;border-top:1px solid #efe7da;font-size:12px;color:#aea298;line-height:1.8">
+  Questions? Email <a href="mailto:${STUDIO_EMAIL_PUBLIC}" style="color:#a85f59;text-decoration:none">${STUDIO_EMAIL_PUBLIC}</a>
+  &nbsp;&middot;&nbsp; <a href="${FAQ_URL}" style="color:#a85f59;text-decoration:none">FAQ</a>
+  &nbsp;&middot;&nbsp; <a href="${t}" style="color:#a85f59;text-decoration:none">Terms &amp; policies</a>
+</p>`;
+}
+
+export function footerText(termsUrl) {
+  return `\n\nQuestions? ${STUDIO_EMAIL_PUBLIC}\nFAQ: ${FAQ_URL}\nTerms & policies: ${termsUrl || TERMS_URL}`;
+}
+
+// A waiver nudge is worth keeping -- a signed waiver before arrival genuinely
+// speeds up check-in. It does not need three paragraphs explaining the rules;
+// anyone who wants the detail can follow the terms link in the footer, and
+// anyone who arrives unsigned simply signs at the door.
+export function waiverButtonHtml(url) {
+  return `<div style="margin:20px 0;text-align:center">
+  <a href="${url}" style="display:inline-block;background:#c97d76;color:#fff;text-decoration:none;font-weight:bold;font-size:13px;letter-spacing:.04em;text-transform:uppercase;padding:12px 26px;border-radius:40px">Sign your waiver</a>
+</div>`;
+}
+
+// Same footer + business card, but pointed at the relevant section of the terms
+// page. SIGNATURE_HTML below is just signatureFor() with the default link.
+export function signatureFor(termsUrl) {
+  return `${footerHtml(termsUrl)}<div style="margin-top:16px">
+  <img src="${SITE}/assets/email-signature.png" alt="Little Haven Play Studio · Yucca Valley, CA · littlehavenplay.com · hello@littlehavenplay.com · @littlehavenplay" style="width:100%;max-width:440px;display:block">
+</div>`;
+}
+
+export const SIGNATURE_HTML = `${footerHtml()}<div style="margin-top:16px">
   <img src="${SITE}/assets/email-signature.png" alt="Little Haven Play Studio · Yucca Valley, CA · littlehavenplay.com · hello@littlehavenplay.com · @littlehavenplay" style="width:100%;max-width:440px;display:block">
 </div>`;
 

@@ -7,7 +7,7 @@
 
 import { getStore } from "@netlify/blobs";
 import { getLivePartyPromo, promoValue, promoLabel } from "./partypromo.js";
-import { SIGNATURE_HTML } from "./lib-email.js";
+import { SIGNATURE_HTML, signatureFor, TERMS } from "./lib-email.js";
 import {
   PARTY_SLOTS, PARTY_SLOT_IDS, PARTY_PACKAGES, isPartyDay,
   PARTY_BOOKING_MIN_DAYS, slotKey, STUDIO_NAME, WAIVER_URL,
@@ -177,19 +177,17 @@ async function emailCustomer(r, depositLink) {
       <p style="margin:0;color:#5c6470;font-size:14px">Thank you for taking advantage of our special! Your deposit stays the same,
       and <b>${esc(r.promo.label)}</b> comes off your remaining balance when we settle up at the end of your party.</p>
     </div>` : ""}
-    <div style="background:#f3f0ff;border-radius:12px;padding:14px 16px;margin:14px 0">
-      <p style="margin:0 0 6px;font-weight:bold;color:#5b4636">📋 Don't forget the waiver!</p>
-      <p style="margin:0 0 10px;color:#5c6470;font-size:14px">Every guest must sign before arrival to avoid delays at your party. Please forward this link to all your guests, or have them sign at littlehavenplay.com:</p>
-      <a href="${WAIVER_URL}" style="display:inline-block;background:#7a6253;color:#fff;text-decoration:none;font-weight:bold;padding:10px 18px;border-radius:10px">Sign the waiver →</a>
+    <div style="margin:18px 0;text-align:center">
+      <a href="${WAIVER_URL}" style="display:inline-block;background:#c97d76;color:#fff;text-decoration:none;font-weight:bold;font-size:13px;letter-spacing:.04em;text-transform:uppercase;padding:12px 26px;border-radius:40px">Sign the waiver</a>
+      <p style="margin:7px 0 0;font-size:12px;color:#aea298">Forward this to your guests — signing ahead keeps check-in quick.</p>
     </div>
-    <p style="color:#5c6470;font-size:13px;margin-top:14px">Questions? Reply to this email or message us @littlehavenplay. — ${STUDIO_NAME}</p>
   </div>`;
   try {
     await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
       body: JSON.stringify({ from: `${STUDIO_NAME} <${from}>`, to: [r.email], bcc: bcc ? [bcc] : undefined,
-        subject: `${pending ? "Party request" : "Party confirmed"} — ${r.childName}'s party on ${r.date}`, html: html + SIGNATURE_HTML }),
+        subject: `${pending ? "Party request" : "Party confirmed"} — ${r.childName}'s party on ${r.date}`, html: html + signatureFor(TERMS.parties) }),
     });
   } catch {}
 }

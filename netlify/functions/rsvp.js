@@ -4,6 +4,7 @@
 //   { d, s, t, action:"send-now" }                              -> emails all guests the waiver now
 import { getStore } from "@netlify/blobs";
 import { slotKey, WAIVER_URL } from "./lib-settings.js";
+import { signatureFor, TERMS } from "./lib-email.js";
 
 const STUDIO = "Little Haven Play Studio";
 const esc = s => (s || "").toString().replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -41,7 +42,7 @@ async function emailGuests(rec) {
     try {
       await fetch("https://api.resend.com/emails", { method: "POST", headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
         body: JSON.stringify({ from: `${STUDIO} <${from}>`, to: [to], bcc: studioEmail ? [studioEmail] : undefined, reply_to: rec.email || undefined,
-          subject: `You're invited to ${rec.childName}'s party! 🎈`, html: guestEmailHtml(rec) }) });
+          subject: `You're invited to ${rec.childName}'s party! 🎈`, html: guestEmailHtml(rec) + signatureFor(TERMS.parties) }) });
       sent++;
     } catch {}
   }
