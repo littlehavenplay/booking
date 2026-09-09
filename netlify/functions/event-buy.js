@@ -2,9 +2,10 @@
 // Body: { eventId, quantity, name, email, sourceId }  (sourceId = Square card token)
 import { getStore } from "@netlify/blobs";
 import { createHash } from "node:crypto";
-import { SIGNATURE_HTML, resendEmail } from "./lib-email.js";
+import { SIGNATURE_HTML, resendEmail, footerText, TERMS } from "./lib-email.js";
 import { squareApiBase, SQUARE_VERSION, STUDIO_NAME } from "./lib-settings.js";
 import { eventPacificParts, eventIsPast } from "./lib-closures.js";
+import { findMemberFor } from "./lib-playclub.js";
 
 export default async (req) => {
   if (req.method !== "POST") return json({ error: "Use POST." }, 405);
@@ -43,10 +44,31 @@ export default async (req) => {
   if (remaining <= 0)                 return json({ error: "sold-out", message: "Sorry, this event is sold out." }, 409);
   if (quantity > remaining)           return json({ error: "limited", message: `Only ${remaining} ticket${remaining === 1 ? "" : "s"} left.` }, 409);
 
-  // Sibling pricing: first ticket at e.price, each additional at e.siblingPrice (if set).
+  // ---- Play Club member price ------------------------------------------
+  // Checked HERE, on the server, from the membership store -- never trusted
+  // from the browser. The page shows the discount for a nice experience, but
+  // this is what decides the charge, so a forged request just pays full price.
+  // findMemberFor() already refuses paused, ended and inactive memberships,
+  // and deliberately gets no date: ANY active membership earns the event rate,
+  // including a weekday plan on a weekend event.
+  let member = null;
+  if (e.memberPrice > 0 && e.memberPrice < e.price) {
+    try {
+      member = await findMemberFor({
+        code: (b.playClubCode || "").toString(),
+        phone: (b.playClubPhone || b.phone || "").toString(),
+      });
+    } catch { member = null; }
+  }
+  const firstTicket = member ? e.memberPrice : e.price;
+  const memberSaving = member ? (e.price - e.memberPrice) : 0;
+
+  // Sibling pricing: first ticket at the member/standard rate, each additional
+  // at e.siblingPrice (if set). Sibling tickets never take the member discount
+  // on top -- they are already a discounted rate.
   let subtotal = (e.siblingPrice && quantity > 1)
-    ? e.price + (quantity - 1) * e.siblingPrice
-    : e.price * quantity;
+    ? firstTicket + (quantity - 1) * e.siblingPrice
+    : firstTicket + (quantity - 1) * e.price;
 
   // Optional store credit (same credits the studio issues for open play).
   const creditCode = (b.creditCode || "").toString().trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
@@ -95,7 +117,7 @@ export default async (req) => {
   try { cur = await store.get("event:" + eventId, { type: "json" }) || e; } catch {}
   cur.sold = (cur.sold || 0) + quantity;
   cur.buyers = Array.isArray(cur.buyers) ? cur.buyers : [];
-  cur.buyers.push({ name, email, phone, attendees, quantity, paymentId, creditApplied: creditApplied || 0, creditCode: creditApplied ? creditCode : null, at: new Date().toISOString() });
+  cur.buyers.push({ name, email, phone, attendees, quantity, paymentId, playClubCode: member ? member.code : null, memberSaving, creditApplied: creditApplied || 0, creditCode: creditApplied ? creditCode : null, at: new Date().toISOString() });
   try { await store.setJSON("event:" + eventId, cur); } catch {}
 
   // Burn the store credit (payment succeeded).
@@ -109,11 +131,11 @@ export default async (req) => {
     try { await creditStore.setJSON("credit:" + creditCode, fresh); } catch {}
   }
 
-  await sendConfirmation({ email, name, event: cur, quantity, amount });
+  await sendConfirmation({ email, name, event: cur, quantity, amount, member, memberSaving, subtotal, creditApplied });
   return json({ ok: true, message: "You're all set! A confirmation email is on its way." });
 };
 
-async function sendConfirmation({ email, name, event, quantity, amount }) {
+async function sendConfirmation({ email, name, event, quantity, amount, member = null, memberSaving = 0, subtotal = 0, creditApplied = 0 }) {
   const key = process.env.RESEND_API_KEY;
   const from = process.env.EMAIL_FROM || "onboarding@resend.dev";
   const bcc = process.env.STUDIO_EMAIL || null;
@@ -121,30 +143,55 @@ async function sendConfirmation({ email, name, event, quantity, amount }) {
   const money = c => "$" + (c / 100).toFixed(2);
   const _ep = eventPacificParts(event.dateTime); const when = _ep ? `${_ep.dateLabel} at ${_ep.timeLabel}` : "";
   const esc = s => (s || "").toString().replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+  // Same pastel gold band as the open-play confirmation, so a member sees their
+  // membership working here too.
+  const memberBanner = member ? `
+    <div style="background:linear-gradient(135deg,#f7ecd2 0%,#f2e2c0 55%,#efdcb4 100%);border:1px solid #e6d3a8;border-radius:14px;padding:11px 16px;margin:0 0 14px;text-align:center">
+      <div style="font-size:12px;letter-spacing:.2em;font-weight:bold;color:#8a6b2f">\u2726 PLAY CLUB MEMBER \u2726</div>
+    </div>` : "";
+  const memberRow = (member && memberSaving > 0) ? `
+      <tr><td style="padding:5px 0;color:#8a6b2f">\u{1F39F}\uFE0F Play Club member price</td><td style="padding:5px 0;text-align:right;font-weight:bold;color:#8a6b2f">\u2212${money(memberSaving)}</td></tr>` : "";
+  const creditRow = creditApplied > 0 ? `
+      <tr><td style="padding:5px 0;color:#5c6470">Store credit</td><td style="padding:5px 0;text-align:right;font-weight:bold">\u2212${money(creditApplied)}</td></tr>` : "";
+
+  // Two buttons, no explanation. The event form differs per event; the waiver
+  // link is the standing WaiverMaster one. Both are required before the event.
+  const btn = (href, label, bg) =>
+    `<a href="${esc(href)}" style="display:inline-block;background:${bg};color:#fff;text-decoration:none;font-weight:bold;font-size:13px;letter-spacing:.04em;text-transform:uppercase;padding:12px 22px;border-radius:40px;margin:5px 4px">${label}</a>`;
+  const forms = (event.waiverLink || event.regularWaiverLink) ? `
+    <div style="margin:18px 0;text-align:center">
+      <p style="margin:0 0 8px;font-size:13px;color:#5c6470"><b>Both are required before the event.</b></p>
+      ${event.waiverLink ? btn(event.waiverLink, "Special event form", "#a85f59") : ""}
+      ${event.regularWaiverLink ? btn(event.regularWaiverLink, "Sign your waiver", "#7ba676") : ""}
+    </div>` : "";
+
   const html = `
   <div style="font-family:Arial,Helvetica,sans-serif;color:#2a2622;max-width:560px;line-height:1.6">
-    <h2 style="color:#a85f59;font-weight:normal">You're registered! 🎉</h2>
-    <p>Hi ${esc(name)}, thank you for signing up for <b>${esc(event.title)}</b>.</p>
+    ${memberBanner}
+    <h2 style="color:#a85f59;font-weight:normal;margin:0 0 4px">You're registered! \u{1F389}</h2>
+    <p style="margin:0 0 14px;color:#5c6470">Thank you, ${esc(name)} — here are your details.</p>
     <table style="width:100%;border-collapse:collapse;font-size:15px">
-      <tr><td style="padding:5px 0;color:#5c6470;width:130px">Event</td><td style="padding:5px 0;font-weight:bold">${esc(event.title)}</td></tr>
-      <tr><td style="padding:5px 0;color:#5c6470">When</td><td style="padding:5px 0;font-weight:bold">${esc(when)}</td></tr>
-      <tr><td style="padding:5px 0;color:#5c6470">Tickets</td><td style="padding:5px 0;font-weight:bold">${quantity}</td></tr>
-      <tr><td style="padding:5px 0;color:#5c6470">Total paid</td><td style="padding:5px 0;font-weight:bold">${money(amount)}</td></tr>
+      <tr><td style="padding:5px 0;color:#5c6470;width:120px">Event</td><td style="padding:5px 0;text-align:right;font-weight:bold">${esc(event.title)}</td></tr>
+      <tr><td style="padding:5px 0;color:#5c6470">When</td><td style="padding:5px 0;text-align:right;font-weight:bold">${esc(when)}</td></tr>
+      <tr><td style="padding:5px 0;color:#5c6470">Tickets</td><td style="padding:5px 0;text-align:right;font-weight:bold">${quantity}</td></tr>
+      ${(memberRow || creditRow) ? `<tr><td style="padding:5px 0;color:#5c6470">Subtotal</td><td style="padding:5px 0;text-align:right">${money(subtotal)}</td></tr>` : ""}
+      ${memberRow}
+      ${creditRow}
+      <tr><td style="padding:6px 0 0;color:#5c6470">Total paid</td><td style="padding:6px 0 0;text-align:right;font-weight:bold;font-size:18px;color:#7ba676">${money(amount)}</td></tr>
     </table>
-    <p style="margin-top:14px;background:#fcfaf6;border:1px solid #efe7da;border-radius:10px;padding:11px 13px;font-size:14px"><b>📩 Don't see this email?</b> Please check your junk/spam folder and mark it "not spam" so you get future updates.</p>
-    <p style="margin-top:12px;background:#fdf7f0;border:1px solid #ecdcc9;border-radius:10px;padding:11px 13px;font-size:14px"><b>🪪 Pickup:</b> The adult who drops off must be the same person who picks up, and must show a valid photo ID at pickup. No child will be released without a matching ID.</p>
-    ${(event.waiverLink || event.regularWaiverLink) ? `
-    <div style="margin-top:14px;background:#fdf7f0;border:1px solid #ecdcc9;border-radius:10px;padding:12px 14px">
-      <b style="color:#a85f59">📋 Before the event — please complete the required waiver(s):</b>
-      <p style="font-size:14px;margin:8px 0 0">Both must be signed unless you've already completed one previously.</p>
-      <div style="margin-top:10px">
-        ${event.waiverLink ? `<a href="${esc(event.waiverLink)}" style="display:inline-block;background:#a85f59;color:#fff;text-decoration:none;font-weight:bold;padding:9px 16px;border-radius:22px;margin:4px 8px 4px 0">Sign the event waiver →</a>` : ""}
-        ${event.regularWaiverLink ? `<a href="${esc(event.regularWaiverLink)}" style="display:inline-block;background:#7ba676;color:#fff;text-decoration:none;font-weight:bold;padding:9px 16px;border-radius:22px;margin:4px 0">Sign the general waiver →</a>` : ""}
-      </div>
-    </div>` : ""}
-    <p style="margin-top:14px">We can't wait to see you at ${STUDIO_NAME}!</p>
+    ${forms}
+    <p style="margin:4px 0 0;font-size:12px;color:#aea298;text-align:center">\u{1FAAA} The adult dropping off must show photo ID at pickup.</p>
   </div>`;
-  const text = `You're registered for ${event.title}!\n\nWhen: ${when}\nTickets: ${quantity}\nTotal paid: ${money(amount)}\n\nIf you don't see this email, please check your junk/spam folder.\n\nSee you at ${STUDIO_NAME}!`;
+
+  const text = `You're registered for ${event.title}!\n\nWhen: ${when}\nTickets: ${quantity}\n`
+    + (member && memberSaving > 0 ? `Play Club member price: \u2212${money(memberSaving)}\n` : "")
+    + `Total paid: ${money(amount)}\n\n`
+    + (event.waiverLink ? `Special event form: ${event.waiverLink}\n` : "")
+    + (event.regularWaiverLink ? `Sign your waiver: ${event.regularWaiverLink}\n` : "")
+    + `Both are required before the event.\n`
+    + footerText(TERMS.all);
+
   try {
     await resendEmail({ from: `${STUDIO_NAME} <${from}>`, to: [email], bcc: bcc ? [bcc] : undefined,
       subject: `You're registered — ${event.title}`, html: html + SIGNATURE_HTML, text });

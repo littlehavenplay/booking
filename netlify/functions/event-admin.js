@@ -28,7 +28,7 @@ export default async (req) => {
     const events = [];
     for (const k of keys) {
       let e = null; try { e = await store.get(k, { type: "json" }); } catch {}
-      if (e) events.push({ id: e.id, title: e.title, description: e.description || "", requirements: e.requirements || "", regClose: e.regClose || "", waiverLink: e.waiverLink || "", regularWaiverLink: e.regularWaiverLink || "", dateTime: e.dateTime, price: e.price, siblingPrice: e.siblingPrice || 0, capacity: e.capacity, sold: e.sold || 0, hasPoster: !!e.posterMime, hidden: !!e.hidden, past: eventIsPast(e.dateTime) });
+      if (e) events.push({ id: e.id, title: e.title, description: e.description || "", requirements: e.requirements || "", regClose: e.regClose || "", waiverLink: e.waiverLink || "", regularWaiverLink: e.regularWaiverLink || "", dateTime: e.dateTime, memberPrice: e.memberPrice || 0, price: e.price, siblingPrice: e.siblingPrice || 0, capacity: e.capacity, sold: e.sold || 0, hasPoster: !!e.posterMime, hidden: !!e.hidden, past: eventIsPast(e.dateTime) });
     }
     events.sort((a, b) => new Date(b.dateTime) - new Date(a.dateTime));
     return json({ ok: true, events });
@@ -42,6 +42,11 @@ export default async (req) => {
     const price = Math.max(0, Math.round(parseFloat(b.price) * 100) || 0);
     const siblingPrice = (b.siblingPrice === undefined || b.siblingPrice === null || b.siblingPrice === "")
       ? 0 : Math.max(0, Math.round(parseFloat(b.siblingPrice) * 100) || 0);
+    // Play Club member price for the FIRST ticket. Blank/0 = no member discount
+    // on this event. Sibling tickets are deliberately untouched: they already
+    // carry their own discount and don't stack with the member rate.
+    const memberPrice = (b.memberPrice === undefined || b.memberPrice === null || b.memberPrice === "")
+      ? 0 : Math.max(0, Math.round(parseFloat(b.memberPrice) * 100) || 0);
     const capacity = Math.max(1, parseInt(b.capacity, 10) || 0);
     if (!title) return json({ error: "Enter an event title." }, 400);
     if (!dateTime || isNaN(new Date(dateTime).getTime())) return json({ error: "Enter a valid date & time." }, 400);
@@ -55,7 +60,7 @@ export default async (req) => {
       id, title, description, requirements: (b.requirements || "").toString().slice(0, 3000), regClose: (b.regClose || "").toString().slice(0, 20),
       waiverLink: (b.waiverLink || "").toString().slice(0, 400).trim(),
       regularWaiverLink: (b.regularWaiverLink || "").toString().slice(0, 400).trim(),
-      dateTime, price, siblingPrice, capacity, sold,
+      dateTime, price, siblingPrice, memberPrice, capacity, sold,
       buyers: existing ? (existing.buyers || []) : [],
       posterMime: existing ? existing.posterMime || null : null,
       hidden: existing ? !!existing.hidden : false,

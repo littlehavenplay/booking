@@ -20,7 +20,7 @@ export default async () => {
       const sold = e.sold || 0;
       upcoming.push({
         id: e.id, title: e.title, description: e.description || "", requirements: e.requirements || "", regClose: e.regClose || "", regClosed: (function(){ if(!e.regClose) return false; var nowPT=new Date().toLocaleString("sv-SE",{timeZone:"America/Los_Angeles"}).slice(0,16).replace(" ","T"); return nowPT >= e.regClose; })(),
-        dateTime: e.dateTime, price: e.price, siblingPrice: e.siblingPrice || 0, capacity: e.capacity,
+        dateTime: e.dateTime, price: e.price, siblingPrice: e.siblingPrice || 0, memberPrice: e.memberPrice || 0, capacity: e.capacity,
         sold, remaining: Math.max(0, e.capacity - sold), soldOut: sold >= e.capacity,
         hasPoster: !!e.posterMime,
       });

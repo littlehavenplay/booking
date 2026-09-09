@@ -104,6 +104,23 @@
       <div id="mReq" style="font-size:.9rem;color:var(--charcoal);white-space:pre-wrap;line-height:1.5"></div>
       <label style="display:flex;gap:9px;align-items:flex-start;margin-top:10px;text-transform:none;letter-spacing:0;color:var(--charcoal);font-weight:700;font-size:.9rem;cursor:pointer"><input type="checkbox" id="mAgree" style="width:auto;margin-top:3px;transform:scale(1.2)"> I have read and understood the requirements and terms for this event.</label>
     </div>
+    <div id="pcBox" style="display:none;background:#faf3e4;border:1.5px solid #e6d3a8;border-radius:16px;padding:14px 16px;margin:14px 0">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <span style="font-family:'Cormorant Garamond',serif;font-size:1.15rem;color:#8a6b2f">✦ Play Club member?</span>
+        <button type="button" class="pchelp" id="pcHelp" aria-label="About the member discount"
+          style="width:21px;height:21px;border-radius:50%;border:none;background:#ecdcb8;color:#8a6b2f;font-weight:900;font-size:.75rem;cursor:pointer;line-height:1">?</button>
+        <span id="pcSaveTag" style="margin-left:auto;font-size:.75rem;font-weight:800;color:#8a6b2f"></span>
+      </div>
+      <p id="pcHelpTxt" style="display:none;margin:8px 0 0;font-size:.78rem;color:#8a6b2f;background:#f3e7cd;border-radius:10px;padding:8px 10px;line-height:1.5">
+        Discounts apply on active Play Club memberships only. Paused or expired memberships need to be reactivated before booking.
+        The member rate applies to the first ticket; sibling tickets keep their own discounted price.
+      </p>
+      <label style="margin-top:10px">Phone number or membership code</label>
+      <input type="text" id="pcInput" placeholder="(760) 555-1234 or PC7K2M" autocomplete="tel">
+      <div id="pcMsg" class="note" style="margin-top:6px"></div>
+      <div id="pcKids" style="display:none;margin-top:8px"></div>
+    </div>
+
     <label>Number of tickets <span class="req">Required</span></label>
     <select id="mQty"></select>
     <label>Your name <span class="req">Required</span></label>
@@ -155,15 +172,20 @@
 <script>
 const $=s=>document.querySelector(s);
 let CFG={}, EV={}, payments=null, card=null, cur=null, eventCredit={code:"",balance:0,ok:false}, creditTimer=null;
+// Play Club member state for the event sheet. `ok` only ever set by a live
+// lookup; the server re-checks it before charging, so this is presentation.
+let pcMember={ok:false,code:"",name:"",planName:"",children:[],selected:[]}, pcTimer=null;
 function money(c){return "$"+(c/100).toFixed(2);}
 function whenStr(iso){return new Date(iso).toLocaleString("en-US",{weekday:"long",month:"long",day:"numeric",hour:"numeric",minute:"2-digit"});}
 
 (async function(){
   try{ CFG=await (await fetch("/api/config")).json(); }catch(e){ CFG={}; }
-  await initSquare();
+  // Show the events FIRST. The card form is only needed once someone opens a
+  // ticket sheet, so a slow or blocked Square CDN must never hold up the list.
   load();
   loadPromos();
   loadPastPhotos();
+  initSquare().catch(function(e){ console.warn("Square did not load:", e); });
 })();
 
 async function loadPromos(){
@@ -229,7 +251,12 @@ async function load(){
 async function initSquare(){
   if(!CFG.applicationId || !CFG.locationId) return;
   const url=(CFG.environment==="production")?"https://web.squarecdn.com/v1/square.js":"https://sandbox.web.squarecdn.com/v1/square.js";
-  await new Promise((res,rej)=>{const s=document.createElement("script");s.src=url;s.onload=res;s.onerror=rej;document.head.appendChild(s);});
+  await new Promise((res,rej)=>{
+    const s=document.createElement("script"); s.src=url;
+    const t=setTimeout(()=>rej(new Error("Square SDK timed out")), 12000);
+    s.onload=()=>{clearTimeout(t);res();}; s.onerror=()=>{clearTimeout(t);rej(new Error("Square SDK failed to load"));};
+    document.head.appendChild(s);
+  });
   try{
     payments=window.Square.payments(CFG.applicationId, CFG.locationId); card=await payments.card(); await card.attach("#card-container");
     window.__lhWallets = await window.initSquareWallets({
@@ -255,6 +282,26 @@ window.openModal=(id)=>{
   for(let i=1;i<=max;i++) opts+='<option value="'+i+'">'+i+'</option>';
   $("#mQty").innerHTML=opts; $("#mQty").onchange=updTotal; updTotal();
   $("#mMsg").className="msg"; $("#mName").value=""; $("#mEmail").value=""; if($("#mPhone"))$("#mPhone").value=""; if($("#mCredit"))$("#mCredit").value=""; eventCredit={code:"",balance:0,ok:false}; if($("#mCreditMsg"))$("#mCreditMsg").textContent="";
+  // The member box only appears on events that actually have a member rate.
+  (function(){
+    const box=$("#pcBox"); if(!box) return;
+    const show = cur.memberPrice > 0 && cur.memberPrice < cur.price;
+    box.style.display = show ? "block" : "none";
+    pcReset(false);
+    if(show){
+      const inp=$("#pcInput");
+      if(inp && !inp.__bound){
+        inp.__bound=true;
+        inp.addEventListener("input",function(){ clearTimeout(pcTimer); pcTimer=setTimeout(pcLookup,450); });
+        inp.addEventListener("change",function(){ clearTimeout(pcTimer); pcLookup(); });
+      }
+      const hb=$("#pcHelp"), ht=$("#pcHelpTxt");
+      if(hb && ht && !hb.__bound){
+        hb.__bound=true;
+        hb.onclick=function(){ ht.style.display = ht.style.display==="none" ? "block" : "none"; };
+      }
+    }
+  })();
   newEvAttempt();
   $("#modal").classList.add("open");
 };
@@ -280,10 +327,16 @@ $("#wJoin").onclick=async()=>{
     else { m.className="msg err"; m.textContent=r.error||"Couldn't add you."; $("#wJoin").disabled=false; }
   }catch(e){ m.className="msg err"; m.textContent="Network error — please try again."; $("#wJoin").disabled=false; }
 };
+function memberPriceActive(){
+  return !!(pcMember.ok && cur && cur.memberPrice > 0 && cur.memberPrice < cur.price);
+}
 function eventSubtotalCents(){
   if(!cur) return 0;
   const q=parseInt($("#mQty").value,10)||1;
-  return (cur.siblingPrice&&q>1)?(cur.price+(q-1)*cur.siblingPrice):(cur.price*q);
+  // The member rate applies to the FIRST ticket only. Sibling tickets keep the
+  // sibling price you set -- the two discounts never stack.
+  const first = memberPriceActive() ? cur.memberPrice : cur.price;
+  return (cur.siblingPrice&&q>1) ? (first+(q-1)*cur.siblingPrice) : (first+(q-1)*cur.price);
 }
 function eventDueCents(){
   const sub=eventSubtotalCents();
@@ -293,6 +346,8 @@ function eventDueCents(){
 function updTotal(){
   const sub=eventSubtotalCents(), due=eventDueCents();
   $("#mTotal").textContent=money(due);
+  const tag=$("#pcSaveTag");
+  if(tag) tag.textContent = memberPriceActive() ? ("You save "+money(cur.price-cur.memberPrice)) : "";
   const cm=$("#mCreditMsg");
   if(cm && eventCredit.ok){
     const used=Math.min(sub,eventCredit.balance||0);
@@ -334,6 +389,107 @@ if($("#mCredit")){
   });
   $("#mCredit").addEventListener("blur",()=>{ clearTimeout(creditTimer); checkEventCredit(); });
 }
+// ---- Play Club lookup on the event sheet -------------------------------
+// Same endpoint the open-play page uses. No `date` is sent on purpose: ANY
+// active membership earns the event rate, including a weekday plan booking a
+// weekend event. Paused/ended/inactive come back with a reason, which we show
+// plainly instead of "not found" -- that would send someone hunting for a
+// problem they don't have.
+function pcReset(keepInput){
+  pcMember={ok:false,code:"",name:"",planName:"",children:[],selected:[]};
+  const k=$("#pcKids"); if(k){ k.style.display="none"; k.innerHTML=""; }
+  const m=$("#pcMsg"); if(m){ m.textContent=""; m.style.color=""; }
+  if(!keepInput && $("#pcInput")) $("#pcInput").value="";
+  updTotal();
+}
+
+function pcRenderKids(){
+  const host=$("#pcKids"); if(!host) return;
+  if(!pcMember.children.length){ host.style.display="none"; host.innerHTML=""; return; }
+  let h='<label style="margin-top:0">Who\'s attending?</label>';
+  pcMember.children.forEach(function(c,i){
+    const on=pcMember.selected.indexOf(c.name)>=0;
+    h+='<label style="display:flex;gap:9px;align-items:center;text-transform:none;letter-spacing:0;font-weight:700;color:var(--charcoal);font-size:.9rem;margin-bottom:5px">'
+      +'<input type="checkbox" class="pc-kid" data-name="'+String(c.name).replace(/"/g,"&quot;")+'"'+(on?" checked":"")+'> '+String(c.name)+'</label>';
+  });
+  h+='<p class="note" style="margin:4px 0 0">Tick each child coming — we\'ll fill their names in below for you.</p>';
+  host.innerHTML=h; host.style.display="block";
+  host.querySelectorAll(".pc-kid").forEach(function(cb){
+    cb.onchange=function(){
+      pcMember.selected=[...host.querySelectorAll(".pc-kid")].filter(x=>x.checked).map(x=>x.dataset.name);
+      pcApplyKids();
+    };
+  });
+}
+
+// Fill the attendee rows from the ticked children, and bump the ticket count up
+// to match so nobody has to enter the same names twice.
+function pcApplyKids(){
+  const sel=pcMember.selected;
+  if(sel.length){
+    const q=parseInt($("#mQty").value,10)||1;
+    if(sel.length>q){
+      const max=parseInt($("#mQty").options[$("#mQty").options.length-1].value,10)||1;
+      $("#mQty").value=String(Math.min(sel.length,max));
+    }
+    renderAtt();
+    const rows=[...document.querySelectorAll("#mAttWrap .att-row")];
+    sel.forEach(function(nm,i){
+      if(rows[i]){ const f=rows[i].querySelector(".att-n"); if(f && !f.value.trim()) f.value=nm; }
+    });
+  }
+  updTotal();
+}
+
+async function pcLookup(){
+  const raw=(($("#pcInput")||{}).value||"").trim();
+  const digits=raw.replace(/\D/g,"");
+  const msg=$("#pcMsg");
+  if(raw.length<4){ pcReset(true); return; }
+  if(msg){ msg.textContent="Checking…"; msg.style.color=""; }
+  const isPhone=digits.length>=10;
+  try{
+    const r=await (await fetch("/api/playclub",{method:"POST",headers:{"content-type":"application/json"},
+      body:JSON.stringify({action:"member-check", code:isPhone?"":raw, phone:isPhone?raw:""})})).json();
+    if(!r || !r.member){
+      pcMember={ok:false,code:"",name:"",planName:"",children:[],selected:[]};
+      const k=$("#pcKids"); if(k){ k.style.display="none"; k.innerHTML=""; }
+      if(msg){
+        msg.style.color="var(--rose-deep)";
+        msg.textContent = r && r.reason==="paused"
+            ? "That membership is paused, so the member price can't be applied. Reactivate it first and we'll honour the discount."
+          : r && r.reason==="ended"
+            ? "That membership has ended, so the member price can't be applied. Renew it and we'll honour the discount."
+          : r && r.reason==="inactive"
+            ? "That membership isn't currently active, so the member price can't be applied."
+          : "We couldn't find a membership for that. Double-check the number or code — or book at the standard price.";
+      }
+      updTotal(); return;
+    }
+    pcMember={ok:true, code:r.code||"", name:r.name||"", planName:r.planName||"Play Club",
+              children:(r.children||[]).filter(c=>c&&c.name), selected:[]};
+    if(msg){
+      msg.style.color="#3f7d54";
+      msg.textContent="✓ "+(r.name||"Member")+" — "+(r.planName||"Play Club")
+        + (memberPriceActive() ? ". Member price applied." : ". This event has no member rate.");
+    }
+    // Prefill what we already hold, empty fields only, so whoever is actually
+    // booking can still use their own details.
+    try{
+      const c=r.contact||{};
+      const nEl=$("#mName"), eEl=$("#mEmail"), pEl=$("#mPhone");
+      if(nEl && !nEl.value.trim() && (c.name||r.name)) nEl.value=c.name||r.name;
+      if(eEl && !eEl.value.trim() && c.email) eEl.value=c.email;
+      if(pEl && !pEl.value.trim() && isPhone) pEl.value=raw;
+    }catch(e){}
+    pcRenderKids();
+    updTotal();
+  }catch(e){
+    if(msg){ msg.style.color="var(--rose-deep)"; msg.textContent="Couldn't check that just now — you can still book at the standard price."; }
+    updTotal();
+  }
+}
+
 function renderAtt(){
   const q=parseInt($("#mQty").value,10)||1, host=$("#mAttWrap");
   if(!host) return;
@@ -416,6 +572,10 @@ async function submitEvent(token){
         phone:(($("#mPhone")||{}).value||"").trim(),
         attendees,
         creditCode:creditCode||undefined,
+        // The server re-checks this against the membership store before
+        // charging — sending it is a hint, not a price.
+        playClubCode:(pcMember.ok&&pcMember.code)?pcMember.code:undefined,
+        playClubPhone:(($("#pcInput")||{}).value||"").trim()||undefined,
         sourceId:token||undefined,
         attemptId:evAttemptId,
       })

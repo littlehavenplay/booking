@@ -904,6 +904,8 @@ body.focusing details.secgroup.has-focus > summary{display:none}
       <div><label>Registration closes — time</label><select id="evRegTime"><option value="">— no cutoff (open until event) —</option><option value="08:00">8:00 AM</option><option value="08:30">8:30 AM</option><option value="09:00">9:00 AM</option><option value="09:30">9:30 AM</option><option value="10:00">10:00 AM</option><option value="10:30">10:30 AM</option><option value="11:00">11:00 AM</option><option value="11:30">11:30 AM</option><option value="12:00">12:00 PM</option><option value="12:30">12:30 PM</option><option value="13:00">1:00 PM</option><option value="13:30">1:30 PM</option><option value="14:00">2:00 PM</option><option value="14:30">2:30 PM</option><option value="15:00">3:00 PM</option><option value="15:30">3:30 PM</option><option value="16:00">4:00 PM</option><option value="16:30">4:30 PM</option><option value="17:00">5:00 PM</option><option value="17:30">5:30 PM</option><option value="18:00">6:00 PM</option><option value="18:30">6:30 PM</option><option value="19:00">7:00 PM</option><option value="19:30">7:30 PM</option><option value="20:00">8:00 PM</option><option value="20:30">8:30 PM</option><option value="21:00">9:00 PM</option><option value="21:30">9:30 PM</option></select></div>
       <div><label>Price per ticket ($)</label><input type="text" id="evPrice" inputmode="decimal" placeholder="40"></div>
       <div><label>Sibling price ($, optional)</label><input type="text" id="evSibPrice" inputmode="decimal" placeholder="35 — each additional child"></div>
+      <div><label>Play Club member price ($, optional)</label><input type="text" id="evMemPrice" inputmode="decimal" placeholder="40 — first ticket for members">
+        <p class="note" style="margin:4px 0 0">Leave blank for no member discount. Applies to the first ticket only on any <b>active</b> membership; sibling tickets keep the sibling price.</p></div>
     </div>
     <div class="row">
       <div><label>Capacity (total tickets)</label><input type="number" id="evCap" min="1" placeholder="12"></div>
@@ -1466,7 +1468,7 @@ async function loadEvents(){
 window.editEvent=(id)=>{
   const e=window._events[id]; if(!e) return;
   $("#evId").value=e.id; $("#evTitle").value=e.title; $("#evDesc").value=e.description||""; $("#evReq").value=e.requirements||""; $("#evWaiver").value=e.waiverLink||""; $("#evWaiver2").value=e.regularWaiverLink||""; { var rc=(e.regClose||"").split("T"); $("#evRegDate").value=rc[0]||""; $("#evRegTime").value=rc[1]||""; }
-  $("#evWhen").value=(e.dateTime||"").slice(0,16); $("#evPrice").value=(e.price/100).toFixed(2); $("#evSibPrice").value=e.siblingPrice?(e.siblingPrice/100).toFixed(2):""; $("#evCap").value=e.capacity;
+  $("#evWhen").value=(e.dateTime||"").slice(0,16); $("#evPrice").value=(e.price/100).toFixed(2); $("#evSibPrice").value=e.siblingPrice?(e.siblingPrice/100).toFixed(2):""; $("#evMemPrice").value=e.memberPrice?(e.memberPrice/100).toFixed(2):""; $("#evCap").value=e.capacity;
   $("#evPoster").value=""; window.scrollTo({top:0,behavior:"smooth"});
   $("#evOut").className="out ok"; $("#evOut").textContent="Editing \u201c"+e.title+"\u201d — make changes and Save. Leave poster empty to keep the current one.";
 };
@@ -1564,14 +1566,14 @@ window.waitRemove=async(id,wid)=>{
   const r=await (await fetch("/api/event-waitlist",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key,action:"remove",eventId:id,id:wid})})).json();
   if(r.ok) waitEvent(id); else alert(r.error||"Couldn't remove.");
 };
-$("#evReset").onclick=()=>{ ["evId","evTitle","evDesc","evReq","evWaiver","evWaiver2","evWhen","evRegDate","evRegTime","evPrice","evSibPrice","evCap"].forEach(i=>$("#"+i).value=""); $("#evPoster").value=""; $("#evOut").className="out"; };
+$("#evReset").onclick=()=>{ ["evId","evTitle","evDesc","evReq","evWaiver","evWaiver2","evWhen","evRegDate","evRegTime","evPrice","evSibPrice","evMemPrice","evCap"].forEach(i=>$("#"+i).value=""); $("#evPoster").value=""; $("#evOut").className="out"; };
 $("#evSave").onclick=async()=>{
   const out=$("#evOut"); out.className="out";
   const key=$("#key").value.trim();
   if(!key){ out.className="out err"; out.textContent="Enter your admin key (top of page)."; return; }
   const body={ key, action:"save", id:$("#evId").value||undefined,
     title:$("#evTitle").value.trim(), description:$("#evDesc").value.trim(), requirements:$("#evReq").value.trim(), waiverLink:$("#evWaiver").value.trim(), regularWaiverLink:$("#evWaiver2").value.trim(), regClose:($("#evRegDate").value&&$("#evRegTime").value)?($("#evRegDate").value+"T"+$("#evRegTime").value):"",
-    dateTime:$("#evWhen").value, price:$("#evPrice").value, siblingPrice:$("#evSibPrice").value, capacity:$("#evCap").value };
+    dateTime:$("#evWhen").value, price:$("#evPrice").value, siblingPrice:$("#evSibPrice").value, memberPrice:$("#evMemPrice").value, capacity:$("#evCap").value };
   const f=$("#evPoster").files[0];
   if(f){ out.className="out"; out.style.display="block"; out.textContent="Processing image…"; const d=await shrinkImage(f); if(d) body.poster=d; }
   $("#evSave").disabled=true;
