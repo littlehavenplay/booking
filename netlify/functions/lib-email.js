@@ -21,6 +21,7 @@ export const TERMS = {
   punchcards: `${TERMS_URL}#punchcards`,
   waiver:     `${TERMS_URL}#waiver`,
   giftcards:  `${TERMS_URL}#giftcards`,
+  events:     `${TERMS_URL}#events`,
 };
 
 // The small print, and the only small print. Three links on one line.

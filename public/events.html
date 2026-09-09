@@ -100,9 +100,11 @@
     <div id="mTitle" style="font-family:'Cormorant Garamond',serif;font-weight:600;font-size:1.4rem;color:var(--rose-deep)"></div>
     <div id="mWhen" class="note" style="margin-top:0"></div>
     <div id="mReqWrap" style="display:none;margin:12px 0;background:#fdf7f0;border:1px solid #ecdcc9;border-radius:12px;padding:12px 14px">
-      <div style="font-weight:800;color:var(--rose-deep);margin-bottom:6px">📋 Requirements &amp; terms for this event</div>
-      <div id="mReq" style="font-size:.9rem;color:var(--charcoal);white-space:pre-wrap;line-height:1.5"></div>
-      <label style="display:flex;gap:9px;align-items:flex-start;margin-top:10px;text-transform:none;letter-spacing:0;color:var(--charcoal);font-weight:700;font-size:.9rem;cursor:pointer"><input type="checkbox" id="mAgree" style="width:auto;margin-top:3px;transform:scale(1.2)"> I have read and understood the requirements and terms for this event.</label>
+      <details style="margin:0">
+        <summary style="cursor:pointer;font-weight:800;color:var(--rose-deep);list-style:none">📋 Requirements &amp; terms <span style="font-weight:600;color:var(--slate);font-size:.85rem">— tap to read</span></summary>
+        <div id="mReq" style="font-size:.9rem;color:var(--charcoal);white-space:pre-wrap;line-height:1.5;margin-top:8px"></div>
+      </details>
+      <label style="display:flex;gap:9px;align-items:flex-start;margin-top:10px;text-transform:none;letter-spacing:0;color:var(--charcoal);font-weight:700;font-size:.9rem;cursor:pointer"><input type="checkbox" id="mAgree" style="width:auto;margin-top:3px;transform:scale(1.2)"> I've read &amp; understood the requirements.</label>
     </div>
     <div id="pcBox" style="display:none;background:#faf3e4;border:1.5px solid #e6d3a8;border-radius:16px;padding:14px 16px;margin:14px 0">
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
@@ -147,7 +149,7 @@
       <button class="btn" id="mPay">Pay & register</button>
     </div>
     <div class="msg" id="mMsg"></div>
-    <div class="note" style="background:#fdf7f0;border:1px solid #ecdcc9;border-radius:10px;padding:9px 12px;color:var(--charcoal);margin-bottom:8px">🪪 <b>Pickup:</b> the adult who drops off must be the same person who picks up, and must show a valid photo ID. No child is released without a matching ID.</div><div class="note">💳 We accept <b>Apple Pay</b>, <b>Google Pay</b>, and all major credit &amp; debit cards. Payments are processed securely by Square. You'll get an email confirmation — if you don't see it, check your junk/spam folder. Event tickets are non-refundable, but if you can't attend, email hello@littlehavenplay.com and we'll do our best to issue store credit.</div>
+    <div class="note" style="margin-bottom:6px">🪪 Photo ID required at pickup · 💳 Apple Pay, Google Pay &amp; cards</div><details class="note" style="margin:0"><summary style="cursor:pointer;font-weight:700;color:var(--rose-deep);list-style:none">Pickup &amp; payment details</summary><div style="margin-top:6px;line-height:1.6">The adult who drops off must be the same person who collects, with a valid photo ID — no child is released without a matching ID. Payments are handled securely by Square. Event tickets are non-refundable; if you can’t attend, email <a href="mailto:hello@littlehavenplay.com" style="color:var(--rose-deep);font-weight:700">hello@littlehavenplay.com</a> and we’ll do our best to issue store credit. <a href="/terms.html" style="color:var(--rose-deep);font-weight:700">Terms &amp; policies</a></div></details>
   </div>
 </div>
 
@@ -412,8 +414,7 @@ function pcRenderKids(){
     h+='<label style="display:flex;gap:9px;align-items:center;text-transform:none;letter-spacing:0;font-weight:700;color:var(--charcoal);font-size:.9rem;margin-bottom:5px">'
       +'<input type="checkbox" class="pc-kid" data-name="'+String(c.name).replace(/"/g,"&quot;")+'"'+(on?" checked":"")+'> '+String(c.name)+'</label>';
   });
-  h+='<p class="note" style="margin:4px 0 0">Tick each child coming — we\'ll fill their names in below for you.</p>';
-  host.innerHTML=h; host.style.display="block";
+    host.innerHTML=h; host.style.display="block";
   host.querySelectorAll(".pc-kid").forEach(function(cb){
     cb.onchange=function(){
       pcMember.selected=[...host.querySelectorAll(".pc-kid")].filter(x=>x.checked).map(x=>x.dataset.name);
@@ -470,8 +471,11 @@ async function pcLookup(){
               children:(r.children||[]).filter(c=>c&&c.name), selected:[]};
     if(msg){
       msg.style.color="#3f7d54";
-      msg.textContent="✓ "+(r.name||"Member")+" — "+(r.planName||"Play Club")
-        + (memberPriceActive() ? ". Member price applied." : ". This event has no member rate.");
+      // No name and no plan tier: this sits on a screen a member may be
+      // holding in a room full of other people.
+      msg.textContent = memberPriceActive()
+        ? "✅ Play Club member verified — member price applied."
+        : "✅ Play Club member verified — this event has no member rate.";
     }
     // Prefill what we already hold, empty fields only, so whoever is actually
     // booking can still use their own details.

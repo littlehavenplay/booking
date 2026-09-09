@@ -2,7 +2,7 @@
 // Body: { eventId, quantity, name, email, sourceId }  (sourceId = Square card token)
 import { getStore } from "@netlify/blobs";
 import { createHash } from "node:crypto";
-import { SIGNATURE_HTML, resendEmail, footerText, TERMS } from "./lib-email.js";
+import { signatureFor, resendEmail, footerText, TERMS } from "./lib-email.js";
 import { squareApiBase, SQUARE_VERSION, STUDIO_NAME } from "./lib-settings.js";
 import { eventPacificParts, eventIsPast } from "./lib-closures.js";
 import { findMemberFor } from "./lib-playclub.js";
@@ -190,11 +190,11 @@ async function sendConfirmation({ email, name, event, quantity, amount, member =
     + (event.waiverLink ? `Special event form: ${event.waiverLink}\n` : "")
     + (event.regularWaiverLink ? `Sign your waiver: ${event.regularWaiverLink}\n` : "")
     + `Both are required before the event.\n`
-    + footerText(TERMS.all);
+    + footerText(TERMS.events);
 
   try {
     await resendEmail({ from: `${STUDIO_NAME} <${from}>`, to: [email], bcc: bcc ? [bcc] : undefined,
-      subject: `You're registered — ${event.title}`, html: html + SIGNATURE_HTML, text });
+      subject: `You're registered — ${event.title}`, html: html + signatureFor(TERMS.events), text });
   } catch {}
 }
 
