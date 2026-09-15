@@ -5,7 +5,7 @@
 // Single-use. `when` may be a single "YYYY-MM-DD" or a { validFrom, validUntil } range.
 import { getStore } from "@netlify/blobs";
 import { listAllKeys } from "./lib-blobs.js";
-import { fromHeader, SIGNATURE_HTML } from "./lib-email.js";
+import { fromHeader, SIGNATURE_HTML, resendEmail } from "./lib-email.js";
 
 const ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no I/O/0/1
 
@@ -78,13 +78,61 @@ export async function issueBirthdayCode(rec, when, loyaltyCode, meta = {}) {
   const validFrom = isRange ? when.validFrom : when;
   const validUntil = isRange ? (when.validUntil || when.validFrom) : when;
 
+  // Last line of defence against a second code for the same birthday. Callers
+  // check too, but this function used to mint unconditionally, so any caller
+  // that forgot -- or two runs racing each other -- produced a duplicate free
+  // admission. Reuse beats minting every time.
+  if (!meta.forceNew) {
+    try {
+      const already = await findExistingBirthdayReward({
+        loyaltyCode: loyaltyCode || rec.code || null,
+        childName: ((rec.first || "") + " " + (rec.last || "")).trim(),
+        validFrom, validUntil,
+      });
+      if (already && already.code) {
+        return { ok: true, code: already.code, emailed: false, reused: true, validFrom, validUntil };
+      }
+    } catch {}
+  }
+
   const rewards = getStore("rewards");
+  const childKey = ((loyaltyCode || rec.code || "") + "|" +
+                    ((rec.first || "") + " " + (rec.last || "")).trim().toLowerCase() + "|" + validFrom);
+
+  // DETERMINISTIC code, derived from the child and the birthday week.
+  //
+  // The old version picked at random. Two cron runs overlapping -- both reading
+  // "no code yet" before either had written -- therefore minted two DIFFERENT
+  // codes, and the family got two free admissions. Checking-then-writing can
+  // never fix that on its own, because the check and the write aren't atomic.
+  //
+  // Deriving the code instead means concurrent runs compute the SAME string and
+  // write the same record, so the duplicate collapses into one by construction.
+  // Collisions between different children are still handled: if the derived key
+  // is taken by somebody else, we walk to the next derived candidate.
+  const hash = (str) => {
+    let h = 2166136261 >>> 0;                       // FNV-1a
+    for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
+    return h >>> 0;
+  };
+  const derive = (salt) => {
+    let h = hash(childKey + "#" + salt), out = "BDAY";
+    for (let j = 0; j < 4; j++) { out += ALPHABET[h % ALPHABET.length]; h = Math.floor(h / ALPHABET.length) + hash(out); }
+    return out;
+  };
+
   let code = "";
-  for (let i = 0; i < 10; i++) {
-    let s = "BDAY";
-    for (let j = 0; j < 4; j++) s += ALPHABET[Math.floor(Math.random() * ALPHABET.length)];
-    let exists = null; try { exists = await rewards.get("reward:" + s, { type: "json" }); } catch {}
-    if (!exists) { code = s; break; }
+  for (let i = 0; i < 12; i++) {
+    const cand = derive(i);
+    let exists = null; try { exists = await rewards.get("reward:" + cand, { type: "json" }); } catch {}
+    if (!exists) { code = cand; break; }
+    // Same child, same birthday week -> this IS their code. Reuse it.
+    const sameChild = (exists.loyaltyCode || "") === (loyaltyCode || rec.code || "") &&
+                      (exists.validFrom || "") === validFrom;
+    if (sameChild) {
+      return { ok: true, code: cand, emailed: false, reused: true, validFrom, validUntil };
+    }
+    // Belongs to someone else -- try the next derived candidate.
   }
   if (!code) code = "BDAY" + Date.now().toString(36).toUpperCase().slice(-5);
 
@@ -117,8 +165,12 @@ export async function issueBirthdayCode(rec, when, loyaltyCode, meta = {}) {
     } catch {}
   }
 
+  // The day-of pass sends its own "it's today" email. Before this flag it also
+  // got the week-ahead email from in here, so one code arrived twice.
   let emailed = false;
-  try { emailed = await sendBirthdayEmail(rec, code, isRange ? { validFrom, validUntil } : when); } catch {}
+  if (meta.sendEmail !== false) {
+    try { emailed = await sendBirthdayEmail(rec, code, isRange ? { validFrom, validUntil } : when); } catch {}
+  }
   return { ok: true, code, emailed, validFrom, validUntil };
 }
 
@@ -169,15 +221,13 @@ export async function sendBirthdayEmail(rec, code, when) {
   </div>
 </div>`;
 
-  const res = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
+  // Routed through resendEmail so this send carries an Idempotency-Key.
+  // It used to POST to Resend directly, which meant a retry -- or a second
+  // cron run -- delivered the same birthday email again.
+  return await resendEmail({
       from: fromHeader(from, studio), to: [rec.email], bcc: bcc ? [bcc] : undefined,
       subject: `🎂 Happy Birthday ${rec.first}! A free visit is waiting`, html: html + SIGNATURE_HTML,
-    }),
-  });
-  return res.ok;
+    }, { idempotencyKey: `bday-advance:${code}` });
 }
 
 export async function sendBirthdayDayOfEmail(rec, code, when, validUntil) {
@@ -187,7 +237,13 @@ export async function sendBirthdayDayOfEmail(rec, code, when, validUntil) {
   const bcc = process.env.STUDIO_EMAIL || undefined;
   const studio = process.env.STUDIO_NAME || "Little Haven Play Studio";
   const name = esc(rec.first || "your little one");
-  const throughLine = validUntil ? `Good all week — through ${esc(prettyDate(validUntil))} 🎈` : `Good all birthday week 🎈`;
+  // When the birthday lands on the last day of its own week (a Saturday) there
+  // is no "rest of the week" left. Saying "good all this week" on that day is
+  // what sent a family to the booking page to be told the code had expired.
+  const lastDay = !!validUntil && String(when).slice(0, 10) >= String(validUntil).slice(0, 10);
+  const throughLine = lastDay
+    ? `Today is the last day to use it 🎈`
+    : (validUntil ? `Good all week — through ${esc(prettyDate(validUntil))} 🎈` : `Good all birthday week 🎈`);
 
   const html = `
 <div style="font-family:Arial,Helvetica,sans-serif;background:#fdf1ec;padding:26px 14px">
@@ -198,7 +254,9 @@ export async function sendBirthdayDayOfEmail(rec, code, when, validUntil) {
     </div>
     <div style="padding:24px">
       <p style="margin:0 0 14px;font-size:15px;color:#2a2622;line-height:1.6">
-        Happy birthday! 🎂 Your free open-play admission is good <b>all this week</b>, so come play any open day that works for you:
+        Happy birthday! 🎂 ${lastDay
+          ? `Your free open-play admission is good <b>today</b> — the last day of the birthday week:`
+          : `Your free open-play admission is good <b>all this week</b>, so come play any open day that works for you:`}
       </p>
       <div style="background:#ecf1e8;border:2px dashed #7ba676;border-radius:16px;padding:18px;text-align:center;margin:18px 0">
         <div style="font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#4d7848;font-weight:800">Your birthday gift code</div>
@@ -216,15 +274,13 @@ export async function sendBirthdayDayOfEmail(rec, code, when, validUntil) {
   </div>
 </div>`;
 
-  const res = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
+  // Routed through resendEmail so this send carries an Idempotency-Key.
+  // It used to POST to Resend directly, which meant a retry -- or a second
+  // cron run -- delivered the same birthday email again.
+  return await resendEmail({
       from: fromHeader(from, studio), to: [rec.email], bcc: bcc ? [bcc] : undefined,
       subject: `🎉 Happy Birthday ${rec.first}! Your free visit is good all week`, html: html + SIGNATURE_HTML,
-    }),
-  });
-  return res.ok;
+    }, { idempotencyKey: `bday-dayof:${code}` });
 }
 
 export function prettyDate(iso) {

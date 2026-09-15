@@ -129,9 +129,19 @@ export default async (req) => {
     const count = Math.max(1, parseInt(b.count, 10) || 0);
     if (count < 1) return json({ error: "Enter how many children walked in." }, 400);
     const adultCount = Math.max(0, parseInt(b.adults, 10) || 0);
+    // Optional Play Club details. Purely additive -- a plain walk-in sends
+    // neither field and behaves exactly as before. When staff check a member in
+    // from the Play Club search, the child names and membership code ride along
+    // so the roster shows WHO walked in, not just a headcount.
+    const childNames = Array.isArray(b.childNames)
+      ? b.childNames.map(n => String(n || "").trim()).filter(Boolean).slice(0, 10)
+      : [];
+    const playClubCode = (b.playClubCode || "").toString().trim().toUpperCase().slice(0, 24) || null;
+
     const rec = await addToSession(bookings, key, {
       id: crypto.randomUUID(), type: "walkin", children: count, adults: adultCount, at: atISO, atLabel,
       waiverConfirmed, waiverConfirmedAt: waiverConfirmed ? atISO : null,
+      childNames, playClubCode,
     });
     const hourKids = await countHourChildren(bookings, date, slot);   // whole hour (:00 + :30), not just this slot
     return json({

@@ -151,7 +151,7 @@ async function sendConfirmation({ email, name, event, quantity, amount, member =
       <div style="font-size:12px;letter-spacing:.2em;font-weight:bold;color:#8a6b2f">\u2726 PLAY CLUB MEMBER \u2726</div>
     </div>` : "";
   const memberRow = (member && memberSaving > 0) ? `
-      <tr><td style="padding:5px 0;color:#8a6b2f">\u{1F39F}\uFE0F Play Club member price</td><td style="padding:5px 0;text-align:right;font-weight:bold;color:#8a6b2f">\u2212${money(memberSaving)}</td></tr>` : "";
+      <tr><td style="padding:5px 0;color:#8a6b2f">\u{1F39F}\uFE0F Play Club</td><td style="padding:5px 0;text-align:right;font-weight:bold;color:#8a6b2f">\u2212${money(memberSaving)}</td></tr>` : "";
   const creditRow = creditApplied > 0 ? `
       <tr><td style="padding:5px 0;color:#5c6470">Store credit</td><td style="padding:5px 0;text-align:right;font-weight:bold">\u2212${money(creditApplied)}</td></tr>` : "";
 
@@ -185,7 +185,7 @@ async function sendConfirmation({ email, name, event, quantity, amount, member =
   </div>`;
 
   const text = `You're registered for ${event.title}!\n\nWhen: ${when}\nTickets: ${quantity}\n`
-    + (member && memberSaving > 0 ? `Play Club member price: \u2212${money(memberSaving)}\n` : "")
+    + (member && memberSaving > 0 ? `Play Club: \u2212${money(memberSaving)}\n` : "")
     + `Total paid: ${money(amount)}\n\n`
     + (event.waiverLink ? `Special event form: ${event.waiverLink}\n` : "")
     + (event.regularWaiverLink ? `Sign your waiver: ${event.regularWaiverLink}\n` : "")

@@ -946,7 +946,11 @@ export default async (req) => {
       // why. All three were already calculated here and thrown away.
       playClubName: member ? (member.planName || "Play Club") : null,
       playClubAmount: memberAmount || 0,
-      playClubKids: member ? memberCoveredKids : [] });
+      playClubKids: member ? memberCoveredKids : [],
+      // Grip socks are added AFTER every discount (they're goods, not
+      // admission), so they were pushing Total paid above Subtotal with no line
+      // explaining the difference -- $25 subtotal, $28 paid, $3 unaccounted for.
+      gripSocks, gripSocksAmount });
   } catch (e) { /* ignore email errors */ }
 
   return json({
@@ -1098,7 +1102,7 @@ function validDob(s) {
 
 // Sends the customer a confirmation + policy email via Resend.
 // If RESEND_API_KEY isn't set, this quietly does nothing.
-async function sendConfirmation({ email, name, date, slotLabel, regular, sibling, infant, adults = 0, additionalAdults = 0, coveredRegular = 0, coveredInfant = 0, paidRegular = regular, paidInfant = infant, subtotal, tax, amount, giftApplied = [], giftTotal = 0, creditApplied = 0, creditRemaining = null, cardAmount = 0, passesUsed = [], discountPct = 0, discountAmount = 0, weekdaySpecialAmount = 0, weekdaySpecialLabel = "", militaryAmount = 0, militaryChildren = [], loyaltyCards = [] , playClubName = null, playClubAmount = 0, playClubKids = []}) {
+async function sendConfirmation({ email, name, date, slotLabel, regular, sibling, infant, adults = 0, additionalAdults = 0, coveredRegular = 0, coveredInfant = 0, paidRegular = regular, paidInfant = infant, subtotal, tax, amount, giftApplied = [], giftTotal = 0, creditApplied = 0, creditRemaining = null, cardAmount = 0, passesUsed = [], discountPct = 0, discountAmount = 0, weekdaySpecialAmount = 0, weekdaySpecialLabel = "", militaryAmount = 0, militaryChildren = [], loyaltyCards = [] , playClubName = null, playClubAmount = 0, playClubKids = [], gripSocks = 0, gripSocksAmount = 0}) {
   const key = process.env.RESEND_API_KEY;
   if (!key || !email) return;
 
@@ -1114,7 +1118,7 @@ async function sendConfirmation({ email, name, date, slotLabel, regular, sibling
 
   // Punch card rows (visits remaining after this booking)
   const passLines = passesUsed.map(p =>
-    `<tr><td style="padding:2px 0;color:#5c6470">Prepaid pass ${p.code} used (1 visit)</td><td style="padding:2px 0;text-align:right;font-weight:bold">${(p.total && p.total >= p.visitsRemaining) ? `${p.visitsRemaining} of ${p.total} left` : `${p.visitsRemaining} left`}</td></tr>`
+    `<tr><td style="padding:2px 0;color:#5c6470">\u{1F39F}\uFE0F Punch card ${p.code}</td><td style="padding:2px 0;text-align:right;font-weight:bold">${(p.total && p.total >= p.visitsRemaining) ? `${p.visitsRemaining} of ${p.total} left` : `${p.visitsRemaining} left`}</td></tr>`
   ).join("");
 
   // Combined punch-card section — folds the old separate "welcome" email into this one.
@@ -1149,9 +1153,14 @@ async function sendConfirmation({ email, name, date, slotLabel, regular, sibling
 
   // Names the children the membership actually covered, so the drop to $0 is
   // self-explanatory and the family can see their membership working.
-  const kidList = (playClubKids || []).filter(Boolean).join(", ");
+  // First names only, and no plan name. The row used to read
+  //   "Weekday Play Club - Baby/Infant — Alani Lee Wong-Gomez"
+  // which wrapped to three lines on a phone and told the family things they
+  // already know. What matters is who was covered and by how much.
+  const firstName = n => String(n || "").trim().split(/\s+/)[0] || "";
+  const kidList = (playClubKids || []).map(firstName).filter(Boolean).join(", ");
   const memberRow = (isMember && playClubAmount > 0) ? `
-      <tr><td style="padding:2px 0;color:#8a6b2f">\u{1F39F}\uFE0F ${esc(playClubName)}${kidList ? ` \u2014 ${esc(kidList)}` : ""}</td><td style="padding:2px 0;text-align:right;font-weight:bold;color:#8a6b2f">\u2212${dollars(playClubAmount)}</td></tr>` : "";
+      <tr><td style="padding:2px 0;color:#8a6b2f">\u{1F39F}\uFE0F Play Club${kidList ? ` \u2014 ${esc(kidList)}` : ""}</td><td style="padding:2px 0;text-align:right;font-weight:bold;color:#8a6b2f">\u2212${dollars(playClubAmount)}</td></tr>` : "";
 
   // Payment breakdown rows (shown when a gift card or store credit was used)
   let payRows = `<tr><td style="padding:6px 0 0;color:#5c6470">Total paid</td><td style="padding:6px 0 0;text-align:right;font-weight:bold;font-size:18px;color:#7ba676">${dollars(amount)}</td></tr>`;
@@ -1185,6 +1194,7 @@ async function sendConfirmation({ email, name, date, slotLabel, regular, sibling
       ${weekdaySpecialAmount > 0 ? `<tr><td style="padding:2px 0;color:#7ba676">🗓️ ${weekdaySpecialLabel}</td><td style="padding:2px 0;text-align:right;font-weight:bold;color:#7ba676">−${dollars(weekdaySpecialAmount)}</td></tr>` : ""}
       ${militaryAmount > 0 ? `<tr><td style="padding:2px 0;color:#7ba676">🎖️ Military discount (10% off)</td><td style="padding:2px 0;text-align:right;font-weight:bold;color:#7ba676">−${dollars(militaryAmount)}</td></tr>` : ""}
       ${memberRow}
+      ${gripSocksAmount > 0 ? `<tr><td style="padding:2px 0;color:#5c6470">\u{1F9E6} Grip socks \u00d7 ${gripSocks}</td><td style="padding:2px 0;text-align:right;font-weight:bold">${dollars(gripSocksAmount)}</td></tr>` : ""}
       ${payRows}
     </table>
     ${loyaltySection}
@@ -1202,7 +1212,8 @@ async function sendConfirmation({ email, name, date, slotLabel, regular, sibling
     + `Date: ${date}\nSession: ${slotLabel}\nChildren: ${total}\n`
     + `Admissions: ${lines.join(", ")}\nSubtotal: ${dollars(subtotal)}\n`
     + (isMember && playClubAmount > 0
-        ? `${playClubName}${kidList ? ` — ${kidList}` : ""}: −${dollars(playClubAmount)}\n` : "")
+        ? `Play Club${kidList ? ` — ${kidList}` : ""}: −${dollars(playClubAmount)}\n` : "")
+    + (gripSocksAmount > 0 ? `Grip socks \u00d7 ${gripSocks}: ${dollars(gripSocksAmount)}\n` : "")
     + `Total paid: ${dollars(amount)}\n\n`
     + cardText
     + `Sign your waiver: ${waiverUrl}\n`

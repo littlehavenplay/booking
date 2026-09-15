@@ -46,7 +46,10 @@ export default async (req) => {
         if (b.type === "walkin" || b.type === "pass") {
           const c = b.children || 0, a = b.type === "walkin" ? (b.adults || 0) : 1;
           sChildren += c; sAdults += a; dayTotalChildren += c; dayTotalGuests += c + a;
-          checkins.push({ id: b.id, type: b.type, slot: mid, arrivalLabel, children: c, adults: a, code: b.code || null, childName: b.childName || "", atLabel: b.atLabel || "", at: b.at || null, legacy });
+          checkins.push({ id: b.id, type: b.type, slot: mid, arrivalLabel, children: c, adults: a, code: b.code || null, childName: b.childName || "", atLabel: b.atLabel || "", at: b.at || null, legacy,
+            // Carried through so the roster can label a Play Club walk-in and
+            // name the children, instead of showing a bare headcount.
+            childNames: Array.isArray(b.childNames) ? b.childNames : [], playClubCode: b.playClubCode || null });
         } else {
           const children = (b.regular || 0) + (b.sibling || 0) + (b.infant || 0);
           const adults = typeof b.adultsTotal === "number"

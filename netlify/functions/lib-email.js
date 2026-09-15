@@ -102,18 +102,48 @@ export async function sendOwnerAlert(subject, bodyHtml, extraTo) {
 // POSTs the email and, if it fails with a rate-limit (429) or server error (5xx) or a
 // network hiccup, waits briefly and retries ONCE. This keeps confirmations from being
 // dropped or delayed during bursts of activity. Returns true on success; never throws.
-export async function resendEmail(payload) {
+export async function resendEmail(payload, opts = {}) {
   const key = process.env.RESEND_API_KEY;
   if (!key) return false;
   const body = JSON.stringify(payload);
+
+  // ---- Why this key exists ----------------------------------------------
+  // The retry below is what makes a flaky network survivable, but on its own
+  // it can DOUBLE-SEND: if the POST reaches Resend and the email goes out, and
+  // only then the connection drops or times out, the catch fires and we post
+  // the identical email a second time. The customer gets two copies of the
+  // same confirmation and nothing in our logs looks wrong.
+  //
+  // Resend de-duplicates on an Idempotency-Key for 24 hours. The key is
+  // generated ONCE per call and reused by the retry, which is exactly the
+  // behaviour we want: a retry of this send is suppressed, while a genuinely
+  // separate send (a second booking, even an identical-looking one) gets a
+  // fresh key and goes out normally.
+  // A caller may supply a STABLE key for a send that must happen at most once
+  // however many times the code runs -- a scheduled job, for instance, where two
+  // overlapping invocations would otherwise each send their own copy. Everything
+  // else gets a fresh key per call, which only de-duplicates its own retry.
+  let idem = (opts.idempotencyKey || "").toString().slice(0, 256);
+  if (!idem) {
+    try { idem = globalThis.crypto.randomUUID(); }
+    catch { idem = Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 12); }
+  }
+
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
       const res = await fetch("https://api.resend.com/emails", {
         method: "POST",
-        headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
+        headers: {
+          "Authorization": `Bearer ${key}`,
+          "Content-Type": "application/json",
+          "Idempotency-Key": idem,
+        },
         body,
       });
       if (res.ok) return true;
+      // 409 = this key is already in flight or already used. Either way the
+      // email is being handled; retrying would be the duplicate we're avoiding.
+      if (res.status === 409) return true;
       if (attempt === 0 && (res.status === 429 || res.status >= 500)) { await new Promise(r => setTimeout(r, 700)); continue; }
       return false;
     } catch {

@@ -66,6 +66,13 @@
   .wi-cols{display:flex;gap:22px;flex-wrap:wrap;align-items:flex-start}
   .wi-cols>.wi-col{flex:1 1 320px;min-width:290px}
   .wi-loyalty{background:#faf6f0;border:1px solid #eadfce;border-radius:14px;padding:14px 16px}
+  /* Play Club search sits beside the loyalty search. Deliberately a different
+     colour -- amber/gold against the cream loyalty panel -- so staff can see at
+     a glance which box they are typing into. Same gold as the Play Club emails. */
+  .wi-playclub{background:#faf3e4;border:1px solid #e6d3a8;border-radius:14px;padding:14px 16px}
+  .wi-playclub input{background:#fdf8ec !important;border-color:#e6d3a8 !important}
+  .pc-kidrow{display:flex;align-items:center;gap:9px;padding:6px 9px;border-radius:9px;background:#fdf8ec;margin:0 0 5px}
+  .pc-kidrow input[type="checkbox"]{width:auto !important;margin:0 !important;transform:scale(1.15)}
 
   /* ---- Category colours on the tools pages ----------------------------------
      Every tool used to have identical cream inputs, so with several open at once
@@ -127,8 +134,8 @@
   </div>
 
   <div id="app" class="hidden">
-<div id="secBar"><button id="secToggle" type="button">Sections ▾</button><div id="secMenu"><a href="#sec-schedule">Daily schedule</a><a href="#sec-walkin">Walk-in check-in</a><a href="#sec-punch">Punch-card check-in</a><a href="/loyalty.html">Loyalty &amp; Punch Cards</a><a href="/referrals.html" style="margin-left:8px">🤝 Referrals</a><a href="#sec-reschedule">Reschedule &amp; cancel</a><a href="#sec-party">Session capacity &amp; blocking</a><a href="#sec-deposit">Record a party deposit</a><a href="#sec-partyoff">Open play only (no parties)</a><a href="#sec-redeem">Redeem a credit</a><a href="#sec-credit-backfill">Backfill credit emails</a><a href="#sec-issue">Issue a credit</a><a href="#sec-code">Manage a code</a><a href="#sec-punchissue">Legacy card tools</a><a href="#sec-closures">Closures &amp; hours</a><a href="#sec-passes">Legacy prepaid holders</a><a href="#sec-parties">Party bookings</a><a href="/headcount.html">Head count</a><a href="#sec-prices">Manage prices</a><a href="#sec-weekly">Weekly hours</a><a href="#sec-seasonal">Seasonal hours</a><a href="#sec-weekday-special">Weekday special</a><a href="#sec-discount">Discount codes</a><a href="#sec-news">News banner</a></div></div>
-<nav id="sideNav" aria-label="Sections"><div class="snav-title">Sections</div><a href="#sec-schedule">Daily schedule</a><a href="#sec-walkin">Walk-in check-in</a><a href="#sec-punch">Punch-card check-in</a><a href="/loyalty.html">Loyalty &amp; Punch Cards</a><a href="#sec-reschedule">Reschedule &amp; cancel</a><a href="#sec-party">Session capacity &amp; blocking</a><a href="#sec-deposit">Record a party deposit</a><a href="#sec-partyoff">Open play only (no parties)</a><a href="#sec-redeem">Redeem a credit</a><a href="#sec-credit-backfill">Backfill credit emails</a><a href="#sec-issue">Issue a credit</a><a href="#sec-code">Manage a code</a><a href="#sec-punchissue">Legacy card tools</a><a href="#sec-closures">Closures &amp; hours</a><a href="#sec-passes">Legacy prepaid holders</a><a href="#sec-parties">Party bookings</a><a href="/headcount.html">Head count</a><a href="#sec-prices">Manage prices</a><a href="#sec-weekly">Weekly hours</a><a href="#sec-seasonal">Seasonal hours</a><a href="#sec-weekday-special">Weekday special</a><a href="#sec-discount">Discount codes</a><a href="#sec-news">News banner</a><a href="#sec-rating">Reviews rating</a><a href="#sec-photos">Site photos</a><a href="#sec-promos">Promotions &amp; Flyers</a><a href="#sec-events">Upcoming events</a><a href="#sec-newsletter">📧 Newsletter</a><a href="#sec-playclub">Play Club plans</a><a href="#sec-playclub-members">Play Club members</a><a href="#sec-partners">Partners page</a><a href="#sec-birthdays">Birthday club</a></nav>
+<div id="secBar"><button id="secToggle" type="button">Sections ▾</button><div id="secMenu"><a href="#sec-schedule">Daily schedule</a><a href="#sec-taxreport">Sales tax report</a><a href="#sec-walkin">Walk-in check-in</a><a href="#sec-punch">Punch-card check-in</a><a href="/loyalty.html">Loyalty &amp; Punch Cards</a><a href="/referrals.html" style="margin-left:8px">🤝 Referrals</a><a href="#sec-reschedule">Reschedule &amp; cancel</a><a href="#sec-party">Session capacity &amp; blocking</a><a href="#sec-deposit">Record a party deposit</a><a href="#sec-partyoff">Open play only (no parties)</a><a href="#sec-redeem">Redeem a credit</a><a href="#sec-credit-backfill">Backfill credit emails</a><a href="#sec-issue">Issue a credit</a><a href="#sec-code">Manage a code</a><a href="#sec-punchissue">Legacy card tools</a><a href="#sec-closures">Closures &amp; hours</a><a href="#sec-passes">Legacy prepaid holders</a><a href="#sec-parties">Party bookings</a><a href="/headcount.html">Head count</a><a href="#sec-prices">Manage prices</a><a href="#sec-weekly">Weekly hours</a><a href="#sec-seasonal">Seasonal hours</a><a href="#sec-weekday-special">Weekday special</a><a href="#sec-discount">Discount codes</a><a href="#sec-news">News banner</a></div></div>
+<nav id="sideNav" aria-label="Sections"><div class="snav-title">Sections</div><a href="#sec-schedule">Daily schedule</a><a href="#sec-taxreport">Sales tax report</a><a href="#sec-walkin">Walk-in check-in</a><a href="#sec-punch">Punch-card check-in</a><a href="/loyalty.html">Loyalty &amp; Punch Cards</a><a href="#sec-reschedule">Reschedule &amp; cancel</a><a href="#sec-party">Session capacity &amp; blocking</a><a href="#sec-deposit">Record a party deposit</a><a href="#sec-partyoff">Open play only (no parties)</a><a href="#sec-redeem">Redeem a credit</a><a href="#sec-credit-backfill">Backfill credit emails</a><a href="#sec-issue">Issue a credit</a><a href="#sec-code">Manage a code</a><a href="#sec-punchissue">Legacy card tools</a><a href="#sec-closures">Closures &amp; hours</a><a href="#sec-passes">Legacy prepaid holders</a><a href="#sec-parties">Party bookings</a><a href="/headcount.html">Head count</a><a href="#sec-prices">Manage prices</a><a href="#sec-weekly">Weekly hours</a><a href="#sec-seasonal">Seasonal hours</a><a href="#sec-weekday-special">Weekday special</a><a href="#sec-discount">Discount codes</a><a href="#sec-news">News banner</a><a href="#sec-rating">Reviews rating</a><a href="#sec-photos">Site photos</a><a href="#sec-promos">Promotions &amp; Flyers</a><a href="#sec-events">Upcoming events</a><a href="#sec-newsletter">📧 Newsletter</a><a href="#sec-playclub">Play Club plans</a><a href="#sec-playclub-members">Play Club members</a><a href="#sec-partners">Partners page</a><a href="#sec-birthdays">Birthday club</a></nav>
     <h1>Daily schedule</h1>
     <div class="card" id="sec-schedule">
       <label>Date</label>
@@ -191,8 +198,48 @@
           </div>
         </details>
       </div>
-      </div></div>
+      </div><div class="wi-col">
+      <div class="wi-playclub">
+        <h3 style="font-family:'Cormorant Garamond',serif;font-weight:600;font-size:1.3rem;color:#8a6b2f;margin:0 0 4px">&#10022; Play Club &mdash; find &amp; check in</h3>
+        <p class="note" style="margin-top:0">Search by phone number or membership code, then tick who is here today.<button type="button" class="hlp" data-help="Search by the phone number the membership is registered to, or the membership code. Tick each child who came today and log them onto the roster as a walk-in. Only active memberships are found &mdash; paused or ended ones need reactivating first.">?</button></p>
+        <label>Phone number or membership code</label>
+        <div class="row">
+          <div><input type="text" id="pcwInput" placeholder="760-555-1234 &middot; PC7K2M" autocomplete="off"></div>
+          <div style="flex:0 0 auto"><button id="pcwFind" type="button" style="margin:0">Find</button></div>
+        </div>
+        <div id="pcwMsg" class="note" style="margin-top:6px"></div>
+        <div id="pcwKids" style="margin:8px 0"></div>
+        <div id="pcwActions" style="display:none">
+          <div class="row"><div><label>Adults with them</label><input type="number" id="pcwAdults" min="0" placeholder="e.g. 1"></div></div>
+          <button id="pcwCheckin" type="button">Check in as walk-in</button>
+        </div>
+        <div class="out" id="pcwOut"></div>
+        <p class="note" style="margin:8px 0 0">Uses the arrival time picked on the left (or the time right now).</p>
+      </div>
+      </div>
     </div>
+    </div>
+
+  <div class="card" id="sec-taxreport">
+      <h2>&#129534; Sales tax report &mdash; goods sold</h2>
+      <p class="note" style="margin-top:0">Grip socks and other physical goods, for your quarterly CDTFA return. Admission isn't taxable; goods are.<button type="button" class="hlp" data-help="Admission is exempt, but physical goods are not. Prices already include the tax (you absorb it rather than charging customers), so the tax is worked backwards out of what was paid. Each price is listed separately, so a price change shows as its own line.">?</button></p>
+      <div class="row">
+        <div><label>From</label><input type="date" id="txFrom"></div>
+        <div><label>To</label><input type="date" id="txTo"></div>
+      </div>
+      <div class="row" style="align-items:flex-end">
+        <div><label>Tax rate (%)</label><input type="text" id="txRate" inputmode="decimal" placeholder="8.75"></div>
+        <div style="flex:0 0 auto"><button id="txRun" type="button" style="margin:0">Run report</button></div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 0">
+        <button type="button" class="alt tx-q" data-q="1" style="margin:0;padding:7px 12px;font-size:.78rem">Q1 Jan&ndash;Mar</button>
+        <button type="button" class="alt tx-q" data-q="2" style="margin:0;padding:7px 12px;font-size:.78rem">Q2 Apr&ndash;Jun</button>
+        <button type="button" class="alt tx-q" data-q="3" style="margin:0;padding:7px 12px;font-size:.78rem">Q3 Jul&ndash;Sep</button>
+        <button type="button" class="alt tx-q" data-q="4" style="margin:0;padding:7px 12px;font-size:.78rem">Q4 Oct&ndash;Dec</button>
+      </div>
+      <div id="txOut" style="margin-top:12px"></div>
+  </div>
+
 
   <div class="card" id="sec-punch">
       <h2>Check in a LEGACY punch card</h2>
@@ -1054,7 +1101,10 @@ async function loadDay(silent){
       if(s.checkins && s.checkins.length){
         html+='<div style="font-weight:800;color:var(--rose-deep);font-size:.82rem;margin-top:8px">Walk-ins & pass check-ins</div><table>';
         s.checkins.forEach(c=>{
-          const tag=c.type==="pass"?('Pass '+esc(c.code||'')+(c.childName?' ('+esc(c.childName)+')':'')):'Walk-in';
+          const tag=c.type==="pass"?('Pass '+esc(c.code||'')+(c.childName?' ('+esc(c.childName)+')':''))
+            /* Play Club walk-ins carry the children's names, so show who came
+               rather than an anonymous "Walk-in" row. */
+            :(c.playClubCode?('<span style="color:#8a6b2f;font-weight:800">\u2726 Play Club</span>'+(c.childNames&&c.childNames.length?(' ('+esc(c.childNames.join(', '))+')'):'')):'Walk-in');
           const det=c.children+' child'+(c.children===1?'':'ren')+(c.adults?(' + '+c.adults+' adult'+(c.adults===1?'':'s')):'');
           html+='<tr><td style="font-weight:700">'+c.atLabel+'</td><td>'+tag+'</td><td>'+det+'</td><td style="text-align:right"><button class="alt" style="padding:4px 10px;margin:0;font-size:.7rem" onclick="removeCheckin(\''+$("#date").value+'\',\''+c.slot+'\',\''+c.id+'\')">Remove</button></td></tr>';
         });
@@ -3705,6 +3755,186 @@ document.addEventListener("input",function(e){
   else label();
   setInterval(label,2000);   // covers dynamically rendered tools
 })();
+
+/* ---- Play Club walk-in check-in -----------------------------------------
+   Mirrors the loyalty search beside it, but reads the membership store. Staff
+   type a phone or code, get the children ON that membership, tick who actually
+   turned up, and log them to today's roster as a walk-in. The names travel
+   with the record so the roster shows who came, not just a headcount.
+   This only writes a staff check-in; it does not touch online booking. */
+/* The three staff surfaces authenticate with differently-named variables
+   (staff.html uses PIN, admin/tools use key) and label the arrival-time select
+   differently (#wiSlot vs #awSlot). Resolve both at call time so one copy of
+   this code works everywhere. typeof on a let still in TDZ throws, hence the
+   try/catch around each. */
+function pcwKey(){
+  try{ if(typeof PIN!=="undefined" && PIN) return PIN; }catch(e){}
+  try{ if(typeof key!=="undefined" && key) return key; }catch(e){}
+  try{ if(typeof KEY!=="undefined" && KEY) return KEY; }catch(e){}
+  return "";
+}
+function pcwSlot(){ var el=$("#wiSlot")||$("#awSlot"); return el ? el.value : ""; }
+var PCW = { code:"", children:[], selected:[] };
+
+function pcwReset(msg, cls){
+  PCW = { code:"", children:[], selected:[] };
+  var k=$("#pcwKids"); if(k) k.innerHTML="";
+  var a=$("#pcwActions"); if(a) a.style.display="none";
+  var m=$("#pcwMsg");
+  if(m){ m.textContent = msg || ""; m.style.color = cls==="err" ? "var(--red)" : (cls==="ok" ? "#3f7d54" : ""); }
+}
+
+function pcwRenderKids(){
+  var host=$("#pcwKids"); if(!host) return;
+  if(!PCW.children.length){
+    host.innerHTML='<p class="note" style="margin:0">No children listed on this membership yet \u2014 add them in the Play Club tool, or log a plain walk-in on the left.</p>';
+    $("#pcwActions").style.display="none";
+    return;
+  }
+  var h="";
+  PCW.children.forEach(function(c){
+    var safe=String(c.name).replace(/"/g,"&quot;");
+    h+='<label class="pc-kidrow" style="text-transform:none;letter-spacing:0;font-weight:700;color:var(--charcoal);font-size:.88rem">'
+      +'<input type="checkbox" class="pcw-kid" data-name="'+safe+'"> '+String(c.name)+'</label>';
+  });
+  host.innerHTML=h;
+  host.querySelectorAll(".pcw-kid").forEach(function(cb){
+    cb.onchange=function(){
+      PCW.selected=[].slice.call(host.querySelectorAll(".pcw-kid")).filter(function(x){return x.checked;}).map(function(x){return x.dataset.name;});
+      var out=$("#pcwOut"); if(out){ out.className="out"; out.textContent=""; }
+    };
+  });
+  $("#pcwActions").style.display="";
+}
+
+async function pcwFind(){
+  var raw=(($("#pcwInput")||{}).value||"").trim();
+  if(raw.length<4){ pcwReset("Type a phone number or membership code.","err"); return; }
+  pcwReset("Checking\u2026","");
+  var digits=raw.replace(/\D/g,""), isPhone=digits.length>=10;
+  try{
+    var r=await (await fetch("/api/playclub",{method:"POST",headers:{"content-type":"application/json"},
+      body:JSON.stringify({action:"member-check", code:isPhone?"":raw, phone:isPhone?raw:""})})).json();
+    if(!r || !r.member){
+      /* Name the actual problem. A bare "not found" sends staff hunting for a
+         typo when the real answer is that the membership lapsed. */
+      pcwReset(
+        r && r.reason==="paused"  ? "That membership is paused \u2014 it needs reactivating before it covers a visit."
+      : r && r.reason==="ended"   ? "That membership has ended \u2014 it needs renewing before it covers a visit."
+      : r && r.reason==="inactive"? "That membership isn't active right now."
+      : "No active membership found. Check the number or code, or log a plain walk-in on the left.", "err");
+      return;
+    }
+    PCW.code=r.code||""; PCW.children=(r.children||[]).filter(function(c){return c && c.name;}); PCW.selected=[];
+    var m=$("#pcwMsg");
+    if(m){ m.style.color="#3f7d54";
+      m.textContent="\u2713 "+(r.name||"Member")+" \u2014 "+(r.planName||"Play Club")
+        +" \u00b7 covers up to "+(r.maxChildren||1)+" child"+((r.maxChildren||1)===1?"":"ren")+" per visit."; }
+    pcwRenderKids();
+  }catch(e){ pcwReset("Couldn't reach the membership list \u2014 try again.","err"); }
+}
+
+async function pcwCheckin(){
+  var out=$("#pcwOut"); out.className="out";
+  if(!PCW.selected.length){ out.className="out err"; out.style.display=""; out.textContent="Tick which child or children are here."; return; }
+  var over = PCW.maxChildren && PCW.selected.length > PCW.maxChildren;
+  var adults=Math.max(0,parseInt(($("#pcwAdults")||{}).value,10)||0);
+  var slot=pcwSlot();
+  $("#pcwCheckin").disabled=true;
+  try{
+    var r=await (await fetch("/api/checkin",{method:"POST",headers:{"content-type":"application/json"},
+      body:JSON.stringify({ key:pcwKey(), action:"walkin", count:PCW.selected.length, adults:adults, slot:slot,
+        waiverConfirmed:false, childNames:PCW.selected, playClubCode:PCW.code })})).json();
+    if(r.ok){
+      var names=PCW.selected.join(", ");
+      out.className="out ok"; out.style.display="";
+      out.innerHTML="\u2713 Checked in "+names+" at "+(r.atLabel||"now")+(r.slotLabel?(" \u2192 "+r.slotLabel):"")+"."
+        +(r.over?'<div style="background:#fdeee6;border:1px solid #f0d3bf;border-radius:9px;padding:8px 10px;margin:8px 0 0;font-weight:800;color:#b5622f">\u26a0\ufe0f That hour is now over capacity ('+r.children+'/'+r.cap+').</div>':'')
+        +'<div style="background:#fdeee6;border:1px solid #f0d3bf;border-radius:9px;padding:8px 10px;margin:8px 0 0;font-weight:800;color:#b5622f">\u{1F4CB} Check their waiver is signed.</div>';
+      pcwReset("","");
+      if($("#pcwInput")) $("#pcwInput").value="";
+      if($("#pcwAdults")) $("#pcwAdults").value="";
+      try{ loadDay(true); }catch(e){}
+    } else { out.className="out err"; out.style.display=""; out.textContent=r.error||"Couldn't check them in."; }
+  }catch(e){ out.className="out err"; out.style.display=""; out.textContent="Network error."; }
+  $("#pcwCheckin").disabled=false;
+}
+
+if($("#pcwFind"))    $("#pcwFind").onclick=pcwFind;
+if($("#pcwCheckin")) $("#pcwCheckin").onclick=pcwCheckin;
+if($("#pcwInput"))   $("#pcwInput").addEventListener("keydown",function(e){ if(e.key==="Enter"){ e.preventDefault(); pcwFind(); } });
+
+
+/* ---- Sales tax report: goods sold ---------------------------------------
+   Admission is exempt; physical goods are not. Prices are tax-INCLUSIVE
+   because the studio absorbs the tax, so the report works the tax backwards
+   out of what was actually paid rather than adding it on top. Each distinct
+   price charged gets its own line, which is how a $2.50 -> $3.00 change stays
+   reportable after the fact. */
+function txMoney(c){ return "$" + ((c||0)/100).toFixed(2); }
+
+function txQuarter(q){
+  var y = new Date().getFullYear();
+  var span = { 1:["01-01","03-31"], 2:["04-01","06-30"], 3:["07-01","09-30"], 4:["10-01","12-31"] }[q];
+  if(!span) return;
+  // Before April, Q4 almost always means last year's Q4.
+  if(q===4 && (new Date().getMonth()+1) < 4) y -= 1;
+  $("#txFrom").value = y + "-" + span[0];
+  $("#txTo").value   = y + "-" + span[1];
+}
+
+async function txRun(){
+  var out=$("#txOut"), from=($("#txFrom")||{}).value, to=($("#txTo")||{}).value;
+  if(!from || !to){ out.innerHTML='<div class="out err" style="display:block">Pick a start and end date.</div>'; return; }
+  var ratePct=parseFloat(($("#txRate")||{}).value);
+  var body={ key:pcwKey(), from:from, to:to };
+  if(isFinite(ratePct) && ratePct>=0) body.rate=ratePct/100;
+  out.innerHTML='<div class="note">Adding it up\u2026</div>';
+  $("#txRun").disabled=true;
+  try{
+    var r=await (await fetch("/api/goods-report",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)})).json();
+    if(!r.ok){ out.innerHTML='<div class="out err" style="display:block">'+(r.error||"Couldn't build the report.")+'</div>'; $("#txRun").disabled=false; return; }
+    if(!r.rows.length){
+      out.innerHTML='<div class="out ok" style="display:block">No goods were sold between '+from+' and '+to+' \u2014 nothing to report.</div>';
+      $("#txRun").disabled=false; return;
+    }
+    var h='<table style="width:100%;border-collapse:collapse;font-size:.85rem">'
+      +'<tr><th style="text-align:left;padding:4px 6px">Item</th><th style="text-align:right;padding:4px 6px">Price each</th>'
+      +'<th style="text-align:right;padding:4px 6px">Qty</th><th style="text-align:right;padding:4px 6px">Collected</th>'
+      +'<th style="text-align:right;padding:4px 6px">Taxable</th><th style="text-align:right;padding:4px 6px">Tax owed</th></tr>';
+    var csv="Item,Price each,Qty,Collected,Taxable,Tax owed\n";
+    r.rows.forEach(function(x){
+      var price = x.unitCents==null ? "unknown" : txMoney(x.unitCents);
+      h+='<tr><td style="padding:4px 6px">'+x.label+'</td><td style="text-align:right;padding:4px 6px">'+price+'</td>'
+        +'<td style="text-align:right;padding:4px 6px">'+x.qty+'</td><td style="text-align:right;padding:4px 6px">'+txMoney(x.grossCents)+'</td>'
+        +'<td style="text-align:right;padding:4px 6px">'+txMoney(x.taxableBaseCents)+'</td>'
+        +'<td style="text-align:right;padding:4px 6px;font-weight:800">'+txMoney(x.taxOwedCents)+'</td></tr>';
+      csv+='"'+x.label+'",'+price+','+x.qty+','+txMoney(x.grossCents)+','+txMoney(x.taxableBaseCents)+','+txMoney(x.taxOwedCents)+"\n";
+    });
+    h+='<tr style="border-top:2px solid #e2d9cc;font-weight:900"><td style="padding:6px">Total</td><td></td>'
+      +'<td style="text-align:right;padding:6px">'+r.totals.qty+'</td><td style="text-align:right;padding:6px">'+txMoney(r.totals.grossCents)+'</td>'
+      +'<td style="text-align:right;padding:6px">'+txMoney(r.totals.taxableBaseCents)+'</td>'
+      +'<td style="text-align:right;padding:6px">'+txMoney(r.totals.taxOwedCents)+'</td></tr></table>';
+    csv+='Total,,'+r.totals.qty+','+txMoney(r.totals.grossCents)+','+txMoney(r.totals.taxableBaseCents)+','+txMoney(r.totals.taxOwedCents)+"\n";
+    h+='<p class="note" style="margin:8px 0 0">'+from+' to '+to+' \u00b7 rate '+(r.rate*100).toFixed(3).replace(/0+$/,"").replace(/\.$/,"")+'% \u00b7 '+r.bookingsWithGoods+' booking'+(r.bookingsWithGoods===1?"":"s")+' included.</p>';
+    h+='<p class="note" style="margin:4px 0 0;color:#b5622f;font-weight:700">'+r.note+'</p>';
+    if(r.rows.some(function(x){return x.unitCents==null;}))
+      h+='<p class="note" style="margin:4px 0 0;color:#b5622f;font-weight:700">Some older records show a quantity but no amount. They are listed as \u201cunknown\u201d rather than valued at today\u2019s price \u2014 check those manually before filing.</p>';
+    h+='<button type="button" class="alt" id="txCopy" style="margin:10px 0 0;padding:8px 14px;font-size:.8rem">Copy as CSV</button>';
+    out.innerHTML=h;
+    var cb=document.getElementById("txCopy");
+    if(cb) cb.onclick=function(){
+      if(navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(csv).then(function(){ cb.textContent="Copied \u2713"; setTimeout(function(){cb.textContent="Copy as CSV";},2000); });
+      } else { window.prompt("Copy this:", csv); }
+    };
+  }catch(e){ out.innerHTML='<div class="out err" style="display:block">Network error.</div>'; }
+  $("#txRun").disabled=false;
+}
+
+if($("#txRun")) $("#txRun").onclick=txRun;
+document.querySelectorAll(".tx-q").forEach(function(b){ b.onclick=function(){ txQuarter(parseInt(b.dataset.q,10)); txRun(); }; });
+
 </script>
 
 </body>
