@@ -115,7 +115,10 @@ export default async (req) => {
 
     return json({ ok: true, code: result.code, when, emailed: result.emailed,
       message: `Birthday gift ${result.code} for ${first} — valid their birthday week (${result.validFrom} to ${result.validUntil}).` +
-               (result.emailed ? " Emailed to the family." : " (Email didn't send — share the code directly.)") });
+               (result.reused ? " (Reused their existing code for this week — no duplicate issued.)" : "") +
+               (result.emailed
+                 ? " Emailed to the family."
+                 : " (Email didn't send — check the email service, and share the code directly for now.)") });
   }
 
   // Manual, staff-triggered version for when a birthday falls on a closed day
@@ -169,7 +172,10 @@ export default async (req) => {
 
     return json({ ok: true, code: result.code, validFrom, validUntil, emailed: result.emailed,
       message: `Birthday gift ${result.code} for ${first} ${last} — good ${validFrom === validUntil ? "on " + validFrom : "between " + validFrom + " and " + validUntil}.` +
-               (result.emailed ? " Emailed to the family." : " (Email didn't send — share the code directly.)") });
+               (result.reused ? " (Reused their existing code for this week — no duplicate issued.)" : "") +
+               (result.emailed
+                 ? " Emailed to the family."
+                 : " (Email didn't send — check the email service, and share the code directly for now.)") });
   }
 
   return json({ error: "Unknown action." }, 400);

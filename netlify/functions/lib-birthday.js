@@ -90,7 +90,18 @@ export async function issueBirthdayCode(rec, when, loyaltyCode, meta = {}) {
         validFrom, validUntil,
       });
       if (already && already.code) {
-        return { ok: true, code: already.code, emailed: false, reused: true, validFrom, validUntil };
+        // Reuse the code, but STILL SEND if the caller wants an email. Returning
+        // emailed:false here made the staff tool report "Could not email" when
+        // nothing had failed -- the child simply already had a code for that
+        // week. A manual re-issue is precisely when you want it sent again.
+        let emailed = false;
+        if (meta.sendEmail !== false) {
+          try {
+            emailed = await sendBirthdayEmail(rec, already.code,
+              isRange ? { validFrom, validUntil } : when, { forceSend: !!meta.manual });
+          } catch {}
+        }
+        return { ok: true, code: already.code, emailed, reused: true, validFrom, validUntil };
       }
     } catch {}
   }
@@ -130,7 +141,14 @@ export async function issueBirthdayCode(rec, when, loyaltyCode, meta = {}) {
     const sameChild = (exists.loyaltyCode || "") === (loyaltyCode || rec.code || "") &&
                       (exists.validFrom || "") === validFrom;
     if (sameChild) {
-      return { ok: true, code: cand, emailed: false, reused: true, validFrom, validUntil };
+      let emailed = false;
+      if (meta.sendEmail !== false) {
+        try {
+          emailed = await sendBirthdayEmail(rec, cand,
+            isRange ? { validFrom, validUntil } : when, { forceSend: !!meta.manual });
+        } catch {}
+      }
+      return { ok: true, code: cand, emailed, reused: true, validFrom, validUntil };
     }
     // Belongs to someone else -- try the next derived candidate.
   }
@@ -169,12 +187,12 @@ export async function issueBirthdayCode(rec, when, loyaltyCode, meta = {}) {
   // got the week-ahead email from in here, so one code arrived twice.
   let emailed = false;
   if (meta.sendEmail !== false) {
-    try { emailed = await sendBirthdayEmail(rec, code, isRange ? { validFrom, validUntil } : when); } catch {}
+    try { emailed = await sendBirthdayEmail(rec, code, isRange ? { validFrom, validUntil } : when, { forceSend: !!meta.manual }); } catch {}
   }
   return { ok: true, code, emailed, validFrom, validUntil };
 }
 
-export async function sendBirthdayEmail(rec, code, when) {
+export async function sendBirthdayEmail(rec, code, when, opts = {}) {
   const key = process.env.RESEND_API_KEY;
   if (!key || !rec.email) return false;
   const from = process.env.EMAIL_FROM || "onboarding@resend.dev";
@@ -227,7 +245,12 @@ export async function sendBirthdayEmail(rec, code, when) {
   return await resendEmail({
       from: fromHeader(from, studio), to: [rec.email], bcc: bcc ? [bcc] : undefined,
       subject: `🎂 Happy Birthday ${rec.first}! A free visit is waiting`, html: html + SIGNATURE_HTML,
-    }, { idempotencyKey: `bday-advance:${code}` });
+    }, opts.forceSend
+         // Staff pressing "Send birthday code" means send it, even if the same
+         // code went out earlier today. Only the automatic run uses the stable
+         // key that collapses accidental repeats.
+         ? {}
+         : { idempotencyKey: `bday-advance:${code}` });
 }
 
 export async function sendBirthdayDayOfEmail(rec, code, when, validUntil) {
