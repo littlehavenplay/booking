@@ -285,6 +285,52 @@ export default async (req) => {
     });
   }
 
+  // Staff-only search by NAME -- parent or child. Deliberately a SEPARATE action
+  // from member-check: the booking page must keep matching on code/phone only,
+  // because a customer typing a common first name should never be handed
+  // somebody else's membership. This one requires the admin key or staff PIN.
+  if (action === "member-search") {
+    const adminKey = process.env.ADMIN_KEY || "", staffPin = process.env.STAFF_PIN || "";
+    const provided = (b.key || "").toString();
+    if (provided !== adminKey && provided !== staffPin) return json({ error: "Wrong key." }, 401);
+
+    const q = (b.q || "").toString().trim().toLowerCase();
+    if (q.length < 2) return json({ ok: true, results: [] });
+    const digits = q.replace(/\D/g, "");
+
+    const members = await readMembers(store);
+    const hits = [];
+    for (const m of members) {
+      if (!m) continue;
+      const kids = (m.children || []).filter(c => c && c.name);
+      const parent = (m.name || "").toLowerCase();
+      const email  = (m.email || "").toLowerCase();
+      const kidHit = kids.find(c => c.name.toLowerCase().includes(q));
+      const match =
+        parent.includes(q) ||
+        email.includes(q) ||
+        !!kidHit ||
+        (m.code || "").toLowerCase().includes(q) ||
+        (digits.length >= 4 && (m.phone4 || "") === digits.slice(-4));
+      if (!match) continue;
+
+      const st = effectiveStatus(m);
+      hits.push({
+        code: m.code, name: m.name || "", planName: m.planName || "Play Club",
+        maxChildren: m.maxChildren || (kids.length || 1),
+        children: kids.map(c => ({ code: c.code || "", name: c.name })),
+        phone4: m.phone4 || "", status: st.status, active: st.status === "active",
+        // Say WHY it matched, so staff can tell two similar names apart.
+        matchedOn: kidHit ? ("child: " + kidHit.name) : parent.includes(q) ? "parent name"
+                 : email.includes(q) ? "email" : "code or phone",
+      });
+    }
+    // Active memberships first, then alphabetical. Cap the list so a search for
+    // "a" doesn't return the whole roster.
+    hits.sort((x, y) => (y.active - x.active) || x.name.localeCompare(y.name));
+    return json({ ok: true, results: hits.slice(0, 25), truncated: hits.length > 25 });
+  }
+
   // Booking page: "is this family a Play Club member?" Matched on the membership
   // code OR the phone they book with, so nobody has to remember anything.
   if (action === "member-check") {

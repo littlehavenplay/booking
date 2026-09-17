@@ -6,8 +6,10 @@
 <link href="https://fonts.googleapis.com" rel="preconnect"/>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&amp;family=Nunito:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
 <style>
+:root{--lh-amber15:#2a2622;--lh-amber17:#2f2a26;--lh-amber28:#5b4636;--lh-amber33:#8a6a1f;--lh-amber36:#8a6b2f;--lh-amber37:#a5651a;--lh-amber38:#6b6055;--lh-amber38a:#6b6255;--lh-amber41:#b9831a;--lh-amber48:#b8783c;--lh-amber48a:#8a7d6a;--lh-amber48b:#f5b301;--lh-amber52:#cf9a3c;--lh-amber54:#c98a4b;--lh-amber54a:#c9a24a;--lh-amber55:#9a8c7e;--lh-amber55a:#9a8d80;--lh-amber57:#f09433;--lh-amber60:#a89b8c;--lh-amber64:#aea298;--lh-amber73:#cbbfa9;--lh-amber74:#c9bfb2;--lh-amber77:#d9c9b0;--lh-amber78:#e6d3a8;--lh-amber78a:#e8d3a4;--lh-amber78b:#e8d7a8;--lh-amber79:#d8cdbb;--lh-amber82:#ecdcb8;--lh-amber83:#ffd9a8;--lh-amber83a:#e0d5c6;--lh-amber83b:#e0d5c7;--lh-amber84:#e2d9cc;--lh-amber85:#f0e0c0;--lh-amber86:#e7ddd0;--lh-amber86a:#e6ded2;--lh-amber86b:#ecdcc9;--lh-amber88:#ece3d6;--lh-amber88a:#ece4d6;--lh-amber88b:#eee1d2;--lh-amber88c:#f0e2d2;--lh-amber88d:#f3e7cd;--lh-amber89:#efe4d5;--lh-amber89a:#f6ecce;--lh-amber90:#efe7da;--lh-amber90a:#efe7dd;--lh-amber90b:#f0e6dd;--lh-amber91:#f0e9df;--lh-amber91a:#f1eadf;--lh-amber91b:#eee8e0;--lh-amber91c:#f0e9de;--lh-amber91d:#f2eae0;--lh-amber91e:#faf0d6;--lh-amber92:#f4ece1;--lh-amber92a:#f0ede5;--lh-amber92b:#f0ece4;--lh-amber92c:#f3ebe0;--lh-amber92d:#f3efe4;--lh-amber93:#f3efe9;--lh-amber93a:#f6efe6;--lh-amber93b:#fdeedd;--lh-amber94:#fbf1e6;--lh-amber94a:#faf3e4;--lh-amber95:#f6f2ec;--lh-amber95a:#f6f3ee;--lh-amber95b:#f7f2ec;--lh-amber95c:#f7f3ec;--lh-amber95d:#fbf3e7;--lh-amber95e:#fbf5ec;--lh-amber96:#fbf7f1;--lh-amber96a:#faf5ef;--lh-amber96b:#fdf5ee;--lh-amber96c:#fdf6ee;--lh-amber96d:#fdf8ec;--lh-amber97:#faf7f3;--lh-amber97a:#fdf9f4;--lh-amber97b:#fbf8f3;--lh-amber97c:#fdf7f0;--lh-amber97d:#fdfaf4;--lh-amber97e:#fffaf0;--lh-amber98:#fcfaf6;--lh-amber98a:#fdfbf8;--lh-amber98b:#fdfaf5;--lh-amber99:#fffdfa;--lh-amber99a:#fffdf9;--lh-blue34:#2f5a80;--lh-blue40:#5c6470;--lh-blue52:#1877f2;--lh-blue61:#4285f4;--lh-blue90:#dde7f0;--lh-blue93:#e3ecf5;--lh-blue97:#f3f7fb;--lh-olive44:#6f8160;--lh-olive53:#889a76;--lh-olive55:#8a9a7e;--lh-olive82:#cfe6bd;--lh-olive84:#d6e6c8;--lh-olive91:#e7f0df;--lh-olive93:#ecf1e8;--lh-olive94:#eef5e8;--lh-paper100:#ffffff;--lh-paper93:#ececec;--lh-rose22:#4a3526;--lh-rose29:#5a463a;--lh-rose34:#6b5444;--lh-rose40:#7a6253;--lh-rose41:#a5352b;--lh-rose42:#a5452f;--lh-rose45:#b5382f;--lh-rose45a:#b5622f;--lh-rose47:#b0473f;--lh-rose47a:#cc2366;--lh-rose48:#d32323;--lh-rose50:#a85f59;--lh-rose51:#b8524a;--lh-rose51a:#dc2743;--lh-rose57:#e6683c;--lh-rose58:#c9785f;--lh-rose61:#c9846f;--lh-rose63:#c97d76;--lh-rose74:#d9a79e;--lh-rose77:#e8a99f;--lh-rose79:#e4b8b1;--lh-rose83:#ffc9a8;--lh-rose85:#efcfc4;--lh-rose85a:#ecccc5;--lh-rose85b:#f0c9c2;--lh-rose86:#f0cfc8;--lh-rose88:#f1d6d2;--lh-rose88a:#f0d9d0;--lh-rose88b:#f0d9d2;--lh-rose88c:#f0dcd2;--lh-rose89:#f1dbd4;--lh-rose92:#f7e3df;--lh-rose94:#fbe7e4;--lh-rose94a:#fbe6e2;--lh-rose94b:#fbe7e2;--lh-rose95:#fdeee9;--lh-rose96:#fdf1ec;--lh-rose96a:#fdf0ee;--lh-rose97:#fdf5f4;--lh-rose99:#fffafa;--lh-sage22:#33521f;--lh-sage24:#127903;--lh-sage28:#3f5d33;--lh-sage30:#2f6a4a;--lh-sage31:#129309;--lh-sage33:#4d6b3e;--lh-sage34:#4f6b43;--lh-sage37:#3f7d5c;--lh-sage37a:#3f7d54;--lh-sage38:#4d7848;--lh-sage41:#5f7d52;--lh-sage45:#5f8a5a;--lh-sage53:#7ba06c;--lh-sage56:#7ba676;--lh-sage65:#9ec089;--lh-sage69:#a9cf90;--lh-sage74:#a9d2b6;--lh-sage79:#c2d7bd;--lh-sage82:#bfe3ce;--lh-sage83:#cfe6c2;--lh-sage83a:#cfe0c9;--lh-sage85:#cfe5d3;--lh-sage86:#cfe6d6;--lh-sage88:#dff0d3;--lh-sage89:#dfeada;--lh-sage91:#dff0e6;--lh-sage92:#e4f0e7;--lh-sage92a:#e3f0e6;--lh-sage93:#eaf4e4;--lh-sage94:#eef4ea;--lh-sage95:#eef5ee;--lh-sage96:#f4f8f2;--lh-sage97:#f7faf5;--lh-violet40:#5c4a80;--lh-violet41:#6d4b86;--lh-violet42:#bc1888;--lh-violet75:#b9a7d8;--lh-violet93:#eee6f5;--lh-violet97:#f3f0ff}
+
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{--cream:#faf7f3;--sand:#f4ece1;--blush-pale:#fdf1ec;--blush:#efcfc4;--rose:#c97d76;--rose-deep:#a85f59;--rose-light:#e8a99f;--sage-pale:#ecf1e8;--sage-light:#c2d7bd;--sage:#7ba676;--sage-dark:#4d7848;--slate:#5c6470;--taupe:#aea298;--charcoal:#2a2622;--white:#fff;--shadow:0 4px 24px rgba(0,0,0,.07);--shadow-lg:0 14px 44px rgba(0,0,0,.12);--radius:22px;--radius-sm:14px}
+:root{--cream:var(--lh-amber97);--sand:var(--lh-amber92);--blush-pale:var(--lh-rose96);--blush:var(--lh-rose85);--rose:var(--lh-rose63);--rose-deep:var(--lh-rose50);--rose-light:var(--lh-rose77);--sage-pale:var(--lh-olive93);--sage-light:var(--lh-sage79);--sage:var(--lh-sage56);--sage-dark:var(--lh-sage38);--slate:var(--lh-blue40);--taupe:var(--lh-amber64);--charcoal:var(--lh-amber15);--white:#fff;--shadow:0 4px 24px rgba(0,0,0,.07);--shadow-lg:0 14px 44px rgba(0,0,0,.12);--radius:22px;--radius-sm:14px}
 html{scroll-behavior:smooth}
 body{font-family:'Nunito',sans-serif;background:var(--cream);color:var(--charcoal);overflow-x:hidden;line-height:1.6}
 img{max-width:100%}
@@ -27,7 +29,7 @@ nav .logo img{height:46px;width:auto;display:block}
   .bnr{font-size:.64rem;letter-spacing:.05em;text-transform:uppercase;background:var(--blush-pale);
     color:var(--rose-deep);border:1.5px solid var(--blush);padding:calc(.5rem - 1.5px) 1rem;border-radius:40px;
     text-decoration:none;font-weight:700;transition:background .2s,border-color .2s;white-space:nowrap}
-  .bnr:hover{background:#fbe7e2;border-color:var(--rose-light)}
+  .bnr:hover{background:var(--lh-rose94b);border-color:var(--rose-light)}
   /* Below ~900px the three buttons crowd the burger, so the referral one drops
      out of the header — it's still in the mobile menu. */
   @media (max-width:900px){ .bnr{display:none} }
@@ -165,8 +167,8 @@ footer{background:var(--charcoal);padding:2rem 3rem;display:flex;align-items:cen
 .exc{border-radius:var(--radius);overflow:hidden;border:1px solid rgba(0,0,0,.06);display:flex;flex-direction:column;transition:.25s}
 .exc:hover{transform:translateY(-4px);box-shadow:var(--shadow-lg)}
 .eximg{overflow:hidden;aspect-ratio:16/9;background:var(--cream)}
-.ghome{display:inline-flex;align-items:center;gap:7px;background:#fff;border-radius:40px;padding:9px 18px;box-shadow:0 4px 20px rgba(0,0,0,.07);text-decoration:none;color:#2a2622;font-weight:800;margin-top:10px;font-size:.95rem}
-.ghome .ghstars{color:#f5b301;letter-spacing:1px}.ghome .ghg{color:#4285F4}.ghome .ghsep{color:#c9bfb2}.ghome .yhg{color:#d32323}.ghome .fhg{color:#1877F2}
+.ghome{display:inline-flex;align-items:center;gap:7px;background:#fff;border-radius:40px;padding:9px 18px;box-shadow:0 4px 20px rgba(0,0,0,.07);text-decoration:none;color:var(--lh-amber15);font-weight:800;margin-top:10px;font-size:.95rem}
+.ghome .ghstars{color:var(--lh-amber48b);letter-spacing:1px}.ghome .ghg{color:var(--lh-blue61)}.ghome .ghsep{color:var(--lh-amber74)}.ghome .yhg{color:var(--lh-rose48)}.ghome .fhg{color:var(--lh-blue52)}
 .rev-viewport{overflow:hidden;margin-top:1.4rem;-webkit-mask-image:linear-gradient(90deg,transparent,#000 5%,#000 95%,transparent);mask-image:linear-gradient(90deg,transparent,#000 5%,#000 95%,transparent)}
 .rev-track{display:flex;gap:16px;width:max-content;padding:22px 20px 10px;animation:revScroll 50s linear infinite}
 .rev-viewport:hover .rev-track{animation-play-state:paused}
@@ -198,8 +200,8 @@ footer{background:var(--charcoal);padding:2rem 3rem;display:flex;align-items:cen
 .socr{display:flex;gap:.6rem;margin-top:1rem}
 .sb{display:inline-flex;align-items:center;gap:.4rem;padding:.5rem 1rem;border-radius:40px;font-size:.7rem;font-weight:700;text-decoration:none;transition:transform .15s}
 .sb:hover{transform:translateY(-2px)}
-.sb.fb{background:#1877f2;color:#fff}
-.sb.ig{background:linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888);color:#fff}
+.sb.fb{background:var(--lh-blue52);color:#fff}
+.sb.ig{background:linear-gradient(135deg,var(--lh-amber57),var(--lh-rose57),var(--lh-rose51a),var(--lh-rose47a),var(--lh-violet42));color:#fff}
 .sb.tt{background:#000;color:#fff}
 .lmap{border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow-lg)}
 .lmap iframe{width:100%;height:360px;border:0;display:block}
@@ -242,17 +244,17 @@ nav, .wbar, .ticker, footer{text-align:left}
 .faqimg img{width:100%;height:auto;border-radius:var(--radius);box-shadow:var(--shadow);background:#fff;padding:.45rem}
 .faqlist{display:grid;gap:1rem}
 .faqitem{background:#fff;border-radius:var(--radius-sm);padding:1.25rem 1.4rem;box-shadow:0 2px 14px rgba(0,0,0,.05);border:1px solid rgba(0,0,0,.05)}
-.faqitem{cursor:pointer}.faqitem summary{font-family:'Cormorant Garamond',serif;font-size:1.35rem;font-weight:500;color:var(--charcoal);text-align:left;list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:1rem}.faqitem summary::-webkit-details-marker{display:none}.faqitem summary::after{content:"+";font-size:1.5rem;color:var(--rose-deep,#a85f59);font-family:sans-serif;line-height:1;flex:0 0 auto}.faqitem[open] summary::after{content:"\2212"}.faqitem[open] summary{margin-bottom:.5rem}
+.faqitem{cursor:pointer}.faqitem summary{font-family:'Cormorant Garamond',serif;font-size:1.35rem;font-weight:500;color:var(--charcoal);text-align:left;list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:1rem}.faqitem summary::-webkit-details-marker{display:none}.faqitem summary::after{content:"+";font-size:1.5rem;color:var(--rose-deep,var(--lh-rose50));font-family:sans-serif;line-height:1;flex:0 0 auto}.faqitem[open] summary::after{content:"\2212"}.faqitem[open] summary{margin-bottom:.5rem}
 .faqitem p{font-size:.86rem;color:var(--slate);line-height:1.75;text-align:left;margin-top:.3rem}
 .faqcat{background:#fff;border-radius:16px;box-shadow:0 2px 14px rgba(0,0,0,.05);border:1px solid rgba(0,0,0,.05);overflow:hidden}
 .faqcat>summary{list-style:none;cursor:pointer;padding:1.15rem 1.4rem;font-family:'Cormorant Garamond',serif;font-size:1.5rem;font-weight:500;color:var(--charcoal);display:flex;align-items:center;gap:.6rem;user-select:none}
 .faqcat>summary::-webkit-details-marker{display:none}
 .faqcat>summary::after{content:"+";margin-left:auto;font-size:1.6rem;color:var(--rose-deep);font-family:sans-serif;line-height:1}
 .faqcat[open]>summary::after{content:"\2212"}
-.faqcat[open]>summary{border-bottom:1px solid #f0e6dd}
+.faqcat[open]>summary{border-bottom:1px solid var(--lh-amber90b)}
 .faqcount{font-family:'Nunito',sans-serif;font-size:.7rem;font-weight:800;color:var(--rose-deep);background:var(--blush-pale);border-radius:40px;padding:.15rem .55rem}
-.faqcatbody{padding:1rem 1.2rem;display:flex;flex-direction:column;gap:.7rem;background:#fdfbf8}
-.faqcatbody .faqitem{box-shadow:none;border:1px solid #efe7dd;padding:.9rem 1.1rem;border-radius:12px}
+.faqcatbody{padding:1rem 1.2rem;display:flex;flex-direction:column;gap:.7rem;background:var(--lh-amber98a)}
+.faqcatbody .faqitem{box-shadow:none;border:1px solid var(--lh-amber90a);padding:.9rem 1.1rem;border-radius:12px}
 .faqcatbody .faqitem summary{font-size:1.05rem}
 .bbanner{width:100%;height:auto;max-width:900px;object-fit:contain;background:#fff;padding:.65rem}
 .bcimg{display:flex;align-items:center;justify-content:center;background:#fff}.bcimg img{width:100%;height:auto;object-fit:contain}
@@ -280,7 +282,7 @@ nav, .wbar, .ticker, footer{text-align:left}
 .inqform{display:grid;gap:1rem;text-align:left}
 .inqrow{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
 .inqform label{display:block;font-size:.66rem;font-weight:800;color:var(--taupe);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.35rem}
-.inqform input,.inqform select,.inqform textarea{width:100%;border:1.5px solid #e7ddd0;border-radius:14px;padding:.85rem 1rem;font-family:'Nunito',sans-serif;font-size:.92rem;font-weight:600;color:var(--charcoal);background:#fcfaf6;outline:none}
+.inqform input,.inqform select,.inqform textarea{width:100%;border:1.5px solid var(--lh-amber86);border-radius:14px;padding:.85rem 1rem;font-family:'Nunito',sans-serif;font-size:.92rem;font-weight:600;color:var(--charcoal);background:var(--lh-amber98);outline:none}
 .inqform textarea{min-height:120px;resize:vertical;line-height:1.6}
 .inqform input:focus,.inqform select:focus,.inqform textarea:focus{border-color:var(--rose)}
 .inqnote{background:var(--sage-pale);border:1px solid rgba(123,166,118,.25);border-radius:14px;padding:.9rem 1rem;color:var(--sage-dark);font-size:.84rem;font-weight:700;line-height:1.6;text-align:center}
@@ -298,7 +300,7 @@ nav, .wbar, .ticker, footer{text-align:left}
 @media(max-width:768px){#imgLightbox{padding:10px}#imgLightbox img{max-width:100%;border-radius:10px}}
 
   .bcimg img{width:100%;height:auto;display:block;object-fit:contain}
-</style><link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#7a6253"><link rel="apple-touch-icon" href="/assets/icons/apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="Little Haven"><link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32.png"></head><body>
+</style><link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="var(--lh-rose40)"><link rel="apple-touch-icon" href="/assets/icons/apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="Little Haven"><link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32.png"></head><body>
 <nav>
 <a class="logo" href="index.html"><img alt="Little Haven Play Studio" src="/assets/inline-home-01.png"/></a>
 <ul class="nav-links" id="navLinks">
@@ -332,20 +334,20 @@ nav, .wbar, .ticker, footer{text-align:left}
 })();
 </script>
 <div class="wbar"><p>📋 Waiver required before entry — sign online to save time at check-in!</p><a href="https://waivermaster.com/sign.html?q=DU3F7C23VNX8D" target="_blank">Sign Now →</a></div>
-<div style="background:#a85f59;color:#fff;text-align:center;padding:9px 16px;font-family:'Nunito',sans-serif;font-weight:800;font-size:.82rem;letter-spacing:.02em">🧦 Grip socks are required for all children and must fully cover the bottom surface of the foot to be accepted.</div>
+<div style="background:var(--lh-rose50);color:#fff;text-align:center;padding:9px 16px;font-family:'Nunito',sans-serif;font-weight:800;font-size:.82rem;letter-spacing:.02em">🧦 Grip socks are required for all children and must fully cover the bottom surface of the foot to be accepted.</div>
 <div class="ticker"><div class="tin"><span class="ti"><span class="tdot"></span>Soft Indoor Playground</span><span class="ti"><span class="tdot"></span>Ball Pit</span><span class="ti"><span class="tdot"></span>Slide &amp; Climber</span><span class="ti"><span class="tdot"></span>Infant &amp; Toddler Zone</span><span class="ti"><span class="tdot"></span>Interactive Floor Games</span><span class="ti"><span class="tdot"></span>Sanitized Throughout the Day</span><span class="ti"><span class="tdot"></span>Grip Socks Required</span><span class="ti"><span class="tdot"></span>Hours Posted Weekly</span><span class="ti"><span class="tdot"></span>Cashless Studio</span><span class="ti"><span class="tdot"></span>Yucca Valley CA</span><span class="ti"><span class="tdot"></span>Soft Indoor Playground</span><span class="ti"><span class="tdot"></span>Ball Pit</span><span class="ti"><span class="tdot"></span>Slide &amp; Climber</span><span class="ti"><span class="tdot"></span>Infant &amp; Toddler Zone</span><span class="ti"><span class="tdot"></span>Interactive Floor Games</span><span class="ti"><span class="tdot"></span>Sanitized Throughout the Day</span><span class="ti"><span class="tdot"></span>Grip Socks Required</span><span class="ti"><span class="tdot"></span>Hours Posted Weekly</span><span class="ti"><span class="tdot"></span>Cashless Studio</span><span class="ti"><span class="tdot"></span>Yucca Valley CA</span></div></div>
-<section id="news" style="display:none;background:linear-gradient(90deg,#fdeee9,#fbf1e6);border-bottom:1px solid #f0d9d0;padding:18px 20px">
+<section id="news" style="display:none;background:linear-gradient(90deg,var(--lh-rose95),var(--lh-amber94));border-bottom:1px solid var(--lh-rose88a);padding:18px 20px">
 <div style="max-width:900px;margin:0 auto;display:flex;align-items:center;justify-content:center;gap:14px;text-align:center">
 <div style="font-size:1.6rem;line-height:1">📣</div>
-<div><div style="font-size:.62rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#c9a24a">Little Haven News</div>
-<div id="newsHead" style="font-family:'Cormorant Garamond',serif;font-weight:600;font-size:1.35rem;color:#a85f59;line-height:1.2;margin-top:1px"></div>
-<div id="newsBody" style="color:#5c6470;font-weight:600;margin-top:3px;white-space:pre-wrap"></div></div>
+<div><div style="font-size:.62rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--lh-amber54a)">Little Haven News</div>
+<div id="newsHead" style="font-family:'Cormorant Garamond',serif;font-weight:600;font-size:1.35rem;color:var(--lh-rose50);line-height:1.2;margin-top:1px"></div>
+<div id="newsBody" style="color:var(--lh-blue40);font-weight:600;margin-top:3px;white-space:pre-wrap"></div></div>
 </div></section>
-<section id="closureNotice" style="display:none;background:linear-gradient(90deg,#fdeee9,#fbf1e6);border-bottom:1px solid #f0d9d0;padding:16px 20px">
+<section id="closureNotice" style="display:none;background:linear-gradient(90deg,var(--lh-rose95),var(--lh-amber94));border-bottom:1px solid var(--lh-rose88a);padding:16px 20px">
 <div style="max-width:900px;margin:0 auto;display:flex;align-items:center;justify-content:center;gap:12px;text-align:center">
 <div style="font-size:1.5rem;line-height:1">📅</div>
-<div><div style="font-size:.62rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#c9785f">Closure Notice</div>
-<div id="closureNoticeText" style="font-weight:700;font-size:1.08rem;color:#a85f59;line-height:1.3;margin-top:2px"></div></div>
+<div><div style="font-size:.62rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--lh-rose58)">Closure Notice</div>
+<div id="closureNoticeText" style="font-weight:700;font-size:1.08rem;color:var(--lh-rose50);line-height:1.3;margin-top:2px"></div></div>
 </div>
 </section>
 <style>
@@ -353,7 +355,7 @@ nav, .wbar, .ticker, footer{text-align:left}
 #peek .peek-viewport{overflow:hidden;margin-top:1.4rem;-webkit-mask-image:linear-gradient(90deg,transparent,#000 5%,#000 95%,transparent);mask-image:linear-gradient(90deg,transparent,#000 5%,#000 95%,transparent)}
 #peek .peek-track{display:flex;width:max-content;animation:peekScroll 55s linear infinite}
 #peek .peek-viewport:hover .peek-track{animation-play-state:paused}
-#peek .peek-tile{flex:0 0 auto;width:300px;height:225px;margin-right:16px;border-radius:18px;overflow:hidden;border:none;padding:0;background:#efe7da;cursor:pointer;box-shadow:var(--shadow);transition:transform .25s ease,box-shadow .25s ease}
+#peek .peek-tile{flex:0 0 auto;width:300px;height:225px;margin-right:16px;border-radius:18px;overflow:hidden;border:none;padding:0;background:var(--lh-amber90);cursor:pointer;box-shadow:var(--shadow);transition:transform .25s ease,box-shadow .25s ease}
 #peek .peek-tile img{width:100%;height:100%;object-fit:cover;display:block}
 #peek .peek-tile:hover{transform:translateY(-5px) scale(1.02);box-shadow:0 14px 32px rgba(0,0,0,.16)}
 #peek .peek-hint{text-align:center;font-size:.78rem;color:var(--slate);margin-top:1rem;font-style:italic}
@@ -470,9 +472,9 @@ nav, .wbar, .ticker, footer{text-align:left}
 <div class="bnote reveal">🎈 Party packages are private events. Maximum capacity is 35 guests total, including children and adults. Now booking online — Friday, Saturday & Sunday!</div>
 <div class="reveal" style="text-align:center;max-width:660px;margin:34px auto 0;padding:0 20px">
 <p class="tag" style="text-align:center">Private Events</p>
-<h3 style="font-family:'Cormorant Garamond',serif;font-weight:400;font-size:2rem;color:#a85f59;margin-bottom:6px">Reserve Little Haven for your <em style="font-style:italic">private celebration</em> 🎈</h3>
-<p style="color:#5c6470;font-weight:600;margin-bottom:18px">Book the whole studio for any little celebration.<button type="button" class="hlp" data-help="Not just birthdays! Book the whole studio for <b>baby showers, gender reveals, and special little moments</b> too. Check available dates &amp; time slots below, or reach out with questions.">?</button></p>
-<div style="text-align:center"><a href="parties.html" style="display:inline-block;background:#c97d76;color:#fff;font-weight:800;letter-spacing:.06em;text-transform:uppercase;font-size:.82rem;padding:16px 38px;border-radius:40px;text-decoration:none;box-shadow:0 10px 26px -10px #a85f59">🎉 Ready to book? Browse available dates</a></div>
+<h3 style="font-family:'Cormorant Garamond',serif;font-weight:400;font-size:2rem;color:var(--lh-rose50);margin-bottom:6px">Reserve Little Haven for your <em style="font-style:italic">private celebration</em> 🎈</h3>
+<p style="color:var(--lh-blue40);font-weight:600;margin-bottom:18px">Book the whole studio for any little celebration.<button type="button" class="hlp" data-help="Not just birthdays! Book the whole studio for <b>baby showers, gender reveals, and special little moments</b> too. Check available dates &amp; time slots below, or reach out with questions.">?</button></p>
+<div style="text-align:center"><a href="parties.html" style="display:inline-block;background:var(--lh-rose63);color:#fff;font-weight:800;letter-spacing:.06em;text-transform:uppercase;font-size:.82rem;padding:16px 38px;border-radius:40px;text-decoration:none;box-shadow:0 10px 26px -10px var(--lh-rose50)">🎉 Ready to book? Browse available dates</a></div>
 </div>
 </section>
 <section class="sec" id="extras">
@@ -512,7 +514,7 @@ nav, .wbar, .ticker, footer{text-align:left}
 <div class="loci"><div class="locic">🕐</div><div><div class="locl">Hours</div><div class="locv" id="hoursLocv">Tue, Wed, Thu: 9:00 AM – 3:00 PM<br/>Fri &amp; Sat: 9:00 AM – 4:00 PM<br/>Sun: 9:00 AM – 3:00 PM<br/><span style="color:var(--rose-deep);font-weight:700">Closed Mondays</span></div></div></div>
 </div>
 <a class="br" href="https://waivermaster.com/sign.html?q=DU3F7C23VNX8D" style="margin-bottom:1rem" target="_blank">📝 Sign Waiver Before Arriving</a>
-<div style="font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:#a85f59;font-weight:900;margin:.2rem 0 .5rem">Stay in the loop</div>
+<div style="font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--lh-rose50);font-weight:900;margin:.2rem 0 .5rem">Stay in the loop</div>
 <div style="font-size:.78rem;color:var(--slate);font-weight:600;margin:0 0 .6rem">Special events &amp; news go out here first.</div>
 <div class="socr">
 <a class="sb fb" href="https://facebook.com/littlehavenplay" target="_blank" rel="noopener" aria-label="Facebook"><svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true"><path d="M24 12.07C24 5.4 18.63 0 12 0S0 5.4 0 12.07C0 18.1 4.39 23.1 10.13 24v-8.44H7.08v-3.49h3.05V9.41c0-3.02 1.79-4.69 4.53-4.69 1.31 0 2.68.24 2.68.24v2.96h-1.51c-1.49 0-1.96.93-1.96 1.89v2.26h3.33l-.53 3.49h-2.8V24C19.61 23.1 24 18.1 24 12.07z"/></svg><span>Facebook</span></a>
@@ -723,7 +725,7 @@ if(s)s.style.display="block";var nv=document.getElementById("navNews");if(nv)nv.
           var idx=DOW.indexOf(name.slice(0,-1)); var sd=idx>-1?(s.schedule[idx]||s.schedule[String(idx)]):null;
           return sd && !sd.closed;
         });
-        if(lv) lv.innerHTML="<b>"+label+"</b><br/>"+summarize(s.schedule).join("<br/>")+"<br/><span style='font-size:.75rem;color:#9a8c7e'>through "+s.to+"</span>";
+        if(lv) lv.innerHTML="<b>"+label+"</b><br/>"+summarize(s.schedule).join("<br/>")+"<br/><span style='font-size:.75rem;color:var(--lh-amber55)'>through "+s.to+"</span>";
         if(fp) fp.innerHTML="<b>"+label+" (through "+s.to+"):</b> "+summarize(s.schedule).join(" \u00b7 ")+". Last admission is always 1 hour before closing.";}
     }
     if(badge&&seasOpenOnClosedDay) badge.style.display="none";
@@ -799,21 +801,21 @@ if(s)s.style.display="block";var nv=document.getElementById("navNews");if(nv)nv.
   #lhnews-card .lhnews-emoji{font-size:2.3rem;line-height:1}
   #lhnews-card h3{font-family:'Cormorant Garamond',serif;font-weight:500;font-size:1.7rem;margin:6px 0 6px;color:var(--charcoal)}
   #lhnews-card p.lhnews-sub{color:var(--slate);font-size:.95rem;line-height:1.55;margin:0 0 16px}
-  #lhnews-card input{width:100%;border:1.5px solid #e7ddd0;border-radius:12px;padding:12px 14px;font-family:'Nunito';font-weight:600;font-size:1rem;background:#fcfaf6;outline:none;margin-bottom:9px}
+  #lhnews-card input{width:100%;border:1.5px solid var(--lh-amber86);border-radius:12px;padding:12px 14px;font-family:'Nunito';font-weight:600;font-size:1rem;background:var(--lh-amber98);outline:none;margin-bottom:9px}
   #lhnews-card input:focus{border-color:var(--rose)}
   #lhnews-subBtn{width:100%;border:none;border-radius:40px;padding:13px 20px;font-family:'Nunito';font-weight:800;font-size:.85rem;letter-spacing:.05em;text-transform:uppercase;color:#fff;background:var(--rose);cursor:pointer;margin-top:3px}
   #lhnews-subBtn:hover{background:var(--rose-deep)}#lhnews-subBtn:disabled{opacity:.6;cursor:not-allowed}
   #lhnews-nothanks{display:inline-block;margin-top:12px;background:none;border:none;color:var(--taupe);font-family:'Nunito';font-weight:700;font-size:.8rem;cursor:pointer;text-decoration:underline}
   #lhnews-fine{font-size:.72rem;color:var(--taupe);line-height:1.5;margin-top:14px}
   #lhnews-msg{font-weight:700;font-size:.85rem;border-radius:10px;padding:9px 12px;margin-top:4px;display:none}
-  #lhnews-msg.err{display:block;background:#f7e3df;color:#b8524a}
+  #lhnews-msg.err{display:block;background:var(--lh-rose92);color:var(--lh-rose51)}
 
 /* Party cards: the photo does the selling, so the itemised list sits behind a
    tap. Seven ticks per card times three cards was most of a screen. */
-.bcx{border-top:1px solid #f0e9de;padding-top:8px;margin-top:4px}
+.bcx{border-top:1px solid var(--lh-amber91c);padding-top:8px;margin-top:4px}
 .bcx>summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:8px}
 .bcx>summary::-webkit-details-marker{display:none}
-.bcxi{margin-left:auto;font-weight:900;color:#a89b8c}
+.bcxi{margin-left:auto;font-weight:900;color:var(--lh-amber60)}
 .bcx[open] .bcxi{transform:rotate(45deg)}
 </style>
 <div id="lhnews-overlay" role="dialog" aria-modal="true" aria-labelledby="lhnews-h">
@@ -893,11 +895,11 @@ if(s)s.style.display="block";var nv=document.getElementById("navNews");if(nv)nv.
 </script>
 <script src="/assets/chat.js" defer></script>
 <style>
-.hlp{display:inline-flex;align-items:center;justify-content:center;width:17px;height:17px;padding:0;margin:0 0 0 5px;vertical-align:middle;border:none;border-radius:50%;cursor:pointer;background:#e6ded2;color:#6b6055;font:900 11px/1 Nunito,Arial,sans-serif;transition:background .15s,color .15s}
-.hlp:hover,.hlp:focus{background:#c9846f;color:#fff;outline:none}
-.hlp-bubble{position:absolute;z-index:10000;max-width:290px;background:#2f2a26;color:#fff;border-radius:10px;padding:10px 12px;font:600 .78rem/1.5 Nunito,Arial,sans-serif;box-shadow:0 10px 30px rgba(0,0,0,.22)}
-.hlp-bubble b{color:#ffd9a8}.hlp-bubble a{color:#ffc9a8}
-.hlp-bubble:after{content:"";position:absolute;top:-5px;left:var(--ax,14px);width:10px;height:10px;background:#2f2a26;transform:rotate(45deg)}
+.hlp{display:inline-flex;align-items:center;justify-content:center;width:17px;height:17px;padding:0;margin:0 0 0 5px;vertical-align:middle;border:none;border-radius:50%;cursor:pointer;background:var(--lh-amber86a);color:var(--lh-amber38);font:900 11px/1 Nunito,Arial,sans-serif;transition:background .15s,color .15s}
+.hlp:hover,.hlp:focus{background:var(--lh-rose61);color:#fff;outline:none}
+.hlp-bubble{position:absolute;z-index:10000;max-width:290px;background:var(--lh-amber17);color:#fff;border-radius:10px;padding:10px 12px;font:600 .78rem/1.5 Nunito,Arial,sans-serif;box-shadow:0 10px 30px rgba(0,0,0,.22)}
+.hlp-bubble b{color:var(--lh-amber83)}.hlp-bubble a{color:var(--lh-rose83)}
+.hlp-bubble:after{content:"";position:absolute;top:-5px;left:var(--ax,14px);width:10px;height:10px;background:var(--lh-amber17);transform:rotate(45deg)}
 @media print{.hlp,.hlp-bubble{display:none!important}}
 
 /* Social buttons carry the real brand marks now, so the pill needs to lay out an
@@ -991,6 +993,50 @@ if(s)s.style.display="block";var nv=document.getElementById("navNews");if(nv)nv.
   }
   if(document.readyState === "loading") document.addEventListener("DOMContentLoaded", countFaqs);
   else countFaqs();
+})();
+</script>
+
+<script>
+/* Seasonal theme. Colour only: it swaps CSS variable values and touches nothing
+   else on the page. The cached value is applied before first paint so the site
+   never flashes the wrong palette, then the server is asked for the current
+   one. If either step fails the everyday rose-and-sage palette simply stays. */
+(function(){
+  var EL;
+  function apply(css){
+    if(!css){ if(EL) EL.textContent=""; return; }
+    if(!EL){ EL=document.createElement("style"); EL.id="lh-theme"; document.head.appendChild(EL); }
+    EL.textContent=css;
+  }
+  try{ apply(localStorage.getItem("lhThemeCss")||""); }catch(e){}
+  fetch("/api/site-theme").then(function(r){return r.json();}).then(function(d){
+    if(!d||!d.ok) return;
+    apply(d.css||"");
+    try{ localStorage.setItem("lhThemeCss", d.css||""); localStorage.setItem("lhThemeKey", d.theme||"default"); }catch(e){}
+  }).catch(function(){});
+})();
+</script>
+
+<script>
+/* One answer open at a time. Opening a question closes whichever was open, in
+   that category and in the What's Included list. Native <details> allows any
+   number open at once, which turns a long FAQ into a wall of text. Scoped per
+   list, so opening a question doesn't collapse a different category. */
+(function(){
+  function only(list){
+    var items = list.querySelectorAll(":scope > details");
+    items.forEach(function(d){
+      d.addEventListener("toggle", function(){
+        if(!d.open) return;
+        items.forEach(function(o){ if(o !== d) o.open = false; });
+      });
+    });
+  }
+  function init(){
+    document.querySelectorAll(".faqlist, .inc-list").forEach(only);
+  }
+  if(document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
+  else init();
 })();
 </script>
 </body></html>

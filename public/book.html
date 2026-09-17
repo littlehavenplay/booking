@@ -7,16 +7,18 @@
 <link href="https://fonts.googleapis.com" rel="preconnect">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Nunito:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
+:root{--lh-amber15:#2a2622;--lh-amber17:#2f2a26;--lh-amber28:#5b4636;--lh-amber33:#8a6a1f;--lh-amber36:#8a6b2f;--lh-amber37:#a5651a;--lh-amber38:#6b6055;--lh-amber38a:#6b6255;--lh-amber41:#b9831a;--lh-amber48:#b8783c;--lh-amber48a:#8a7d6a;--lh-amber48b:#f5b301;--lh-amber52:#cf9a3c;--lh-amber54:#c98a4b;--lh-amber54a:#c9a24a;--lh-amber55:#9a8c7e;--lh-amber55a:#9a8d80;--lh-amber57:#f09433;--lh-amber60:#a89b8c;--lh-amber64:#aea298;--lh-amber73:#cbbfa9;--lh-amber74:#c9bfb2;--lh-amber77:#d9c9b0;--lh-amber78:#e6d3a8;--lh-amber78a:#e8d3a4;--lh-amber78b:#e8d7a8;--lh-amber79:#d8cdbb;--lh-amber82:#ecdcb8;--lh-amber83:#ffd9a8;--lh-amber83a:#e0d5c6;--lh-amber83b:#e0d5c7;--lh-amber84:#e2d9cc;--lh-amber85:#f0e0c0;--lh-amber86:#e7ddd0;--lh-amber86a:#e6ded2;--lh-amber86b:#ecdcc9;--lh-amber88:#ece3d6;--lh-amber88a:#ece4d6;--lh-amber88b:#eee1d2;--lh-amber88c:#f0e2d2;--lh-amber88d:#f3e7cd;--lh-amber89:#efe4d5;--lh-amber89a:#f6ecce;--lh-amber90:#efe7da;--lh-amber90a:#efe7dd;--lh-amber90b:#f0e6dd;--lh-amber91:#f0e9df;--lh-amber91a:#f1eadf;--lh-amber91b:#eee8e0;--lh-amber91c:#f0e9de;--lh-amber91d:#f2eae0;--lh-amber91e:#faf0d6;--lh-amber92:#f4ece1;--lh-amber92a:#f0ede5;--lh-amber92b:#f0ece4;--lh-amber92c:#f3ebe0;--lh-amber92d:#f3efe4;--lh-amber93:#f3efe9;--lh-amber93a:#f6efe6;--lh-amber93b:#fdeedd;--lh-amber94:#fbf1e6;--lh-amber94a:#faf3e4;--lh-amber95:#f6f2ec;--lh-amber95a:#f6f3ee;--lh-amber95b:#f7f2ec;--lh-amber95c:#f7f3ec;--lh-amber95d:#fbf3e7;--lh-amber95e:#fbf5ec;--lh-amber96:#fbf7f1;--lh-amber96a:#faf5ef;--lh-amber96b:#fdf5ee;--lh-amber96c:#fdf6ee;--lh-amber96d:#fdf8ec;--lh-amber97:#faf7f3;--lh-amber97a:#fdf9f4;--lh-amber97b:#fbf8f3;--lh-amber97c:#fdf7f0;--lh-amber97d:#fdfaf4;--lh-amber97e:#fffaf0;--lh-amber98:#fcfaf6;--lh-amber98a:#fdfbf8;--lh-amber98b:#fdfaf5;--lh-amber99:#fffdfa;--lh-amber99a:#fffdf9;--lh-blue34:#2f5a80;--lh-blue40:#5c6470;--lh-blue52:#1877f2;--lh-blue61:#4285f4;--lh-blue90:#dde7f0;--lh-blue93:#e3ecf5;--lh-blue97:#f3f7fb;--lh-olive44:#6f8160;--lh-olive53:#889a76;--lh-olive55:#8a9a7e;--lh-olive82:#cfe6bd;--lh-olive84:#d6e6c8;--lh-olive91:#e7f0df;--lh-olive93:#ecf1e8;--lh-olive94:#eef5e8;--lh-paper100:#ffffff;--lh-paper93:#ececec;--lh-rose22:#4a3526;--lh-rose29:#5a463a;--lh-rose34:#6b5444;--lh-rose40:#7a6253;--lh-rose41:#a5352b;--lh-rose42:#a5452f;--lh-rose45:#b5382f;--lh-rose45a:#b5622f;--lh-rose47:#b0473f;--lh-rose47a:#cc2366;--lh-rose48:#d32323;--lh-rose50:#a85f59;--lh-rose51:#b8524a;--lh-rose51a:#dc2743;--lh-rose57:#e6683c;--lh-rose58:#c9785f;--lh-rose61:#c9846f;--lh-rose63:#c97d76;--lh-rose74:#d9a79e;--lh-rose77:#e8a99f;--lh-rose79:#e4b8b1;--lh-rose83:#ffc9a8;--lh-rose85:#efcfc4;--lh-rose85a:#ecccc5;--lh-rose85b:#f0c9c2;--lh-rose86:#f0cfc8;--lh-rose88:#f1d6d2;--lh-rose88a:#f0d9d0;--lh-rose88b:#f0d9d2;--lh-rose88c:#f0dcd2;--lh-rose89:#f1dbd4;--lh-rose92:#f7e3df;--lh-rose94:#fbe7e4;--lh-rose94a:#fbe6e2;--lh-rose94b:#fbe7e2;--lh-rose95:#fdeee9;--lh-rose96:#fdf1ec;--lh-rose96a:#fdf0ee;--lh-rose97:#fdf5f4;--lh-rose99:#fffafa;--lh-sage22:#33521f;--lh-sage24:#127903;--lh-sage28:#3f5d33;--lh-sage30:#2f6a4a;--lh-sage31:#129309;--lh-sage33:#4d6b3e;--lh-sage34:#4f6b43;--lh-sage37:#3f7d5c;--lh-sage37a:#3f7d54;--lh-sage38:#4d7848;--lh-sage41:#5f7d52;--lh-sage45:#5f8a5a;--lh-sage53:#7ba06c;--lh-sage56:#7ba676;--lh-sage65:#9ec089;--lh-sage69:#a9cf90;--lh-sage74:#a9d2b6;--lh-sage79:#c2d7bd;--lh-sage82:#bfe3ce;--lh-sage83:#cfe6c2;--lh-sage83a:#cfe0c9;--lh-sage85:#cfe5d3;--lh-sage86:#cfe6d6;--lh-sage88:#dff0d3;--lh-sage89:#dfeada;--lh-sage91:#dff0e6;--lh-sage92:#e4f0e7;--lh-sage92a:#e3f0e6;--lh-sage93:#eaf4e4;--lh-sage94:#eef4ea;--lh-sage95:#eef5ee;--lh-sage96:#f4f8f2;--lh-sage97:#f7faf5;--lh-violet40:#5c4a80;--lh-violet41:#6d4b86;--lh-violet42:#bc1888;--lh-violet75:#b9a7d8;--lh-violet93:#eee6f5;--lh-violet97:#f3f0ff}
+
   :root{
-    --cream:#faf7f3;--sand:#f4ece1;--blush-pale:#fdf1ec;--blush:#efcfc4;
-    --rose:#c97d76;--rose-deep:#a85f59;--rose-light:#e8a99f;
-    --sage-pale:#ecf1e8;--sage-light:#c2d7bd;--sage:#7ba676;--sage-dark:#4d7848;
-    --slate:#5c6470;--taupe:#aea298;--charcoal:#2a2622;--white:#fff;
+    --cream:var(--lh-amber97);--sand:var(--lh-amber92);--blush-pale:var(--lh-rose96);--blush:var(--lh-rose85);
+    --rose:var(--lh-rose63);--rose-deep:var(--lh-rose50);--rose-light:var(--lh-rose77);
+    --sage-pale:var(--lh-olive93);--sage-light:var(--lh-sage79);--sage:var(--lh-sage56);--sage-dark:var(--lh-sage38);
+    --slate:var(--lh-blue40);--taupe:var(--lh-amber64);--charcoal:var(--lh-amber15);--white:#fff;
     --shadow:0 4px 24px rgba(0,0,0,.07);--shadow-lg:0 14px 44px rgba(0,0,0,.12);
     /* mapped names used by the booking logic */
-    --bg:var(--cream);--ink:var(--charcoal);--ink-soft:var(--slate);--card:#fff;--line:#ece3d6;
+    --bg:var(--cream);--ink:var(--charcoal);--ink-soft:var(--slate);--card:#fff;--line:var(--lh-amber88);
     --coral:var(--rose);--coral-deep:var(--rose-deep);--teal:var(--sage-dark);
-    --amber:#cf9a3c;--green:var(--sage);--red:#b8524a;
+    --amber:var(--lh-amber52);--green:var(--sage);--red:var(--lh-rose51);
   }
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
   body{font-family:'Nunito',sans-serif;color:var(--charcoal);line-height:1.6;
@@ -45,8 +47,8 @@
   /* 16px on mobile is deliberate and must not be reduced: iOS Safari zooms the
      whole page in whenever a focused input is under 16px, which throws the
      layout around mid-booking. Desktop shrinks these inside the @media block. */
-  input[type=date],input[type=text],input[type=email],input[type=tel],input[type=number],select,textarea{width:100%;border:1px solid #e7ddd0;border-radius:9px;
-    padding:7px 10px;font-family:'Nunito';font-weight:600;font-size:16px;line-height:1.25;background:#fcfaf6;outline:none;color:var(--charcoal);}
+  input[type=date],input[type=text],input[type=email],input[type=tel],input[type=number],select,textarea{width:100%;border:1px solid var(--lh-amber86);border-radius:9px;
+    padding:7px 10px;font-family:'Nunito';font-weight:600;font-size:16px;line-height:1.25;background:var(--lh-amber98);outline:none;color:var(--charcoal);}
   input:focus{border-color:var(--rose);box-shadow:0 0 0 3px rgba(201,125,118,.13);}
   /* Time slots as a compact grid rather than a stacked row each. */
   /* Terms live in a modal now — the full text was eating a screen of space on
@@ -94,16 +96,16 @@
   .qty .lab{line-height:1.35}
   .slotgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:5px}
   .slotbtn{font-family:'Nunito';font-weight:800;font-size:.86rem;padding:10px 6px;border-radius:12px;
-    border:1.5px solid var(--line);background:#fcfaf6;color:var(--charcoal);cursor:pointer;margin:0;
+    border:1.5px solid var(--line);background:var(--lh-amber98);color:var(--charcoal);cursor:pointer;margin:0;
     transition:border-color .12s,background .12s,transform .12s;white-space:nowrap}
   .slotbtn:hover:not(.dead){border-color:var(--rose-light);transform:translateY(-1px)}
   .slotbtn.sel{background:var(--rose);border-color:var(--rose);color:#fff}
-  .slotbtn.low:not(.sel){border-color:#e8d3a4;background:#fdf8ec}
-  .slotbtn.dead{opacity:.42;background:#f3efe9;color:var(--taupe);cursor:not-allowed;text-decoration:line-through}
+  .slotbtn.low:not(.sel){border-color:var(--lh-amber78a);background:var(--lh-amber96d)}
+  .slotbtn.dead{opacity:.42;background:var(--lh-amber93);color:var(--taupe);cursor:not-allowed;text-decoration:line-through}
   .slotdetail{margin-top:9px;font-size:.88rem;color:var(--slate);display:flex;align-items:center;gap:9px;flex-wrap:wrap;min-height:26px}
   .slotdetail .pill{font-size:.74rem;font-weight:900;border-radius:999px;padding:3px 10px;white-space:nowrap}
-  .slotdetail .pill.ok{background:#e4f0e7;color:#3f7d5c}
-  .slotdetail .pill.low{background:#f6ecce;color:#b9831a}
+  .slotdetail .pill.ok{background:var(--lh-sage92);color:var(--lh-sage37)}
+  .slotdetail .pill.low{background:var(--lh-amber89a);color:var(--lh-amber41)}
   .slotdetail .sn{display:block;width:100%;font-size:.78rem;font-weight:700;color:var(--rose-deep)}
   /* Members don't choose admissions — their subscription covers it. */
   /* Member mode used to disable the admission steppers entirely, which is why
@@ -113,11 +115,11 @@
   body.pc-member-mode #adm, body.pc-member-mode .adm-rows{opacity:1;pointer-events:auto}
   /* The membership box is a different path through the page, so it looks
      different from the outset rather than only once it's filled in. */
-  #pcMemberCard{background:linear-gradient(180deg,#eef4ea,#f7faf5);border:2px solid var(--sage-light)}
+  #pcMemberCard{background:linear-gradient(180deg,var(--lh-sage94),var(--lh-sage97));border:2px solid var(--sage-light)}
   #pcMemberCard .step .n{background:var(--sage);color:#fff}
-  #pcMemberCard input{background:#fff;border-color:#cfe0c9}
+  #pcMemberCard input{background:#fff;border-color:var(--lh-sage83a)}
   #pcMemberCard input:focus{border-color:var(--sage);box-shadow:0 0 0 3px rgba(123,166,118,.16)}
-  #pcMemberCard .opt{background:#dfeada;color:#4d7848}
+  #pcMemberCard .opt{background:var(--lh-sage89);color:var(--lh-sage38)}
   body.pc-member-mode #pcMemberCard{border-color:var(--sage);box-shadow:0 0 0 3px rgba(123,166,118,.14)}
   /* Required fields used to carry a full "REQUIRED" pill, which shouted at the
      reader on every single field and pushed the actual inputs down the page.
@@ -129,20 +131,20 @@
   .step .req{margin-left:5px;}
   /* An empty required input gets a red edge once it has been visited, so it is
      obvious WHICH box still needs filling in rather than just that one does. */
-  input.needs:invalid, input.needs.blank{border-color:var(--red);background:#fffafa;}
+  input.needs:invalid, input.needs.blank{border-color:var(--red);background:var(--lh-rose99);}
   .reqlegend{font-size:.78rem;color:var(--ink-soft);font-weight:700;margin:-2px 0 12px;}
   .reqlegend b{color:var(--red);font-size:1rem;line-height:1;}
   .opt{display:inline-block;margin-left:6px;font-size:.66rem;font-weight:800;letter-spacing:.04em;
-    text-transform:uppercase;color:var(--taupe);background:#f6f2ec;border:1px solid var(--line);
+    text-transform:uppercase;color:var(--taupe);background:var(--lh-amber95);border:1px solid var(--line);
     border-radius:999px;padding:2px 8px;vertical-align:middle;}
   .is-missing input,.is-missing select,.is-missing textarea,input.is-missing,select.is-missing{
-    border-color:var(--red)!important;background:#fdf5f4!important;}
+    border-color:var(--red)!important;background:var(--lh-rose97)!important;}
   .is-missing input:focus,input.is-missing:focus{box-shadow:0 0 0 3px rgba(184,82,74,.15)!important;}
   .card.is-missing{box-shadow:0 0 0 2px rgba(184,82,74,.35),var(--shadow);}
   .fieldnote{display:none;margin:6px 0 0;font-size:.82rem;font-weight:700;color:var(--red);line-height:1.45;}
   .fieldnote.on{display:block;}
   #wallets{border:1.5px solid var(--line);border-radius:16px;padding:14px;
-    background:linear-gradient(180deg,#fffdfa,#fbf7f1);}
+    background:linear-gradient(180deg,var(--lh-amber99),var(--lh-amber96));}
   .wallet-head{display:flex;align-items:center;gap:10px;margin:0 0 11px;font-size:.72rem;font-weight:900;
     letter-spacing:.09em;text-transform:uppercase;color:var(--taupe);}
   .wallet-head::before,.wallet-head::after{content:"";flex:1;height:1px;background:var(--line);}
@@ -155,21 +157,21 @@
     letter-spacing:.05em;margin:13px 0 3px;}
   .row{display:flex;gap:12px;}.row>*{flex:1;}
   .slots{display:flex;flex-direction:column;gap:10px;}
-  .slot{display:flex;align-items:center;justify-content:space-between;gap:10px;border:1.5px solid #e7ddd0;
-    border-radius:14px;padding:14px 16px;cursor:pointer;background:#fcfaf6;transition:.18s;}
+  .slot{display:flex;align-items:center;justify-content:space-between;gap:10px;border:1.5px solid var(--lh-amber86);
+    border-radius:14px;padding:14px 16px;cursor:pointer;background:var(--lh-amber98);transition:.18s;}
   .slot:hover{border-color:var(--rose);}
   .slot.sel{border-color:var(--rose);background:var(--blush-pale);box-shadow:0 0 0 3px var(--blush) inset;}
   .slot.full{opacity:.55;cursor:not-allowed;border-style:dashed;}
   .slot .t{font-family:'Nunito';font-weight:800;font-size:1rem;}
   .slot .a{font-size:.74rem;font-weight:800;padding:4px 11px;border-radius:999px;letter-spacing:.02em;}
-  .qty{display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid #efe7da;}
+  .qty{display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--lh-amber90);}
   .qty:last-of-type{border-bottom:none;}
   .qty .lab{font-weight:700;font-size:.95rem;}.qty .pr{font-size:.78rem;color:var(--taupe);font-weight:700;margin-top:2px;}
-  .stepper{display:flex;align-items:center;gap:8px;background:#fcfaf6;border:1.5px solid #e7ddd0;border-radius:11px;padding:5px;}
+  .stepper{display:flex;align-items:center;gap:8px;background:var(--lh-amber98);border:1.5px solid var(--lh-amber86);border-radius:11px;padding:5px;}
   .stepper button{width:32px;height:32px;border-radius:8px;border:none;background:var(--blush-pale);color:var(--rose-deep);font-weight:800;font-size:1.15rem;cursor:pointer;transition:.15s;}
   .stepper button:hover{background:var(--rose);color:#fff;}
   .stepper .num{min-width:26px;text-align:center;font-weight:800;font-size:1.1rem;}
-  .totals{display:flex;justify-content:space-between;align-items:center;margin-top:16px;padding-top:16px;border-top:1px solid #efe7da;}
+  .totals{display:flex;justify-content:space-between;align-items:center;margin-top:16px;padding-top:16px;border-top:1px solid var(--lh-amber90);}
   .totals .kids{font-weight:700;color:var(--slate);}
   .totals .amt{font-family:'Cormorant Garamond',serif;font-weight:500;font-size:1.9rem;color:var(--charcoal);}
   #card-container{margin-top:6px;min-height:48px;}
@@ -178,13 +180,13 @@
   .pay:hover{background:var(--rose-deep);transform:translateY(-2px);}
   .pay:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none;}
   .msg{font-weight:700;font-size:.88rem;margin-top:12px;padding:11px 13px;border-radius:11px;display:none;}
-  .msg.err{display:block;background:#f7e3df;color:var(--red);}
+  .msg.err{display:block;background:var(--lh-rose92);color:var(--red);}
   .msg.ok{display:block;background:var(--sage-pale);color:var(--sage-dark);}
   .note{font-size:.78rem;color:var(--taupe);font-weight:700;margin-top:10px;}
   .closed-note{background:var(--blush-pale);border:1.5px dashed var(--rose-light);border-radius:14px;padding:18px;text-align:center;color:var(--rose-deep);font-weight:700;font-size:.95rem;line-height:1.5;}
   .gc-toggle{display:flex;align-items:center;justify-content:space-between;}
-  .seg{display:flex;border:1.5px solid #e7ddd0;border-radius:11px;overflow:hidden;}
-  .seg button{border:none;background:#fcfaf6;color:var(--slate);font-family:'Nunito';font-weight:800;font-size:.9rem;padding:8px 18px;cursor:pointer;}
+  .seg{display:flex;border:1.5px solid var(--lh-amber86);border-radius:11px;overflow:hidden;}
+  .seg button{border:none;background:var(--lh-amber98);color:var(--slate);font-family:'Nunito';font-weight:800;font-size:.9rem;padding:8px 18px;cursor:pointer;}
   .seg button.on{background:var(--rose);color:#fff;}
   .gc-row{display:flex;gap:8px;}
   .gc-row input{flex:1;}
@@ -192,10 +194,10 @@
   .gc-check:hover{background:var(--sage-dark);}
   .gc-bal{font-size:.82rem;font-weight:700;margin-top:6px;min-height:1px;}
   .gc-bal.ok{color:var(--sage-dark);}.gc-bal.bad{color:var(--red);}
-  .pay-summary{background:#fcfaf6;border:1px solid #efe7da;border-radius:12px;padding:12px 14px;margin-bottom:14px;font-size:.9rem;}
+  .pay-summary{background:var(--lh-amber98);border:1px solid var(--lh-amber90);border-radius:12px;padding:12px 14px;margin-bottom:14px;font-size:.9rem;}
   .pay-summary .r{display:flex;justify-content:space-between;margin:3px 0;}
-  .pay-summary .due{font-weight:800;font-size:1.05rem;border-top:1px solid #efe7da;padding-top:8px;margin-top:8px;}
-  .policy{background:#fcfaf6;border:1px solid #efe7da;border-radius:12px;padding:15px;font-size:.82rem;line-height:1.6;color:var(--slate);max-height:210px;overflow:auto;}
+  .pay-summary .due{font-weight:800;font-size:1.05rem;border-top:1px solid var(--lh-amber90);padding-top:8px;margin-top:8px;}
+  .policy{background:var(--lh-amber98);border:1px solid var(--lh-amber90);border-radius:12px;padding:15px;font-size:.82rem;line-height:1.6;color:var(--slate);max-height:210px;overflow:auto;}
   .policy h4{font-family:'Cormorant Garamond',serif;font-weight:500;font-size:1.1rem;margin:0 0 8px;color:var(--charcoal);}
   .policy ul{margin:0;padding-left:18px;}.policy li{margin:0 0 7px;}
   .agree{display:flex;align-items:flex-start;gap:9px;margin-top:9px;font-weight:700;font-size:.85rem;cursor:pointer;color:var(--charcoal);}
@@ -206,7 +208,7 @@
   .banner{background:var(--blush-pale);color:var(--rose-deep);font-weight:700;font-size:.82rem;border-radius:12px;padding:11px 13px;margin-bottom:14px;}
   .hidden{display:none!important;}
 </style>
-<link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#7a6253"><link rel="apple-touch-icon" href="/assets/icons/apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="Little Haven"><link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32.png"><script src="/assets/square-wallets.js"></script>
+<link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="var(--lh-rose40)"><link rel="apple-touch-icon" href="/assets/icons/apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="Little Haven"><link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32.png"><script src="/assets/square-wallets.js"></script>
 <style>#apple-pay-button{-webkit-appearance:-apple-pay-button;appearance:-apple-pay-button;-apple-pay-button-type:pay;-apple-pay-button-style:black;height:48px;border-radius:12px;cursor:pointer;width:100%}#wallets .gpay-card-info-container,#wallets>div{border-radius:12px}</style>
 </head>
 <body>
@@ -219,7 +221,7 @@
   <div class="sub">Book Open Play · each hour holds up to <b id="capTxt">6</b> children.</div>
     <div id="setupBanner" class="banner hidden">⚙️ Demo mode — Square keys aren't set yet, so payment won't complete until configured.</div>
 
-  <div id="priceNotice" style="display:none;background:#fdf1ec;border:1px solid #f0d9d2;border-radius:12px;padding:11px 14px;margin:0 0 16px;font-weight:700;color:#a85f59;font-size:.9rem">📣 Good news — starting July 2, every visit now includes <b>2 adults</b> and punch card holders get <b>free coffee</b> each visit!</div>
+  <div id="priceNotice" style="display:none;background:var(--lh-rose96);border:1px solid var(--lh-rose88b);border-radius:12px;padding:11px 14px;margin:0 0 16px;font-weight:700;color:var(--lh-rose50);font-size:.9rem">📣 Good news — starting July 2, every visit now includes <b>2 adults</b> and punch card holders get <b>free coffee</b> each visit!</div>
   <script>
   (function(){var c="2026-07-02";var t=new Date().toLocaleDateString("en-CA",{timeZone:"America/Los_Angeles"});if(t<c){var e=document.getElementById("priceNotice");if(e)e.style.display="block";}})();
   </script>
@@ -249,7 +251,7 @@
     <div class="card">
       <p class="step"><span class="n">1</span> Who's coming? <span class="req" aria-hidden="false">*<span>Required</span></span></p>
       <p class="reqlegend"><b>*</b> marks a field you must fill in.</p>
-      <div style="background:#fdf5ee;border:1px solid #f0e2d2;border-radius:12px;padding:11px 14px;margin:0 0 14px;font-size:.85rem;color:#5c6470;line-height:1.6">✨ <b>Ages 0–6 or 48" tall.</b> A parent or guardian 18+ must supervise.<button type="button" class="hlp" data-help="Our play area is built for children <b>0&ndash;6 years, or up to 48&quot; tall</b>, whichever comes first.<br><br>Older children and teens are welcome to wait in the lobby with the family, but may not play in the play area or act as the supervising adult.<br><br>A parent or guardian <b>18+</b> must actively supervise at all times &mdash; we&rsquo;re not a drop-off facility.">?</button></div>
+      <div style="background:var(--lh-amber96b);border:1px solid var(--lh-amber88c);border-radius:12px;padding:11px 14px;margin:0 0 14px;font-size:.85rem;color:var(--lh-blue40);line-height:1.6">✨ <b>Ages 0–6 or 48" tall.</b> A parent or guardian 18+ must supervise.<button type="button" class="hlp" data-help="Our play area is built for children <b>0&ndash;6 years, or up to 48&quot; tall</b>, whichever comes first.<br><br>Older children and teens are welcome to wait in the lobby with the family, but may not play in the play area or act as the supervising adult.<br><br>A parent or guardian <b>18+</b> must actively supervise at all times &mdash; we&rsquo;re not a drop-off facility.">?</button></div>
       <div class="qty">
         <div><div class="lab">Regular admission <span style="color:var(--ink-soft);font-weight:700;font-size:.8rem">(18 mo+ · 2 adults incl.)</span> <span class="pr" id="regPr" style="display:inline;color:var(--taupe);font-weight:700">$0 each</span></div></div>
         <div class="stepper" data-k="reg"><button data-d>–</button><span class="num">0</span><button data-i>+</button></div>
@@ -271,36 +273,36 @@
         <div class="stepper" data-k="gs"><button type="button" data-d>&minus;</button><span class="num" id="gsN">0</span><button type="button" data-i>+</button></div>
       </div>
       <div style="font-size:.78rem;color:var(--ink-soft);margin:-2px 0 6px;line-height:1.5">🧦 <b>Full-coverage grip socks required.</b><button type="button" class="hlp" data-help="Grip socks must cover most of the bottom of the foot to be accepted &mdash; open-sole or partial-grip socks won&rsquo;t pass.<br><br><b>Babies who aren&rsquo;t walking yet don&rsquo;t need them.</b><br><br>Buy a pair here for $3, pick some up at the studio, or bring your own.">?</button></div>
-      <div style="margin-top:16px;padding-top:16px;border-top:1px solid #efe7da">
+      <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--lh-amber90)">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
           <span style="font-weight:700;color:var(--slate)"><span id="kidCount">0</span> children · Subtotal</span>
           <span style="font-weight:700" id="subtotal">$0</span>
         </div>
-        <div id="discRow" style="display:none;justify-content:space-between;align-items:center;margin-bottom:6px;color:#7ba676">
+        <div id="discRow" style="display:none;justify-content:space-between;align-items:center;margin-bottom:6px;color:var(--lh-sage56)">
           <span style="font-weight:700"><span id="discPctTxt"></span>% off discount</span>
           <span style="font-weight:700" id="discAmt">−$0</span>
         </div>
-        <div id="rewardRow" style="display:none;justify-content:space-between;align-items:center;margin-bottom:6px;color:#7ba676">
+        <div id="rewardRow" style="display:none;justify-content:space-between;align-items:center;margin-bottom:6px;color:var(--lh-sage56)">
           <span style="font-weight:700">🎁 Free-visit code</span>
           <span style="font-weight:700" id="rewardAmtTxt">−$0</span>
         </div>
-        <div id="wdRow" style="display:none;justify-content:space-between;align-items:center;margin-bottom:6px;color:#7ba676">
+        <div id="wdRow" style="display:none;justify-content:space-between;align-items:center;margin-bottom:6px;color:var(--lh-sage56)">
           <span style="font-weight:700" id="wdLabel">🗓️ Weekday special</span>
           <span style="font-weight:700" id="wdAmtTxt">−$0</span>
         </div>
-        <div id="refRow" style="display:none;justify-content:space-between;align-items:center;margin-bottom:6px;color:#7ba676">
+        <div id="refRow" style="display:none;justify-content:space-between;align-items:center;margin-bottom:6px;color:var(--lh-sage56)">
           <span style="font-weight:700" id="refLabel">🤝 Referral discount</span>
           <span style="font-weight:700" id="refAmtTxt">−$0</span>
         </div>
-        <div id="gsRow" style="display:none;justify-content:space-between;align-items:center;margin-bottom:6px;color:#7ba676">
+        <div id="gsRow" style="display:none;justify-content:space-between;align-items:center;margin-bottom:6px;color:var(--lh-sage56)">
           <span style="font-weight:700" id="gsLabel">🧦 Grip socks</span>
           <span style="font-weight:700" id="gsAmtTxt">−$0</span>
         </div>
-        <div id="pcRow" style="display:none;justify-content:space-between;align-items:center;margin-bottom:6px;color:#4d7848">
+        <div id="pcRow" style="display:none;justify-content:space-between;align-items:center;margin-bottom:6px;color:var(--lh-sage38)">
           <span style="font-weight:800" id="pcLabel">🎟️ Play Club member</span>
           <span style="font-weight:800" id="pcAmtTxt">−$0</span>
         </div>
-        <div id="milRow" style="display:none;justify-content:space-between;align-items:center;margin-bottom:6px;color:#7ba676">
+        <div id="milRow" style="display:none;justify-content:space-between;align-items:center;margin-bottom:6px;color:var(--lh-sage56)">
           <span style="font-weight:700">🎖️ Military discount (10% off)</span>
           <span style="font-weight:700" id="milAmtTxt">−$0</span>
         </div>
@@ -311,7 +313,7 @@
           <span style="font-weight:700">🎖️ Military status verified</span>
           <span style="font-weight:700;font-size:.82rem">Already covered by your membership</span>
         </div>
-        <div class="totals" style="margin-top:0;padding-top:12px;border-top:1px solid #efe7da">
+        <div class="totals" style="margin-top:0;padding-top:12px;border-top:1px solid var(--lh-amber90)">
           <span class="kids">Total</span>
           <span class="amt" id="amount">$0</span>
         </div>
@@ -360,7 +362,7 @@
     <details class="code-collapse" style="margin:0 0 18px">
     <summary style="cursor:pointer;list-style:none;background:#fff;border-radius:16px;padding:16px 20px;font-weight:800;color:var(--ink);box-shadow:0 2px 10px rgba(0,0,0,.04)">🎟️ Have a code, reward, birthday gift, referral or credit? <span style="font-weight:600;color:var(--ink-soft);font-size:.85rem">(tap to open)</span></summary>
     <div class="card full" id="oneCodeCard">
-      <p class="step"><span class="n">&#127903;</span> Have a code? <span class="opt">Optional</span></p>
+      <p class="step"><span class="n">&var(--lh-sage24);</span> Have a code? <span class="opt">Optional</span></p>
       <p class="note" style="margin-top:0">Gift card, store credit, reward, birthday gift, classroom code, discount or legacy punch card &mdash; all go here.<button type="button" class="hlp" data-help="Paste any code and we&rsquo;ll work out what it is automatically.<br><br><b>Gift card</b> &middot; pays toward your total.<br><b>Store credit / referral credit (LHC&hellip;)</b> &middot; treated as payment, so it stacks with anything.<br><b>FREE&hellip; or BDAY&hellip;</b> &middot; makes one child&rsquo;s admission free.<br><b>Discount code</b> &middot; a % off, used on its own.<br><br>You can apply more than one, and we&rsquo;ll say if two can&rsquo;t be combined.">?</button></p>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <input type="text" id="anyCode" placeholder="Enter your code" autocomplete="off"
@@ -422,7 +424,7 @@
         <div class="gc-bal" id="gc2bal"></div>
         <p class="note" style="margin-top:4px">Paste or type it any way you like — spaces, dashes, all run together — we'll match it to your card either way.</p>
       </div>
-      <div style="border-top:1px dashed #e2d9cc;margin:16px 0 12px"></div>
+      <div style="border-top:1px dashed var(--lh-amber84);margin:16px 0 12px"></div>
       <div class="gc-toggle">
         <span style="font-weight:700">Have store credit?</span>
         <div class="seg">
@@ -461,14 +463,14 @@
     </div>
     </div>
 
-    <div class="card" style="box-shadow:none;border:1px solid #efe7da">
+    <div class="card" style="box-shadow:none;border:1px solid var(--lh-amber90)">
       <p class="step" style="margin-bottom:8px"><span class="n">🎈</span> Free admission / reward code<button type="button" class="hlp" data-help="Earned your 8th visit, got a classroom code, or received a <b>birthday reward</b>? Enter it here and one child&rsquo;s admission is free.<br><br>A birthday reward is emailed about a week before your child&rsquo;s birthday and is good for <b>one single Open Play visit</b> on any one open day that birthday week (Sunday&ndash;Saturday).<br><br>Applied automatically at checkout. One-time use, and it can&rsquo;t be combined with a % off discount code.">?</button></p>
       <input type="text" id="rewardCode" placeholder="FREE1234 or BDAYXXXX" style="text-transform:uppercase;width:100%">
       <div id="rewardMsg" style="margin-top:6px;font-size:.85rem;display:none"></div>
     </div>
 
-    <div class="card" id="referCard" style="box-shadow:none;border:1px solid #efe7da">
-      <p class="step" style="margin-bottom:8px"><span class="n">&#129309;</span> Referred by a friend?<button type="button" class="hlp" data-help="A friend&rsquo;s referral code gets <b>new families $5 off</b> their first visit.<br><br>It only works for families who haven&rsquo;t visited before &mdash; we check by phone number &mdash; and you can&rsquo;t use your own code.<br><br>Earned referral credit of your own starts with <b>LHC</b> and goes in the code box above instead.">?</button> <span class="opt">Optional</span></p>
+    <div class="card" id="referCard" style="box-shadow:none;border:1px solid var(--lh-amber90)">
+      <p class="step" style="margin-bottom:8px"><span class="n">&var(--lh-sage31);</span> Referred by a friend?<button type="button" class="hlp" data-help="A friend&rsquo;s referral code gets <b>new families $5 off</b> their first visit.<br><br>It only works for families who haven&rsquo;t visited before &mdash; we check by phone number &mdash; and you can&rsquo;t use your own code.<br><br>Earned referral credit of your own starts with <b>LHC</b> and goes in the code box above instead.">?</button> <span class="opt">Optional</span></p>
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
         <input type="text" id="refCode" placeholder="REF1234" autocomplete="off"
                style="flex:1;min-width:150px;text-transform:uppercase">
@@ -680,7 +682,7 @@ function renderPolicy(){
   // fetch failed there is nothing trustworthy to show, so say that instead.
   if(!src.length){
     $("#policy").innerHTML='<h4>Cancellation &amp; Refund Policy</h4>'
-      +'<p style="margin:0;color:#a5452f;font-weight:700">We couldn\'t load the current policy just now.</p>'
+      +'<p style="margin:0;color:var(--lh-rose42);font-weight:700">We couldn\'t load the current policy just now.</p>'
       +'<p style="margin:6px 0 0">Please refresh the page before booking so you can read the full terms. '
       +'If it keeps happening, email <a href="mailto:hello@littlehavenplay.com">hello@littlehavenplay.com</a> and we\'ll help you book.</p>';
     return;
@@ -707,14 +709,14 @@ async function loadAvailability(){
     data = await _r.json();
   }
   catch(e){
-    host.innerHTML='<div class="note" style="background:#fdf1ec;color:#b8524a;border-radius:11px;padding:12px 14px;font-weight:700">' + 'We couldn\u2019t load the times just now \u2014 please refresh the page. ' + '<span style="font-weight:400">(' + (e && e.message ? e.message : "network error") + ')</span></div>';
+    host.innerHTML='<div class="note" style="background:var(--lh-rose96);color:var(--lh-rose51);border-radius:11px;padding:12px 14px;font-weight:700">' + 'We couldn\u2019t load the times just now \u2014 please refresh the page. ' + '<span style="font-weight:400">(' + (e && e.message ? e.message : "network error") + ')</span></div>';
     return;
   }
   state.avail=data.availability||{};
   { const cl=document.getElementById('closeLine'); if(cl && data.hoursLabel) cl.textContent=data.hoursLabel; }
   host.innerHTML="";
   if(data.closed){
-    host.innerHTML='<div class="note" style="background:#f7e3df;color:#b8524a;border-radius:11px;padding:12px 14px;font-weight:700">🚫 '+(data.closedMessage||"We're closed on this date.")+'</div>';
+    host.innerHTML='<div class="note" style="background:var(--lh-rose92);color:var(--lh-rose51);border-radius:11px;padding:12px 14px;font-weight:700">🚫 '+(data.closedMessage||"We're closed on this date.")+'</div>';
     state.slot=null; updateTotals(); return;
   }
   if(data.notice){
@@ -726,7 +728,7 @@ async function loadAvailability(){
   if(data.specialEvent && data.specialEvent.message){
     const se=document.createElement("div");
     se.style.cssText="background:#efe6f5;color:#6d4b86;border:1px solid #d9c7e6;border-radius:11px;padding:11px 14px;font-weight:700;margin-bottom:10px;line-height:1.4";
-    se.innerHTML='\u2728 '+data.specialEvent.message.replace('Events/Promotions tab','<a href="/events.html" style="color:#6d4b86;text-decoration:underline">Events/Promotions tab</a>');
+    se.innerHTML='\u2728 '+data.specialEvent.message.replace('Events/Promotions tab','<a href="/events.html" style="color:var(--lh-violet41);text-decoration:underline">Events/Promotions tab</a>');
     host.appendChild(se);
   }
   // Compact grid: one small button per time. Unavailable times are dimmed rather
@@ -777,7 +779,7 @@ async function loadAvailability(){
   }
   host.appendChild(det);
   } catch(err){
-    host.innerHTML='<div class="note" style="background:#fdf1ec;color:#b8524a;border-radius:11px;padding:12px 14px;font-weight:700">'
+    host.innerHTML='<div class="note" style="background:var(--lh-rose96);color:var(--lh-rose51);border-radius:11px;padding:12px 14px;font-weight:700">'
       + 'Something went wrong showing the times \u2014 please refresh. '
       + '<span style="font-weight:400">(' + (err && err.message ? err.message : "error") + ')</span></div>';
   }
@@ -859,7 +861,7 @@ function renderChildNames(){
   let html="";
   for(let i=0;i<specs.length;i++){
     const p=prev[i]||{}, f=(p.f||"").replace(/"/g,"&quot;"), l=(p.l||"").replace(/"/g,"&quot;"), d=(p.d||"").replace(/"/g,"&quot;"), code=(p.code||"").replace(/"/g,"&quot;");
-    html+='<div class="cn-row" data-type="'+specs[i].type+'" style="border:1.5px solid #e7ddd0;border-radius:12px;padding:12px;margin-bottom:10px;background:#fcfaf6">'
+    html+='<div class="cn-row" data-type="'+specs[i].type+'" style="border:1.5px solid var(--lh-amber86);border-radius:12px;padding:12px;margin-bottom:10px;background:var(--lh-amber98)">'
       +'<div style="font-weight:800;font-size:.76rem;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-soft);margin-bottom:7px">'+specs[i].label+' — Child '+specs[i].n+'</div>'
       // No loyalty-code field here on purpose: families don't know their number,
       // and staff apply it at the desk. Child rows collect names only.
@@ -1304,7 +1306,7 @@ async function submitBooking(token){
       if(!parts.length) parts.push(`${money(data.amount)} paid`);
       let passTxt = (data.passesUsed||[]).map(p=>`${p.code}: ${p.visitsRemaining} left`).join(" · ");
       let celebrateHtml = (data.freeVisit && data.freeVisitMessage)
-        ? `<div style="background:#eaf4e4;border:1px solid #cfe6c2;border-radius:12px;padding:12px 14px;margin:12px 0 0;font-weight:700;color:#4d6b3e;font-size:.9rem">${data.freeVisitMessage}</div>`
+        ? `<div style="background:var(--lh-sage93);border:1px solid var(--lh-sage83);border-radius:12px;padding:12px 14px;margin:12px 0 0;font-weight:700;color:var(--lh-sage33);font-size:.9rem">${data.freeVisitMessage}</div>`
         : "";
       $("#doneTxt").innerHTML=`${state.reg+state.sib+state.inf} children • ${state.date} • ${label}<br>${parts.join(" + ")}${passTxt?`<br><span style="font-size:.85em;color:var(--ink-soft)">${passTxt}</span>`:""}${celebrateHtml}`;
       $("#form").classList.add("hidden"); $("#done").classList.remove("hidden");
@@ -1991,22 +1993,22 @@ state.gs = 0;
   display:inline-flex;align-items:center;justify-content:center;
   width:17px;height:17px;padding:0;margin:0 0 0 5px;vertical-align:middle;
   border:none;border-radius:50%;cursor:pointer;
-  background:#e6ded2;color:#6b6055;
+  background:var(--lh-amber86a);color:var(--lh-amber38);
   font:900 11px/1 Nunito,Arial,sans-serif;
   transition:background .15s,color .15s;
 }
-.hlp:hover,.hlp:focus{background:#c9846f;color:#fff;outline:none}
+.hlp:hover,.hlp:focus{background:var(--lh-rose61);color:#fff;outline:none}
 .hlp-bubble{
   position:absolute;z-index:10000;max-width:290px;
-  background:#2f2a26;color:#fff;border-radius:10px;
+  background:var(--lh-amber17);color:#fff;border-radius:10px;
   padding:10px 12px;font:600 .78rem/1.5 Nunito,Arial,sans-serif;
   box-shadow:0 10px 30px rgba(0,0,0,.22);
 }
-.hlp-bubble b{color:#ffd9a8}
-.hlp-bubble a{color:#ffc9a8}
+.hlp-bubble b{color:var(--lh-amber83)}
+.hlp-bubble a{color:var(--lh-rose83)}
 .hlp-bubble:after{
   content:"";position:absolute;top:-5px;left:var(--ax,14px);
-  width:10px;height:10px;background:#2f2a26;transform:rotate(45deg);
+  width:10px;height:10px;background:var(--lh-amber17);transform:rotate(45deg);
 }
 @media print{.hlp,.hlp-bubble{display:none!important}}
 </style>
@@ -2081,6 +2083,27 @@ state.gs = 0;
     }
   }
   if(document.readyState==="loading") document.addEventListener("DOMContentLoaded",wire); else wire();
+})();
+</script>
+
+<script>
+/* Seasonal theme. Colour only: it swaps CSS variable values and touches nothing
+   else on the page. The cached value is applied before first paint so the site
+   never flashes the wrong palette, then the server is asked for the current
+   one. If either step fails the everyday rose-and-sage palette simply stays. */
+(function(){
+  var EL;
+  function apply(css){
+    if(!css){ if(EL) EL.textContent=""; return; }
+    if(!EL){ EL=document.createElement("style"); EL.id="lh-theme"; document.head.appendChild(EL); }
+    EL.textContent=css;
+  }
+  try{ apply(localStorage.getItem("lhThemeCss")||""); }catch(e){}
+  fetch("/api/site-theme").then(function(r){return r.json();}).then(function(d){
+    if(!d||!d.ok) return;
+    apply(d.css||"");
+    try{ localStorage.setItem("lhThemeCss", d.css||""); localStorage.setItem("lhThemeKey", d.theme||"default"); }catch(e){}
+  }).catch(function(){});
 })();
 </script>
 </body>

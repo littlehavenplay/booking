@@ -8,9 +8,11 @@
 <link href="https://fonts.googleapis.com" rel="preconnect">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,400&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
+:root{--lh-amber15:#2a2622;--lh-amber17:#2f2a26;--lh-amber28:#5b4636;--lh-amber33:#8a6a1f;--lh-amber36:#8a6b2f;--lh-amber37:#a5651a;--lh-amber38:#6b6055;--lh-amber38a:#6b6255;--lh-amber41:#b9831a;--lh-amber48:#b8783c;--lh-amber48a:#8a7d6a;--lh-amber48b:#f5b301;--lh-amber52:#cf9a3c;--lh-amber54:#c98a4b;--lh-amber54a:#c9a24a;--lh-amber55:#9a8c7e;--lh-amber55a:#9a8d80;--lh-amber57:#f09433;--lh-amber60:#a89b8c;--lh-amber64:#aea298;--lh-amber73:#cbbfa9;--lh-amber74:#c9bfb2;--lh-amber77:#d9c9b0;--lh-amber78:#e6d3a8;--lh-amber78a:#e8d3a4;--lh-amber78b:#e8d7a8;--lh-amber79:#d8cdbb;--lh-amber82:#ecdcb8;--lh-amber83:#ffd9a8;--lh-amber83a:#e0d5c6;--lh-amber83b:#e0d5c7;--lh-amber84:#e2d9cc;--lh-amber85:#f0e0c0;--lh-amber86:#e7ddd0;--lh-amber86a:#e6ded2;--lh-amber86b:#ecdcc9;--lh-amber88:#ece3d6;--lh-amber88a:#ece4d6;--lh-amber88b:#eee1d2;--lh-amber88c:#f0e2d2;--lh-amber88d:#f3e7cd;--lh-amber89:#efe4d5;--lh-amber89a:#f6ecce;--lh-amber90:#efe7da;--lh-amber90a:#efe7dd;--lh-amber90b:#f0e6dd;--lh-amber91:#f0e9df;--lh-amber91a:#f1eadf;--lh-amber91b:#eee8e0;--lh-amber91c:#f0e9de;--lh-amber91d:#f2eae0;--lh-amber91e:#faf0d6;--lh-amber92:#f4ece1;--lh-amber92a:#f0ede5;--lh-amber92b:#f0ece4;--lh-amber92c:#f3ebe0;--lh-amber92d:#f3efe4;--lh-amber93:#f3efe9;--lh-amber93a:#f6efe6;--lh-amber93b:#fdeedd;--lh-amber94:#fbf1e6;--lh-amber94a:#faf3e4;--lh-amber95:#f6f2ec;--lh-amber95a:#f6f3ee;--lh-amber95b:#f7f2ec;--lh-amber95c:#f7f3ec;--lh-amber95d:#fbf3e7;--lh-amber95e:#fbf5ec;--lh-amber96:#fbf7f1;--lh-amber96a:#faf5ef;--lh-amber96b:#fdf5ee;--lh-amber96c:#fdf6ee;--lh-amber96d:#fdf8ec;--lh-amber97:#faf7f3;--lh-amber97a:#fdf9f4;--lh-amber97b:#fbf8f3;--lh-amber97c:#fdf7f0;--lh-amber97d:#fdfaf4;--lh-amber97e:#fffaf0;--lh-amber98:#fcfaf6;--lh-amber98a:#fdfbf8;--lh-amber98b:#fdfaf5;--lh-amber99:#fffdfa;--lh-amber99a:#fffdf9;--lh-blue34:#2f5a80;--lh-blue40:#5c6470;--lh-blue52:#1877f2;--lh-blue61:#4285f4;--lh-blue90:#dde7f0;--lh-blue93:#e3ecf5;--lh-blue97:#f3f7fb;--lh-olive44:#6f8160;--lh-olive53:#889a76;--lh-olive55:#8a9a7e;--lh-olive82:#cfe6bd;--lh-olive84:#d6e6c8;--lh-olive91:#e7f0df;--lh-olive93:#ecf1e8;--lh-olive94:#eef5e8;--lh-paper100:#ffffff;--lh-paper93:#ececec;--lh-rose22:#4a3526;--lh-rose29:#5a463a;--lh-rose34:#6b5444;--lh-rose40:#7a6253;--lh-rose41:#a5352b;--lh-rose42:#a5452f;--lh-rose45:#b5382f;--lh-rose45a:#b5622f;--lh-rose47:#b0473f;--lh-rose47a:#cc2366;--lh-rose48:#d32323;--lh-rose50:#a85f59;--lh-rose51:#b8524a;--lh-rose51a:#dc2743;--lh-rose57:#e6683c;--lh-rose58:#c9785f;--lh-rose61:#c9846f;--lh-rose63:#c97d76;--lh-rose74:#d9a79e;--lh-rose77:#e8a99f;--lh-rose79:#e4b8b1;--lh-rose83:#ffc9a8;--lh-rose85:#efcfc4;--lh-rose85a:#ecccc5;--lh-rose85b:#f0c9c2;--lh-rose86:#f0cfc8;--lh-rose88:#f1d6d2;--lh-rose88a:#f0d9d0;--lh-rose88b:#f0d9d2;--lh-rose88c:#f0dcd2;--lh-rose89:#f1dbd4;--lh-rose92:#f7e3df;--lh-rose94:#fbe7e4;--lh-rose94a:#fbe6e2;--lh-rose94b:#fbe7e2;--lh-rose95:#fdeee9;--lh-rose96:#fdf1ec;--lh-rose96a:#fdf0ee;--lh-rose97:#fdf5f4;--lh-rose99:#fffafa;--lh-sage22:#33521f;--lh-sage24:#127903;--lh-sage28:#3f5d33;--lh-sage30:#2f6a4a;--lh-sage31:#129309;--lh-sage33:#4d6b3e;--lh-sage34:#4f6b43;--lh-sage37:#3f7d5c;--lh-sage37a:#3f7d54;--lh-sage38:#4d7848;--lh-sage41:#5f7d52;--lh-sage45:#5f8a5a;--lh-sage53:#7ba06c;--lh-sage56:#7ba676;--lh-sage65:#9ec089;--lh-sage69:#a9cf90;--lh-sage74:#a9d2b6;--lh-sage79:#c2d7bd;--lh-sage82:#bfe3ce;--lh-sage83:#cfe6c2;--lh-sage83a:#cfe0c9;--lh-sage85:#cfe5d3;--lh-sage86:#cfe6d6;--lh-sage88:#dff0d3;--lh-sage89:#dfeada;--lh-sage91:#dff0e6;--lh-sage92:#e4f0e7;--lh-sage92a:#e3f0e6;--lh-sage93:#eaf4e4;--lh-sage94:#eef4ea;--lh-sage95:#eef5ee;--lh-sage96:#f4f8f2;--lh-sage97:#f7faf5;--lh-violet40:#5c4a80;--lh-violet41:#6d4b86;--lh-violet42:#bc1888;--lh-violet75:#b9a7d8;--lh-violet93:#eee6f5;--lh-violet97:#f3f0ff}
+
   :root{
-    --cream:#faf7f3;--blush-pale:#fdf1ec;--blush:#efcfc4;--rose:#c97d76;--rose-deep:#a85f59;
-    --sage-pale:#ecf1e8;--sage:#7ba676;--sage-dark:#4d7848;--slate:#5c6470;--taupe:#aea298;--charcoal:#2a2622;
+    --cream:var(--lh-amber97);--blush-pale:var(--lh-rose96);--blush:var(--lh-rose85);--rose:var(--lh-rose63);--rose-deep:var(--lh-rose50);
+    --sage-pale:var(--lh-olive93);--sage:var(--lh-sage56);--sage-dark:var(--lh-sage38);--slate:var(--lh-blue40);--taupe:var(--lh-amber64);--charcoal:var(--lh-amber15);
     --shadow:0 4px 24px rgba(0,0,0,.07);
   }
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -34,21 +36,21 @@
   .rbtn .t1{font-weight:800;font-size:1.05rem;color:var(--charcoal);}
   .rbtn .t2{font-size:.8rem;color:var(--taupe);font-weight:700;}
   .rbtn .arr{color:var(--taupe);font-weight:800;font-size:1.2rem;}
-  .ic.google{background:#fff;border:1.5px solid #ececec;color:#4285F4;}
-  .ic.yelp{background:#d32323;}
-  .ic.fb{background:#1877F2;}
+  .ic.google{background:#fff;border:1.5px solid var(--lh-paper93);color:var(--lh-blue61);}
+  .ic.yelp{background:var(--lh-rose48);}
+  .ic.fb{background:var(--lh-blue52);}
   .heart{display:inline-block;}
   .footer{margin-top:34px;font-size:.85rem;color:var(--slate);font-weight:600;line-height:1.7;}
   .footer a{color:var(--rose-deep);text-decoration:none;font-weight:800;}
   .thanks{margin-top:26px;background:#fff;border:1px solid rgba(0,0,0,.05);border-radius:18px;padding:16px 18px;box-shadow:var(--shadow);font-weight:700;color:var(--sage-dark);font-size:.92rem;}
 
   .gbadge{display:inline-flex;align-items:center;gap:9px;background:#fff;border:1.5px solid rgba(0,0,0,.06);border-radius:40px;padding:10px 20px;box-shadow:var(--shadow);text-decoration:none;color:var(--charcoal);font-weight:800;margin:6px auto 4px;}
-  .gbadge .gstars{color:#f5b301;font-size:1.15rem;letter-spacing:1px;}
+  .gbadge .gstars{color:var(--lh-amber48b);font-size:1.15rem;letter-spacing:1px;}
   .gbadge .num{font-size:1.15rem;color:var(--charcoal);}
   .gbadge .cnt{color:var(--slate);font-weight:700;font-size:.9rem;}
-  .gbadge .glogo{font-weight:800;color:#4285F4;}
-  .gbadge.yelpbadge .glogo{font-weight:800;color:#d32323;}
-  .gbadge.fbbadge .glogo{font-weight:800;color:#1877F2;}
+  .gbadge .glogo{font-weight:800;color:var(--lh-blue61);}
+  .gbadge.yelpbadge .glogo{font-weight:800;color:var(--lh-rose48);}
+  .gbadge.fbbadge .glogo{font-weight:800;color:var(--lh-blue52);}
   .gallery-wrap{max-width:1040px;margin:26px auto 0;padding:0 16px;}
   .gallery{columns:2;column-gap:16px;}
   .gallery img{width:100%;display:block;border-radius:14px;box-shadow:var(--shadow);margin:0 0 16px;break-inside:avoid;border:1px solid rgba(0,0,0,.04);cursor:pointer;}
@@ -60,7 +62,7 @@
   .sechead{font-family:'Cormorant Garamond',serif;font-weight:400;font-size:clamp(1.6rem,5vw,2.2rem);text-align:center;margin:44px 0 4px;}
   .sechead-sub{text-align:center;color:var(--slate);font-weight:600;font-size:.92rem;margin-bottom:6px;}
 </style>
-<link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#7a6253"><link rel="apple-touch-icon" href="/assets/icons/apple-touch-icon.png"><link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32.png"></head>
+<link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="var(--lh-rose40)"><link rel="apple-touch-icon" href="/assets/icons/apple-touch-icon.png"><link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32.png"></head>
 <body>
 <div class="topbar">
   <a href="/" style="text-decoration:none"><span class="name">Little <em>Haven</em></span></a>
@@ -79,7 +81,7 @@
 <div class="wrap" style="padding-top:0;padding-bottom:0" id="yelpSection">
   <h2 class="sechead">On Yelp too 🟨</h2>
   <a class="gbadge yelpbadge" href="https://www.yelp.com/biz/little-haven-play-studio-yucca-valley" target="_blank" rel="noopener">
-    <span class="gstars" id="rvYelpStars" style="color:#d32323">★★★★★</span><span class="num" id="rvYelpAvg">5.0</span><span class="cnt">· <span class="glogo">Yelp</span> · <span id="rvYelpCount">3 reviews</span></span>
+    <span class="gstars" id="rvYelpStars" style="color:var(--lh-rose48)">★★★★★</span><span class="num" id="rvYelpAvg">5.0</span><span class="cnt">· <span class="glogo">Yelp</span> · <span id="rvYelpCount">3 reviews</span></span>
   </a>
 </div>
 <div class="gallery-wrap" id="yelpGalleryWrap" style="display:none">
@@ -88,7 +90,7 @@
 <div class="wrap" style="padding-top:0;padding-bottom:0" id="fbSection">
   <h2 class="sechead">On Facebook too 🔷</h2>
   <a class="gbadge fbbadge" href="https://www.facebook.com/littlehavenplay" target="_blank" rel="noopener">
-    <span class="gstars" id="rvFbStars" style="color:#1877F2">★★★★★</span><span class="num" id="rvFbAvg">5.0</span><span class="cnt">· <span class="glogo">Facebook</span> · <span id="rvFbCount">2 reviews</span></span>
+    <span class="gstars" id="rvFbStars" style="color:var(--lh-blue52)">★★★★★</span><span class="num" id="rvFbAvg">5.0</span><span class="cnt">· <span class="glogo">Facebook</span> · <span id="rvFbCount">2 reviews</span></span>
   </a>
 </div>
 <div class="gallery-wrap" id="fbGalleryWrap" style="display:none">
@@ -179,5 +181,26 @@
 </script>
 <script>if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("/sw.js").catch(function(){});});}</script>
 <script src="/assets/chat.js" defer></script>
+
+<script>
+/* Seasonal theme. Colour only: it swaps CSS variable values and touches nothing
+   else on the page. The cached value is applied before first paint so the site
+   never flashes the wrong palette, then the server is asked for the current
+   one. If either step fails the everyday rose-and-sage palette simply stays. */
+(function(){
+  var EL;
+  function apply(css){
+    if(!css){ if(EL) EL.textContent=""; return; }
+    if(!EL){ EL=document.createElement("style"); EL.id="lh-theme"; document.head.appendChild(EL); }
+    EL.textContent=css;
+  }
+  try{ apply(localStorage.getItem("lhThemeCss")||""); }catch(e){}
+  fetch("/api/site-theme").then(function(r){return r.json();}).then(function(d){
+    if(!d||!d.ok) return;
+    apply(d.css||"");
+    try{ localStorage.setItem("lhThemeCss", d.css||""); localStorage.setItem("lhThemeKey", d.theme||"default"); }catch(e){}
+  }).catch(function(){});
+})();
+</script>
 </body>
 </html>
