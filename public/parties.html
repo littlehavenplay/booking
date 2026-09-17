@@ -49,6 +49,27 @@
   .policy p,.faq p{font-size:.86rem;color:var(--slate);margin-top:3px}
   .done{text-align:center}.done .big{font-size:46px}
   details{border-top:1px solid var(--lh-amber90);padding:10px 0}details summary{font-weight:800;cursor:pointer;font-size:.92rem}
+#imgLightbox{display:none;position:fixed;inset:0;z-index:9999;background:rgba(30,26,22,.93);overflow:auto;-webkit-overflow-scrolling:touch;cursor:zoom-out;padding:18px;box-sizing:border-box;align-items:flex-start;justify-content:center}
+#imgLightbox.open{display:flex}
+#imgLightbox img{display:block;width:auto;height:auto;max-width:min(100%,1100px);max-height:none;margin:0 auto;border-radius:14px;box-shadow:0 24px 70px rgba(0,0,0,.55);object-fit:contain;background:#fff}
+#imgLightboxClose{position:fixed;top:14px;right:18px;background:#fff;border:none;border-radius:999px;width:46px;height:46px;font-size:1.5rem;line-height:1;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.35);z-index:10000}
+#imgLightbox{padding:10px}
+#imgLightbox img{max-width:100%;border-radius:10px}
+
+  /* Package artwork. Hover (or tap) lifts the card and shows the hint; clicking
+     opens the same lightbox the rest of the site uses. */
+  .pkgs{display:grid;gap:18px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));margin:22px 0 8px}
+  .pkg{position:relative;border-radius:18px;overflow:hidden;background:var(--white);
+       box-shadow:var(--shadow);transition:transform .22s ease,box-shadow .22s ease}
+  .pkg:hover,.pkg:focus-within{transform:translateY(-4px);box-shadow:var(--shadow-lg)}
+  .pkg img{display:block;width:100%;height:auto;cursor:zoom-in}
+  .pkg .hint{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);
+       background:rgba(42,38,34,.78);color:#fff;font-size:.74rem;font-weight:700;letter-spacing:.04em;
+       padding:6px 12px;border-radius:999px;opacity:0;transition:opacity .2s ease;pointer-events:none}
+  .pkg:hover .hint,.pkg:focus-within .hint{opacity:1}
+  .pkg .pop{position:absolute;top:10px;right:10px;background:var(--rose);color:#fff;font-size:.68rem;
+       font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:5px 11px;border-radius:999px}
+  @media(hover:none){ .pkg .hint{opacity:1} }
 </style>
 <link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="var(--lh-rose40)"><link rel="apple-touch-icon" href="/assets/icons/apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="Little Haven"><link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32.png"></head>
 <body>
@@ -58,6 +79,16 @@
 
 <div class="topbar"><a class="name" href="/index.html" style="text-decoration:none;color:inherit">Little <em>Haven</em> Play Studio</a><a class="back" href="/index.html">← Back to site</a></div>
 <div class="wrap">
+  <section class="pkgwrap" style="margin-top:26px">
+    <h2 style="font-family:'Cormorant Garamond',serif;font-weight:300;font-size:clamp(1.9rem,5vw,2.8rem);margin-bottom:4px">Our party packages</h2>
+    <p class="note" style="margin-top:0">Tap any package to see everything included, full size.</p>
+    <div class="pkgs">
+      <div class="pkg"><img class="zoomable" src="/assets/party-sweet.png" alt="Sweet Party package &mdash; $429, everything included"><span class="hint">Tap to enlarge</span></div>
+      <div class="pkg"><img class="zoomable" src="/assets/party-haven.png" alt="Haven Party package &mdash; $549, everything included"><span class="pop">Most popular</span><span class="hint">Tap to enlarge</span></div>
+      <div class="pkg"><img class="zoomable" src="/assets/party-dream.png" alt="Dream Party package &mdash; $699, everything included"><span class="hint">Tap to enlarge</span></div>
+    </div>
+    <p class="note">Play Club members get <b>10% off</b> any package &mdash; applied automatically when you book with the number your membership is under.</p>
+  </section>
   <h1>Book a Private Party</h1>
   <div class="sub">2-hour private parties · Friday, Saturday & Sunday · pay a deposit to reserve 🎈</div>
 
@@ -463,6 +494,20 @@ async function submitQuestionnaire(){
     apply(d.css||"");
     try{ localStorage.setItem("lhThemeCss", d.css||""); localStorage.setItem("lhThemeKey", d.theme||"default"); }catch(e){}
   }).catch(function(){});
+})();
+</script>
+<div id="imgLightbox" role="dialog" aria-modal="true" aria-label="Enlarged image"><img id="imgLightboxPic" src="" alt=""/><button id="imgLightboxClose" aria-label="Close">×</button></div>
+<script>
+(function(){
+  var lb=document.getElementById('imgLightbox'), pic=document.getElementById('imgLightboxPic'), cl=document.getElementById('imgLightboxClose');
+  function open(src,alt){ pic.src=src; pic.alt=alt||''; lb.classList.add('open'); lb.scrollTop=0; document.body.style.overflow='hidden'; }
+  function close(){ lb.classList.remove('open'); pic.src=''; document.body.style.overflow=''; }
+  document.querySelectorAll('img.zoomable').forEach(function(im){ im.addEventListener('click',function(){ open(im.currentSrc||im.src, im.alt); }); });
+  lb.addEventListener('click',close);
+  pic.addEventListener('click',function(e){ e.stopPropagation(); });
+  cl.addEventListener('click',function(e){ e.stopPropagation(); close(); });
+  document.addEventListener('keydown',function(e){ if(e.key==='Escape' && lb.classList.contains('open')) close(); });
+  window.openImgLightbox=open;
 })();
 </script>
 </body>
