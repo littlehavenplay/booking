@@ -4,62 +4,19 @@
 //   { action: "undo",    code }            -> put the last one back
 //   { action: "issue-now" }                -> run the monthly issue immediately
 //
-// Also runs itself on the 1st of every month to issue that month's passes.
-// Issuance is idempotent per membership per month, so running it twice — by
-// schedule, by hand, or both — cannot hand out a second set.
+// The monthly issuing run lives in guest-pass-cron.js. Netlify does not allow a
+// function to be both scheduled AND reachable on a custom path, so the two are
+// deliberately separate files sharing one library.
 
-import { getStore } from "@netlify/blobs";
-import { issueFor, redeem, undo, readPasses, monthKey, passesFor } from "./lib-guestpass.js";
+import { issueFor, redeem, undo, readPasses, monthKey, passesFor, allMembers, isActiveMember, issueAll } from "./lib-guestpass.js";
 
 const json = (o, s = 200) =>
   new Response(JSON.stringify(o), { status: s, headers: { "content-type": "application/json" } });
 
-async function allMembers() {
-  try {
-    const rec = await getStore("playclub").get("playclub:members", { type: "json" });
-    return Array.isArray(rec) ? rec : (rec && rec.members) || [];
-  } catch { return []; }
-}
-
-// Only memberships that actually cover visits right now get passes. A paused or
-// ended membership shouldn't quietly accrue them.
-function isActive(m) {
-  if (!m || m.active === false) return false;
-  const today = new Date().toISOString().slice(0, 10);
-  if (m.status === "ended") return false;
-  if (m.endsOn && m.endsOn < today) return false;
-  if (m.pausedUntil && m.pausedUntil > today) return false;
-  if (m.status === "paused" && !m.pausedUntil) return false;
-  return true;
-}
-
-async function issueAll(mk) {
-  const members = await allMembers();
-  let issued = 0, skipped = 0, already = 0, passes = 0;
-  for (const m of members) {
-    if (!isActive(m) || !m.code) { skipped++; continue; }
-    const r = await issueFor(m, mk);
-    if (r.alreadyExisted) already++;
-    else if (r.issued > 0) { issued++; passes += r.issued; }
-    else skipped++;
-  }
-  return { month: mk, memberships: members.length, issued, already, skipped, passesIssued: passes };
-}
-
 export default async (req) => {
-  // Scheduled invocation: no body, just issue this month's passes.
-  if (req.method !== "POST") {
-    const out = await issueAll(monthKey());
-    return json({ ok: true, ranBy: "schedule", ...out });
-  }
-
+  if (req.method !== "POST") return json({ error: "Use POST." }, 405);
   let b; try { b = await req.json(); } catch { b = {}; }
-
-  // Netlify calls scheduled functions with no useful body; treat that as the run.
-  if (!b || !b.action) {
-    const out = await issueAll(monthKey());
-    return json({ ok: true, ranBy: "schedule", ...out });
-  }
+  if (!b || !b.action) return json({ error: "No action." }, 400);
 
   const adminKey = process.env.ADMIN_KEY || "", staffPin = process.env.STAFF_PIN || "";
   const provided = (b.key || "").toString();
@@ -113,5 +70,4 @@ export default async (req) => {
   return json({ error: "Unknown action." }, 400);
 };
 
-// 1st of the month, 15:00 UTC — the same hour the other daily jobs run.
-export const config = { path: "/api/guest-pass", schedule: "0 15 1 * *" };
+export const config = { path: "/api/guest-pass" };

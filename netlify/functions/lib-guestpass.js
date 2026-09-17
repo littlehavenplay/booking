@@ -105,3 +105,38 @@ export async function undo(code, mk = monthKey()) {
   try { await store.setJSON(ledgerKey(code, mk), rec); } catch { return { ok: false, error: "Couldn't save." }; }
   return { ok: true, total: rec.total, used: rec.uses.length, remaining: rec.total - rec.uses.length };
 }
+
+// ---- shared by the HTTP endpoint and the scheduled issuer --------------------
+
+// Only memberships that actually cover visits right now get passes. A paused or
+// ended membership shouldn't quietly accrue them.
+export function isActiveMember(m) {
+  if (!m || m.active === false) return false;
+  const today = new Date().toISOString().slice(0, 10);
+  if (m.status === "ended") return false;
+  if (m.endsOn && m.endsOn < today) return false;
+  if (m.pausedUntil && m.pausedUntil > today) return false;
+  if (m.status === "paused" && !m.pausedUntil) return false;
+  return true;
+}
+
+export async function allMembers() {
+  try {
+    const rec = await getStore("playclub").get("playclub:members", { type: "json" });
+    return Array.isArray(rec) ? rec : (rec && rec.members) || [];
+  } catch { return []; }
+}
+
+// Idempotent per membership per month: safe to run by schedule, by hand, or both.
+export async function issueAll(mk = monthKey()) {
+  const members = await allMembers();
+  let issued = 0, skipped = 0, already = 0, passes = 0;
+  for (const m of members) {
+    if (!isActiveMember(m) || !m.code) { skipped++; continue; }
+    const r = await issueFor(m, mk);
+    if (r.alreadyExisted) already++;
+    else if (r.issued > 0) { issued++; passes += r.issued; }
+    else skipped++;
+  }
+  return { month: mk, memberships: members.length, issued, already, skipped, passesIssued: passes };
+}
