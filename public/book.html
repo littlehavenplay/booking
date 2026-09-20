@@ -1044,11 +1044,25 @@ function updateTotals(){
   // Credit the tier the plan was sold at. This used to always use the regular
   // price, so a Baby/Infant plan took $25 off a $25 admission instead of $19 —
   // and the server agreed with it, so the studio simply lost the difference.
+  // Each covered child is credited at ITS OWN tier price, because a plan can
+  // cover a mix -- "1 Toddler + 1 Sibling" credits $25 + $21, not 2 x either.
+  // Must match the same sum in book.js, which is authoritative.
+  const pcKeys = (state.playClub && state.playClub.coverKeys) || null;
   const pcTier = (state.playClub && state.playClub.coverAdmission) || "regular";
-  const pcUnit = (CFG.prices && CFG.prices[pcTier]) || (CFG.prices && CFG.prices.regular) || 0;
+  const pcPriceFor = function(tier){
+    return (CFG.prices && CFG.prices[tier]) || (CFG.prices && CFG.prices.regular) || 0;
+  };
+  let pcGross = 0;
+  if (pcCoveredN > 0) {
+    if (pcKeys && pcKeys.length) {
+      const back = { reg:"regular", inf:"infant", sib:"sibling" };
+      for (let i = 0; i < pcCoveredN; i++) pcGross += pcPriceFor(back[pcKeys[i]] || "regular");
+    } else {
+      pcGross = pcCoveredN * pcPriceFor(pcTier);
+    }
+  }
   const pcAmt = pcCoveredN > 0
-    ? Math.min(pcCoveredN * pcUnit,
-               Math.max(0, subtotal - discAmt - wdAmt - milAmt - rewardAmt - refAmt))
+    ? Math.min(pcGross, Math.max(0, subtotal - discAmt - wdAmt - milAmt - rewardAmt - refAmt))
     : 0;
   // Show the membership as a saving rather than silently zeroing the total, so
   // the value of the plan is visible on every single booking.
@@ -1552,7 +1566,9 @@ state.playClub = null;
     // Give back whatever the membership was holding, or removing the code would
     // leave paid-for admissions in the cart that nobody added.
     try{
-      if(state.playClub && state.playClub.coverKey){
+      if(state.playClub && state.playClub.coverKeys && state.playClub.coverKeys.length){
+        state.playClub.coverKeys.forEach(function(k){ state[k]=Math.max(0,(state[k]||0)-1); });
+      } else if(state.playClub && state.playClub.coverKey){
         state[state.playClub.coverKey]=Math.max(0,(state[state.playClub.coverKey]||0)-(state.playClub.coveredN||0));
       }
     }catch(e){}
@@ -1603,15 +1619,34 @@ state.playClub = null;
     // regular one it used to be forced into. Anything the family added on top
     // is preserved rather than wiped, and extras keep their own tier and price
     // (an older sibling added alongside still costs the regular rate).
-    var tier=state.playClub.coverAdmission||"regular";
-    var key = tier==="infant" ? "inf" : tier==="sibling" ? "sib" : "reg";
-    // Take the previous coverage back out of whichever bucket held it first,
-    // so re-ticking or switching plans can't leave a phantom admission behind.
-    var prev=state.playClub.coverKey;
-    if(prev) state[prev]=Math.max(0,(state[prev]||0)-(state.playClub.coveredN||0));
-    state.playClub.coverKey=key;
+    // Each covered child is booked as the tier the PLAN covers at that
+    // position. "1 Toddler + 1 Sibling" is one regular plus one sibling add-on
+    // -- booking both as siblings left the cart with no regular admission,
+    // which the server refuses outright, so the member couldn't book at all.
+    var K={regular:"reg", infant:"inf", sibling:"sib"};
+    var comp=state.playClub.coverComposition;
+    if(!comp || !comp.length){
+      var t=state.playClub.coverAdmission||"regular";
+      comp=[]; for(var z=0;z<Math.max(1,cap);z++) comp.push(z===0?t:(t==="sibling"?"regular":"sibling"));
+      if(comp.every(function(x){return x==="sibling";})) comp[0]="regular";
+    }
+
+    // Give back whatever the previous selection was holding, in whatever
+    // buckets it used, so re-ticking can't leave a phantom admission behind.
+    var prevKeys=state.playClub.coverKeys;
+    if(prevKeys && prevKeys.length){
+      prevKeys.forEach(function(k){ state[k]=Math.max(0,(state[k]||0)-1); });
+    } else if(state.playClub.coverKey){
+      state[state.playClub.coverKey]=Math.max(0,(state[state.playClub.coverKey]||0)-(state.playClub.coveredN||0));
+    }
+
+    var keys=chosen.map(function(_,i){
+      return K[comp[i] || comp[comp.length-1] || "regular"] || "reg";
+    });
+    keys.forEach(function(k){ state[k]=(state[k]||0)+1; });
+    state.playClub.coverKeys=keys;
+    state.playClub.coverKey=keys[0]||null;   // kept for anything still reading it
     state.playClub.coveredN=chosen.length;
-    state[key]=(state[key]||0)+chosen.length;
     syncStepperNums();
     try{ if(typeof renderChildNames==="function") renderChildNames(); }catch(e){}
     try{ syncMemberChildRows(); }catch(e){}
@@ -1675,8 +1710,14 @@ state.playClub = null;
       // "infant"). A Baby/Infant plan credits the $19 baby admission, not the
       // $25 regular one, and its covered children are booked as baby admissions.
       var tier = r.coverAdmission==="infant" || r.coverAdmission==="sibling" ? r.coverAdmission : "regular";
+      // The per-child breakdown, e.g. ["regular","sibling"] for a plan covering
+      // one toddler and one sibling. Booking every covered child as the SAME
+      // tier meant a mixed plan produced siblings with no regular admission,
+      // which the server refuses -- so those members couldn't book at all.
+      var comp = Array.isArray(r.coverComposition) && r.coverComposition.length
+        ? r.coverComposition.slice() : null;
       state.playClub={ code:r.code, planName:r.planName, planKind:r.planKind||"anyday",
-        coverAdmission:tier, coverKey:null,
+        coverAdmission:tier, coverComposition:comp, coverKeys:null, coverKey:null,
         maxChildren:r.maxChildren, children:r.children||[], selected:[], coveredN:0,
         coversDate:r.coversDate!==false };
 
@@ -1693,8 +1734,15 @@ state.playClub = null;
         // asking them to type the same ten digits again two fields later is
         // just a second chance to get it wrong. Only fills an empty field, so
         // whoever is actually bringing the children can still use their own.
-        if(pEl && !pEl.value.trim() && digits.length>=10){
-          pEl.value=raw;
+        // Prefer the number held on the membership; fall back to whatever they
+        // typed if they looked it up by phone. Before this, a member who
+        // entered their CODE was left with an empty phone field -- and it's
+        // required, so the booking simply wouldn't go through.
+        var memberPhone = (c.phone||"").replace(/\D/g,"");
+        if(pEl && !pEl.value.trim() && (memberPhone.length>=10 || digits.length>=10)){
+          pEl.value = memberPhone.length>=10
+            ? memberPhone.slice(-10).replace(/(\d{3})(\d{3})(\d{4})/, "($1) $2-$3")
+            : raw;
           pEl.dispatchEvent(new Event("input",{bubbles:true}));
           pEl.dispatchEvent(new Event("change",{bubbles:true}));
         }

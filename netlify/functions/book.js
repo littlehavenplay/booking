@@ -27,7 +27,7 @@ import { getActiveFamCode, logFamUse } from "./famcode.js";
 // global; only actually CALLING the code catches it. There is now a booking
 // smoke test (test-booking-smoke.mjs) that posts a real booking through this
 // handler, including a member booking, so this class of fault cannot ship again.
-import { findMemberFor, recordMemberVisit, memberCoversDate, coverAdmissionFor } from "./lib-playclub.js";
+import { findMemberFor, recordMemberVisit, memberCoversDate, coverAdmissionFor, coverCompositionFor } from "./lib-playclub.js";
 import { FRIEND_DISCOUNT_CENTS, findFamilyByCode, familyStatus, normalizeRef, last4 as refLast4 } from "./lib-referral.js";
 import { loadSeasonal, loadWeekly } from "./lib-hours.js";
 import { getClosure, slotBlockedByClosure, getEventHold } from "./lib-closures.js";
@@ -457,10 +457,16 @@ export default async (req) => {
       // full was giving away $6 a visit -- and disagreeing with nothing, because
       // the booking page was doing the same thing. The cover is now capped at
       // the plan's own tier price and the family pays any difference.
-      const coverTier  = coverAdmissionFor(found, null);
-      const coverPrice = PRICES[coverTier] || PRICES.regular;
+      // A plan can cover a MIX of tiers -- "1 Toddler + 1 Sibling" is one
+      // regular plus one sibling add-on, not two of either. Each covered slot
+      // is credited against its own position in that composition, so the family
+      // pays any difference and nothing is over-credited.
+      const composition = coverCompositionFor(found, null);
 
-      for (const s of coveredSlots) {
+      for (let ci = 0; ci < coveredSlots.length; ci++) {
+        const s = coveredSlots[ci];
+        const coverTier  = composition[ci] || composition[composition.length - 1] || "regular";
+        const coverPrice = PRICES[coverTier] || PRICES.regular;
         memberAmount += Math.min(s.price, coverPrice);
         memberCoveredCount++;
         if (s.child) {

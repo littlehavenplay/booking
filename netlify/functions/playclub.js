@@ -19,7 +19,7 @@
 // on an external host.
 import { getStore } from "@netlify/blobs";
 import { listAllKeys } from "./lib-blobs.js";
-import { isWeekend, memberCoversDate, coverAdmissionFor } from "./lib-playclub.js";
+import { isWeekend, memberCoversDate, coverAdmissionFor, coverCompositionFor } from "./lib-playclub.js";
 import { resendEmail } from "./lib-email.js";
 
 const STORE = "site";
@@ -365,12 +365,16 @@ export default async (req) => {
       // plan the page could show a tier the charge disagreed with. m.planName
       // is copied from the plan at save time, so nothing is lost.
       coverAdmission: coverAdmissionFor(m, null),
+      // The per-child breakdown. A plan covering "1 Toddler + 1 Sibling" is one
+      // regular AND one sibling; booking both as siblings produced an invalid
+      // combination the server refused.
+      coverComposition: coverCompositionFor(m, null),
       maxChildren: m.maxChildren || (m.children || []).length || 1,
       children: (m.children || []).map(c => ({ code: c.code || "", name: c.name || "" })),
       // Prefills the booker's details so a member isn't retyping what we already
       // hold. Stays editable — the membership belongs to the CHILDREN, so
       // grandma or dad may well be the one bringing them today.
-      contact: { name: m.name || "", email: m.email || "", phone4: m.phone4 || "" },
+      contact: { name: m.name || "", email: m.email || "", phone: m.phone || "", phone4: m.phone4 || "" },
       endsOn: m.endsOn || null,
       status: st,
       coversDate: dateOk,
@@ -495,6 +499,11 @@ export default async (req) => {
 
     const rec = {
       code, name, phone4: p4,
+      // The full number, so the booking page can prefill it. Only phone4 was
+      // kept before, which meant a member who looked their membership up by
+      // CODE was left with an empty (and required) phone field -- the exact
+      // thing that stopped them booking. phone4 is still what matching uses.
+      phone: String(m.phone || m.phone4 || "").replace(/\D/g, "").slice(-15),
       email: (m.email || "").toString().slice(0, 160).trim(),
       planId: (m.planId || "").toString(),
       planName: (m.planName || (chosenPlan && chosenPlan.name) || "").toString().slice(0, 80),

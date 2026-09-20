@@ -42,6 +42,70 @@ export function memberCoversDate(m, dateStr) {
 // always been written ("... - Baby/Infant"). Anything unrecognised stays
 // "regular", which is what every plan did before, so nothing changes for plans
 // that don't name a tier.
+// How many of EACH admission tier a plan covers, in the order they should be
+// booked.
+//
+// coverAdmissionFor() below returns ONE tier for the whole membership, which is
+// wrong for any plan covering a mix. "Any Day Play Club - 1 Toddler + 1 Sibling"
+// matched /sibling/ and booked BOTH covered children as sibling add-ons with no
+// regular admission -- a combination book.js rejects outright ("Sibling add-on
+// requires at least one regular admission"), so the member simply could not
+// book online. This resolves the real composition instead.
+const TIER_WORD = {
+  toddler: "regular", regular: "regular", child: "regular", kid: "regular",
+  baby: "infant", infant: "infant",
+  sibling: "sibling", sib: "sibling",
+};
+
+export function coverCompositionFor(m, plan) {
+  const cap = Math.max(1, Math.min(10,
+    parseInt((m && m.maxChildren) || (plan && plan.maxChildren), 10) ||
+    ((m && m.children) || []).filter(c => c && c.name).length || 1));
+
+  // An explicit tier set by staff wins outright and applies to every child.
+  const explicit = String((m && m.planTier) || (plan && plan.tier) || "").toLowerCase();
+  if (explicit === "infant" || explicit === "sibling" || explicit === "regular") {
+    return Array(cap).fill(explicit);
+  }
+
+  const text = [m && m.planName, plan && plan.name, plan && plan.category]
+    .filter(Boolean).join(" ").toLowerCase();
+
+  const counts = { regular: 0, infant: 0, sibling: 0 };
+  let found = false;
+  for (const mm of text.matchAll(/(\d+)\s*([a-z/]+)/g)) {
+    const n = parseInt(mm[1], 10);
+    for (const part of mm[2].split("/")) {
+      const tier = TIER_WORD[part.replace(/s$/, "")];
+      if (tier) { counts[tier] += n; found = true; break; }
+    }
+  }
+  if (!found) {
+    // No counts in the name. Cover the family the way a walk-in family of the
+    // same size is charged: one full admission, the rest as sibling add-ons.
+    if (/\b(baby|infant)\b/.test(text)) { counts.infant = 1; counts.sibling = cap - 1; }
+    else                                 { counts.regular = 1; counts.sibling = cap - 1; }
+  }
+
+  // Regulars and infants first: a sibling add-on is only valid alongside one.
+  let out = [].concat(
+    Array(Math.max(0, counts.regular)).fill("regular"),
+    Array(Math.max(0, counts.infant)).fill("infant"),
+    Array(Math.max(0, counts.sibling)).fill("sibling"));
+
+  if (out.length > cap) out = out.slice(0, cap);
+  while (out.length < cap) out.push(out.length ? "sibling" : "regular");
+
+  // A sibling add-on is only valid alongside a REGULAR admission -- an infant
+  // does not satisfy it (studio rule, and book.js enforces it). So a Baby/Infant
+  // plan covering two children resolves to infant + regular, not infant +
+  // sibling, which the server would have refused exactly like the toddler case.
+  if (out.some(t => t === "sibling") && !out.some(t => t === "regular")) {
+    out[out.indexOf("sibling")] = "regular";
+  }
+  return out;
+}
+
 export function coverAdmissionFor(m, plan) {
   const explicit = String((m && m.planTier) || (plan && plan.tier) || "").toLowerCase();
   if (explicit === "infant" || explicit === "sibling" || explicit === "regular") return explicit;
