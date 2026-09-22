@@ -9,6 +9,7 @@ import { listAllKeys } from "./lib-blobs.js";
 import {
   STORE, cleanEmail, validEmail, subKey, suppress,
   buildSubscriberCsv, pullResendUnsubscribes, CONTACT_CAP,
+  previewCatchup, sendCatchup,
 } from "./lib-newsletter.js";
 import {
   resolveSegmentId, importContactsCsv, setContactUnsubscribed, marketingConfigured,
@@ -33,6 +34,35 @@ export default async (req) => {
   // Resume at the RIGHT stage. Sending is the one irreversible step, so if the
   // send was already requested we only ever go back to polling — never to a
   // state that would hand Resend a second copy of the same broadcast.
+  // A campaign that stopped partway: who still hasn't had it, and send to just
+  // them. "catchup-preview" sends nothing; "catchup-send" emails one batch and
+  // reports how many are left, so a big list can be finished in a few presses.
+  if (action === "catchup-preview" || action === "catchup-send") {
+    const id = (b.id || "").toString();
+    if (!id) return json({ error: "Missing campaign id." }, 400);
+    const key = "campaign:" + id;
+    let c = null; try { c = await store.get(key, { type: "json", consistency: "strong" }); } catch {}
+    if (!c) return json({ error: "Campaign not found." }, 404);
+
+    if (action === "catchup-preview") {
+      const p = await previewCatchup(store, c);
+      return json({ ok: true, ...p, subject: c.subject || "", status: c.status,
+        message: !p.recoverable
+          ? "This campaign didn't record who it reached, so the people who missed it can't be identified."
+          : p.missed
+            ? `${p.missed} subscriber${p.missed === 1 ? "" : "s"} never got this. ${p.alreadySent} already did and won't be emailed again.`
+            : "Everyone on the list has had this one." });
+    }
+
+    if (c.status === "sent") return json({ error: "That campaign is already finished." }, 400);
+    const r = await sendCatchup(store, c, key);
+    if (!r.ok) return json({ error: r.error }, 502);
+    return json({ ok: true, sent: r.sent, remaining: r.remaining, complete: r.complete,
+      message: r.complete
+        ? `Sent to the last ${r.sent}. Everyone on the list has it now.`
+        : `Sent to ${r.sent}. ${r.remaining} still to go \u2014 press again to send the next batch.` });
+  }
+
   if (action === "retry-campaign") {
     const id = (b.id || "").toString();
     if (!id) return json({ error: "Missing campaign id." }, 400);

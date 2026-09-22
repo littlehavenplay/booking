@@ -3199,6 +3199,7 @@ async function nlLoad(){
       else if(st==="syncing"){ badge='<span style="color:#7a6cc4;font-weight:800">🔄 Preparing your list…</span>'; when=" (uploading subscribers to Resend)"; }
       else if(st==="ready"){ badge='<span style="color:#7a6cc4;font-weight:800">🔄 Preparing to send…</span>'; }
       else if(st==="queued"||st==="sending"){ badge='<span style="color:#4d7848;font-weight:800">📤 Going out now…</span>'; when=" to "+(m.stats.total||0)+" subscribers"; }
+      else if(st==="stalled"){ badge='<span style="color:#b5622f;font-weight:800">\u26A0\uFE0F Stopped partway</span>'; when=" ("+((m.stats&&m.stats.sent)||0)+"/"+((m.stats&&m.stats.total)||0)+" sent \u00b7 needs a decision)"; }
       else if(st==="sent"){ badge='<span style="color:#4d7848;font-weight:800">✅ Sent</span>'; when=" to "+(m.stats.sent||m.stats.total||0)+(m.sentAt?(" · "+new Date(m.sentAt).toLocaleDateString()):""); }
       else if(st==="failed"){ badge='<span style="color:#b5382f;font-weight:800">⚠️ Stopped</span>'; }
       else { badge='<span class="note" style="margin:0">'+esc(st)+'</span>'; }
@@ -3211,7 +3212,7 @@ async function nlLoad(){
         : '';
       return '<div style="background:#faf7f2;border:1px solid #efe4d5;border-radius:9px;padding:7px 10px;margin-bottom:6px;font-size:.82rem">'
         +'<div style="display:flex;align-items:center;gap:8px">'
-        +'<div style="flex:1;min-width:0"><b>'+esc(m.subject||"(no subject)")+'</b><br>'+badge+'<span style="color:var(--slate)">'+esc(when)+'</span></div>'
+        +'<div style="flex:1;min-width:0"><b>'+esc(m.subject||"(no subject)")+'</b><br>'+badge+'<span style="color:var(--slate)">'+esc(when)+'</span>'+(st==="stalled"?('<div style="margin-top:5px"><button type="button" onclick="nlCatchup(\''+esc(m.id)+'\')" style="border:none;background:#e7f0df;color:#3f5d33;font-weight:800;font-size:.72rem;border-radius:999px;padding:5px 11px;cursor:pointer">Send to the ones who missed it</button></div>'):'')+'</div>'
         +'<button type="button" onclick="nlDeleteCampaign(\''+esc(m.id)+'\','+(canCancel?"true":"false")+')" style="border:none;background:'+(canCancel?'#fbe6e2;color:#b5382f':'#eee;color:#777')+';border-radius:6px;cursor:pointer;font-weight:800;font-size:.72rem;padding:5px 9px">'+(canCancel?"Cancel":"Delete")+'</button>'
         +'</div>'+err
       +'</div>';
@@ -5050,6 +5051,32 @@ async function baSend(){
 }
 if($("#baPreview")) $("#baPreview").onclick=baPreview;
 if($("#baSend")) $("#baSend").onclick=baSend;
+
+
+/* Finish a campaign that stopped partway: preview who missed it, then send to
+   only those people. Never re-emails anyone already reached. */
+async function nlCatchup(id){
+  var p;
+  try{
+    p=await (await fetch("/api/newsletter-admin",{method:"POST",headers:{"content-type":"application/json"},
+      body:JSON.stringify({key:pcwKey(),action:"catchup-preview",id:id})})).json();
+  }catch(e){ alert("Couldn't check that campaign."); return; }
+  if(!p.ok){ alert(p.error||"Couldn't check that campaign."); return; }
+  if(!p.recoverable || !p.missed){ alert(p.message); return; }
+  if(!window.confirm(p.message+"\n\nSend it to just those "+p.missed+" now?")) return;
+  var total=0;
+  for(var i=0;i<20;i++){
+    var r;
+    try{
+      r=await (await fetch("/api/newsletter-admin",{method:"POST",headers:{"content-type":"application/json"},
+        body:JSON.stringify({key:pcwKey(),action:"catchup-send",id:id})})).json();
+    }catch(e){ alert("Network error after "+total+" sent. Press the button again to carry on."); break; }
+    if(!r.ok){ alert(r.error||"Couldn't send."); break; }
+    total+=r.sent||0;
+    if(r.complete){ alert("Done \u2014 sent to "+total+". Everyone on the list has it now."); break; }
+  }
+  try{ nlLoad(); }catch(e){}
+}
 
 </script>
 

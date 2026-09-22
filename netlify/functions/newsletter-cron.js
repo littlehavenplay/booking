@@ -17,7 +17,10 @@ import { listAllKeys } from "./lib-blobs.js";
 import { STORE, runCampaign } from "./lib-newsletter.js";
 import { sendOwnerAlert } from "./lib-email.js";
 
-const ACTIVE = new Set(["scheduled", "syncing", "ready", "queued"]);
+// "sending" is a legacy status from the older per-recipient sender. It has to be
+// in here or the cron never looks at those campaigns at all -- which is exactly
+// why one sat stuck with no alert. advanceCampaign() parks it as "stalled".
+const ACTIVE = new Set(["scheduled", "syncing", "ready", "queued", "sending"]);
 
 export default async () => {
   const store = getStore(STORE);
@@ -37,12 +40,12 @@ export default async () => {
     if (last && last.done) completed++;
 
     // A campaign that has parked itself gets one owner alert, not a nightly one.
-    if (c.status === "failed" && !c.errorAlerted) {
+    if ((c.status === "failed" || c.status === "stalled") && !c.errorAlerted) {
       parked++;
       c.errorAlerted = true;
       try {
         await sendOwnerAlert(
-          `\u26A0\uFE0F Newsletter "${c.subject || "campaign"}" could not send`,
+          `\u26A0\uFE0F Newsletter "${c.subject || "campaign"}" ${c.status === "stalled" ? "stopped partway" : "could not send"}`,
           `<h3>A newsletter campaign has stopped</h3>
            <p><b>${c.subject || "(no subject)"}</b><br>
            Subscribers on the list: ${(c.stats && c.stats.total) || 0}</p>

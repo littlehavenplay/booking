@@ -269,7 +269,32 @@ function clearError(campaign) {
   campaign.errorCount = 0;
 }
 
+// Every status this pipeline actually drives. Anything else -- "sending" from
+// the older per-recipient sender, or a typo -- is parked rather than ignored.
+const KNOWN_STATUSES = new Set(["scheduled", "syncing", "ready", "queued", "sent", "failed", "stalled"]);
+
 export async function advanceCampaign(store, campaign) {
+  campaign.stats = campaign.stats || { sent: 0, failed: 0, total: 0 };
+
+  // Any status this pipeline doesn't know -- notably "sending", written by the
+  // older version that posted to each subscriber itself -- used to fall through
+  // here and return "nothing changed", silently, for ever. That is how a
+  // campaign sat at 200/248 with no error and no alert.
+  //
+  // It is NOT resumed automatically: the old per-recipient position is gone, so
+  // re-running would email everyone who already received it a second time. It
+  // is parked, named, and left for a person to decide.
+  if (!KNOWN_STATUSES.has(campaign.status)) {
+    const sent = (campaign.stats && campaign.stats.sent) || 0;
+    const total = (campaign.stats && campaign.stats.total) || 0;
+    campaign.status = "stalled";
+    campaign.lastError = `This campaign was started by an older version of the newsletter tool and stopped partway`
+      + (total ? ` (${sent} of ${total} sent)` : "")
+      + `. It can't be resumed automatically, because re-sending would email the ${sent || "already-sent"} people again.`;
+    campaign.lastErrorAt = new Date().toISOString();
+    return { changed: true, done: false, error: campaign.lastError, stage: "stalled" };
+  }
+
   if (!marketingConfigured()) {
     return { changed: false, done: false, error: "email-not-configured" };
   }
@@ -413,6 +438,7 @@ export async function advanceCampaign(store, campaign) {
     return { changed: false, done: false, stage: "queued" };
   }
 
+
   return { changed: false, done: false };
 }
 
@@ -445,4 +471,113 @@ export async function runCampaign(store, campaign, { maxSteps = 10, budgetMs = 0
     break;   // otherwise hand off to the cron
   }
   return { steps, last };
+}
+
+// ---- Finishing a campaign that stopped partway ------------------------------
+//
+// The older sender emailed subscribers one batch at a time and recorded every
+// address it reached in campaign.done. When a campaign stalled mid-way, that
+// list is what makes it possible to reach ONLY the people who missed it --
+// rather than re-sending to everyone or giving up on them.
+//
+// It uses the transactional batch endpoint (one message per person), not a
+// broadcast, because a broadcast can only target a whole audience. Suppressed
+// and unsubscribed addresses are skipped, and every message keeps its
+// one-click unsubscribe header.
+
+const CATCHUP_BATCH = 40;
+
+export function missedBy(campaign, subscribers) {
+  const done = new Set((Array.isArray(campaign.done) ? campaign.done : []).map(cleanEmail));
+  return subscribers.filter(s => !done.has(cleanEmail(s.email)));
+}
+
+// Who still needs it, without sending anything.
+export async function previewCatchup(store, campaign) {
+  const subs = await listActiveSubscribers(store);
+  const pending = missedBy(campaign, subs);
+  const alreadySent = (Array.isArray(campaign.done) ? campaign.done : []).length;
+  return {
+    alreadySent, subscribers: subs.length, missed: pending.length,
+    sample: pending.slice(0, 5).map(s => s.email),
+    recoverable: Array.isArray(campaign.done) && campaign.done.length > 0,
+  };
+}
+
+// Send to the people who missed it. Resumable and safe to run twice: every
+// address that goes out is added to campaign.done first, so a timeout or a
+// second press picks up where it left off instead of repeating anyone.
+export async function sendCatchup(store, campaign, key, { max = CATCHUP_BATCH } = {}) {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) return { ok: false, error: "Resend isn't configured." };
+  if (!Array.isArray(campaign.done)) {
+    return { ok: false, error: "This campaign has no record of who it already reached, so the people who missed it can't be identified." };
+  }
+
+  const from = process.env.NEWSLETTER_FROM || process.env.EMAIL_FROM || "onboarding@resend.dev";
+  const studio = process.env.STUDIO_NAME || "Little Haven Play Studio";
+  const replyTo = process.env.STUDIO_EMAIL || "hello@littlehavenplay.com";
+
+  const subs = await listActiveSubscribers(store);
+  const pending = missedBy(campaign, subs);
+  campaign.stats = campaign.stats || { sent: 0, failed: 0, total: 0 };
+  campaign.stats.total = subs.length;
+
+  if (!pending.length) {
+    campaign.status = "sent";
+    campaign.sentAt = campaign.sentAt || new Date().toISOString();
+    campaign.lastError = "";
+    try { await store.setJSON(key, campaign); } catch {}
+    return { ok: true, sent: 0, remaining: 0, complete: true };
+  }
+
+  const chunk = pending.slice(0, max);
+  const payload = [];
+  for (const s of chunk) {
+    if (await isSuppressed(store, s.email)) continue;      // never email an unsubscriber
+    payload.push({
+      from: fromHeader(from, studio), to: [s.email], reply_to: replyTo,
+      subject: campaign.subject, html: buildCampaignHtml(campaign),
+      headers: {
+        "List-Unsubscribe": `<${unsubUrl(s.email, s.token)}>`,
+        "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+      },
+    });
+  }
+  if (!payload.length) {
+    // Everyone left in this chunk had unsubscribed. Record them as handled so
+    // the next run moves past them rather than looping on the same people.
+    campaign.done = campaign.done.concat(chunk.map(s => cleanEmail(s.email)));
+    try { await store.setJSON(key, campaign); } catch {}
+    return { ok: true, sent: 0, remaining: Math.max(0, pending.length - chunk.length), complete: false };
+  }
+
+  let ok = false, detail = "";
+  try {
+    const res = await fetch("https://api.resend.com/emails/batch", {
+      method: "POST",
+      headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    ok = res.ok;
+    if (!ok) { try { detail = (await res.text()).slice(0, 200); } catch {} }
+  } catch (e) { ok = false; detail = (e && e.message) || "network error"; }
+
+  if (!ok) {
+    campaign.lastError = `Couldn't send to the remaining subscribers: ${detail || "unknown error"}`;
+    campaign.lastErrorAt = new Date().toISOString();
+    try { await store.setJSON(key, campaign); } catch {}
+    return { ok: false, error: campaign.lastError };
+  }
+
+  const emailed = payload.map(x => cleanEmail(x.to[0]));
+  const handled = chunk.map(s => cleanEmail(s.email));     // includes skipped unsubscribers
+  campaign.done = campaign.done.concat(handled);
+  campaign.stats.sent = (campaign.stats.sent || 0) + emailed.length;
+  const remaining = Math.max(0, pending.length - chunk.length);
+  campaign.status = remaining ? "stalled" : "sent";
+  if (!remaining) campaign.sentAt = campaign.sentAt || new Date().toISOString();
+  campaign.lastError = remaining ? campaign.lastError : "";
+  try { await store.setJSON(key, campaign); } catch {}
+  return { ok: true, sent: emailed.length, remaining, complete: !remaining };
 }
