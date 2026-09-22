@@ -1,18 +1,6 @@
-// Monthly guest-pass issuing run — 1st of the month at 15:00 UTC.
-//
-// Separate from guest-pass.js on purpose: Netlify rejects a function that is
-// both scheduled and reachable on a custom path, so the schedule lives here and
-// the staff endpoint lives there. Both call the same issueAll().
-//
-// Issuance is idempotent per membership per month, so an extra run — a retry, a
-// manual trigger, two invocations overlapping — cannot hand out a second set.
-
-import { issueAll, monthKey } from "./lib-guestpass.js";
-
-export default async () => {
-  const out = await issueAll(monthKey());
-  return new Response(JSON.stringify({ ok: true, ranBy: "schedule", ...out }),
-    { status: 200, headers: { "content-type": "application/json" } });
-};
-
+// RETIRED (Sept 2026) — replaced by buddy passes (buddy-pass-cron.js).
+// Kept as a harmless no-op so an upload that doesn't delete this file can't
+// keep issuing the old guest passes alongside the new ones. Safe to delete.
+export default async () => new Response(JSON.stringify({ ok: true, retired: true, replacedBy: "buddy-pass-cron" }),
+  { status: 200, headers: { "content-type": "application/json" } });
 export const config = { schedule: "0 15 1 * *" };

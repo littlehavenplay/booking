@@ -13,11 +13,10 @@
 // deliberately separate, with no link between them.
 import { getStore } from "@netlify/blobs";
 import { listAllKeys } from "./lib-blobs.js";
-import { SIGNATURE_HTML, fromHeader } from "./lib-email.js";
+import { SIGNATURE_HTML, fromHeader, reviewRequestHtml } from "./lib-email.js";
 import { getOrCreateFamilyCode, shareMessage, reconcileLots, lotSummaryLines } from "./lib-referral.js";
 
 const SITE = process.env.SITE_URL || "https://littlehavenplay.com";
-const REVIEW_URL = process.env.GOOGLE_REVIEW_URL || "";
 
 function pacificToday() {
   return new Date(new Date().toLocaleString("en-US", { timeZone: "America/Los_Angeles" }))
@@ -97,12 +96,9 @@ async function sendFollowUp(entry, fam) {
     } catch {}
   }
 
-  const reviewBlock = REVIEW_URL ? `
-    <div style="background:#f3f0ff;border-radius:14px;padding:16px;margin:14px 0;text-align:center">
-      <p style="margin:0 0 4px;font-weight:bold;color:#5b4636">Did the little ones have fun?</p>
-      <p style="margin:0 0 12px;color:#5c6470;font-size:14px">A quick review helps other local families find us. It takes about 30 seconds.</p>
-      <a href="${esc(REVIEW_URL)}" style="display:inline-block;background:#7a6253;color:#fff;text-decoration:none;font-weight:bold;padding:11px 20px;border-radius:10px">Leave a Google review →</a>
-    </div>` : "";
+  // Always shown now. It used to appear only when GOOGLE_REVIEW_URL was set in
+  // Netlify -- it wasn't, so this thank-you email never asked for a review.
+  const reviewBlock = reviewRequestHtml();
 
   const referBlock = share ? `
     <div style="background:#e7f0df;border:1px solid #c2d7bd;border-radius:14px;padding:16px;margin:14px 0">

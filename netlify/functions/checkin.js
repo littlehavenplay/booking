@@ -14,6 +14,8 @@ import { getStore } from "@netlify/blobs";
 import { ARRIVAL, openPlayForDate, slotCap, slotKey, PARTY_SLOT_IDS, hoursFor, countHourChildren } from "./lib-settings.js";
 import { loadSeasonal, loadWeekly } from "./lib-hours.js";
 import { graduateLegacyCard } from "./lib-loyalty.js";
+import { findMemberFor, memberCoversDate } from "./lib-playclub.js";
+import { ensureIssued, eligiblePasses, consume as consumeBuddies, release as releaseBuddies, monthKeyOf } from "./lib-buddypass.js";
 
 export default async (req) => {
   if (req.method !== "POST") return json({ error: "Use POST." }, 405);
@@ -45,6 +47,10 @@ export default async (req) => {
     rec.bookings.splice(idx, 1);
     rec.children = Math.max(0, (rec.children || 0) - n);
     try { await bookings.setJSON(key, rec); } catch { return json({ error: "Couldn't update. Try again." }, 502); }
+    // Undoing a walk-in gives back any buddy passes it spent.
+    if (entry.playClubCode && Array.isArray(entry.buddies) && entry.buddies.length) {
+      try { await releaseBuddies(entry.playClubCode, monthKeyOf(date), { booking: entry.id }); } catch {}
+    }
     // If it was a pass check-in, give the visits back to the pass
     if (entry.type === "pass" && entry.code) {
       const passes = getStore("passes");
@@ -138,16 +144,79 @@ export default async (req) => {
       : [];
     const playClubCode = (b.playClubCode || "").toString().trim().toUpperCase().slice(0, 24) || null;
 
+    // ---- Buddy passes at the desk (walk-in members) ----------------------
+    // The same rules as online, checked here on the server: a membership in
+    // good standing, a date the plan covers, that month's pass, unused, and the
+    // pass's OWN child checked in on this same walk-in -- Otis's pass can't be
+    // spent on Easton's friend. And only when there is room: a plain walk-in is
+    // still never blocked, but a free buddy is only admitted if the hour has a
+    // spot for them.
+    const buddyReq = Array.isArray(b.buddies)
+      ? b.buddies.slice(0, 4).map(x => ({
+          id: String((x && x.passId) || "").slice(0, 60),
+          buddy: String((x && x.name) || "").replace(/\s+/g, " ").trim().slice(0, 60),
+        })).filter(x => x.id)
+      : [];
+    let buddyPasses = [], buddyMonth = "", member = null;
+    if (buddyReq.length) {
+      if (buddyReq.some(x => !x.buddy)) return json({ error: "Enter each buddy's name so they're on the roster." }, 400);
+      if (new Set(buddyReq.map(x => x.id)).size !== buddyReq.length) {
+        return json({ error: "Each buddy pass admits one friend — the same pass was picked twice." }, 400);
+      }
+      if (!playClubCode) return json({ error: "Buddy passes need the member found first." }, 400);
+      member = await findMemberFor({ code: playClubCode }).catch(() => null);
+      if (!member) return json({ error: "That membership isn't active, so its buddy passes can't be used." }, 409);
+      if (!memberCoversDate(member, date)) {
+        return json({ error: `${member.planName || "This Weekday plan"} doesn't cover today, so its buddy passes can't be used today.` }, 409);
+      }
+      buddyMonth = monthKeyOf(date);
+      const prec = await ensureIssued(member, buddyMonth);
+      if (!prec) return json({ error: "Couldn't load the buddy passes. Try again." }, 503);
+      const byId = new Map(eligiblePasses(prec, childNames).map(p => [p.id, p]));
+      for (const w of buddyReq) {
+        const p = byId.get(w.id);
+        if (!p) {
+          const known = (prec.passes || []).find(x => x.id === w.id);
+          const first = known ? String(known.child).split(" ")[0] : "";
+          return json({ error: !known ? "That buddy pass isn't on this membership this month."
+            : known.used ? `${first}'s buddy pass is already used this month.`
+            : `That's ${first}'s buddy pass — ${first} needs to be checked in too.` }, 409);
+        }
+        buddyPasses.push({ id: p.id, ref: p.ref, child: p.child, buddy: w.buddy });
+        byId.delete(w.id);
+      }
+      const before = await countHourChildren(bookings, date, slot);
+      if (before + count + buddyPasses.length > cap) {
+        const room = Math.max(0, cap - before - count);
+        return json({ error: room
+          ? `Only room for ${room} ${room === 1 ? "buddy" : "buddies"} this hour (${before + count}/${cap} with this check-in). Untick ${buddyPasses.length - room}.`
+          : `No room for buddies this hour — it's at ${before + count}/${cap} with this check-in. The children can still be checked in without them.` }, 409);
+      }
+    }
+
+    const entryId = crypto.randomUUID();
     const rec = await addToSession(bookings, key, {
-      id: crypto.randomUUID(), type: "walkin", children: count, adults: adultCount, at: atISO, atLabel,
+      id: entryId, type: "walkin", children: count + buddyPasses.length, adults: adultCount, at: atISO, atLabel,
       waiverConfirmed, waiverConfirmedAt: waiverConfirmed ? atISO : null,
       childNames, playClubCode,
+      buddies: buddyPasses.map(x => ({ name: x.buddy, forChild: x.child, passRef: x.ref, passId: x.id })),
     });
+    // Spend the passes only once the walk-in is actually logged.
+    let buddyNote = "";
+    if (buddyPasses.length && rec) {
+      try {
+        const r = await consumeBuddies(playClubCode, buddyMonth,
+          buddyPasses.map(x => ({ id: x.id, buddy: x.buddy })),
+          { booking: entryId, date, slot: chosen.label });
+        buddyNote = r.used.length ? ` + ${r.used.length} ${r.used.length === 1 ? "buddy" : "buddies"} (${r.used.map(u => u.buddy).join(", ")})` : "";
+      } catch {}
+    }
     const hourKids = await countHourChildren(bookings, date, slot);   // whole hour (:00 + :30), not just this slot
     return json({
       ok: true, slot, slotLabel: chosen.label, atLabel,
       children: hourKids, cap, remaining: Math.max(0, cap - hourKids), over: hourKids > cap,
-      message: `Logged ${count} walk-in child${count === 1 ? "" : "ren"}${adultCount ? ` + ${adultCount} adult${adultCount === 1 ? "" : "s"}` : ""} at ${atLabel} → ${chosen.label}.`,
+      buddies: buddyPasses.map(x => ({ name: x.buddy, forChild: x.child })),
+      message: `Logged ${count} walk-in child${count === 1 ? "" : "ren"}${buddyNote}${adultCount ? ` + ${adultCount} adult${adultCount === 1 ? "" : "s"}` : ""} at ${atLabel} → ${chosen.label}.`,
     });
   }
 

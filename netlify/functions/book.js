@@ -28,6 +28,7 @@ import { getActiveFamCode, logFamUse } from "./famcode.js";
 // smoke test (test-booking-smoke.mjs) that posts a real booking through this
 // handler, including a member booking, so this class of fault cannot ship again.
 import { findMemberFor, recordMemberVisit, memberCoversDate, coverAdmissionFor, coverCompositionFor } from "./lib-playclub.js";
+import { ensureIssued, eligiblePasses, consume as consumeBuddies, monthKeyOf } from "./lib-buddypass.js";
 import { FRIEND_DISCOUNT_CENTS, findFamilyByCode, familyStatus, normalizeRef, last4 as refLast4 } from "./lib-referral.js";
 import { loadSeasonal, loadWeekly } from "./lib-hours.js";
 import { getClosure, slotBlockedByClosure, getEventHold } from "./lib-closures.js";
@@ -65,19 +66,32 @@ export default async (req) => {
   const infant  = Math.max(0, parseInt(body.infant, 10) || 0);
   const children = regular + sibling + infant;
 
+  // Buddy passes: a friend a Play Club member brings on their own booking. Each
+  // is { passId, name }. Validated against the membership further down; nothing
+  // here is trusted beyond the shape. Free admission, their adult free, grip
+  // socks still charged, and they DO take a spot in the session.
+  const buddyReq = Array.isArray(body.buddies)
+    ? body.buddies.slice(0, 4).map(x => ({
+        id: String((x && x.passId) || "").slice(0, 60),
+        buddy: String((x && x.name) || "").replace(/\s+/g, " ").trim().slice(0, 60),
+      })).filter(x => x.id)
+    : [];
+  const buddyCount = buddyReq.length;
+
   // Adults: the form sends the TRUE total adult headcount (totalAdults) so staff
   // can track physical occupancy. The number of PAID (extra) adults is decided by
   // the date-gated rule in settings — on/after 7/2 that's "2 adults included PER
   // Regular or Baby/Infant admission (not the Sibling add-on), $5 each beyond that."
   // Older clients may send additionalAdults directly as the already-extra count.
-  const adultEligibleChildren = regular + infant;   // Sibling add-on carries no adults
+  // Sibling add-on carries no adults. A buddy does: the adult who brings them is free.
+  const adultEligibleChildren = regular + infant + buddyCount;
   let totalAdults, additionalAdults;
   if (body.totalAdults !== undefined && body.totalAdults !== null && body.totalAdults !== "") {
     totalAdults = Math.max(1, parseInt(body.totalAdults, 10) || 1);
     additionalAdults = additionalAdultsFor(undefined, totalAdults, adultEligibleChildren, children);
   } else {
     additionalAdults = Math.max(0, parseInt(body.additionalAdults, 10) || 0);
-    totalAdults = Math.max(1, children + additionalAdults);
+    totalAdults = Math.max(1, children + buddyCount + additionalAdults);
   }
   const sourceId = (body.sourceId || "").toString();
   const giftCardCodes = Array.isArray(body.giftCards)
@@ -139,7 +153,10 @@ export default async (req) => {
   if (!name)                            return json({ error: "Please enter your full name." }, 400);
   if (!/^\S+@\S+\.\S+$/.test(email))    return json({ error: "Please enter a valid email." }, 400);
   if (sibling > 0 && regular < 1)       return json({ error: "Sibling add-on requires at least one regular admission." }, 400);
-  if (children > cap)                   return json({ error: `A single booking can't exceed ${cap} children.` }, 400);
+  if (children + buddyCount > cap)      return json({ error: `A single booking can't exceed ${cap} children, including buddies.` }, 400);
+  if (buddyReq.some(x => !x.buddy))     return json({ error: "buddy", message: "Please enter your buddy's name so we have them on the list." }, 400);
+  if (new Set(buddyReq.map(x => x.id)).size !== buddyReq.length)
+    return json({ error: "buddy", message: "Each buddy pass admits one friend — the same pass was picked twice." }, 400);
 
   const env = process.env;
   if (!env.SQUARE_ACCESS_TOKEN || !env.SQUARE_LOCATION_ID) {
@@ -562,14 +579,74 @@ export default async (req) => {
     }
   } catch {}
 
+  // ---- Buddy passes ---------------------------------------------------
+  // Only ever spent here, inside the member's own booking. Every rule is checked
+  // server-side: a verified membership, a date the plan covers, a pass from THAT
+  // month, unused, and belonging to one of the children actually being booked.
+  let buddyPasses = [];           // validated: { id, ref, child, buddy }
+  let buddyMonth = "";
+  if (buddyCount) {
+    if (!member) {
+      return json({ error: "buddy", message: "Buddy passes come with a Play Club membership. Enter your membership code or phone number first." }, 409);
+    }
+    if (!memberCoversDate(member, date)) {
+      return json({ error: "buddy", message: "Your plan doesn't cover this date, so its buddy passes can't be used on it either." }, 409);
+    }
+    buddyMonth = monthKeyOf(date);
+    const rec = await ensureIssued(member, buddyMonth);
+    if (!rec) return json({ error: "buddy", message: "We couldn't check your buddy passes just now. Try again, or book without them." }, 503);
+    const eligible = eligiblePasses(rec, memberCoveredKids);
+    const byId = new Map(eligible.map(p => [p.id, p]));
+    for (const w of buddyReq) {
+      const p = byId.get(w.id);
+      if (!p) {
+        const known = (rec.passes || []).find(x => x.id === w.id);
+        const why = !known ? "That buddy pass isn't on this membership for " + buddyMonth + "."
+          : known.used ? `${known.child}'s buddy pass for this month has already been used.`
+          : `${known.child}'s buddy pass can only be used when ${known.child.split(" ")[0]} is on the booking too.`;
+        return json({ error: "buddy", message: why }, 409);
+      }
+      buddyPasses.push({ id: p.id, ref: p.ref, child: p.child, buddy: w.buddy });
+      byId.delete(w.id);                 // no using the same pass twice in one booking
+    }
+  }
+  const occupying = children + buddyCount;   // everyone who takes a spot
+
   // Capacity check: this arrival shares one pool of `cap` children with its :00/:30
   // partner (and any legacy session for the same hour), so a 1:00 and a 1:30 booking
-  // draw from the SAME 6 and the room is never oversold.
+  // draw from the SAME 6 and the room is never oversold. Buddies count.
   const current = await countHourChildren(store, date, slot);
-  if (current + children > cap) {
+  if (current + occupying > cap) {
     const remaining = Math.max(0, cap - current);
-    return json({ error: "full", remaining,
-      message: `Only ${remaining} spot${remaining === 1 ? "" : "s"} left in that hour.` }, 409);
+    // Suggest other times that same day with room for the whole group.
+    const suggest = [];
+    try {
+      // Only times actually open that day (hours, closures, party blocks), and not
+      // already in the past -- suggesting a closed or gone time helps nobody.
+      const openIds = openPlayForDate(date, effectivePartyBlocks(date, _bookedParties),
+        hoursFor(date, _seasonal, _weekly)).map(x => x.id);
+      const nowLA = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Los_Angeles" }));
+      const todayLA = nowLA.toISOString().slice(0, 10);
+      const nowMin = nowLA.getHours() * 60 + nowLA.getMinutes();
+      for (const sid of openIds) {
+        if (sid === slot) continue;
+        if (date === todayLA) {
+          const def = SLOTS.find(x => x.id === sid);
+          const startMin = def && typeof def.start === "number" ? def.start : null;
+          if (startMin !== null && startMin <= nowMin) continue;
+        }
+        const cur = await countHourChildren(store, date, sid);
+        if (cap - cur >= occupying) {
+          const lbl = (SLOTS.find(x => x.id === sid) || {}).label || sid;
+          if (!suggest.includes(lbl)) suggest.push(lbl);
+        }
+        if (suggest.length >= 3) break;
+      }
+    } catch {}
+    const who = buddyCount ? `${occupying} children including buddies` : `${occupying} child${occupying === 1 ? "" : "ren"}`;
+    return json({ error: "full", remaining, suggest,
+      message: `Only ${remaining} spot${remaining === 1 ? "" : "s"} left in that hour, and you're booking ${who}.`
+        + (suggest.length ? ` There's room at ${suggest.join(", ")}.` : " Please try another day.") }, 409);
   }
 
   const note = `Open Play ${date} ${slot} - ${regular} reg + ${sibling} sib + ${infant} infant`;
@@ -778,6 +855,9 @@ export default async (req) => {
     // "covered" is no longer the same as "everyone on the booking".
     playClubCovered: member ? memberCoveredCount : 0,
     playClubCoveredKids: member ? memberCoveredKids : [],
+    // Friends brought on buddy passes. They take spots (counted in the slot total)
+    // and are released with the booking if it's cancelled.
+    buddies: buddyPasses.map(b => ({ name: b.buddy, forChild: b.child, passRef: b.ref, passId: b.id })),
     referredBy: referral ? referral.code : null,
     referralAmount: referralAmount || 0,
     referralPaid: false,
@@ -791,7 +871,7 @@ export default async (req) => {
     cardLast4,
     at: new Date().toISOString(),
   });
-  base.children = (base.children || 0) + children;
+  base.children = (base.children || 0) + occupying;
 
   // The customer has already paid, so we still report success to them — but a
   // write failure here means the booking is NOT on the roster. Alert the studio
@@ -862,7 +942,8 @@ export default async (req) => {
     } catch {}
   }
 
-  try { await store.setJSON(key, base); }
+  let bookingSaved = false;
+  try { await store.setJSON(key, base); bookingSaved = true; }
   catch (e) {
     try {
       const lbl = (SLOTS.find(s => s.id === slot) || {}).label || slot;
@@ -875,6 +956,25 @@ export default async (req) => {
          Paid by card: <b>$${(cardAmount / 100).toFixed(2)}</b>${payment?.id ? ` · Square payment ${payment.id}` : ""}</p>
          <p>The customer has been told they're booked. Please add them to the roster manually.</p>`
       );
+    } catch {}
+  }
+
+  // Spend the buddy passes now the booking is on the roster -- never before, so a
+  // failed or abandoned booking never burns a pass. consume() re-reads and claims
+  // only passes still unused, so two bookings racing for one pass can't both win;
+  // if that ever happens the booking stands and staff are told.
+  if (bookingSaved && buddyPasses.length && member) {
+    try {
+      const r = await consumeBuddies(member.code, buddyMonth,
+        buddyPasses.map(b => ({ id: b.id, buddy: b.buddy })),
+        { booking: bookingId, date, slot: (SLOTS.find(x => x.id === slot) || {}).label || slot });
+      if (!r.ok && r.missing && r.missing.length) {
+        try {
+          await sendOwnerAlert(`Buddy pass double-use — ${date}`,
+            `<p>A booking for <b>${name}</b> on <b>${date}</b> used buddy pass(es) that another booking claimed at the same moment: ${r.missing.join(", ")}.</p>
+             <p>The booking is on the roster. Check the membership's buddy passes in the staff tools.</p>`);
+        } catch {}
+      }
     } catch {}
   }
 
@@ -956,7 +1056,8 @@ export default async (req) => {
       // Grip socks are added AFTER every discount (they're goods, not
       // admission), so they were pushing Total paid above Subtotal with no line
       // explaining the difference -- $25 subtotal, $28 paid, $3 unaccounted for.
-      gripSocks, gripSocksAmount });
+      gripSocks, gripSocksAmount,
+      buddies: buddyPasses.map(b => ({ name: b.buddy, forChild: b.child })) });
   } catch (e) { /* ignore email errors */ }
 
   return json({
@@ -985,7 +1086,7 @@ export default async (req) => {
     birthdayWarnings,
     adults: totalAdults,
     additionalAdults,
-    remaining: Math.max(0, cap - (current + children)),
+    remaining: Math.max(0, cap - (current + occupying)),
     paymentId: payment?.id || null,
   });
 };
@@ -1108,7 +1209,7 @@ function validDob(s) {
 
 // Sends the customer a confirmation + policy email via Resend.
 // If RESEND_API_KEY isn't set, this quietly does nothing.
-async function sendConfirmation({ email, name, date, slotLabel, regular, sibling, infant, adults = 0, additionalAdults = 0, coveredRegular = 0, coveredInfant = 0, paidRegular = regular, paidInfant = infant, subtotal, tax, amount, giftApplied = [], giftTotal = 0, creditApplied = 0, creditRemaining = null, cardAmount = 0, passesUsed = [], discountPct = 0, discountAmount = 0, weekdaySpecialAmount = 0, weekdaySpecialLabel = "", militaryAmount = 0, militaryChildren = [], loyaltyCards = [] , playClubName = null, playClubAmount = 0, playClubKids = [], gripSocks = 0, gripSocksAmount = 0}) {
+async function sendConfirmation({ email, name, date, slotLabel, regular, sibling, infant, adults = 0, additionalAdults = 0, coveredRegular = 0, coveredInfant = 0, paidRegular = regular, paidInfant = infant, subtotal, tax, amount, giftApplied = [], giftTotal = 0, creditApplied = 0, creditRemaining = null, cardAmount = 0, passesUsed = [], discountPct = 0, discountAmount = 0, weekdaySpecialAmount = 0, weekdaySpecialLabel = "", militaryAmount = 0, militaryChildren = [], loyaltyCards = [] , playClubName = null, playClubAmount = 0, playClubKids = [], gripSocks = 0, gripSocksAmount = 0, buddies = []}) {
   const key = process.env.RESEND_API_KEY;
   if (!key || !email) return;
 
@@ -1201,6 +1302,7 @@ async function sendConfirmation({ email, name, date, slotLabel, regular, sibling
       ${militaryAmount > 0 ? `<tr><td style="padding:2px 0;color:#7ba676">🎖️ Military discount (10% off)</td><td style="padding:2px 0;text-align:right;font-weight:bold;color:#7ba676">−${dollars(militaryAmount)}</td></tr>` : ""}
       ${memberRow}
       ${gripSocksAmount > 0 ? `<tr><td style="padding:2px 0;color:#5c6470">\u{1F9E6} Grip socks \u00d7 ${gripSocks}</td><td style="padding:2px 0;text-align:right;font-weight:bold">${dollars(gripSocksAmount)}</td></tr>` : ""}
+      ${buddies.length ? buddies.map(b => `<tr><td style="padding:2px 0;color:#5c6470">\u{1F91D} Buddy \u2014 ${esc(b.name)} <span style="color:#aea298">(${esc(String(b.forChild||"").split(" ")[0])}\u2019s friend)</span></td><td style="padding:2px 0;text-align:right;font-weight:bold;color:#4d7848">Free</td></tr>`).join("") : ""}
       ${payRows}
     </table>
     ${loyaltySection}
@@ -1220,6 +1322,7 @@ async function sendConfirmation({ email, name, date, slotLabel, regular, sibling
     + (isMember && playClubAmount > 0
         ? `Play Club${kidList ? ` — ${kidList}` : ""}: −${dollars(playClubAmount)}\n` : "")
     + (gripSocksAmount > 0 ? `Grip socks \u00d7 ${gripSocks}: ${dollars(gripSocksAmount)}\n` : "")
+    + buddies.map(b => `Buddy \u2014 ${b.name} (${String(b.forChild||"").split(" ")[0]}'s friend): Free\n`).join("")
     + `Total paid: ${dollars(amount)}\n\n`
     + cardText
     + `Sign your waiver: ${waiverUrl}\n`

@@ -49,9 +49,14 @@ export default async (req) => {
           checkins.push({ id: b.id, type: b.type, slot: mid, arrivalLabel, children: c, adults: a, code: b.code || null, childName: b.childName || "", atLabel: b.atLabel || "", at: b.at || null, legacy,
             // Carried through so the roster can label a Play Club walk-in and
             // name the children, instead of showing a bare headcount.
-            childNames: Array.isArray(b.childNames) ? b.childNames : [], playClubCode: b.playClubCode || null });
+            childNames: Array.isArray(b.childNames) ? b.childNames : [], playClubCode: b.playClubCode || null,
+            buddies: Array.isArray(b.buddies) ? b.buddies.map(x => ({ name: x.name || "", forChild: x.forChild || "" })) : [] });
         } else {
-          const children = (b.regular || 0) + (b.sibling || 0) + (b.infant || 0);
+          // Buddy-pass friends are real children in the room, so they count in
+          // the headcount. Without this the roster showed Isaac's group of 4
+          // as 2, while the booking system (correctly) held 4 spots.
+          const buddies = Array.isArray(b.buddies) ? b.buddies : [];
+          const children = (b.regular || 0) + (b.sibling || 0) + (b.infant || 0) + buddies.length;
           const adults = typeof b.adultsTotal === "number"
             ? b.adultsTotal
             : 1 + (b.adults || 0);
@@ -63,7 +68,10 @@ export default async (req) => {
           if (b.passesUsed && b.passesUsed.length) paid.push(b.passesUsed.map(p => "pass " + p.code).join(", "));
           people.push({ id: b.id || null, name: b.name || "(no name)", email: b.email || "", slot: mid, legacy, arrivalLabel,
             regular: b.regular || 0, sibling: b.sibling || 0, infant: b.infant || 0, adults, children,
-            paid: paid.join(" + ") || "—", at: b.at || null });
+            paid: paid.join(" + ") || "—", at: b.at || null,
+            // Named so staff know who's coming and can check each has a waiver.
+            buddies: buddies.map(x => ({ name: x.name || "", forChild: x.forChild || "" })),
+            playClubCode: b.playClubCode || null });
         }
       }
     }

@@ -1,7 +1,7 @@
 // Shared loyalty punch-card logic, used by loyalty.js (staff tool), book.js
 // (auto-issue codes at booking), and checkin.js (punch at check-in).
 import { getStore } from "@netlify/blobs";
-import { SIGNATURE_HTML, fromHeader, TERMS } from "./lib-email.js";
+import { SIGNATURE_HTML, fromHeader, TERMS, reviewRequestHtml } from "./lib-email.js";
 
 export const PUNCHES_FOR_REWARD = 7;      // 7 paid visits → 8th is free
 export const REWARD_EXPIRY_DAYS = 30;
@@ -276,18 +276,8 @@ async function uniqueReward(store) {
 function studioName() { return process.env.STUDIO_NAME || "Little Haven Play Studio"; }
 function esc(s) { return String(s || "").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
 
-// Bright "leave us a review" block appended to loyalty emails (no extra emails sent).
-function reviewFooter() {
-  const btn = (href, bg, label) =>
-    `<a href="${href}" target="_blank" style="display:inline-block;background:${bg};color:#fff;text-decoration:none;font-weight:800;font-size:13px;padding:9px 16px;border-radius:22px;margin:4px 4px">${label}</a>`;
-  return `<div style="margin:20px 0 0;padding:16px;background:#fdf1ec;border:1px solid #f0d9d2;border-radius:14px;text-align:center">
-    <div style="font-size:15px;font-weight:800;color:#a85f59;margin-bottom:2px">Loved your visit? 💛</div>
-    <div style="font-size:13px;color:#5c6470;margin-bottom:10px">A quick review means the world to our small studio!</div>
-    ${btn("https://g.page/r/CRSz8WUH8sS2EBM/review", "#4285F4", "Google")}
-    ${btn("https://www.yelp.com/writeareview/biz/dmZg1HQxKJj2lcQbKFHpaQ?review_origin=writeareview-search", "#d32323", "Yelp")}
-    ${btn("https://www.facebook.com/Littlehavenplay/reviews/", "#1877F2", "Facebook")}
-  </div>`;
-}
+// The review request now lives in lib-email.js so every thank-you email shares it.
+function reviewFooter() { return reviewRequestHtml(); }
 
 export async function sendWelcome(rec) {
   const key = process.env.RESEND_API_KEY; if (!key || !rec.buyerEmail) return;
@@ -358,7 +348,8 @@ async function sendLegacyGraduationEmail(pass, card) {
     <p style="margin:0 0 12px;color:#5c6470">Going forward, you're on our new <b>free Loyalty Punch Card</b> program instead: pay your normal admission each visit, and once you've paid for <b>7 visits, your 8th is on us</b> — automatically, no purchase needed.</p>
     ${codeBlock}
     <p style="margin:12px 0 0;font-size:13px;color:#5f7d52">☕ Punch card holders get free coffee every visit, plus 2 adults included.</p>
-    <p style="margin:14px 0 0;font-size:13px;color:#5c6470">See you soon! — ${esc(studio)}</p></div>`;
+    <p style="margin:14px 0 0;font-size:13px;color:#5c6470">See you soon! — ${esc(studio)}</p></div>
+    ${reviewFooter()}`;
   try {
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",

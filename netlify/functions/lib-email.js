@@ -153,3 +153,32 @@ export async function resendEmail(payload, opts = {}) {
   }
   return false;
 }
+
+// ---- Review request ---------------------------------------------------------
+// One version, shared by every "thanks for visiting" email, so the wording and
+// links can't drift apart. GOOGLE_REVIEW_URL in Netlify overrides the Google
+// link if it ever changes; without it, the studio's real link is used. (The
+// post-visit email used to show a review box ONLY when that setting existed,
+// so it never appeared at all.)
+export const REVIEW_LINKS = {
+  google:   process.env.GOOGLE_REVIEW_URL || "https://g.page/r/CRSz8WUH8sS2EBM/review",
+  yelp:     "https://www.yelp.com/writeareview/biz/dmZg1HQxKJj2lcQbKFHpaQ?review_origin=writeareview-search",
+  facebook: "https://www.facebook.com/Littlehavenplay/reviews/",
+};
+
+export function reviewRequestHtml() {
+  const btn = (href, bg, label) =>
+    `<a href="${href}" target="_blank" style="display:inline-block;background:${bg};color:#fff;text-decoration:none;font-weight:800;font-size:13px;padding:9px 16px;border-radius:999px;margin:4px">${label}</a>`;
+  return `<div style="margin:20px 0 0;padding:16px;background:#fdf1ec;border:1px solid #f0d9d2;border-radius:14px;text-align:center">
+    <div style="font-size:15px;font-weight:800;color:#a85f59;margin-bottom:4px">Thank you for visiting Little Haven Play Studio \u{1F49B}</div>
+    <div style="font-size:13px;color:#5c6470;margin-bottom:10px">If you had a lovely time, would you kindly leave us a review? It only takes a minute, and it helps other local families find us.</div>
+    ${btn(REVIEW_LINKS.google, "#4285F4", "Review on Google")}
+    ${btn(REVIEW_LINKS.yelp, "#d32323", "Yelp")}
+    ${btn(REVIEW_LINKS.facebook, "#1877F2", "Facebook")}
+  </div>`;
+}
+
+export function reviewRequestText() {
+  return `Thank you for visiting Little Haven Play Studio! If you had a lovely time, would you kindly leave us a review? It helps other local families find us.\n`
+    + `Google: ${REVIEW_LINKS.google}\nYelp: ${REVIEW_LINKS.yelp}\nFacebook: ${REVIEW_LINKS.facebook}\n`;
+}

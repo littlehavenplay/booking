@@ -134,7 +134,7 @@
   </div>
 
   <div id="app" class="hidden">
-<div id="secBar"><button id="secToggle" type="button">Sections ▾</button><div id="secMenu"><a href="#sec-schedule">Daily schedule</a><a href="#sec-taxreport">Sales tax report</a><a href="#sec-emailtest">Email health</a><a href="#sec-theme">Site theme</a><a href="#sec-walkin">Walk-in check-in</a><a href="#sec-punch">Punch-card check-in</a><a href="/loyalty.html">Loyalty &amp; Punch Cards</a><a href="/referrals.html" style="margin-left:8px">🤝 Referrals</a><a href="#sec-reschedule">Reschedule &amp; cancel</a><a href="#sec-party">Session capacity &amp; blocking</a><a href="#sec-deposit">Record a party deposit</a><a href="#sec-partyoff">Open play only (no parties)</a><a href="#sec-redeem">Redeem a credit</a><a href="#sec-credit-backfill">Backfill credit emails</a><a href="#sec-issue">Issue a credit</a><a href="#sec-code">Manage a code</a><a href="#sec-punchissue">Legacy card tools</a><a href="#sec-closures">Closures &amp; hours</a><a href="#sec-passes">Legacy prepaid holders</a><a href="#sec-parties">Party bookings</a><a href="/headcount.html">Head count</a><a href="#sec-prices">Manage prices</a><a href="#sec-weekly">Weekly hours</a><a href="#sec-seasonal">Seasonal hours</a><a href="#sec-weekday-special">Weekday special</a><a href="#sec-discount">Discount codes</a><a href="#sec-news">News banner</a></div></div>
+<div id="secBar"><button id="secToggle" type="button">Sections ▾</button><div id="secMenu"><a href="#sec-schedule">Daily schedule</a><a href="#sec-taxreport">Sales tax report</a><a href="#sec-emailtest">Email health</a><a href="#sec-theme">Site theme</a><a href="#sec-buddyannounce">Buddy pass email</a><a href="#sec-walkin">Walk-in check-in</a><a href="#sec-punch">Punch-card check-in</a><a href="/loyalty.html">Loyalty &amp; Punch Cards</a><a href="/referrals.html" style="margin-left:8px">🤝 Referrals</a><a href="#sec-reschedule">Reschedule &amp; cancel</a><a href="#sec-party">Session capacity &amp; blocking</a><a href="#sec-deposit">Record a party deposit</a><a href="#sec-partyoff">Open play only (no parties)</a><a href="#sec-redeem">Redeem a credit</a><a href="#sec-credit-backfill">Backfill credit emails</a><a href="#sec-issue">Issue a credit</a><a href="#sec-code">Manage a code</a><a href="#sec-punchissue">Legacy card tools</a><a href="#sec-closures">Closures &amp; hours</a><a href="#sec-passes">Legacy prepaid holders</a><a href="#sec-parties">Party bookings</a><a href="/headcount.html">Head count</a><a href="#sec-prices">Manage prices</a><a href="#sec-weekly">Weekly hours</a><a href="#sec-seasonal">Seasonal hours</a><a href="#sec-weekday-special">Weekday special</a><a href="#sec-discount">Discount codes</a><a href="#sec-news">News banner</a></div></div>
 <nav id="sideNav" aria-label="Sections"><div class="snav-title">Sections</div><a href="#sec-schedule">Daily schedule</a><a href="#sec-taxreport">Sales tax report</a><a href="#sec-emailtest">Email health</a><a href="#sec-theme">Site theme</a><a href="#sec-walkin">Walk-in check-in</a><a href="#sec-punch">Punch-card check-in</a><a href="/loyalty.html">Loyalty &amp; Punch Cards</a><a href="#sec-reschedule">Reschedule &amp; cancel</a><a href="#sec-party">Session capacity &amp; blocking</a><a href="#sec-deposit">Record a party deposit</a><a href="#sec-partyoff">Open play only (no parties)</a><a href="#sec-redeem">Redeem a credit</a><a href="#sec-credit-backfill">Backfill credit emails</a><a href="#sec-issue">Issue a credit</a><a href="#sec-code">Manage a code</a><a href="#sec-punchissue">Legacy card tools</a><a href="#sec-closures">Closures &amp; hours</a><a href="#sec-passes">Legacy prepaid holders</a><a href="#sec-parties">Party bookings</a><a href="/headcount.html">Head count</a><a href="#sec-prices">Manage prices</a><a href="#sec-weekly">Weekly hours</a><a href="#sec-seasonal">Seasonal hours</a><a href="#sec-weekday-special">Weekday special</a><a href="#sec-discount">Discount codes</a><a href="#sec-news">News banner</a><a href="#sec-rating">Reviews rating</a><a href="#sec-photos">Site photos</a><a href="#sec-promos">Promotions &amp; Flyers</a><a href="#sec-events">Upcoming events</a><a href="#sec-newsletter">📧 Newsletter</a><a href="#sec-playclub">Play Club plans</a><a href="#sec-playclub-members">Play Club members</a><a href="#sec-partners">Partners page</a><a href="#sec-birthdays">Birthday club</a></nav>
     <h1>Daily schedule</h1>
     <div class="card" id="sec-schedule">
@@ -221,6 +221,17 @@
       </div>
     </div>
     </div>
+
+  <div class="card" id="sec-buddyannounce">
+      <h2>&#129309; Tell members about buddy passes</h2>
+      <p class="note" style="margin-top:0">A one-time email to existing Play Club members about their new monthly buddy pass. Each member is only ever emailed once.<button type="button" class="hlp" data-help="Preview shows exactly who will get it, who won&rsquo;t and why (paused, no email, already told), and the email itself. Nothing is sent until you press Send and confirm. Pressing Send again later only emails members who haven&rsquo;t had it yet.">?</button></p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button type="button" id="baPreview" style="margin:0">Preview</button>
+        <button type="button" id="baSend" class="alt" style="margin:0;display:none">Send to members</button>
+      </div>
+      <div class="out" id="baOut"></div>
+  </div>
+
 
   <div class="card" id="sec-taxreport">
       <h2>&#129534; Sales tax report &mdash; goods sold</h2>
@@ -1115,7 +1126,7 @@ async function loadDay(silent){
         html+='<table>';
         s.people.forEach(p=>{ const a=[]; if(p.regular)a.push(p.regular+' reg'); if(p.sibling)a.push(p.sibling+' sib'); if(p.infant)a.push(p.infant+' inf');
           const arrived=p.id&&arr[p.id];
-          html+='<tr'+(arrived?' style="background:#eaf3e4"':'')+'><td style="width:30px;text-align:center">'+(p.id?'<input type="checkbox" data-id="'+p.id+'" data-email="'+(p.email||'')+'" '+(arrived?'checked':'')+' onchange="markArrived(this)" title="Mark arrived" style="width:auto;transform:scale(1.35);cursor:pointer">':'')+'</td><td style="font-weight:700">'+(arrived?'\u2705 ':'')+esc(p.name)+(p.arrivalLabel?' <span style="font-size:.68rem;font-weight:800;color:#7a6f95;background:#efeaf3;border-radius:6px;padding:1px 6px;white-space:nowrap">\u23F1 '+esc(p.arrivalLabel)+'</span>':'')+(p.legacy?' <span style="font-size:.7rem;color:var(--taupe)">(2-hr session)</span>':'')+(p.playClub?' <span style="font-size:.68rem;font-weight:800;color:#3f5d33;background:#e7f0df;border-radius:6px;padding:1px 6px;white-space:nowrap">\uD83C\uDF9F\uFE0F PLAY CLUB '+esc(p.playClub)+'</span>':'')+(p.gripSocks>0?' <span style="font-size:.68rem;font-weight:900;color:#8a5a12;background:#fdf3dc;border:1px solid #f0dfae;border-radius:6px;padding:1px 7px;white-space:nowrap">\uD83E\uDDE6 '+p.gripSocks+' GRIP SOCK'+(p.gripSocks===1?'':'S')+' PAID</span>':'')+(p.childNames&&p.childNames.length?'<div style="font-size:.75rem;font-weight:600;color:var(--sage-dark);margin-top:3px">\uD83E\uDDD2 '+p.childNames.map(function(c){return esc(((c.first||'')+' '+(c.last||'')).trim())}).filter(Boolean).join(', ')+'</div>':'')+'</td><td style="color:var(--slate)">'+a.join(", ")+' · '+p.adults+' adult'+(p.adults===1?'':'s')+'</td><td style="color:var(--taupe);font-size:.78rem">'+esc(p.email)+(p.at?' <button type="button" onclick="showPayRec(this)" data-at="'+esc(p.at)+'" data-last4="'+esc(p.cardLast4||'')+'" data-paid="'+esc(p.paid||'')+'" style="border:none;background:#eef3ea;color:#4f6b43;border-radius:7px;cursor:pointer;font-weight:800;font-size:.68rem;padding:3px 8px;margin-left:6px;white-space:nowrap">💳 Payment record</button>':'')+'</td></tr>';
+          html+='<tr'+(arrived?' style="background:#eaf3e4"':'')+'><td style="width:30px;text-align:center">'+(p.id?'<input type="checkbox" data-id="'+p.id+'" data-email="'+(p.email||'')+'" '+(arrived?'checked':'')+' onchange="markArrived(this)" title="Mark arrived" style="width:auto;transform:scale(1.35);cursor:pointer">':'')+'</td><td style="font-weight:700">'+(arrived?'\u2705 ':'')+esc(p.name)+((p.buddies&&p.buddies.length)?'<div style="font-size:.72rem;font-weight:700;color:#8a6b2f;margin-top:2px">\u{1F91D} '+p.buddies.map(function(x){return esc(x.name)+' ('+esc(String(x.forChild||'').split(' ')[0])+'\u2019s buddy)';}).join(', ')+' \u00b7 needs waiver</div>':'')+(p.arrivalLabel?' <span style="font-size:.68rem;font-weight:800;color:#7a6f95;background:#efeaf3;border-radius:6px;padding:1px 6px;white-space:nowrap">\u23F1 '+esc(p.arrivalLabel)+'</span>':'')+(p.legacy?' <span style="font-size:.7rem;color:var(--taupe)">(2-hr session)</span>':'')+(p.playClub?' <span style="font-size:.68rem;font-weight:800;color:#3f5d33;background:#e7f0df;border-radius:6px;padding:1px 6px;white-space:nowrap">\uD83C\uDF9F\uFE0F PLAY CLUB '+esc(p.playClub)+'</span>':'')+(p.gripSocks>0?' <span style="font-size:.68rem;font-weight:900;color:#8a5a12;background:#fdf3dc;border:1px solid #f0dfae;border-radius:6px;padding:1px 7px;white-space:nowrap">\uD83E\uDDE6 '+p.gripSocks+' GRIP SOCK'+(p.gripSocks===1?'':'S')+' PAID</span>':'')+(p.childNames&&p.childNames.length?'<div style="font-size:.75rem;font-weight:600;color:var(--sage-dark);margin-top:3px">\uD83E\uDDD2 '+p.childNames.map(function(c){return esc(((c.first||'')+' '+(c.last||'')).trim())}).filter(Boolean).join(', ')+'</div>':'')+'</td><td style="color:var(--slate)">'+a.join(", ")+' · '+p.adults+' adult'+(p.adults===1?'':'s')+'</td><td style="color:var(--taupe);font-size:.78rem">'+esc(p.email)+(p.at?' <button type="button" onclick="showPayRec(this)" data-at="'+esc(p.at)+'" data-last4="'+esc(p.cardLast4||'')+'" data-paid="'+esc(p.paid||'')+'" style="border:none;background:#eef3ea;color:#4f6b43;border-radius:7px;cursor:pointer;font-weight:800;font-size:.68rem;padding:3px 8px;margin-left:6px;white-space:nowrap">💳 Payment record</button>':'')+'</td></tr>';
         });
         html+='</table>';
       } else { html+='<div class="note">No online bookings yet.</div>'; }
@@ -1125,7 +1136,7 @@ async function loadDay(silent){
           const tag=c.type==="pass"?('Pass '+esc(c.code||'')+(c.childName?' ('+esc(c.childName)+')':''))
             /* Play Club walk-ins carry the children's names, so show who came
                rather than an anonymous "Walk-in" row. */
-            :(c.playClubCode?('<span style="color:#8a6b2f;font-weight:800">\u2726 Play Club</span>'+(c.childNames&&c.childNames.length?(' ('+esc(c.childNames.join(', '))+')'):'')):'Walk-in');
+            :(c.playClubCode?('<span style="color:#8a6b2f;font-weight:800">\u2726 Play Club</span>'+(c.childNames&&c.childNames.length?(' ('+esc(c.childNames.join(', '))+')'):'')+((c.buddies&&c.buddies.length)?('<div style="font-size:.72rem;font-weight:700;color:#8a6b2f;margin-top:2px">\u{1F91D} '+c.buddies.map(function(x){return esc(x.name)+' ('+esc(String(x.forChild||'').split(' ')[0])+'\u2019s buddy)';}).join(', ')+' \u00b7 needs waiver</div>'):'')):'Walk-in');
           const det=c.children+' child'+(c.children===1?'':'ren')+(c.adults?(' + '+c.adults+' adult'+(c.adults===1?'':'s')):'');
           html+='<tr><td style="font-weight:700">'+c.atLabel+'</td><td>'+tag+'</td><td>'+det+'</td><td style="text-align:right"><button class="alt" style="padding:4px 10px;margin:0;font-size:.7rem" onclick="removeCheckin(\''+$("#date").value+'\',\''+c.slot+'\',\''+c.id+'\')">Remove</button></td></tr>';
         });
@@ -3825,6 +3836,7 @@ function pcwRenderKids(){
     cb.onchange=function(){
       PCW.selected=[].slice.call(host.querySelectorAll(".pcw-kid")).filter(function(x){return x.checked;}).map(function(x){return x.dataset.name;});
       var out=$("#pcwOut"); if(out){ out.className="out"; out.textContent=""; }
+      try{ pcwBuddyOptions(); }catch(e){}
     };
   });
   $("#pcwActions").style.display="";
@@ -3918,19 +3930,60 @@ async function pcwFind(){
   }catch(e){ pcwReset("Couldn't reach the membership list \u2014 try again.","err"); }
 }
 
+
+/* Desk redemption for walk-in members. Each pass belongs to its own child:
+   only passes whose child is ticked as here today are offered, so Otis's pass
+   can't be spent on Easton's friend. The server re-checks every rule, and only
+   admits buddies if the hour has room. */
+function pcwBuddyOptions(){
+  var host=$("#pcwBuddyRedeem"); if(!host) return;
+  var sel=(PCW.selected||[]).map(function(n){ return String(n).trim().toLowerCase(); });
+  var avail=(PCW.bp||[]).filter(function(p){
+    if(p.used) return false;
+    if(/^Covered child \d+$/.test(p.child)) return sel.length>0;
+    return sel.indexOf(String(p.child).trim().toLowerCase())>=0;
+  });
+  var keep={}; (PCW.buddies||[]).forEach(function(b){ keep[b.passId]=b; });
+  PCW.buddies=(PCW.buddies||[]).filter(function(b){ return avail.some(function(p){ return p.id===b.passId; }); });
+  if(!avail.length){ host.innerHTML=(PCW.bp&&PCW.bp.length&&sel.length)
+      ? '<p class="note" style="margin:8px 0 0">No unused buddy pass for the child'+(sel.length===1?'':'ren')+' ticked.</p>' : ''; return; }
+  host.innerHTML='<div style="margin-top:8px;font-weight:800;font-size:.8rem;color:#8a6b2f">Redeem at the desk</div>'
+    +avail.map(function(p){
+      var first=String(p.child).split(" ")[0], on=!!keep[p.id], nm=on?(keep[p.id].name||""):"";
+      return '<div class="pcw-bd" data-id="'+p.id+'" style="margin:5px 0">'
+        +'<label style="text-transform:none;letter-spacing:0;font-weight:700;font-size:.84rem;color:var(--charcoal)">'
+        +'<input type="checkbox" class="pcw-bd-on"'+(on?' checked':'')+'> '+first+'\u2019s buddy is here</label>'
+        +'<input type="text" class="pcw-bd-name" placeholder="Buddy\u2019s first and last name" value="'+nm.replace(/"/g,"&quot;")+'"'
+        +' style="margin-top:4px;'+(on?'':'display:none')+'"></div>';
+    }).join("");
+  host.querySelectorAll(".pcw-bd").forEach(function(row){
+    var cb=row.querySelector(".pcw-bd-on"), nm=row.querySelector(".pcw-bd-name");
+    function sync(){
+      nm.style.display=cb.checked?"":"none";
+      PCW.buddies=(PCW.buddies||[]).filter(function(b){ return b.passId!==row.dataset.id; });
+      if(cb.checked) PCW.buddies.push({ passId:row.dataset.id, name:nm.value.trim() });
+    }
+    cb.onchange=function(){ sync(); if(cb.checked) try{ nm.focus(); }catch(e){} };
+    nm.oninput=sync;
+  });
+}
+
 async function pcwCheckin(){
   var out=$("#pcwOut"); out.className="out";
   if(!PCW.selected.length){ out.className="out err"; out.style.display=""; out.textContent="Tick which child or children are here."; return; }
   var over = PCW.maxChildren && PCW.selected.length > PCW.maxChildren;
+  var bds=(PCW.buddies||[]);
+  if(bds.some(function(b){ return !b.name; })){ out.className="out err"; out.style.display=""; out.textContent="Enter each buddy\u2019s name so they\u2019re on the roster."; return; }
   var adults=Math.max(0,parseInt(($("#pcwAdults")||{}).value,10)||0);
   var slot=pcwSlot();
   $("#pcwCheckin").disabled=true;
   try{
     var r=await (await fetch("/api/checkin",{method:"POST",headers:{"content-type":"application/json"},
       body:JSON.stringify({ key:pcwKey(), action:"walkin", count:PCW.selected.length, adults:adults, slot:slot,
-        waiverConfirmed:false, childNames:PCW.selected, playClubCode:PCW.code })})).json();
+        waiverConfirmed:false, childNames:PCW.selected, playClubCode:PCW.code,
+        buddies:bds.map(function(b){ return { passId:b.passId, name:b.name }; }) })})).json();
     if(r.ok){
-      var names=PCW.selected.join(", ");
+      var names=PCW.selected.join(", ")+((r.buddies&&r.buddies.length)?(" + buddies "+r.buddies.map(function(x){return x.name;}).join(", ")):"");
       out.className="out ok"; out.style.display="";
       out.innerHTML="\u2713 Checked in "+names+" at "+(r.atLabel||"now")+(r.slotLabel?(" \u2192 "+r.slotLabel):"")+"."
         +(r.over?'<div style="background:#fdeee6;border:1px solid #f0d3bf;border-radius:9px;padding:8px 10px;margin:8px 0 0;font-weight:800;color:#b5622f">\u26a0\ufe0f That hour is now over capacity ('+r.children+'/'+r.cap+').</div>':'')
@@ -4081,47 +4134,92 @@ async function thSet(k, themes){
 if($("#thGrid")) thLoad();
 
 
-/* ---- Guest passes -------------------------------------------------------
-   One per covered child per month, issued on the 1st. A pass admits a friend
-   visiting WITH the member's child -- it is not a standalone free visit, so it
-   is only ever spent here, at check-in, with the member present. */
+/* ---- Buddy passes (see pcwGuestPasses below; name kept so existing calls still work) ---- */
 async function pcwGuestPasses(){
+  /* Buddy passes (replaced the old guest passes, Sept 2026).
+     One per covered child per month, assigned by name. Redeemed ONLY online,
+     inside the member's own booking for the same session -- so there is no
+     "use one" button here on purpose. Staff can see who used each pass and
+     give one back if a booking went wrong. */
   var host=$("#pcwGp"); if(!host || !PCW.code) return;
   host.style.display="block";
-  host.innerHTML='<p class="note" style="margin:0">Checking guest passes\u2026</p>';
+  host.innerHTML='<p class="note" style="margin:0">Checking buddy passes\u2026</p>';
   try{
-    var r=await (await fetch("/api/guest-pass",{method:"POST",headers:{"content-type":"application/json"},
+    var r=await (await fetch("/api/buddy-pass",{method:"POST",headers:{"content-type":"application/json"},
       body:JSON.stringify({key:pcwKey(),action:"status",code:PCW.code})})).json();
-    if(!r.ok || !r.found){ host.innerHTML='<p class="note" style="margin:0">No guest passes on file.</p>'; return; }
-    var left=r.remaining, tot=r.total;
-    host.innerHTML='<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;'
-      +'background:#fdf8ec;border:1.5px solid #e6d3a8;border-radius:12px;padding:10px 12px">'
-      +'<span style="font-weight:800;font-size:.86rem;color:#8a6b2f">\u{1F39F}\uFE0F Guest passes</span>'
-      +'<span style="font-weight:900;font-size:1.05rem">'+left+' of '+tot+'</span>'
-      +'<span class="note" style="margin:0">left this month'+(r.expiresOn?(" \u00b7 expires "+r.expiresOn):"")+'</span>'
-      +'<span style="margin-left:auto;display:flex;gap:6px">'
-      +(left>0?'<button type="button" id="gpUse" style="margin:0;padding:7px 13px;font-size:.76rem">Use one</button>':'')
-      +(r.used>0?'<button type="button" class="alt" id="gpUndo" style="margin:0;padding:7px 13px;font-size:.76rem">Undo</button>':'')
-      +'</span></div>'
-      +'<p class="note" style="margin:6px 0 0">Only valid when the member is here too \u2014 a guest pass admits a friend playing alongside their child.</p>';
-    var use=document.getElementById("gpUse");
-    if(use) use.onclick=async function(){
-      use.disabled=true;
-      var who=window.prompt("Who is the guest? (e.g. Alani's friend Noah)")||"";
-      var g=await (await fetch("/api/guest-pass",{method:"POST",headers:{"content-type":"application/json"},
-        body:JSON.stringify({key:pcwKey(),action:"redeem",code:PCW.code,by:who})})).json();
-      if(!g.ok) alert(g.error||"Couldn't use that pass.");
-      pcwGuestPasses();
-    };
-    var un=document.getElementById("gpUndo");
-    if(un) un.onclick=async function(){
-      un.disabled=true;
-      await fetch("/api/guest-pass",{method:"POST",headers:{"content-type":"application/json"},
-        body:JSON.stringify({key:pcwKey(),action:"undo",code:PCW.code})});
-      pcwGuestPasses();
-    };
-  }catch(e){ host.innerHTML='<p class="note" style="margin:0">Couldn\u2019t load guest passes.</p>'; }
+    if(!r.ok || !r.found){ host.innerHTML='<p class="note" style="margin:0">No buddy passes on file.</p>'; return; }
+    if(r.inactive){ host.innerHTML='<p class="note" style="margin:0">Membership isn\u2019t active, so no buddy passes this month.</p>'; return; }
+    var rows=(r.passes||[]).map(function(p){
+      var u=p.used;
+      return '<div style="display:flex;gap:8px;align-items:center;padding:6px 0;border-top:1px solid #efe4c8">'
+        +'<span style="font-weight:800;font-size:.84rem;flex:1">'+String(p.child||"").split(" ")[0]+'\u2019s pass'
+        +' <span style="font-weight:600;color:#8a6b2f;font-size:.74rem">'+(p.ref||"")+'</span></span>'
+        +(u?('<span class="note" style="margin:0;font-size:.76rem">used \u00b7 '+(u.buddy||"a friend")+' \u00b7 '+(u.date||"")+' '+(u.slot||"")+'</span>'
+             +'<button type="button" class="alt bp-undo" data-id="'+p.id+'" style="margin:0;padding:5px 10px;font-size:.7rem">Give back</button>')
+           :'<span style="font-size:.76rem;font-weight:800;color:#3f7d54">available</span>')
+        +'</div>';
+    }).join("");
+    PCW.bp=r.passes||[];
+    host.innerHTML='<div style="background:#fdf8ec;border:1.5px solid #e6d3a8;border-radius:12px;padding:10px 12px">'
+      +'<div style="display:flex;gap:10px;align-items:baseline;flex-wrap:wrap">'
+      +'<span style="font-weight:800;font-size:.86rem;color:#8a6b2f">\u{1F91D} Buddy passes</span>'
+      +'<span style="font-weight:900;font-size:1.05rem">'+r.remaining+' of '+r.total+'</span>'
+      +'<span class="note" style="margin:0">left for '+r.month+(r.expiresOn?(" \u00b7 use by "+r.expiresOn):"")+'</span></div>'
+      +rows+'<div id="pcwBuddyRedeem"></div></div>'
+      +'<p class="note" style="margin:6px 0 0">Buddy passes are redeemed online with the member\u2019s own booking, for the same visit. '
+      +'At the desk they can be used for a walk-in member\u2019s own child when there\u2019s room \u2014 never by a friend visiting alone.</p>';
+    try{ pcwBuddyOptions(); }catch(e){}
+    host.querySelectorAll(".bp-undo").forEach(function(b){
+      b.onclick=async function(){
+        if(!window.confirm("Give this buddy pass back to the member for this month?")) return;
+        b.disabled=true;
+        var g=await (await fetch("/api/buddy-pass",{method:"POST",headers:{"content-type":"application/json"},
+          body:JSON.stringify({key:pcwKey(),action:"undo",code:PCW.code,passId:b.dataset.id})})).json();
+        if(!g.ok) alert(g.error||"Couldn't give it back.");
+        pcwGuestPasses();
+      };
+    });
+  }catch(e){ host.innerHTML='<p class="note" style="margin:0">Couldn\u2019t load buddy passes.</p>'; }
 }
+
+
+/* ---- One-time buddy pass announcement ---------------------------------- */
+async function baPreview(){
+  var out=$("#baOut"); out.className="out"; out.style.display="block"; out.textContent="Checking members\u2026";
+  try{
+    var r=await (await fetch("/api/buddy-pass",{method:"POST",headers:{"content-type":"application/json"},
+      body:JSON.stringify({key:pcwKey(),action:"announce-preview"})})).json();
+    if(!r.ok){ out.className="out err"; out.textContent=r.error||"Couldn't load members."; return; }
+    var rows=(r.list||[]).map(function(x){
+      return '<div style="display:flex;gap:8px;padding:4px 0;border-top:1px solid #efe7da;font-size:.82rem">'
+        +'<span style="flex:1"><b>'+esc(x.name||x.code)+'</b> <span style="color:var(--slate)">'+esc((x.kids||[]).join(", "))+'</span></span>'
+        +(x.eligible?'<span style="color:#3f7d54;font-weight:800">will send</span>'
+                    :'<span style="color:var(--slate)">'+esc(x.reason)+(x.sentAt?(' '+String(x.sentAt).slice(0,10)):'')+'</span>')
+        +'</div>';
+    }).join("");
+    out.className="out ok";
+    out.innerHTML='<div style="font-weight:800;margin-bottom:6px">'+r.willSend+' of '+r.total+' member'+(r.total===1?'':'s')+' will get it.</div>'+rows
+      +(r.sample?('<details style="margin-top:10px"><summary style="cursor:pointer;font-weight:800">See the email</summary>'
+        +'<div style="margin-top:8px;font-weight:800">'+esc(r.sample.subject)+'</div>'
+        +'<div style="margin-top:6px;border:1px solid #efe7da;border-radius:10px;padding:10px;background:#fff">'+r.sample.html+'</div></details>'):'');
+    $("#baSend").style.display = r.willSend ? "" : "none";
+    $("#baSend").textContent = "Send to "+r.willSend+" member"+(r.willSend===1?"":"s");
+  }catch(e){ out.className="out err"; out.textContent="Network error."; }
+}
+async function baSend(){
+  var n=($("#baSend").textContent.match(/\d+/)||["0"])[0];
+  if(!window.confirm("Email "+n+" member"+(n==="1"?"":"s")+" about buddy passes now? Each is only ever sent once.")) return;
+  var out=$("#baOut"); $("#baSend").disabled=true; out.className="out"; out.textContent="Sending\u2026";
+  try{
+    var r=await (await fetch("/api/buddy-pass",{method:"POST",headers:{"content-type":"application/json"},
+      body:JSON.stringify({key:pcwKey(),action:"announce-send"})})).json();
+    out.className=r.ok?"out ok":"out err"; out.textContent=r.ok?("\u2713 "+r.message):(r.error||"Couldn't send.");
+    $("#baSend").style.display="none";
+  }catch(e){ out.className="out err"; out.textContent="Network error."; }
+  $("#baSend").disabled=false;
+}
+if($("#baPreview")) $("#baPreview").onclick=baPreview;
+if($("#baSend")) $("#baSend").onclick=baSend;
 
 </script>
 

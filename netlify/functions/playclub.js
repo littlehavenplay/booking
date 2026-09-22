@@ -21,6 +21,7 @@ import { getStore } from "@netlify/blobs";
 import { listAllKeys } from "./lib-blobs.js";
 import { isWeekend, memberCoversDate, coverAdmissionFor, coverCompositionFor } from "./lib-playclub.js";
 import { resendEmail } from "./lib-email.js";
+import { ensureIssued, unusedPasses, monthKeyOf, monthEnd } from "./lib-buddypass.js";
 
 const STORE = "site";
 const PLANS = "playclub:plans";
@@ -354,7 +355,22 @@ export default async (req) => {
     // which would send someone hunting for a problem that doesn't exist.
     const forDate = (b.date || "").toString();
     const dateOk = !forDate || memberCoversDate(m, forDate);
+
+    // Buddy passes available for the chosen date: that month's set, unused, and
+    // only when the plan covers the date (a Weekday pass can't do a Saturday).
+    // Issued lazily here if the 1st's run hasn't reached this member yet; that
+    // is idempotent, so it can never create a second set.
+    let buddyPasses = [], buddyMonth = "", buddyExpires = "";
+    if (/^\d{4}-\d{2}-\d{2}$/.test(forDate) && dateOk) {
+      try {
+        buddyMonth = monthKeyOf(forDate);
+        buddyExpires = monthEnd(buddyMonth);
+        const rec = await ensureIssued(m, buddyMonth);
+        buddyPasses = unusedPasses(rec).map(p => ({ id: p.id, ref: p.ref, child: p.child }));
+      } catch { buddyPasses = []; }
+    }
     return json({
+      buddyPasses, buddyMonth, buddyExpires,
       member: true, code: m.code, name: m.name || "",
       planName: (plan && plan.name) || m.planName || "Play Club",
       planKind: m.planKind || "anyday",

@@ -246,6 +246,14 @@
         <p class="note" style="margin-top:6px">Tick each child who's playing. Your membership covers their admission,
         so there's nothing to pay.</p>
       </div>
+      <!-- Buddy passes: only ever offered here, after the membership is verified,
+           and only for children ticked above. There is no code to type, so a pass
+           can't be passed on to someone visiting without the member. -->
+      <div id="pcBuddies" style="display:none;margin-top:14px;padding-top:12px;border-top:1px dashed var(--line,#e7ddd0)">
+        <label class="fld">&#129309; Bring a buddy? <span style="font-weight:600;text-transform:none;letter-spacing:0">&mdash; free this visit</span></label>
+        <div id="pcBuddyList"></div>
+        <p class="note" id="pcBuddyNote" style="margin-top:6px"></p>
+      </div>
     </div>
 
     <div class="card">
@@ -938,6 +946,8 @@ function flashSiblingNote(){
   n.style.color="var(--red)";
 }
 
+function buddyCount(){ return (state.playClub && Array.isArray(state.buddies)) ? state.buddies.length : 0; }
+
 function updateTotals(){
   const kids=state.reg+state.sib+state.inf;
   // No sales tax collected (CDTFA-exempt recreational admission)
@@ -1103,7 +1113,9 @@ function updateTotals(){
   else if(!state.slot){ ok=false; note="Choose an arrival time to continue \u2192 tap here to jump to it."; }
   else if(kids<1){ ok=false; note="Add at least one child."; }
   else if(state.sib>0 && state.reg<1){ ok=false; note="Sibling add-on requires at least one regular admission."; }
-  else if(a && kids>a.remaining){ ok=false; note=`Only ${a.remaining} spot${a.remaining===1?"":"s"} left at that time.`; }
+  else if(a && kids+buddyCount()>a.remaining){ ok=false; note=buddyCount()
+      ? `Only ${a.remaining} spot${a.remaining===1?"":"s"} left at that time, and your group is ${kids+buddyCount()} with buddies. Try another time with more room.`
+      : `Only ${a.remaining} spot${a.remaining===1?"":"s"} left at that time.`; }
   else if(!$("#name").value.trim()){ ok=false; note="Please enter your full name."; }
   else if(!/^\S+@\S+\.\S+$/.test($("#email").value.trim())){ ok=false; note="Please enter a valid email."; }
   else if((($("#phone")||{}).value||"").replace(/\D/g,"").length<10){ ok=false; note="Please enter your phone number — it sets up your child's free punch card."; }
@@ -1243,7 +1255,11 @@ function checkoutFormValid(){
   if(!state.slot){ flagField("#slots","Choose an arrival time to continue."); return false; }
   if(kids<1){ flagField("#regPr","Add at least one child."); return false; }
   if(state.sib>0 && state.reg<1){ flagField("#regPr","A sibling add-on needs at least one regular admission."); return false; }
-  if(a && kids>a.remaining){ flagField("#slots",`Only ${a.remaining} spot${a.remaining===1?"":"s"} left at that time.`); return false; }
+  if(a && kids+buddyCount()>a.remaining){ flagField("#slots", buddyCount()
+      ? `Only ${a.remaining} spot${a.remaining===1?"":"s"} left at that time for your group of ${kids+buddyCount()} (with buddies). Please pick a time with more room.`
+      : `Only ${a.remaining} spot${a.remaining===1?"":"s"} left at that time.`); return false; }
+  var noName=(state.buddies||[]).some(function(b){ return !b.name; });
+  if(state.playClub && noName){ flagField("#pcBuddies","Please enter your buddy\u2019s name so we have them on the list."); return false; }
   if(!$("#name").value.trim()){ flagField("#name","Please enter your full name."); return false; }
   if(!/^\S+@\S+\.\S+$/.test($("#email").value.trim())){ flagField("#email","Please enter a valid email address."); return false; }
   if(phoneDigits.length<10){ flagField("#phone","Please enter a 10-digit phone number."); return false; }
@@ -1306,6 +1322,7 @@ async function submitBooking(token){
         sourceId:token,giftCards,visitPasses,promoCode,discountCode,rewardCode,
         refCode:(state.referral&&state.referral.ok?state.referral.code:""),
         playClubCode:(state.playClub?state.playClub.code:""),
+        buddies:(state.playClub?(state.buddies||[]):[]).map(function(b){ return {passId:b.passId, name:b.name}; }),
         gripSocks:(state.gs||0),
         attemptId:lhAttemptId})});
     const data=await res.json();
@@ -1562,6 +1579,60 @@ state.playClub = null;
       kidsWrap=el("pcMemberKids"), kidList=el("pcKidList");
   if(!input) return;
 
+  // One row per available buddy pass whose child is ticked. Otis's friend comes
+  // with Otis: untick Otis and his buddy row disappears (and is dropped).
+  function renderBuddies(chosen){
+    var wrap=el("pcBuddies"), list=el("pcBuddyList"), note=el("pcBuddyNote");
+    if(!wrap||!list) return;
+    var passes=(state.playClub && state.playClub.buddyPasses)||[];
+    var names=(chosen||[]).map(function(b){ return (b.getAttribute("data-name")||"").trim().toLowerCase(); });
+    var usable=passes.filter(function(p){
+      if(/^Covered child \d+$/.test(p.child)) return names.length>0;
+      return names.indexOf(String(p.child||"").trim().toLowerCase())>=0;
+    });
+    // keep whatever was already typed for passes still usable
+    var prev={}; (state.buddies||[]).forEach(function(b){ prev[b.passId]=b; });
+    state.buddies=(state.buddies||[]).filter(function(b){ return usable.some(function(p){return p.id===b.passId;}); });
+    if(!passes.length){
+      list.innerHTML="";
+      // Only say "none left" once a covered date is chosen -- before that the
+      // server hasn't looked, and "none left" would be untrue.
+      if(state.playClub && state.playClub.buddyExpires){
+        wrap.style.display="block";
+        note.textContent="This month\u2019s buddy passes have been used \u2014 new ones arrive on the 1st.";
+      } else { wrap.style.display="none"; note.textContent=""; }
+      return;
+    }
+    if(!usable.length){ wrap.style.display="none"; list.innerHTML=""; return; }
+    wrap.style.display="block";
+    list.innerHTML=usable.map(function(p){
+      var first=String(p.child||"").split(" ")[0]||"your child";
+      var on=!!prev[p.id], nm=on?(prev[p.id].name||""):"";
+      return '<div class="bd-row" data-id="'+p.id+'" style="margin:6px 0">'
+        +'<label class="agree" style="align-items:center"><input type="checkbox" class="bd-on"'+(on?" checked":"")+'> '
+        +'Bring a friend for <b>'+first+'</b></label>'
+        +'<input type="text" class="bd-name" placeholder="Friend\u2019s first and last name" autocomplete="off"'
+        +' value="'+nm.replace(/"/g,"&quot;")+'" style="margin-top:6px;'+(on?"":"display:none")+'">'
+        +'</div>';
+    }).join("");
+    note.innerHTML="Free admission for the friend and the grown-up who brings them. "
+      +"Grip socks are still $3 if they need a pair, and they\u2019ll need a waiver. "
+      +"Must come to this same visit. Use it by "+(state.playClub.buddyExpires||"the end of the month")+".";
+    [].slice.call(list.querySelectorAll(".bd-row")).forEach(function(row){
+      var cb=row.querySelector(".bd-on"), nm=row.querySelector(".bd-name");
+      function sync(){
+        nm.style.display=cb.checked?"":"none";
+        state.buddies=(state.buddies||[]).filter(function(b){ return b.passId!==row.dataset.id; });
+        if(cb.checked) state.buddies.push({passId:row.dataset.id, name:nm.value.trim()});
+        try{ updateTotals(); }catch(e){}
+      }
+      cb.addEventListener("change",function(){ sync(); if(cb.checked) try{nm.focus();}catch(e){} });
+      nm.addEventListener("input",sync);
+    });
+    try{ updateTotals(); }catch(e){}
+  }
+  window.lhRenderBuddies=renderBuddies;
+
   function clearMember(){
     // Give back whatever the membership was holding, or removing the code would
     // leave paid-for admissions in the cart that nobody added.
@@ -1573,6 +1644,8 @@ state.playClub = null;
       }
     }catch(e){}
     state.playClub=null;
+    state.buddies=[];
+    try{ var bw=el("pcBuddies"); if(bw){ bw.style.display="none"; el("pcBuddyList").innerHTML=""; } }catch(e){}
     kidsWrap.style.display="none";
     kidList.innerHTML="";
     document.body.classList.remove("pc-member-mode");
@@ -1650,6 +1723,7 @@ state.playClub = null;
     syncStepperNums();
     try{ if(typeof renderChildNames==="function") renderChildNames(); }catch(e){}
     try{ syncMemberChildRows(); }catch(e){}
+    try{ renderBuddies(chosen); }catch(e){}
     try{ updateTotals(); }catch(e){}
   }
 
@@ -1716,7 +1790,9 @@ state.playClub = null;
       // which the server refuses -- so those members couldn't book at all.
       var comp = Array.isArray(r.coverComposition) && r.coverComposition.length
         ? r.coverComposition.slice() : null;
+      state.buddies=[];
       state.playClub={ code:r.code, planName:r.planName, planKind:r.planKind||"anyday",
+        buddyPasses:Array.isArray(r.buddyPasses)?r.buddyPasses:[], buddyExpires:r.buddyExpires||"",
         coverAdmission:tier, coverComposition:comp, coverKeys:null, coverKey:null,
         maxChildren:r.maxChildren, children:r.children||[], selected:[], coveredN:0,
         coversDate:r.coversDate!==false };
