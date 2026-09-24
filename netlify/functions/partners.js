@@ -27,6 +27,8 @@ export default async (req) => {
 
   if ((b.action || "save") !== "save") return json({ error: "Unknown action." }, 400);
 
+  let before = [];
+  try { before = (await store.get("partners", { type: "json" })) || []; } catch { before = []; }
   const list = [];
   for (const p of (Array.isArray(b.partners) ? b.partners : [])) {
     const id = (p && p.id) || crypto.randomUUID();
@@ -58,6 +60,11 @@ export default async (req) => {
 
   try { await store.setJSON("partners", list); }
   catch { return json({ error: "Couldn't save. Try again." }, 502); }
+  // Removed partners: drop their uploaded logo too, so nothing of theirs lingers.
+  const keep = new Set(list.map((x) => x.id));
+  for (const old of Array.isArray(before) ? before : []) {
+    if (old && old.id && !keep.has(old.id)) { try { await store.delete("plogo:" + old.id); } catch {} }
+  }
   return json({ ok: true, partners: list });
 };
 

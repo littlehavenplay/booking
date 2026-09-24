@@ -1575,7 +1575,7 @@ function pnRender(){
       +'<label>Party perk <span style="font-weight:400;color:var(--slate);text-transform:none">(the deal for party bookings)</span></label><textarea class="pnPerk" data-i="'+i+'" rows="2" style="width:100%;border:1.5px solid #e7ddd0;border-radius:11px;padding:8px 11px;font-family:\'Nunito\';font-weight:600;background:#fff">'+esc(p.perk||"")+'</textarea>'
     +'</div>';
   }).join("");
-  box.querySelectorAll(".pnDel").forEach(function(b){ b.onclick=async function(){ await pnCollect(); pnData.splice(+b.getAttribute("data-i"),1); pnRender(); }; });
+  box.querySelectorAll(".pnDel").forEach(function(b){ b.onclick=async function(){ await pnCollect(); var i=+b.getAttribute("data-i"); var nm=(pnData[i]&&pnData[i].name)||"this partner"; if(!confirm("Remove "+nm+" from the site?")) return; pnData.splice(i,1); pnRender(); await pnSaveNow(); }; });
 }
 async function pnCollect(){
   function val(cls,i){ var el=$("#pnList").querySelector(cls+'[data-i="'+i+'"]'); return el?el.value:""; }
@@ -1598,7 +1598,7 @@ async function pnCollect(){
 }
 async function pnLoad(){ try{ var r=await (await fetch("/api/partners")).json(); pnData=(r&&r.partners)||[]; pnRender(); }catch(e){ if($("#pnList"))$("#pnList").innerHTML='<div class="note">Couldn\'t load partners.</div>'; } }
 if($("#pnAdd")) $("#pnAdd").onclick=async function(){ await pnCollect(); pnData.push({name:"",logo:"",url:"",blurb:"",perk:"",active:true}); pnRender(); };
-if($("#pnSave")) $("#pnSave").onclick=async function(){
+async function pnSaveNow(){
   await pnCollect();
   var out=$("#pnOut"); out.style.display="block";
   var key=$("#key").value.trim();
@@ -1607,11 +1607,12 @@ if($("#pnSave")) $("#pnSave").onclick=async function(){
   out.className="out"; out.textContent="Saving…"; $("#pnSave").disabled=true;
   try{
     var r=await (await fetch("/api/partners",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key,action:"save",partners:list})})).json();
-    if(r&&r.ok){ out.className="out ok"; out.textContent="Saved! Your Partners page is updated (hard-refresh to see it)."; pnData=r.partners||list; pnRender(); }
+    if(r&&r.ok){ out.className="out ok"; out.textContent="Saved."; pnData=r.partners||list; pnRender(); }
     else { out.className="out err"; out.textContent=(r&&r.error)||"Couldn't save."; }
   }catch(e){ out.className="out err"; out.textContent="Network error."; }
   $("#pnSave").disabled=false;
-};
+}
+if($("#pnSave")) $("#pnSave").onclick=pnSaveNow;
 pnLoad();
 var bdRows=[];
 var BD_MONTH_NAMES=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
