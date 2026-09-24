@@ -17,7 +17,7 @@ export default async (req) => {
   const provided = (b.key || "").toString();
   if (provided !== adminKey && provided !== staffPin) return json({ error: "Wrong key." }, 401);
 
-  const store = getStore("promos");
+  const store = getStore({ name: "promos", consistency: "strong" });
   const action = (b.action || "").toString();
 
   if (action === "list") {

@@ -15,6 +15,7 @@
 import { getStore } from "@netlify/blobs";
 import { pacificToday } from "./lib-settings.js";
 import { listAllKeys } from "./lib-blobs.js";
+import { getDeletedCodes, unmarkDeleted } from "./lib-deleted-codes.js";
 
 function addDaysToDateStr(dateStr, days) {
   const d = new Date(dateStr + "T00:00:00Z"); d.setUTCDate(d.getUTCDate() + days);
@@ -33,7 +34,7 @@ export default async (req) => {
   if (!adminKey && !staffPin) return json({ error: "Admin key isn't configured." }, 500);
   if (provided !== adminKey && provided !== staffPin) return json({ error: "Wrong key." }, 401);
 
-  const store = getStore("rewards");
+  const store = getStore({ name: "rewards", consistency: "strong" });
   const action = (b.action || "generate").toString();
 
   if (action === "list") {
@@ -41,9 +42,11 @@ export default async (req) => {
     const keys = await listAllKeys(store, { prefix: "reward:" });
     const today = new Date().toISOString().slice(0, 10);
     const rows = [];
+    const gone = await getDeletedCodes();
     for (const k of keys) {
       let rec = null; try { rec = await store.get(k, { type: "json" }); } catch {}
       if (!rec || rec.source !== "classroom") continue;
+      if (gone[(rec.code || "").toString().toUpperCase()]) continue;
       if (want && (rec.classroom || "") !== want) continue;
       const expired = rec.expiry && rec.expiry < today;
       rows.push({
@@ -70,12 +73,14 @@ export default async (req) => {
     let codes = Array.isArray(b.codes)
       ? b.codes.map(c => (c || "").toString().trim().toUpperCase().replace(/[^A-Z0-9]/g, "")).filter(Boolean)
       : null;
+    const explicit = !!codes;
+    const gone = await getDeletedCodes();
     if (!codes) {
       codes = [];
       const bulkKeys = await listAllKeys(store, { prefix: "reward:" });
       for (const k of bulkKeys) {
         let rec = null; try { rec = await store.get(k, { type: "json" }); } catch {}
-        if (rec && rec.source === "classroom" && rec.classroom === label) codes.push(rec.code);
+        if (rec && rec.source === "classroom" && rec.classroom === label && !gone[(rec.code || "").toUpperCase()]) codes.push(rec.code);
       }
     }
     if (!codes.length) return json({ error: `No codes found for "${label}" — paste the code list to recreate them.` }, 404);
@@ -93,6 +98,7 @@ export default async (req) => {
       rec.expiry = expiry;
       rec.classroom = label;
       try { await store.setJSON("reward:" + code, rec); } catch {}
+      if (explicit) await unmarkDeleted(code);
     }
     return json({ ok: true, count: codes.length, fixed, recreated, expiry,
       message: `${codes.length} code${codes.length === 1 ? "" : "s"} for "${label}" are now guaranteed valid through ${expiry}` +

@@ -4,6 +4,8 @@
 // Body: { key, action:"deactivate"|"delete", code }
 // (Gift cards are managed in Square, not here.)
 import { getStore } from "@netlify/blobs";
+import { listAllKeys } from "./lib-blobs.js";
+import { markDeleted } from "./lib-deleted-codes.js";
 
 const TYPES = [
   { store: "credits",   prefix: "credit:", label: "store credit" },
@@ -26,17 +28,36 @@ export default async (req) => {
   const code = (b.code || "").toString().trim().toUpperCase();
   if (!code) return json({ error: "Enter a code." }, 400);
 
+  // DELETE: remove EVERY copy of this code in every store (matching the stored
+  // key or the code on the record, any letter case), then remember it as
+  // deleted so it can never reappear in the list or be brought back.
+  if (action === "delete") {
+    const removed = [];
+    for (const t of TYPES) {
+      const store = getStore({ name: t.store, consistency: "strong" });
+      const keys = await listAllKeys(store, { prefix: t.prefix });
+      for (const k of keys) {
+        const suffix = k.slice(t.prefix.length).trim().toUpperCase();
+        let match = suffix === code;
+        if (!match) {
+          let rec = null; try { rec = await store.get(k, { type: "json" }); } catch {}
+          match = !!(rec && (rec.code || "").toString().trim().toUpperCase() === code);
+        }
+        if (!match) continue;
+        try { await store.delete(k); removed.push(t.label); }
+        catch { return json({ error: "Couldn't delete that code. Try again." }, 502); }
+      }
+    }
+    await markDeleted(code);
+    if (!removed.length) return json({ ok: true, action: "delete", code, message: `${code} is deleted.` });
+    return json({ ok: true, action: "delete", kind: removed[0], code, message: `Deleted ${code}.` });
+  }
+
   for (const t of TYPES) {
-    const store = getStore(t.store);
+    const store = getStore({ name: t.store, consistency: "strong" });
     let rec = null;
     try { rec = await store.get(t.prefix + code, { type: "json" }); } catch {}
     if (!rec) continue;
-
-    if (action === "delete") {
-      try { await store.delete(t.prefix + code); }
-      catch { return json({ error: "Couldn't delete that code. Try again." }, 502); }
-      return json({ ok: true, action: "delete", kind: t.label, code, message: `Deleted ${t.label} ${code}.` });
-    }
 
     // deactivate — free-visit codes don't have an "active" flag, they use "used";
     // marking one used has the same practical effect (it can no longer be redeemed).

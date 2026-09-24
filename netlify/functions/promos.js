@@ -3,7 +3,7 @@ import { getStore } from "@netlify/blobs";
 import { listAllKeys } from "./lib-blobs.js";
 
 export default async () => {
-  const store = getStore("promos");
+  const store = getStore({ name: "promos", consistency: "strong" });
   const keys = await listAllKeys(store, { prefix: "promo:" });
   const promos = [];
   for (const k of keys) {

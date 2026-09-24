@@ -7,7 +7,7 @@
 import { getStore } from "@netlify/blobs";
 
 export default async (req) => {
-  const store = getStore("site");
+  const store = getStore({ name: "site", consistency: "strong" });
 
   if (req.method === "GET") {
     let rec = null;

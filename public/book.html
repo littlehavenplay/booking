@@ -218,7 +218,7 @@
     <div class="logo">🎈</div>
     <div><h1 id="studio">Little Haven Play Studio</h1></div>
   </div>
-  <div class="sub">Book Open Play · each hour holds up to <b id="capTxt">6</b> children.</div>
+  <div class="sub">Book Open Play<b id="capTxt" style="display:none">6</b></div>
     <div id="setupBanner" class="banner hidden">⚙️ Demo mode — Square keys aren't set yet, so payment won't complete until configured.</div>
 
   <div id="priceNotice" style="display:none;background:var(--lh-rose96);border:1px solid var(--lh-rose88b);border-radius:12px;padding:11px 14px;margin:0 0 16px;font-weight:700;color:var(--lh-rose50);font-size:.9rem">📣 Good news — starting July 2, every visit now includes <b>2 adults</b> and punch card holders get <b>free coffee</b> each visit!</div>
@@ -243,14 +243,12 @@
       <div id="pcMemberKids" style="display:none;margin-top:10px">
         <label class="fld">Who's coming today?</label>
         <div id="pcKidList"></div>
-        <p class="note" style="margin-top:6px">Tick each child who's playing. Your membership covers their admission,
-        so there's nothing to pay.</p>
       </div>
       <!-- Buddy passes: only ever offered here, after the membership is verified,
            and only for children ticked above. There is no code to type, so a pass
            can't be passed on to someone visiting without the member. -->
       <div id="pcBuddies" style="display:none;margin-top:14px;padding-top:12px;border-top:1px dashed var(--line,#e7ddd0)">
-        <label class="fld">&#129309; Bring a buddy? <span style="font-weight:600;text-transform:none;letter-spacing:0">&mdash; free this visit</span></label>
+        <label class="fld">&#129309; Bring a buddy?</label>
         <div id="pcBuddyList"></div>
         <p class="note" id="pcBuddyNote" style="margin-top:6px"></p>
       </div>
@@ -258,8 +256,8 @@
 
     <div class="card">
       <p class="step"><span class="n">1</span> Who's coming? <span class="req" aria-hidden="false">*<span>Required</span></span></p>
-      <p class="reqlegend"><b>*</b> marks a field you must fill in.</p>
-      <div style="background:var(--lh-amber96b);border:1px solid var(--lh-amber88c);border-radius:12px;padding:11px 14px;margin:0 0 14px;font-size:.85rem;color:var(--lh-blue40);line-height:1.6">✨ <b>Ages 0–6 or 48" tall.</b> A parent or guardian 18+ must supervise.<button type="button" class="hlp" data-help="Our play area is built for children <b>0&ndash;6 years, or up to 48&quot; tall</b>, whichever comes first.<br><br>Older children and teens are welcome to wait in the lobby with the family, but may not play in the play area or act as the supervising adult.<br><br>A parent or guardian <b>18+</b> must actively supervise at all times &mdash; we&rsquo;re not a drop-off facility.">?</button></div>
+      
+      <div style="background:var(--lh-amber96b);border:1px solid var(--lh-amber88c);border-radius:12px;padding:11px 14px;margin:0 0 14px;font-size:.85rem;color:var(--lh-blue40);line-height:1.6">✨ <b>Ages 0–6 or 48" tall.</b> A parent or guardian 18+ must supervise.</div>
       <div class="qty">
         <div><div class="lab">Regular admission <span style="color:var(--ink-soft);font-weight:700;font-size:.8rem">(18 mo+ · 2 adults incl.)</span> <span class="pr" id="regPr" style="display:inline;color:var(--taupe);font-weight:700">$0 each</span></div></div>
         <div class="stepper" data-k="reg"><button data-d>–</button><span class="num">0</span><button data-i>+</button></div>
@@ -280,7 +278,7 @@
         <div><div class="lab">🧦 Grip socks <span class="pr" id="gsPr" style="display:inline;color:var(--taupe);font-weight:700">$3 each</span></div></div>
         <div class="stepper" data-k="gs"><button type="button" data-d>&minus;</button><span class="num" id="gsN">0</span><button type="button" data-i>+</button></div>
       </div>
-      <div style="font-size:.78rem;color:var(--ink-soft);margin:-2px 0 6px;line-height:1.5">🧦 <b>Full-coverage grip socks required.</b><button type="button" class="hlp" data-help="Grip socks must cover most of the bottom of the foot to be accepted &mdash; open-sole or partial-grip socks won&rsquo;t pass.<br><br><b>Babies who aren&rsquo;t walking yet don&rsquo;t need them.</b><br><br>Buy a pair here for $3, pick some up at the studio, or bring your own.">?</button></div>
+      <div style="font-size:.78rem;color:var(--ink-soft);margin:-2px 0 6px;line-height:1.5">🧦 <b>Full-coverage grip socks required.</b><button type="button" class="hlp" data-help="Grips must cover the bottom of the foot. Babies who aren&rsquo;t walking yet don&rsquo;t need them.">?</button></div>
       <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--lh-amber90)">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
           <span style="font-weight:700;color:var(--slate)"><span id="kidCount">0</span> children · Subtotal</span>
@@ -336,27 +334,27 @@
 
     <div class="card">
       <p class="step"><span class="n">3</span> Choose your arrival time <span class="req" aria-hidden="false">*<span>Required</span></span></p>
-      <p style="margin:-4px 0 6px;font-size:.8rem;color:var(--ink-soft);font-weight:700">💛 Arrival time<button type="button" class="hlp" data-help="Your <b>2-hour session</b> starts at the arrival time you pick.<br><br>A few minutes late is always fine &mdash; the times just let us spread arrivals out so the room stays comfortable.">?</button></p>
-      <p id="closeLine" style="margin:0 0 10px;font-size:.8rem;color:var(--rose-deep);font-weight:700">🕒 We close at 3:00 PM (4:00 PM Fri & Sat) · closed Mondays · last admission 1 hour before close.</p>
+      
+      <p id="closeLine" style="margin:0 0 10px;font-size:.8rem;color:var(--rose-deep);font-weight:700">🕒 Last admission is 1 hour before close.</p>
       <div class="slots" id="slots"><div class="note">Pick a date to see availability…</div></div>
     </div>
 
     <div class="card">
       <p class="step"><span class="n">4</span> Who is bringing the children? <span class="req" aria-hidden="false">*<span>Required</span></span></p>
-      <p class="note" style="margin:-4px 0 8px">The adult who will actually be here<button type="button" class="hlp" data-help="Whoever supervises on the day should be the name, email and phone on this booking, so our check-in list matches who walks in and the confirmation reaches the right person.<br><br>Booking on behalf of someone else? Put <b>their</b> details here, not yours.<br><br><b>Play Club members:</b> the membership belongs to the children, so grandma or dad can bring them &mdash; just keep using the membership phone number in the Play Club box above.">?</button></p>
+      <p class="note" style="margin:-4px 0 8px">The adult who will actually be here</p>
       <div class="row" style="margin-bottom:12px">
         <div><label class="fld">Name <span class="req" aria-hidden="false">*<span>Required</span></span></label><input type="text" class="needs" id="name" placeholder="Full name" autocomplete="name"><p class="fieldnote" id="err-name">Please enter your full name.</p></div>
       </div>
       <label class="fld">Email (for your receipt) <span class="req" aria-hidden="false">*<span>Required</span></span></label>
       <input type="email" class="needs" id="email" placeholder="you@email.com" autocomplete="email" inputmode="email">
       <p class="fieldnote" id="err-email">Please enter a valid email address.</p>
-      <label class="fld" style="margin-top:12px">Phone number <span class="req" aria-hidden="false">*<span>Required</span></span><button type="button" class="hlp" data-help="We use this to reach you about your booking, and to find or set up your child&rsquo;s free loyalty punch card.<br><br><b>Play Club members:</b> covered visits don&rsquo;t earn a punch, since admission is already included &mdash; but any extra child you pay for on the same visit does.">?</button><span id="phoneHint" style="display:none"></span></label>
+      <label class="fld" style="margin-top:12px">Phone number <span class="req" aria-hidden="false">*<span>Required</span></span><span id="phoneHint" style="display:none"></span></label>
       <input type="tel" class="needs" id="phone" placeholder="(760) 555-1234" autocomplete="tel" inputmode="tel">
       <p class="fieldnote" id="err-phone">Please enter a 10-digit phone number.</p>
       <div id="childNamesWrap" style="margin-top:14px;display:none">
-        <label class="fld">Who's playing?<button type="button" class="hlp" data-help="First and last name of each child.<br><br>This sets up their free <b>Loyalty Punch Card</b> automatically &mdash; every 8th visit is free, nothing to sign up for.<br><br>Already have a card? Just give us the name at the desk and we&rsquo;ll match it up.">?</button></label>
+        <label class="fld">Who's playing?</label>
         <div id="childNames"></div>
-        <p style="margin:6px 0 0;font-size:.78rem;color:var(--ink-soft);font-weight:700">🎂 Birthday gift<button type="button" class="hlp" data-help="Share a birthday and we&rsquo;ll email a gift code about a week beforehand.<br><br>It&rsquo;s worth <b>one free Open Play admission</b>, good for a <b>single visit</b> on any one open day during their birthday week (Sunday&ndash;Saturday).">?</button></p>
+        <p style="margin:6px 0 0;font-size:.78rem;color:var(--ink-soft);font-weight:700">🎂 Birthday (optional)<button type="button" class="hlp" data-help="Add a birthday and we&rsquo;ll email a free admission for their birthday week.">?</button></p>
       </div>
     </div>
 
@@ -368,12 +366,10 @@
     </div>
 
     <details class="code-collapse" style="margin:0 0 18px">
-    <summary style="cursor:pointer;list-style:none;background:#fff;border-radius:16px;padding:16px 20px;font-weight:800;color:var(--ink);box-shadow:0 2px 10px rgba(0,0,0,.04)">🎟️ Have a code, reward, birthday gift, referral or credit? <span style="font-weight:600;color:var(--ink-soft);font-size:.85rem">(tap to open)</span></summary>
+    <summary style="cursor:pointer;list-style:none;background:#fff;border-radius:16px;padding:16px 20px;font-weight:800;color:var(--ink);box-shadow:0 2px 10px rgba(0,0,0,.04)">🎟️ Have a code?</summary>
     <div class="card full" id="oneCodeCard">
-      <p class="step"><span class="n">&var(--lh-sage24);</span> Have a code? <span class="opt">Optional</span></p>
-      <p class="note" style="margin-top:0">Gift card, store credit, reward, birthday gift, classroom code, discount or legacy punch card &mdash; all go here.<button type="button" class="hlp" data-help="Paste any code and we&rsquo;ll work out what it is automatically.<br><br><b>Gift card</b> &middot; pays toward your total.<br><b>Store credit / referral credit (LHC&hellip;)</b> &middot; treated as payment, so it stacks with anything.<br><b>FREE&hellip; or BDAY&hellip;</b> &middot; makes one child&rsquo;s admission free.<br><b>Discount code</b> &middot; a % off, used on its own.<br><br>You can apply more than one, and we&rsquo;ll say if two can&rsquo;t be combined.">?</button></p>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <input type="text" id="anyCode" placeholder="Enter your code" autocomplete="off"
+        <input type="text" id="anyCode" placeholder="Gift card, credit or promo code" autocomplete="off"
                style="flex:1;min-width:170px;text-transform:uppercase">
         <button type="button" id="anyCodeAdd" style="margin:0;padding:12px 22px">Apply</button>
       </div>
@@ -393,7 +389,7 @@
           <button type="button" id="vpYes">Yes</button>
         </div>
       </div>
-      <div class="note" style="margin-top:6px">Only for pre-paid punch cards purchased before our loyalty program.<button type="button" class="hlp" data-help="Only for pre-paid punch cards purchased before our loyalty program. Loyalty free-visit rewards use the &quot;Free-visit reward code&quot; field below — not here.">?</button></div>
+      
       <div id="vpArea" class="hidden" style="margin-top:14px">
         <div class="gc-row">
           <input type="text" id="vp1" placeholder="Legacy punch card code">
@@ -405,13 +401,13 @@
           <button type="button" class="vp-check" data-vp="2">Check</button>
         </div>
         <div class="gc-bal" id="vp2bal"></div>
-        <div class="note">Each pass covers one matching admission (regular or infant). Siblings and extra adults are paid separately.</div>
+        
       </div>
     </div>
 
     <div class="card">
       <p class="step"><span class="n">💳</span> Gift card &amp; store credit</p>
-      <div class="note" style="margin-bottom:8px">These are money already on your account — they're applied to your total no matter what else is going on with y…<button type="button" class="hlp" data-help="These are money already on your account — they're applied to your total no matter what else is going on with your booking, including any discount below. Any amount left over always stays on your card or credit for next time.">?</button></div>
+      
       <div class="gc-toggle">
         <span style="font-weight:700">Using a gift card?</span>
         <div class="seg">
@@ -430,7 +426,7 @@
           <button type="button" class="gc-check" data-gc="2">Check</button>
         </div>
         <div class="gc-bal" id="gc2bal"></div>
-        <p class="note" style="margin-top:4px">Paste or type it any way you like — spaces, dashes, all run together — we'll match it to your card either way.</p>
+        
       </div>
       <div style="border-top:1px dashed var(--lh-amber84);margin:16px 0 12px"></div>
       <div class="gc-toggle">
@@ -446,7 +442,7 @@
           <button type="button" class="pc-check">Check</button>
         </div>
         <div class="gc-bal" id="pc1bal"></div>
-        <div class="note">A gift card applies first, then store credit covers what's left. Any remainder after both goes to your card.</div>
+        
       </div>
     </div>
 
@@ -465,20 +461,21 @@
           <button type="button" class="gc-check dc-check">Apply</button>
         </div>
         <div class="gc-bal" id="dc1bal"></div>
-        <div class="note">A % off code is used on its own — it can’t be combined with the Weekday Special or a military discount (whichever is bigger automatically applies).<button type="button" class="hlp" data-help="A % off code is used on its own — it can’t be combined with the Weekday Special or a military discount (whichever is bigger automatically applies). Gift cards and store credit still apply on top, since those are payment, not a promotion.">?</button></div>
+        
         <div id="dcLockNote" class="note" style="display:none;color:var(--sage-dark);font-weight:700">✓ Discount applied.</div>
       </div>
     </div>
     </div>
 
+    <div id="hiddenCodeCards" style="display:none">
     <div class="card" style="box-shadow:none;border:1px solid var(--lh-amber90)">
-      <p class="step" style="margin-bottom:8px"><span class="n">🎈</span> Free admission / reward code<button type="button" class="hlp" data-help="Earned your 8th visit, got a classroom code, or received a <b>birthday reward</b>? Enter it here and one child&rsquo;s admission is free.<br><br>A birthday reward is emailed about a week before your child&rsquo;s birthday and is good for <b>one single Open Play visit</b> on any one open day that birthday week (Sunday&ndash;Saturday).<br><br>Applied automatically at checkout. One-time use, and it can&rsquo;t be combined with a % off discount code.">?</button></p>
+      <p class="step" style="margin-bottom:8px"><span class="n">🎈</span> Free admission / reward code</p>
       <input type="text" id="rewardCode" placeholder="FREE1234 or BDAYXXXX" style="text-transform:uppercase;width:100%">
       <div id="rewardMsg" style="margin-top:6px;font-size:.85rem;display:none"></div>
     </div>
 
     <div class="card" id="referCard" style="box-shadow:none;border:1px solid var(--lh-amber90)">
-      <p class="step" style="margin-bottom:8px"><span class="n">&var(--lh-sage31);</span> Referred by a friend?<button type="button" class="hlp" data-help="A friend&rsquo;s referral code gets <b>new families $5 off</b> their first visit.<br><br>It only works for families who haven&rsquo;t visited before &mdash; we check by phone number &mdash; and you can&rsquo;t use your own code.<br><br>Earned referral credit of your own starts with <b>LHC</b> and goes in the code box above instead.">?</button> <span class="opt">Optional</span></p>
+      <p class="step" style="margin-bottom:8px"><span class="n">&var(--lh-sage31);</span> Referred by a friend? <span class="opt">Optional</span></p>
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
         <input type="text" id="refCode" placeholder="REF1234" autocomplete="off"
                style="flex:1;min-width:150px;text-transform:uppercase">
@@ -486,6 +483,7 @@
       </div>
       <p class="fieldnote" id="err-refCode"></p>
       <p id="refMsg" class="note" style="margin-top:6px"></p>
+    </div>
     </div>
     </details>
 
@@ -509,7 +507,7 @@
       </div>
       <button class="pay" id="pay" disabled>Reserve &amp; Pay</button>
       <div class="msg" id="msg"></div>
-      <div class="note">💳 We accept Apple Pay, Google Pay, and all major credit &amp; debit cards.<button type="button" class="hlp" data-help="💳 We accept <b>Apple Pay</b>, <b>Google Pay</b>, and all major credit &amp; debit cards. Payments are processed securely by Square — your card details never touch this site's server.">?</button></div>
+      <div class="note">💳 We accept Apple Pay, Google Pay, and all major credit &amp; debit cards.</div>
     </div>
   </div>
 
@@ -1512,7 +1510,7 @@ state.referral={code:"",amount:0,ok:false};
     // Nothing is applied until the server confirms it. Fail closed, always.
     if(phone.replace(/\D/g,"").length<10){
       msg.style.color="var(--taupe)";
-      msg.textContent="Enter your phone number above and we'll check this code.";
+      msg.textContent="Enter your phone number, then apply the code again.";
       updateTotals(); return;
     }
     try{
@@ -1529,13 +1527,9 @@ state.referral={code:"",amount:0,ok:false};
       }
       var who = r.match ? (" (" + r.match + ")") : "";
       if(r.reason==="self"){
-        deny("That's your own referral code \u2014 it can't be used on your own booking.");
+        deny("You can't use your own referral code.");
       } else if(r.reason==="existing_child"||r.reason==="existing_phone"||r.reason==="existing_email"){
-        deny("This is a <b>welcome offer for families who haven't visited us before</b>, and it looks like "
-          +"you've already played with us"+who+". <br><br>"
-          +"<b>Already a Little Haven family?</b> Referral codes are for sharing with friends \u2014 you earn "
-          +"<b>$5</b> each time one of them visits. Any credit you've already earned has its own code "
-          +"starting with <b>LHC</b>, and that goes in the <b>store credit</b> box further down, not here.");
+        deny("Referral codes are for new families only.");
       } else if(r.reason==="not_found"){
         deny("We don't recognise that referral code.");
       } else {
@@ -1597,10 +1591,7 @@ state.playClub = null;
       list.innerHTML="";
       // Only say "none left" once a covered date is chosen -- before that the
       // server hasn't looked, and "none left" would be untrue.
-      if(state.playClub && state.playClub.buddyExpires){
-        wrap.style.display="block";
-        note.textContent="This month\u2019s buddy passes have been used \u2014 new ones arrive on the 1st.";
-      } else { wrap.style.display="none"; note.textContent=""; }
+      wrap.style.display="none"; note.textContent="";
       return;
     }
     if(!usable.length){ wrap.style.display="none"; list.innerHTML=""; return; }
@@ -1615,9 +1606,7 @@ state.playClub = null;
         +' value="'+nm.replace(/"/g,"&quot;")+'" style="margin-top:6px;'+(on?"":"display:none")+'">'
         +'</div>';
     }).join("");
-    note.innerHTML="Free admission for the friend and the grown-up who brings them. "
-      +"Grip socks are still $3 if they need a pair, and they\u2019ll need a waiver. "
-      +"Must come to this same visit. Use it by "+(state.playClub.buddyExpires||"the end of the month")+".";
+    note.textContent="";
     [].slice.call(list.querySelectorAll(".bd-row")).forEach(function(row){
       var cb=row.querySelector(".bd-on"), nm=row.querySelector(".bd-name");
       function sync(){
@@ -1651,7 +1640,7 @@ state.playClub = null;
     document.body.classList.remove("pc-member-mode");
     try{
       var ph=el("phoneHint");
-      if(ph) ph.textContent="How we reach you about this booking \uD83C\uDF88";
+      if(ph) ph.textContent="";
     }catch(e){}
     try{ syncStepperNums(); }catch(e){}
     try{ updateTotals(); }catch(e){}
@@ -1825,8 +1814,7 @@ state.playClub = null;
       }catch(e){}
 
       msg.style.color="#3f7d54";
-      msg.textContent="\u2713 "+(r.name?r.name+" \u2014 ":"")+r.planName+". Admission is covered for up to "
-        + r.maxChildren + " child" + (r.maxChildren===1?"":"ren") + " per visit.";
+      msg.textContent="\u2713 "+(r.name?r.name+" \u2014 ":"")+r.planName;
       if(r.coversDate===false && r.dateNote){
         msg.style.color="#a5452f";
         msg.textContent="\u26A0 "+r.dateNote;
@@ -1844,7 +1832,7 @@ state.playClub = null;
       // Members' covered visits don't earn a punch, so don't promise one.
       try{
         var ph=el("phoneHint");
-        if(ph) ph.textContent="Must be the phone your membership is registered to \uD83C\uDF9F\uFE0F";
+        if(ph) ph.textContent="";
       }catch(e){}
       applyKids();
     }catch(e){
@@ -1884,7 +1872,7 @@ state.playClub = null;
   function classify(code){
     var c=code.toUpperCase().replace(/[^A-Z0-9]/g,"");
     var digits=code.replace(/\D/g,"");
-    if(/^BDAY/.test(c)||/^FREE/.test(c)) return {kind:"reward", field:"rewardCode", label:"Free-visit reward"};
+    if(/^BDAY/.test(c)||/^FREE/.test(c)||/^CLASS/.test(c)) return {kind:"reward", field:"rewardCode", label:"Free admission"};
     if(/^REF/.test(c))                    return {kind:"referral", field:"refCode", label:"Referral code"};
     if(/^LHC/.test(c))                    return {kind:"credit", field:"pc1", label:"Store credit"};
     if(/^FAM/.test(c))                    return {kind:"reward", field:"rewardCode", label:"Family code"};
@@ -1951,6 +1939,7 @@ state.playClub = null;
 
   // Reveal whichever section owns the field, then fire its existing check.
   async function drive(info, raw){
+    try{ ["rewardMsg","refMsg"].forEach(function(id){ var mm=el(id); if(mm) mm.textContent=""; }); }catch(e){}
     var target=el(info.field);
     if(!target){ say("We couldn't apply that code here — try the manual fields below.","err"); return; }
 
@@ -1983,15 +1972,30 @@ state.playClub = null;
       // The field's own message may already start with a tick/cross and end in
       // a full stop; don't double them up.
       var tidy = function(t){ return (t||"").replace(/^[\u2713\u2717]\s*/,"").replace(/[.\s]+$/,""); };
-      if(res && res.ok){       say("\u2713 "+info.label+" applied \u2014 "+tidy(res.text)+". Check your total below.","ok"); box.value=""; return; }
-      if(res && !res.ok){      say("\u2717 "+tidy(res.text)+" (entered as a "+info.label.toLowerCase()+")","err"); return; }
-      say("Still checking that code \u2014 see the "+info.label.toLowerCase()+" section below.","");
+      if(res && res.ok){       say("\u2713 "+info.label+" applied \u2014 "+tidy(res.text)+".","ok"); box.value=""; return; }
+      if(res && !res.ok){      say("\u2717 "+tidy(res.text),"err"); return; }
+      say("Still checking\u2026","");
       return;
     }
 
-    // Reward / referral / membership report in their own sections.
-    say("Sent to the "+info.label.toLowerCase()+" field below \u2014 check the result there.","");
-    box.value="";
+    // Reward / referral / membership write their result into their own
+    // (hidden) message line -- read it back and show it right here.
+    var mid={reward:"rewardMsg", referral:"refMsg", playclub:"pcMemberMsg"}[info.kind];
+    var m=mid?el(mid):null;
+    if(!m){ box.value=""; return; }
+    say("Checking\u2026","");
+    var t0=Date.now();
+    await new Promise(function(res){ (function poll(){
+      var txt=(m.textContent||"").trim();
+      if(txt && !/^Checking/.test(txt)) return res();
+      if(Date.now()-t0>9000) return res();
+      setTimeout(poll,150);
+    })(); });
+    var txt=(m.textContent||"").trim();
+    var ok=/^\u2713/.test(txt);
+    if(!txt){ say("Couldn\u2019t check that code \u2014 please try again.","err"); return; }
+    say(txt, ok?"ok":"err");
+    if(ok) box.value="";
   }
 
   function say(t,cls){
@@ -2029,6 +2033,16 @@ state.playClub = null;
         }
       }
 
+      if(info.kind==="unknown"){
+        try{
+          var rc=raw.toUpperCase().replace(/[^A-Z0-9]/g,"");
+          var rr=await (await fetch("/api/loyalty",{method:"POST",headers:{"content-type":"application/json"},
+            body:JSON.stringify({action:"reward-check",rewardCode:rc,date:state.date})})).json();
+          if(rr && (rr.valid || rr.reason==="used" || rr.reason==="expired" || rr.reason==="not_yet")){
+            info={kind:"reward", field:"rewardCode", label:"Free admission"};
+          }
+        }catch(e){}
+      }
       await drive(info, raw);
     } finally {
       busy=false;

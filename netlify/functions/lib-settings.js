@@ -225,6 +225,10 @@ export const LEGACY_SLOT_IDS = Object.keys(OPENPLAY);
 export const VISIT_MINUTES = 120;
 export const ARRIVAL_CAP = parseInt(process.env.ARRIVAL_CAP || "6", 10); // children per arrival time
 export const ARRIVAL = {
+  // 8 AM and 6:30/7 PM arrivals only ever appear when Weekly or Seasonal hours
+  // open that early / close that late (see openPlayForDate).
+  "arr08": { label: "8:00 AM",  start: 480 },
+  "arr0830": { label: "8:30 AM", start: 510, half: true },
   "arr09": { label: "9:00 AM",  start: 540 },
   "arr10": { label: "10:00 AM", start: 600 },
   "arr11": { label: "11:00 AM", start: 660 },
@@ -248,6 +252,8 @@ export const ARRIVAL = {
   "arr1530": { label: "3:30 PM",  start: 930,  half: true },
   "arr1630": { label: "4:30 PM",  start: 990,  half: true },
   "arr1730": { label: "5:30 PM",  start: 1050, half: true },
+  "arr1830": { label: "6:30 PM",  start: 1110, half: true },
+  "arr19": { label: "7:00 PM",  start: 1140 },
 };
 export const ARRIVAL_IDS = Object.keys(ARRIVAL);
 
@@ -396,7 +402,7 @@ export function openPlayForDate(date, bookedPartyIds = [], hours = null) {
         id,
         label: a.label + (lastCall ? " (last hour)" : ""),
         note: lastCall
-          ? `We close at ${fmtClock(close)} — about a 1-hour visit. Come on by if an hour works for you!`
+          ? `About a 1-hour visit — we close at ${fmtClock(close)}.`
           : (shortVisit ? `We close at ${fmtClock(close)} — about a ${hrsLabel}-hour visit for this arrival.` : ""),
         lastCall,
         half: !!a.half,

@@ -9,6 +9,7 @@
 // Body: { key, filter? }   filter = "all" | "credit" | "discount" | "pass" | "reward" (optional)
 import { getStore } from "@netlify/blobs";
 import { listAllKeys } from "./lib-blobs.js";
+import { getDeletedCodes } from "./lib-deleted-codes.js";
 
 export default async (req) => {
   if (req.method !== "POST") return json({ error: "Use POST." }, 405);
@@ -18,13 +19,13 @@ export default async (req) => {
   if (!adminKey && !staffPin) return json({ error: "Admin key isn't configured." }, 500);
   if (provided !== adminKey && provided !== staffPin) return json({ error: "Wrong key." }, 401);
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = new Date().toLocaleDateString("en-CA", { timeZone: "America/Los_Angeles" });
   const want = (b.filter || "all").toString();
   const rows = [];
 
   // ---- Store credits ----
   if (want === "all" || want === "credit") {
-    const store = getStore("credits");
+    const store = getStore({ name: "credits", consistency: "strong" });
     let keys = [];
     keys = await listAllKeys(store, { prefix: "credit:" });
     for (const k of keys) {
@@ -50,7 +51,7 @@ export default async (req) => {
 
   // ---- Discount codes ----
   if (want === "all" || want === "discount") {
-    const store = getStore("discounts");
+    const store = getStore({ name: "discounts", consistency: "strong" });
     let keys = [];
     keys = await listAllKeys(store, { prefix: "disc:" });
     for (const k of keys) {
@@ -76,7 +77,7 @@ export default async (req) => {
 
   // ---- Punch cards ----
   if (want === "all" || want === "pass") {
-    const store = getStore("passes");
+    const store = getStore({ name: "passes", consistency: "strong" });
     let keys = [];
     keys = await listAllKeys(store, { prefix: "pass:" });
     for (const k of keys) {
@@ -103,7 +104,7 @@ export default async (req) => {
 
   // ---- Free-visit codes: loyalty 8th-visit rewards, birthday gifts, classroom codes ----
   if (want === "all" || want === "reward") {
-    const store = getStore("rewards");
+    const store = getStore({ name: "rewards", consistency: "strong" });
     let keys = [];
     keys = await listAllKeys(store, { prefix: "reward:" });
     for (const k of keys) {
@@ -127,6 +128,12 @@ export default async (req) => {
         note: r.loyaltyCode ? ("linked to " + r.loyaltyCode) : "",
       });
     }
+  }
+
+  // Never show a code that was deleted.
+  const gone = await getDeletedCodes();
+  for (let i = rows.length - 1; i >= 0; i--) {
+    if (gone[(rows[i].code || "").toString().trim().toUpperCase()]) rows.splice(i, 1);
   }
 
   // Newest issued first; blanks sort last.

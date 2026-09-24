@@ -7,6 +7,7 @@
 //   { action:"reward-check", rewardCode }          (public — booking page)
 //   { action:"code-check", code }                  (public — booking page, auto-fill by loyalty code)
 import { getStore } from "@netlify/blobs";
+import { isDeletedCode } from "./lib-deleted-codes.js";
 import { listAllKeys } from "./lib-blobs.js";
 import { getActiveFamCode } from "./famcode.js";
 import {
@@ -35,7 +36,7 @@ export default async (req) => {
     }
     let r = null;
     try { r = await rewards.get("reward:" + rc, { type: "json" }); } catch { r = null; }
-    if (!r) return json({ valid: false, reason: "not_found" });
+    if (!r || await isDeletedCode(rc)) return json({ valid: false, reason: "not_found" });
     if (r.used) return json({ valid: false, reason: "used" });
     // Validate against the play date the customer picked, not today's real date —
     // a code good for a future window (e.g. a birthday code valid Aug 16-23) must

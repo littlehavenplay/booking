@@ -17,7 +17,7 @@ export default async (req) => {
   let b;
   try { b = await req.json(); } catch { return json({ error: "Invalid request." }, 400); }
 
-  const site = getStore("site");
+  const site = getStore({ name: "site", consistency: "strong" });
   const action = (b.action || "").toString();
   let weekly = null, seasonal = null;
   try { weekly = (await site.get("weekly-hours", { type: "json" })) || null; } catch {}
