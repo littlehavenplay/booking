@@ -63,7 +63,6 @@
   .wi-playclub input{background:#fdf8ec !important;border-color:#e6d3a8 !important}
   .pc-kidrow{display:flex;align-items:center;gap:9px;padding:6px 9px;border-radius:9px;background:#fdf8ec;margin:0 0 5px}
   .pc-kidrow input[type="checkbox"]{width:auto !important;margin:0 !important;transform:scale(1.15)}
-  #sec-punch,#sec-punchissue,#sec-passes{display:none!important}
 
   /* ---- Category colours on the tools pages ----------------------------------
      Every tool used to have identical cream inputs, so with several open at once
@@ -72,15 +71,15 @@
   .card[id^="sec-"]{border-left:5px solid var(--line)}
 
   /* Today & check-in */
-  #sec-schedule,#sec-walkin,#sec-punch,#sec-bookings,#sec-manual,#sec-reschedule{border-left-color:#2f9e8f}
-  #sec-schedule input,#sec-schedule select,#sec-walkin input,#sec-walkin select,#sec-punch input,
+  #sec-schedule,#sec-walkin,#sec-bookings,#sec-manual,#sec-reschedule{border-left-color:#2f9e8f}
+  #sec-schedule input,#sec-schedule select,#sec-walkin input,#sec-walkin select,
   #sec-bookings input,#sec-bookings select,#sec-manual input,#sec-manual select,
   #sec-reschedule input,#sec-reschedule select{background:#eaf6f4;border-color:#bfe0da}
 
   /* Loyalty & birthdays */
-  #sec-loyalty-list,#sec-legacy,#sec-punchissue,#sec-passes,#sec-grandfather,#sec-birthdays,#sec-birthdaycode{border-left-color:#c97d76}
-  #sec-loyalty-list input,#sec-loyalty-list select,#sec-legacy input,#sec-punchissue input,
-  #sec-passes input,#sec-grandfather input,#sec-birthdays input,#sec-birthdaycode input,
+  #sec-loyalty-list,#sec-legacy,#sec-grandfather,#sec-birthdays,#sec-birthdaycode{border-left-color:#c97d76}
+  #sec-loyalty-list input,#sec-loyalty-list select,#sec-legacy input,
+  #sec-grandfather input,#sec-birthdays input,#sec-birthdaycode input,
   #sec-birthdaycode select{background:#fdf1ec;border-color:#efcfc4}
 
   /* Codes, credits & discounts */
@@ -113,8 +112,8 @@
 <link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#7a6253"><link rel="apple-touch-icon" href="/assets/icons/apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="Little Haven"><link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32.png"></head>
 <body>
 <div class="wrap">
-<div id="secBar"><button id="secToggle" type="button">Sections ▾</button><div id="secMenu"><a href="#sec-bookings">Bookings by date</a><a href="#sec-taxreport">Sales tax report</a><a href="#sec-emailtest">Email health</a><a href="#sec-theme">Site theme</a><a href="#sec-buddyannounce">Buddy pass email</a><a href="#sec-walkin">Walk-in check-in</a><a href="#sec-punch">Punch-card check-in</a><a href="/loyalty.html">Loyalty &amp; Punch Cards</a><a href="/referrals.html" style="margin-left:8px">🤝 Referrals</a><a href="#sec-reschedule">Reschedule &amp; cancel</a><a href="#sec-redeem">Redeem a credit</a><a href="#sec-credit-backfill">Backfill credit emails</a><a href="#sec-party">Session capacity &amp; blocking</a><a href="#sec-issue">Issue a credit</a><a href="#sec-punchissue">Legacy card tools</a><a href="#sec-code">Manage a code</a><a href="#sec-closures">Closures &amp; hours</a><a href="#sec-passes">Legacy prepaid holders</a><a href="#sec-grandfather">Grandfather note</a><a href="#sec-parties">Party bookings</a><a href="#sec-deposit">Record a party deposit</a><a href="#sec-partyoff">Open play only (no parties)</a><a href="/headcount.html">Head count</a><a href="#sec-prices">Manage prices</a><a href="#sec-weekly">Weekly hours</a><a href="#sec-seasonal">Seasonal hours</a><a href="#sec-weekday-special">Weekday special</a><a href="#sec-partypromo">Party booking promo</a><a href="#sec-famcode">Family master code</a><a href="#sec-discount">Discount codes</a><a href="#sec-news">News update</a><a href="#sec-promos">Promotions &amp; Flyers</a><a href="#sec-events">Upcoming events</a><a href="#sec-playclub">Play Club plans</a><a href="#sec-playclub-members">Play Club members</a><a href="#sec-partners">Partners page</a><a href="#sec-birthdays">Birthday club</a></div></div>
-<nav id="sideNav" aria-label="Sections"><div class="snav-title">Sections</div><a href="#sec-bookings">Bookings by date</a><a href="#sec-taxreport">Sales tax report</a><a href="#sec-emailtest">Email health</a><a href="#sec-theme">Site theme</a><a href="#sec-walkin">Walk-in check-in</a><a href="#sec-punch">Punch-card check-in</a><a href="/loyalty.html">Loyalty &amp; Punch Cards</a><a href="#sec-reschedule">Reschedule &amp; cancel</a><a href="#sec-redeem">Redeem a credit</a><a href="#sec-credit-backfill">Backfill credit emails</a><a href="#sec-party">Session capacity &amp; blocking</a><a href="#sec-issue">Issue a credit</a><a href="#sec-punchissue">Legacy card tools</a><a href="#sec-code">Manage a code</a><a href="#sec-closures">Closures &amp; hours</a><a href="#sec-passes">Legacy prepaid holders</a><a href="#sec-grandfather">Grandfather note</a><a href="#sec-parties">Party bookings</a><a href="#sec-deposit">Record a party deposit</a><a href="#sec-partyoff">Open play only (no parties)</a><a href="/headcount.html">Head count</a><a href="#sec-prices">Manage prices</a><a href="#sec-weekly">Weekly hours</a><a href="#sec-seasonal">Seasonal hours</a><a href="#sec-weekday-special">Weekday special</a><a href="#sec-discount">Discount codes</a><a href="#sec-news">News update</a><a href="#sec-rating">Reviews rating</a><a href="#sec-photos">Site photos</a><a href="#sec-promos">Promotions &amp; Flyers</a><a href="#sec-events">Upcoming events</a><a href="#sec-partners">Partners page</a><a href="#sec-birthdays">Birthday club</a></nav>
+<div id="secBar"><button id="secToggle" type="button">Sections ▾</button><div id="secMenu"><a href="#sec-bookings">Bookings by date</a><a href="#sec-taxreport">Sales tax report</a><a href="#sec-emailtest">Email health</a><a href="#sec-theme">Site theme</a><a href="#sec-buddyannounce">Buddy pass email</a><a href="#sec-walkin">Walk-in check-in</a><a href="#sec-legacy">Legacy punch cards</a><a href="/loyalty.html">Loyalty &amp; Punch Cards</a><a href="/referrals.html" style="margin-left:8px">🤝 Referrals</a><a href="#sec-reschedule">Reschedule &amp; cancel</a><a href="#sec-redeem">Redeem a credit</a><a href="#sec-credit-backfill">Backfill credit emails</a><a href="#sec-party">Session capacity &amp; blocking</a><a href="#sec-issue">Issue a credit</a><a href="#sec-code">Manage a code</a><a href="#sec-closures">Closures &amp; hours</a><a href="#sec-grandfather">Grandfather note</a><a href="#sec-parties">Party bookings</a><a href="#sec-deposit">Record a party deposit</a><a href="#sec-partyoff">Open play only (no parties)</a><a href="/headcount.html">Head count</a><a href="#sec-prices">Manage prices</a><a href="#sec-weekly">Weekly hours</a><a href="#sec-seasonal">Seasonal hours</a><a href="#sec-weekday-special">Weekday special</a><a href="#sec-partypromo">Party booking promo</a><a href="#sec-famcode">Family master code</a><a href="#sec-discount">Discount codes</a><a href="#sec-news">News update</a><a href="#sec-promos">Promotions &amp; Flyers</a><a href="#sec-events">Upcoming events</a><a href="#sec-playclub">Play Club plans</a><a href="#sec-playclub-members">Play Club members</a><a href="#sec-partners">Partners page</a><a href="#sec-birthdays">Birthday club</a></div></div>
+<nav id="sideNav" aria-label="Sections"><div class="snav-title">Sections</div><a href="#sec-bookings">Bookings by date</a><a href="#sec-taxreport">Sales tax report</a><a href="#sec-emailtest">Email health</a><a href="#sec-theme">Site theme</a><a href="#sec-walkin">Walk-in check-in</a><a href="#sec-legacy">Legacy punch cards</a><a href="/loyalty.html">Loyalty &amp; Punch Cards</a><a href="#sec-reschedule">Reschedule &amp; cancel</a><a href="#sec-redeem">Redeem a credit</a><a href="#sec-credit-backfill">Backfill credit emails</a><a href="#sec-party">Session capacity &amp; blocking</a><a href="#sec-issue">Issue a credit</a><a href="#sec-code">Manage a code</a><a href="#sec-closures">Closures &amp; hours</a><a href="#sec-grandfather">Grandfather note</a><a href="#sec-parties">Party bookings</a><a href="#sec-deposit">Record a party deposit</a><a href="#sec-partyoff">Open play only (no parties)</a><a href="/headcount.html">Head count</a><a href="#sec-prices">Manage prices</a><a href="#sec-weekly">Weekly hours</a><a href="#sec-seasonal">Seasonal hours</a><a href="#sec-weekday-special">Weekday special</a><a href="#sec-discount">Discount codes</a><a href="#sec-news">News update</a><a href="#sec-rating">Reviews rating</a><a href="#sec-photos">Site photos</a><a href="#sec-promos">Promotions &amp; Flyers</a><a href="#sec-events">Upcoming events</a><a href="#sec-partners">Partners page</a><a href="#sec-birthdays">Birthday club</a></nav>
   <h1>Store Credit</h1>
   <div class="sub">Issue and look up Little Haven store credit codes</div>
 
@@ -263,28 +262,17 @@
 
 
 
-  <div class="card" id="sec-punch">
-    <h2>Check in a LEGACY punch card (in-store)</h2>
-    <p class="note" style="margin-top:-2px">For customers still holding a prepaid card (bought before the loyalty switch).<button type="button" class="hlp" data-help="For customers still holding a prepaid card (bought before the loyalty switch). Keeps free coffee until used up. Don't also punch their loyalty card for this visit.">?</button></p>
-    <label>Pass code</label>
-    <input type="text" id="acCode" placeholder="e.g. AR4655-1" style="text-transform:uppercase">
-    <label>Visits to use</label>
-    <input type="number" id="acCount" min="1" value="1">
-    <div style="background:#fdf5ee;border:1px solid #f0e2d2;border-radius:10px;padding:9px 12px;margin:4px 0 8px">
-      <label style="display:flex;align-items:flex-start;gap:8px;text-transform:none;letter-spacing:0;color:var(--charcoal);font-weight:700;font-size:.82rem;margin:0;cursor:pointer"><input type="checkbox" id="acWaiver" style="width:auto;margin-top:2px"> 📋 I confirmed <b>every adult AND child</b> entering is signed on the WaiverMaster list.</label>
+  
+    <div class="card" id="sec-legacy">
+    <h2>🎟️ Legacy punch cards</h2>
+    <p class="note" style="margin-top:-2px">Search, check in, or fix a prepaid card. Don't also punch their loyalty card for the same visit.</p>
+    <div style="display:flex;gap:8px;align-items:center">
+      <input type="search" id="lgSearch" placeholder="Child, parent, phone, email, or code" autocomplete="off" style="flex:1;margin:0">
+      <button type="button" id="lgLoad" title="Refresh list" style="margin:0;padding:12px 16px;width:auto">↻</button>
     </div>
-    <button id="acUse">Use visit(s)</button>
-    <div class="out" id="acOut"></div>
-    <p class="note">Decrements the pass and counts the child toward the current session's capacity. Each visit includes 2 adults, no charge.</p>
-  </div>
-
-  <div class="card" id="sec-legacy">
-    <h2>🎟️ Legacy punch card tool</h2>
-    <p class="note" style="margin-top:-2px">For customers still holding a prepaid legacy card.<button type="button" class="hlp" data-help="For customers still holding a prepaid <b>legacy</b> card. Search by child, parent, phone, email, or code — then <b>use a visit</b> at check-in or <b>fix</b> the card's remaining visits. (We no longer sell these; new families are on the free Loyalty Punch Card.)">?</button></p>
-    <div class="row"><div style="flex:1"><input type="text" id="lgSearch" placeholder="Search child, parent, phone, email, or code…"></div><div style="flex:0 0 auto"><button id="lgLoad" style="margin-top:0">Search</button></div></div>
-    <label style="display:flex;align-items:center;gap:8px;font-size:.82rem;text-transform:none;letter-spacing:0;font-weight:700;margin-top:6px"><input type="checkbox" id="lgWaiver" style="width:auto"> 📋 Everyone entering is signed on WaiverMaster (required to use a visit)</label>
-    <div id="lgList" style="margin-top:8px"><div class="note">Search above, or leave blank and press Search to see everyone.</div></div>
+    <label style="display:flex;align-items:flex-start;gap:8px;text-transform:none;letter-spacing:0;color:var(--charcoal);font-weight:700;font-size:.82rem;margin:10px 0 0;cursor:pointer;background:#fdf5ee;border:1px solid #f0e2d2;border-radius:10px;padding:9px 12px"><input type="checkbox" id="lgWaiver" style="width:auto;margin:2px 0 0"> 📋 Every adult &amp; child entering is signed on WaiverMaster</label>
     <div class="out" id="lgOut"></div>
+    <div id="lgList" style="margin-top:10px"><div class="note">Start typing to search.</div></div>
   </div>
 
   <div class="card" id="sec-loyalty-list">
@@ -515,21 +503,7 @@
     <div class="out" id="bcOut"></div>
   </div>
 
-  <div class="card" id="sec-punchissue">
-    <h2>Legacy card tools</h2>
-    <p class="note" style="margin-top:-2px">We no longer issue or sell prepaid punch cards — everyone is on the free Loyalty Punch Card (use the 🎈 Loyalty tool above).<button type="button" class="hlp" data-help="We no longer issue or sell prepaid punch cards — everyone is on the free Loyalty Punch Card (use the 🎈 Loyalty tool above). This is only for correcting an existing <b>legacy</b> prepaid card (e.g. Aneeka Gray's).">?</button></p>
-    <div style="margin-top:10px">
-      <label>Fix a legacy card (set exact visits &amp; refresh expiry)</label>
-      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-        <input type="text" id="piFixCode" placeholder="Card code (e.g. AG7817-7)" style="flex:1;min-width:140px;text-transform:uppercase">
-        <input type="number" id="piFixVisits" placeholder="Exact visits" min="0" style="width:120px">
-        <button id="piFix" style="white-space:nowrap">Fix card</button>
-      </div>
-      <p class="note">SETS the visits to the exact number (not added) and refreshes the expiry to a valid future date.</p>
-      <div class="out" id="piFixOut"></div>
-    </div>
-  </div>
-
+  
   <div class="card" id="sec-code">
     <h2>Codes — look up & manage</h2>
     <label>Paste any code — punch card, store credit, discount, or gift card</label>
@@ -712,15 +686,7 @@
     <div class="out" id="dcLookOut"></div>
   </div>
 
-  <div class="card" id="sec-passes">
-    <h2>Legacy prepaid card holders</h2>
-    <div class="note" style="margin-bottom:8px">Everyone with a punch card, newest purchase first.<button type="button" class="hlp" data-help="Everyone with a punch card, newest purchase first. <b>To verify a family</b> (e.g. confirm a Sibling Add-On belongs with a Toddler card), search their <b>email</b> to see every card and child under that account.">?</button></div>
-    <input type="text" id="pcSearch" placeholder="Search name, child, email, or code…" oninput="renderPasses()">
-    <div id="pcList"><div class="note">Click Load to pull the list.</div></div>
-    <button id="pcLoad" style="margin-top:10px">Load punch card holders</button>
-    <div class="out" id="pcOut"></div>
-  </div>
-  <div class="card" id="sec-grandfather">
+    <div class="card" id="sec-grandfather">
     <h2>🎈 Grandfather note (legacy punch cards)</h2>
     <p class="note" style="margin-top:-4px">Sends a one-time email to legacy punch-card holders whose prepaid card is used up: they're grandfathered in at…<button type="button" class="hlp" data-help="Sends a <b>one-time</b> email to legacy punch-card holders whose prepaid card is used up: they're grandfathered in at the same prices (5 visits 15% off / 10 visits 20% off), reload in store, otherwise they roll onto the 7+1 loyalty card. Each person is emailed <b>only once, ever</b> — pressing Send again can't spam anyone. (The weekly job also sends it automatically to anyone whose card newly runs out.)">?</button></p>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
@@ -1684,21 +1650,6 @@ window.exportBirthdays=function(){
 };
 if($("#bdExport")) $("#bdExport").onclick=exportBirthdays;
 if($("#bdMonth")) $("#bdMonth").value=String(new Date().getMonth()+1).padStart(2,"0");
-$("#piFix").onclick=async()=>{
-  const key=$("#key").value.trim(), out=$("#piFixOut"); out.style.display="block";
-  const code=$("#piFixCode").value.trim().toUpperCase(), setVisits=$("#piFixVisits").value.trim();
-  if(!key){ out.className="out err"; out.textContent="Enter your admin key (top of page)."; return; }
-  if(!code){ out.className="out err"; out.textContent="Enter the card code."; return; }
-  if(setVisits===""||isNaN(parseInt(setVisits,10))){ out.className="out err"; out.textContent="Enter the exact number of visits to set."; return; }
-  $("#piFix").disabled=true; $("#piFix").textContent="Fixing…";
-  try{
-    const r=await (await fetch("/api/pass-issue",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({
-      key, fixCode:code, setVisits:parseInt(setVisits,10) })})).json();
-    if(r.ok){ out.className="out ok"; out.innerHTML='✅ Fixed <b>'+esc(r.code)+'</b> → set to <b>'+r.visitsRemaining+'</b> visits · expires '+r.expiry; $("#piFixCode").value="";$("#piFixVisits").value=""; }
-    else { out.className="out err"; out.textContent=r.error||"Couldn't fix the card."; }
-  }catch(e){ out.className="out err"; out.textContent="Network error."; }
-  $("#piFix").disabled=false; $("#piFix").textContent="Fix card";
-};
 // ---- Loyalty punch card ----
 var phSet="reviews", phList=[];
 function phRender(list){
@@ -1842,6 +1793,7 @@ async function loadPasses(){
   $("#pcLoad").disabled=false;
 }
 function renderPasses(){
+  if(!document.getElementById("pcList")) return;
   var q=($("#pcSearch")?$("#pcSearch").value:"").toLowerCase().trim();
   var rows=PASSES.filter(function(p){return !q||((p.name||"")+" "+(p.code||"")+" "+(p.childName||"")+" "+(p.email||"")).toLowerCase().indexOf(q)>=0;});
   function pLast(n){var a=(n||"").trim().split(/\s+/);return (a[a.length-1]||"").toLowerCase();}
@@ -1964,22 +1916,6 @@ $("#awAdd").onclick=async()=>{
     else { out.className="out err"; out.textContent=r.error||"Couldn't log walk-in."; }
   }catch(e){ out.className="out err"; out.textContent="Network error."; }
   $("#awAdd").disabled=false;
-};
-$("#acUse").onclick=async()=>{
-  const out=$("#acOut"); out.className="out";
-  const key=$("#key").value.trim();
-  if(!key){ out.className="out err"; out.textContent="Enter your admin key (top of page)."; return; }
-  const code=$("#acCode").value.trim().toUpperCase();
-  const count=parseInt($("#acCount").value,10)||1;
-  if(!code){ out.className="out err"; out.textContent="Enter the pass code."; return; }
-  $("#acUse").disabled=true;
-  try{
-    const wv=$("#acWaiver").checked;
-    const r=await (await fetch("/api/checkin",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key,action:"pass",code,count,waiverConfirmed:wv})})).json();
-    if(r.ok){ out.className="out ok"; var cele=r.freeVisit?'<div style="background:#eaf4e4;border:1px solid #cfe6c2;border-radius:10px;padding:9px 11px;margin:8px 0;font-weight:800;color:#4d6b3e">📋 That was their last prepaid visit — this card is now complete. They\'re on our free loyalty program going forward (no reload available).'+(r.reminderEmailed?' A reload reminder was emailed.':'')+'</div>':''; var wvNote=wv?'':'<div style="background:#fdeee6;border:1px solid #f0d3bf;border-radius:9px;padding:8px 10px;margin:8px 0 0;font-weight:800;color:#b5622f">📋 Reminder: check every adult & child is signed on WaiverMaster before they enter.</div>'; out.innerHTML=esc(r.message)+cele+'<br><b>'+r.children+'/'+r.cap+'</b> in '+esc(r.slotLabel)+(r.over?' ⚠️ over capacity':' · '+r.remaining+' left')+' · <b>'+r.visitsRemaining+' visit(s) left on pass</b>'+'<br>☕ <b>Free coffee</b> — hand them their cup!'+wvNote; $("#acCode").value="";$("#acCount").value="1";$("#acWaiver").checked=false; coffeePopup(r.freeVisit?"📋 Card complete — they're on the loyalty program now!":"Free coffee — hand them their cup!"); reloadRoster(); }
-    else { out.className="out err"; out.textContent=r.error||"Couldn't check in the pass."; }
-  }catch(e){ out.className="out err"; out.textContent="Network error."; }
-  $("#acUse").disabled=false;
 };
 window.rmCheckin=async(date,slot,entryId)=>{
   if(!confirm("Remove this check-in? It frees the spot back up.")) return;
@@ -2588,8 +2524,7 @@ if($("#wsSave")) $("#wsSave").onclick=async function(){
       g.ids.forEach(function(id){ var el=document.getElementById(id); if(el && el.classList.contains('card')){ body.appendChild(el); used[id]=1; any=true; } });
       if(any) parent.insertBefore(d, ph);
     });
-    var RETIRED={"sec-punch":1,"sec-punchissue":1,"sec-passes":1};
-    var left=cards.filter(function(c){return !used[c.id] && !RETIRED[c.id];});
+    var left=cards.filter(function(c){return !used[c.id];});
     if(left.length){
       var d=document.createElement('details'); d.className='secgroup';
       var sum=document.createElement('summary'); sum.textContent="\uD83D\uDD27 More tools"; d.appendChild(sum);
@@ -2910,65 +2845,6 @@ if($("#wsSave")) $("#wsSave").onclick=async function(){
   try{ var d=$("#mbDate"); if(d && !d.value) d.value=new Date().toLocaleDateString("en-CA",{timeZone:"America/Los_Angeles"}); }catch(e){}
 })();
 </script><script>
-(function(){
-  var $=function(sel){return document.querySelector(sel);};
-  function KEY(){ return ($("#key")&&$("#key").value.trim())||""; }
-  function esc(t){return (t||"").toString().replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
-  var LGDATA=[];
-  async function lgLoad(){
-    var key=KEY(); var out=$("#lgOut");
-    if(!key){ out.style.display="block"; out.className="out err"; out.textContent="Enter your admin key (top of page)."; return; }
-    $("#lgList").innerHTML='<div class="note">Loading\u2026</div>';
-    try{ var r=await (await fetch("/api/passes-list",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key:key})})).json();
-      if(!r.ok){ $("#lgList").innerHTML='<div class="out err" style="display:block">'+esc(r.error||"Couldn\u2019t load.")+'</div>'; return; }
-      LGDATA=r.passes||[]; lgRender();
-    }catch(e){ $("#lgList").innerHTML='<div class="out err" style="display:block">Network error.</div>'; }
-  }
-  function lgRender(){
-    var q=($("#lgSearch").value||"").trim().toLowerCase();
-    if(!LGDATA.length){ $("#lgList").innerHTML='<div class="note">No legacy cards on file.</div>'; return; }
-    var list=LGDATA.filter(function(p){ if(!q) return true; return [p.code,p.childName,p.name,p.email,p.phone].some(function(v){return (v||"").toString().toLowerCase().indexOf(q)>=0;}); });
-    if(!list.length){ $("#lgList").innerHTML='<div class="note">No match for \u201c'+esc(q)+'\u201d.</div>'; return; }
-    $("#lgList").innerHTML=list.slice(0,40).map(function(p){
-      var vr=(typeof p.visitsRemaining==="number")?p.visitsRemaining:"\u2014";
-      return '<div style="border:1px solid #eadfce;border-radius:10px;padding:10px 12px;margin-bottom:8px;background:#fff">'
-        +'<div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:center">'
-        +'<div><b>'+esc(p.name||p.childName||"\u2014")+'</b> <span style="font-family:monospace;color:var(--rose-deep)">'+esc(p.code)+'</span>'
-        +'<br><span class="note">'+esc(p.childName||"")+(p.childName?" \u00b7 ":"")+'<b>'+vr+'</b> visit'+(vr===1?"":"s")+' left'+(p.expiry?" \u00b7 exp "+esc(p.expiry):"")+(p.email?" \u00b7 "+esc(p.email):"")+(p.phone?" \u00b7 "+esc(p.phone):"")+'</span></div>'
-        +'<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">'
-        +'<input type="number" min="1" value="1" class="lgUseN" data-code="'+esc(p.code)+'" style="width:52px;margin:0;padding:7px">'
-        +'<button class="lgUse" data-code="'+esc(p.code)+'" style="margin:0;padding:8px 12px;white-space:nowrap">Use visit</button>'
-        +'<input type="number" min="0" placeholder="set" class="lgFixN" data-code="'+esc(p.code)+'" style="width:58px;margin:0;padding:7px">'
-        +'<button class="lgFix alt" data-code="'+esc(p.code)+'" style="margin:0;padding:8px 12px;white-space:nowrap">Fix</button>'
-        +'</div></div></div>';
-    }).join("");
-    Array.prototype.forEach.call(document.querySelectorAll(".lgUse"),function(b){ b.onclick=function(){ lgUse(b.getAttribute("data-code")); }; });
-    Array.prototype.forEach.call(document.querySelectorAll(".lgFix"),function(b){ b.onclick=function(){ lgFix(b.getAttribute("data-code")); }; });
-  }
-  function fieldVal(cls,code){ var el=document.querySelector(cls+'[data-code="'+code+'"]'); return el?el.value:""; }
-  async function lgUse(code){
-    var key=KEY(); var out=$("#lgOut"); out.style.display="block";
-    var n=parseInt(fieldVal(".lgUseN",code),10)||1;
-    if(!$("#lgWaiver").checked){ out.className="out err"; out.textContent="Confirm everyone is signed on WaiverMaster before using a visit."; return; }
-    try{ var r=await (await fetch("/api/checkin",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key:key,action:"pass",code:code,count:n,waiverConfirmed:true})})).json();
-      if(r.ok){ out.className="out ok"; out.textContent="\u2713 Used "+n+" visit"+(n===1?"":"s")+" on "+code+"."+((typeof r.visitsRemaining==="number")?(" "+r.visitsRemaining+" left."):""); lgLoad(); }
-      else { out.className="out err"; out.textContent=r.error||"Couldn\u2019t use the visit."; }
-    }catch(e){ out.className="out err"; out.textContent="Network error."; }
-  }
-  async function lgFix(code){
-    var key=KEY(); var out=$("#lgOut"); out.style.display="block";
-    var v=(fieldVal(".lgFixN",code)||"").trim();
-    if(v===""||isNaN(parseInt(v,10))){ out.className="out err"; out.textContent="Enter the exact number of visits to set for "+code+"."; return; }
-    try{ var r=await (await fetch("/api/pass-issue",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key:key,fixCode:code,setVisits:parseInt(v,10)})})).json();
-      if(r.ok){ out.className="out ok"; out.innerHTML="\u2705 Fixed <b>"+esc(r.code)+"</b> \u2192 set to <b>"+r.visitsRemaining+"</b> visits \u00b7 expires "+esc(r.expiry); lgLoad(); }
-      else { out.className="out err"; out.textContent=r.error||"Couldn\u2019t fix the card."; }
-    }catch(e){ out.className="out err"; out.textContent="Network error."; }
-  }
-  if($("#lgLoad")) $("#lgLoad").onclick=lgLoad;
-  if($("#lgSearch")) $("#lgSearch").addEventListener("input",function(){ if(LGDATA.length) lgRender(); });
-  if($("#lgSearch")) $("#lgSearch").addEventListener("keydown",function(e){ if(e.key==="Enter"){ e.preventDefault(); LGDATA.length?lgRender():lgLoad(); } });
-})();
-
 /* ---- Family master code (admin only) ---- */
 (function(){
   function el(id){ return document.getElementById(id); }
@@ -4231,5 +4107,146 @@ if($("#baSend")) $("#baSend").onclick=baSend;
 
 </script>
 
+<script>
+/* ---- Legacy punch cards: one tool to search, check in, and fix ---- */
+(function(){
+  var $=function(s){return document.querySelector(s);};
+  if(!$("#sec-legacy")) return;
+  function KEY(){
+    try{ if(typeof PIN!=="undefined" && PIN) return PIN; }catch(e){}
+    var k=$("#key"); return k?k.value.trim():"";
+  }
+  function esc(t){return (t==null?"":String(t)).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
+  function norm(t){return (t==null?"":String(t)).toLowerCase();}
+  function digits(t){return (t==null?"":String(t)).replace(/\D/g,"");}
+  var DATA=[], loaded=false, loading=null, openFix={};
+
+  function load(force){
+    if(loading) return loading;
+    if(loaded && !force) return Promise.resolve();
+    var key=KEY();
+    if(!key){ $("#lgList").innerHTML='<div class="note">Sign in first.</div>'; return Promise.resolve(); }
+    $("#lgList").innerHTML='<div class="note">Loading cards…</div>';
+    loading=fetch("/api/passes-list",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key:key})})
+      .then(function(r){return r.json();})
+      .then(function(r){
+        if(!r || !r.ok){ $("#lgList").innerHTML='<div class="out err" style="display:block">'+esc((r&&r.error)||"Couldn’t load cards.")+'</div>'; return; }
+        DATA=r.passes||[]; loaded=true; render();
+      })
+      .catch(function(){ $("#lgList").innerHTML='<div class="out err" style="display:block">Network error — tap ↻ to try again.</div>'; })
+      .then(function(){ loading=null; });
+    return loading;
+  }
+
+  function matches(p,q){
+    if(!q) return p.status==="active";
+    var hay=norm([p.code,p.childName,p.name,p.email,p.phone,p.label].join(" "));
+    var ph=digits(p.phone);
+    return q.split(/\s+/).every(function(w){
+      if(!w) return true;
+      if(hay.indexOf(w)>=0) return true;
+      var d=digits(w);
+      return d.length>=3 && ph.indexOf(d)>=0;
+    });
+  }
+
+  function badge(p){
+    var m={active:[(p.visitsRemaining||0)+" left","#e7f0df","#4d6b3e"],usedup:["Used up","#f1ece5","#8a8276"],expired:["Expired","#fbe7e4","#b5382f"],inactive:["Off","#f1ece5","#8a8276"]};
+    var x=m[p.status]||m.inactive;
+    return '<span style="display:inline-block;padding:3px 9px;border-radius:20px;font-size:.72rem;font-weight:800;background:'+x[1]+';color:'+x[2]+';white-space:nowrap">'+x[0]+'</span>';
+  }
+
+  function render(){
+    var box=$("#lgList"); if(!box) return;
+    if(!loaded){ return; }
+    var q=norm(($("#lgSearch").value||"").trim());
+    var rank={active:0,usedup:1,expired:2,inactive:3};
+    var list=DATA.filter(function(p){return matches(p,q);})
+      .sort(function(a,b){ return (rank[a.status]-rank[b.status]) || norm(a.childName||a.name).localeCompare(norm(b.childName||b.name)); });
+    if(!DATA.length){ box.innerHTML='<div class="note">No legacy cards on file.</div>'; return; }
+    if(!list.length){ box.innerHTML='<div class="note">'+(q?'No card matches “'+esc(q)+'”.':'No active cards right now.')+'</div>'; return; }
+    var head=q?'':'<div class="note" style="margin-bottom:6px">Showing active cards. Type to search all.</div>';
+    box.innerHTML=head+list.slice(0,40).map(function(p){
+      var c=esc(p.code), who=p.childName||p.name||"—";
+      var sub=[p.childName&&p.name?p.name:"", p.phone, p.expiry?("exp "+p.expiry):""].filter(Boolean).map(esc).join(" · ");
+      var active=p.status==="active";
+      var fixOpen=!!openFix[p.code];
+      return '<div class="lg-row" style="border:1px solid #eadfce;border-radius:12px;padding:10px 12px;margin-bottom:8px;background:#fff">'
+        +'<div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start">'
+          +'<div style="min-width:0"><b>'+esc(who)+'</b> <span style="font-family:monospace;color:var(--rose-deep);font-size:.85rem">'+c+'</span>'
+          +(sub?'<div class="note" style="margin:2px 0 0">'+sub+'</div>':'')+'</div>'
+          +badge(p)
+        +'</div>'
+        +'<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:8px">'
+          +(active?'<input type="number" min="1" max="'+(p.visitsRemaining||1)+'" value="1" class="lgN" data-code="'+c+'" aria-label="Visits to use" style="width:62px;margin:0;padding:8px">'
+            +'<button type="button" class="lgUse" data-code="'+c+'" style="margin:0;padding:9px 16px;width:auto;white-space:nowrap">Check in</button>':'')
+          +'<button type="button" class="lgEdit alt" data-code="'+c+'" style="margin:0 0 0 auto;padding:7px 12px;width:auto;font-size:.75rem;background:#f1ece5;color:var(--charcoal)">'+(fixOpen?"Cancel":"Fix visits")+'</button>'
+        +'</div>'
+        +(fixOpen?'<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:8px;padding-top:8px;border-top:1px dashed #eadfce">'
+            +'<span class="note" style="margin:0">Set visits left to</span>'
+            +'<input type="number" min="0" class="lgFixN" data-code="'+c+'" value="'+(p.visitsRemaining||0)+'" style="width:70px;margin:0;padding:8px">'
+            +'<button type="button" class="lgFix" data-code="'+c+'" style="margin:0;padding:9px 14px;width:auto">Save</button>'
+          +'</div>':'')
+      +'</div>';
+    }).join("")+(list.length>40?'<div class="note">Showing 40 of '+list.length+'. Keep typing to narrow it down.</div>':'');
+  }
+
+  function field(cls,code){ var el=document.querySelector(cls+'[data-code="'+code+'"]'); return el?el.value:""; }
+  function say(cls,html){ var o=$("#lgOut"); o.style.display="block"; o.className="out "+cls; o.innerHTML=html; }
+  function update(code,changes){ DATA.forEach(function(p){ if(p.code===code){ for(var k in changes) p[k]=changes[k]; } }); }
+
+  async function useVisit(code,btn){
+    var n=parseInt(field(".lgN",code),10)||1;
+    var wv=$("#lgWaiver").checked;
+    btn.disabled=true; btn.textContent="…";
+    try{
+      var r=await (await fetch("/api/checkin",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key:KEY(),action:"pass",code:code,count:n,waiverConfirmed:wv})})).json();
+      if(r && r.ok){
+        var left=(typeof r.visitsRemaining==="number")?r.visitsRemaining:null;
+        if(left!==null) update(code,{visitsRemaining:left,status:left<1?"usedup":"active"});
+        var cap=(r.children!=null&&r.cap!=null)?'<br><b>'+r.children+'/'+r.cap+'</b> in '+esc(r.slotLabel||"this hour")+(r.over?' ⚠️ over capacity':''):'';
+        var done=r.freeVisit?'<div style="margin-top:6px;font-weight:800">📋 That was their last prepaid visit. They’re on the free loyalty card from now on.</div>':'';
+        var wvNote=wv?'':'<div style="margin-top:6px;font-weight:800;color:#b5622f">📋 Check WaiverMaster before they go in.</div>';
+        say("ok",'✓ Checked in <b>'+esc(code)+'</b>'+(left!==null?' · <b>'+left+'</b> left':'')+cap+'<br>☕ Free coffee — hand them their cup!'+done+wvNote);
+        $("#lgWaiver").checked=false;
+        try{ if(typeof coffeePopup==="function") coffeePopup(r.freeVisit?"📋 Card complete — they’re on the loyalty program now!":"Free coffee — hand them their cup!"); }catch(e){}
+        try{ if(typeof reloadRoster==="function") reloadRoster(); else if(typeof loadDay==="function") loadDay(true); }catch(e){}
+        render();
+      } else { say("err",esc((r&&r.error)||"Couldn’t check in that card.")); }
+    }catch(e){ say("err","Network error — try again."); }
+    btn.disabled=false; btn.textContent="Check in";
+  }
+
+  async function fixVisits(code,btn){
+    var v=(field(".lgFixN",code)||"").trim();
+    if(v===""||isNaN(parseInt(v,10))||parseInt(v,10)<0){ say("err","Enter the number of visits left."); return; }
+    if(!confirm("Set "+code+" to exactly "+parseInt(v,10)+" visits left?")) return;
+    btn.disabled=true;
+    try{
+      var r=await (await fetch("/api/pass-issue",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key:KEY(),fixCode:code,setVisits:parseInt(v,10)})})).json();
+      if(r && r.ok){
+        update(code,{visitsRemaining:r.visitsRemaining,expiry:r.expiry||"",status:(r.visitsRemaining||0)<1?"usedup":"active"});
+        delete openFix[code];
+        say("ok",'✓ <b>'+esc(r.code||code)+'</b> now has <b>'+r.visitsRemaining+'</b> visits'+(r.expiry?' · expires '+esc(r.expiry):''));
+        render();
+      } else { say("err",esc((r&&r.error)||"Couldn’t fix that card.")); }
+    }catch(e){ say("err","Network error — try again."); }
+    btn.disabled=false;
+  }
+
+  $("#lgList").addEventListener("click",function(e){
+    var b=e.target.closest("button"); if(!b) return;
+    var code=b.getAttribute("data-code"); if(!code) return;
+    if(b.classList.contains("lgUse")) useVisit(code,b);
+    else if(b.classList.contains("lgFix")) fixVisits(code,b);
+    else if(b.classList.contains("lgEdit")){ if(openFix[code]) delete openFix[code]; else openFix[code]=1; render(); }
+  });
+  var t=null;
+  $("#lgSearch").addEventListener("input",function(){ clearTimeout(t); t=setTimeout(function(){ load().then(render); },150); });
+  $("#lgSearch").addEventListener("focus",function(){ load().then(render); });
+  $("#lgSearch").addEventListener("keydown",function(e){ if(e.key==="Enter"){ e.preventDefault(); load().then(render); } });
+  $("#lgLoad").onclick=function(){ load(true).then(render); };
+})();
+</script>
 </body>
 </html>
