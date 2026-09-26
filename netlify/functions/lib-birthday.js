@@ -207,8 +207,8 @@ export async function sendBirthdayEmail(rec, code, when, opts = {}) {
     ? `Valid all birthday week: <b>${esc(prettyDate(when.validFrom))}</b> – <b>${esc(prettyDate(when.validUntil))}</b> 🎈`
     : `Good on ${esc(pretty)} 🎈`;
   const bodyLine = isRange
-    ? `Enter this code in the <b>"Free-visit reward code"</b> box when you book an <b>Open Play</b> session online. It's good for <b>one free child admission any open day that week (Sunday–Saturday)</b> — so even if their birthday lands on a day we're closed, just come another day that week! Use it once.`
-    : `Enter this code in the <b>"Free-visit reward code"</b> box when you book an <b>Open Play</b> session online. It's valid on ${esc(pretty)}, for one child admission, and can be used once.`;
+    ? `Enter it in the <b>Have a code?</b> box when you book Open Play online. One free child admission, any open day that week.`
+    : `Enter it in the <b>Have a code?</b> box when you book Open Play online. Good on ${esc(pretty)} for one child admission.`;
 
   const html = `
 <div style="font-family:Arial,Helvetica,sans-serif;background:#fdf1ec;padding:26px 14px">
@@ -244,7 +244,7 @@ export async function sendBirthdayEmail(rec, code, when, opts = {}) {
   // cron run -- delivered the same birthday email again.
   return await resendEmail({
       from: fromHeader(from, studio), to: [rec.email], bcc: bcc ? [bcc] : undefined,
-      subject: `🎂 Happy Birthday ${rec.first}! A free visit is waiting`, html: html + SIGNATURE_HTML,
+      subject: `🎂 Happy Birthday${rec.first ? " " + rec.first : ""}! A free visit is waiting`, html: html + SIGNATURE_HTML,
     }, opts.forceSend
          // Staff pressing "Send birthday code" means send it, even if the same
          // code went out earlier today. Only the automatic run uses the stable
@@ -287,7 +287,7 @@ export async function sendBirthdayDayOfEmail(rec, code, when, validUntil) {
         <div style="font-size:13px;color:#4d7848;font-weight:700">${throughLine}</div>
       </div>
       <p style="margin:0 0 14px;font-size:14px;color:#5c6470;line-height:1.6">
-        Enter it in the <b>"Free-visit reward code"</b> box when you book an <b>Open Play</b> session online — one free child admission, any open day this week.
+        Enter it in the <b>Have a code?</b> box when you book Open Play online.
       </p>
       <div style="text-align:center;margin:22px 0 6px">
         <a href="https://littlehavenplay.com/book.html" style="display:inline-block;background:#c97d76;color:#ffffff;text-decoration:none;font-weight:800;font-size:16px;padding:14px 34px;border-radius:40px">Book an open-play visit →</a>
@@ -302,7 +302,7 @@ export async function sendBirthdayDayOfEmail(rec, code, when, validUntil) {
   // cron run -- delivered the same birthday email again.
   return await resendEmail({
       from: fromHeader(from, studio), to: [rec.email], bcc: bcc ? [bcc] : undefined,
-      subject: `🎉 Happy Birthday ${rec.first}! Your free visit is good all week`, html: html + SIGNATURE_HTML,
+      subject: `🎉 Happy Birthday${rec.first ? " " + rec.first : ""}! Your free visit is good all week`, html: html + SIGNATURE_HTML,
     }, { idempotencyKey: `bday-dayof:${code}` });
 }
 

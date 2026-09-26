@@ -133,17 +133,12 @@ async function emailCode({ email, name, code, percent, expiry }) {
       <div style="font-size:30px;letter-spacing:.06em;font-weight:bold;color:#2a2622;margin-top:4px">${code}</div>
       <div style="font-size:13px;color:#8a8276;margin-top:6px">${percent}% off · valid through ${expiry}</div>
     </div>
-    <p style="margin:0 0 8px;font-size:14px;color:#5c6470">To use it, book Open Play online and enter the code at checkout.</p>
-    <ul style="margin:0 0 14px;padding-left:18px;font-size:13px;color:#8a8276">
-      <li>One-time use</li>
-      <li>Redeemable online only</li>
-      <li>Cannot be combined with any other offer (gift cards, store credit, or punch cards)</li>
-    </ul>
+    <p style="margin:0 0 14px;font-size:14px;color:#5c6470">Enter it in the <b>Have a code?</b> box when you book Open Play online. One-time use.</p>
     <a href="${process.env.SITE_URL || "https://littlehavenplay.com"}/book.html" style="display:inline-block;background:#c97d76;color:#fff;text-decoration:none;font-weight:bold;font-size:13px;letter-spacing:.04em;text-transform:uppercase;padding:11px 22px;border-radius:40px">Book your visit</a>
     <p style="margin:18px 0 0;font-size:13px;color:#aea298">We can't wait to see you! 💛</p>
   </div>`;
   const text = `A treat from ${STUDIO_NAME}!\n\n${percent}% off your next Open Play visit.\nCode: ${code}\nValid through ${expiry}\n\n`
-    + `How to use: book Open Play online and enter the code at checkout.\n- One-time use\n- Online only\n- Cannot be combined with any other offer.\n\nBook: ${(process.env.SITE_URL || "https://littlehavenplay.com")}/book.html`;
+    + `Enter it in the Have a code? box when you book Open Play online. One-time use.\n\nBook: ${(process.env.SITE_URL || "https://littlehavenplay.com")}/book.html`;
   try {
     const r = await fetch("https://api.resend.com/emails", {
       method: "POST",

@@ -221,14 +221,13 @@ export async function sendWelcomeEmail(m, plan) {
 
     <div style="background:#e7f0df;border:1px solid #c2d7bd;border-radius:12px;padding:14px 16px;margin:0 0 16px">
       <p style="margin:0;color:#3f5d33;font-size:15px">
-        <b>To book:</b> enter your membership phone number in the <b>Play Club</b> box at
-        <a href="${site}/book.html" style="color:#a85f59;font-weight:700">${esc(site.replace(/^https?:\/\//, ""))}/book.html</a>,
-        tick who's coming, and your total shows <b>$0</b>.
+        <b>To book:</b> go to
+        <a href="${site}/book.html" style="color:#a85f59;font-weight:700">${esc(site.replace(/^https?:\/\//, ""))}/book.html</a>
+        and enter your membership phone number.
       </p>
     </div>
 
     <p style="color:#5c6470;font-size:14px;margin:0">
-      Anyone can bring the children &mdash; just use the membership phone number when booking.
       <a href="${site}/playclub.html#terms" style="color:#a85f59;font-weight:700">Membership terms &amp; conditions</a>
     </p>`;
   return sendMemberEmail(m.email, `You're in the Play Club \u2014 ${m.code}`, inner);
@@ -246,11 +245,11 @@ async function sendCancelEmail(m, endsOn) {
 
     <div style="background:#fdf1ec;border:1px solid #efcfc4;border-radius:12px;padding:14px 16px;margin:0 0 16px">
       <p style="margin:0;color:#a85f59;font-size:16px"><b>You can still play until ${esc(endsOn)}</b></p>
-      <p style="margin:6px 0 0;color:#5c6470;font-size:14px">${kids || "Your children"} keep full access until then. After that, normal admission applies.</p>
+      <p style="margin:6px 0 0;color:#5c6470;font-size:14px">After that, regular admission applies.</p>
     </div>
 
     <p style="color:#5c6470;font-size:14px;margin:0">
-      Loyalty cards, visit history and any credit are unaffected. You're welcome back any time \u2014
+      You're welcome back any time \u2014
       <a href="${site}/playclub.html" style="color:#a85f59;font-weight:700">see plans</a> &middot;
       <a href="${site}/playclub.html#terms" style="color:#a85f59;font-weight:700">terms</a>
     </p>`;

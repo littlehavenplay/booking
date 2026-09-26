@@ -154,13 +154,12 @@ async function sendClosureEmail(a, date, closure) {
   <div style="font-family:Arial,Helvetica,sans-serif;color:#2a2622;max-width:560px;line-height:1.6">
     <h2 style="color:#a85f59;font-weight:normal">An update about your reservation</h2>
     <p>Dear ${esc(a.name) || "Guest"},</p>
-    <p>Please accept our sincere apologies — due to an unexpected change, ${reason}. We're very sorry for any inconvenience this may cause.</p>
-    <p><b>You don't need to do anything.</b> A <b>full refund</b> for your booking will be issued to your original payment method, and you should see it credited to your account within the next few business days.</p>
-    <p>We truly value your understanding and hope to welcome your family back to ${esc(studio)} very soon. If you have any questions, simply reply to this email or call us.</p>
-    <p style="margin-top:16px">Warm regards,<br>The ${esc(studio)} Team</p>
-    <p style="margin-top:14px;background:#fcfaf6;border:1px solid #efe7da;border-radius:10px;padding:11px 13px;font-size:13px;color:#5c6470"><b>📩 Don't see this email clearly?</b> Please check your junk/spam folder so you don't miss our updates.</p>
+    <p>We're so sorry — ${reason}.</p>
+    <p>A <b>full refund</b> is on its way to your original payment method. You don't need to do anything.</p>
+    <p>Questions? Just reply to this email. We hope to see you soon!</p>
+    <p style="margin-top:16px">— The ${esc(studio)} Team</p>
   </div>`;
-  const text = `Dear ${a.name || "Guest"},\n\nPlease accept our sincere apologies — ${reason}. You don't need to do anything; a full refund will be issued to your original payment method and credited within the next few business days.\n\nWe're sorry for the inconvenience and hope to see you again soon at ${studio}.\n\n— The ${studio} Team`;
+  const text = `Dear ${a.name || "Guest"},\n\nWe're so sorry — ${reason}.\n\nA full refund is on its way to your original payment method. You don't need to do anything.\n\nQuestions? Just reply to this email.\n\n— The ${studio} Team`;
   try {
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",

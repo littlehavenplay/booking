@@ -182,7 +182,7 @@
               <input type="text" id="lwAdults" placeholder="e.g. Maria Gomez, John Gomez">
               <label style="display:flex;align-items:center;gap:8px;font-weight:700;font-size:.8rem;color:var(--charcoal);margin:12px 0 0;cursor:pointer;text-transform:none;letter-spacing:0"><input type="checkbox" id="lwMilitary" style="width:auto"> 🎖️ Verified military family (10% off)</label>
             </div>
-            <button id="lwCreate">Create &amp; punch</button>
+            <div style="display:flex;gap:8px;flex-wrap:wrap"><button id="lwCreateOnly" class="alt" style="flex:1">Create</button><button id="lwCreate" style="flex:1">Create &amp; punch</button></div>
             <div class="out" id="lwOut"></div>
           </div>
         </details>
@@ -2818,6 +2818,22 @@ if($("#wsSave")) $("#wsSave").onclick=async function(){
       else { out.className='out err'; out.style.display='block'; out.textContent=r.error||'Could not create.'; }
     }catch(e){ out.className='out err'; out.style.display='block'; out.textContent='Network error.'; }
     $('#lwCreate').disabled=false; $('#lwCreate').textContent='Create & punch';
+  };
+  // Create only: saves the card(s) so the family is in the system. No punch, no visit, no email.
+  if($('#lwCreateOnly')) $('#lwCreateOnly').onclick=async function(){
+    var key=KEY(); var out=$('#lwOut'); var btn=$('#lwCreateOnly');
+    if(!key){ out.className='out err'; out.style.display='block'; out.textContent='Enter your '+KLABEL+' first.'; return; }
+    var phone=(($('#lwNewPhone')&&$('#lwNewPhone').value)||$('#lwPhone').value||'').trim();
+    var kids=[].map.call(document.querySelectorAll('#lwKids .lw-kid'),function(r){return {first:r.querySelector('.lwF').value.trim(),last:r.querySelector('.lwL').value.trim(),dob:r.querySelector('.lwD').value};}).filter(function(c){return c.first&&c.last;});
+    if(phone.replace(/\D/g,'').length<4){ out.className='out err'; out.style.display='block'; out.textContent='Enter the parent phone.'; return; }
+    if(!kids.length){ out.className='out err'; out.style.display='block'; out.textContent='Enter at least one child first + last name.'; return; }
+    var email=($('#lwEmail').value||'').trim(), waiverSigned=$('#lwWaiver').value||'', adultNames=($('#lwAdults').value||'').split(',').map(function(s){return s.trim();}).filter(Boolean), military=$('#lwMilitary').checked;
+    btn.disabled=true; btn.textContent='Saving\u2026';
+    try{ var r=await (await fetch('/api/loyalty',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({key:key,action:'family-create',children:kids,phone:phone,email:email,waiverSigned:waiverSigned,adultNames:adultNames,militaryVerified:military})})).json();
+      if(r.ok){ out.className='out ok'; out.style.display='block'; out.textContent='\u2713 '+r.message; $('#lwKids').innerHTML=kidRow(); $('#lwEmail').value='';$('#lwWaiver').value='';$('#lwAdults').value='';$('#lwMilitary').checked=false; lwFind(); }
+      else { out.className='out err'; out.style.display='block'; out.textContent=r.error||'Could not create.'; }
+    }catch(e){ out.className='out err'; out.style.display='block'; out.textContent='Network error.'; }
+    btn.disabled=false; btn.textContent='Create';
   };
 })();
 </script><script>

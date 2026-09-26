@@ -90,7 +90,7 @@
       <p class="note" style="margin-top:6px">Every adult entering must be signed on WaiverMaster too — track who's already covered for this family here, so…<button type="button" class="hlp" data-help="Every adult entering must be signed on WaiverMaster too — track who's already covered for this family here, so a new adult showing up later is easy to spot.">?</button></p>
       <label style="display:flex;align-items:center;gap:8px;font-weight:700;font-size:.82rem;color:var(--charcoal);margin:14px 0 0;cursor:pointer;text-transform:none;letter-spacing:0"><input type="checkbox" id="loMilitary" style="width:auto"> 🎖️ Verified military family (checked ID in person) — 10% off admission going forward</label>
     </div>
-    <button id="loPunch">Add a punch</button>
+    <div style="display:flex;gap:8px;flex-wrap:wrap"><button id="loCreate" class="alt" style="flex:1">Create</button><button id="loPunch" style="flex:1">Add a punch</button></div>
     <div class="out" id="loOut"></div>
   </div>
 
@@ -345,6 +345,28 @@ $("#loPunch").onclick=async()=>{
     else { out.className="out err"; out.textContent=r.error||"Couldn't add a punch."; }
   }catch(e){ out.className="out err"; out.textContent="Network error."; }
   $("#loPunch").disabled=false; $("#loPunch").textContent="Add a punch";
+};
+// Create only: saves the card(s) so the family is in the system. No punch, no visit, no email.
+$("#loCreate").onclick=async()=>{
+  const key=KEY, out=$("#loOut"), btn=$("#loCreate"); out.style.display="block";
+  const phone=$("#loPhone").value.trim(), email=$("#loEmail").value.trim(), waiverSigned=$("#loWaiverDate").value;
+  const adultNames=$("#loWaiverAdults").value.split(",").map(function(s){return s.trim();}).filter(Boolean);
+  const militaryVerified=$("#loMilitary").checked;
+  if(!key){ out.className="out err"; out.textContent="Enter your admin key (top of page)."; return; }
+  const kids=[...document.querySelectorAll("#loKids .lo-kid")].map(function(r){return {first:r.querySelector(".lokF").value.trim(), last:r.querySelector(".lokL").value.trim()};}).filter(function(c){return c.first&&c.last;});
+  if(!kids.length){ out.className="out err"; out.textContent="Enter at least one child's first and last name."; return; }
+  if(phone.replace(/\D/g,"").length<4){ out.className="out err"; out.textContent="Enter at least the last 4 digits of the phone."; return; }
+  btn.disabled=true; btn.textContent="Saving\u2026";
+  try{
+    const r=await (await fetch("/api/loyalty",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key,action:"family-create",children:kids,phone,email,waiverSigned,adultNames,militaryVerified})})).json();
+    if(r.ok){
+      out.className="out ok"; out.innerHTML="\u2705 "+esc(r.message);
+      document.querySelectorAll("#loKids .lo-kid").forEach(function(el,i){ if(i===0){ el.querySelector(".lokF").value="";el.querySelector(".lokL").value="";} else el.remove(); });
+      $("#loPhone").value="";$("#loEmail").value="";$("#loWaiverDate").value="";$("#loWaiverAdults").value="";$("#loMilitary").checked=false;
+      try{ if(LOYALTY.length && $("#llLoad")) $("#llLoad").click(); }catch(e){}
+    } else { out.className="out err"; out.textContent=r.error||"Couldn't create."; }
+  }catch(e){ out.className="out err"; out.textContent="Network error."; }
+  btn.disabled=false; btn.textContent="Create";
 };
 window.loEditFromList=function(code){
   var row=document.getElementById("editRow-"+code); if(!row) return;

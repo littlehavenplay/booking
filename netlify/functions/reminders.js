@@ -29,7 +29,7 @@ export default async () => {
         <p>Hi ${esc(r.name)}, we can't wait to celebrate ${esc(r.childName)}'s birthday with you tomorrow${r.slotLabel ? " at " + esc(r.slotLabel) : ""}!</p>
         <div style="background:#f3f0ff;border-radius:12px;padding:14px 16px;margin:14px 0">
           <p style="margin:0 0 6px;font-weight:bold;color:#5b4636">⭐ One quick thing — the waiver</p>
-          <p style="margin:0 0 10px;color:#5c6470;font-size:14px">Please make sure <b>every guest signs the waiver before arrival</b> so there are no delays at your party. Forward this link to all your guests:</p>
+          <p style="margin:0 0 10px;color:#5c6470;font-size:14px">Please forward this to your guests so everyone signs before arriving:</p>
           <a href="${WAIVER_URL}" style="display:inline-block;background:#7a6253;color:#fff;text-decoration:none;font-weight:bold;padding:10px 18px;border-radius:10px">Sign the waiver →</a>
         </div>
         <p style="color:#5c6470;font-size:13px">See you soon! Reply or message @littlehavenplay with any last-minute questions. — ${studio}</p></div>`;
@@ -50,9 +50,9 @@ export default async () => {
           const esc = s => (s || "").toString().replace(/</g, "&lt;").replace(/>/g, "&gt;");
           const html = `<div style="font-family:Arial,sans-serif;color:#2a2622;line-height:1.6;max-width:560px">
             <h2 style="color:#a85f59;font-weight:normal">See you tomorrow! 🌿</h2>
-            <p>Hi ${esc(bk.name || "there")}, this is a friendly reminder that your visit to ${studio} is <b>tomorrow</b>. We can't wait to see you!</p>
+            <p>Hi ${esc(bk.name || "there")}, your visit to ${studio} is <b>tomorrow</b>. We can't wait to see you!</p>
             <div style="background:#f3f0ff;border-radius:12px;padding:12px 15px;margin:12px 0">
-              <p style="margin:0 0 8px;font-size:14px;color:#5c6470">Please make sure <b>everyone in your group has signed the waiver</b> before you arrive so check-in is quick:</p>
+              <p style="margin:0 0 8px;font-size:14px;color:#5c6470">Please sign the waiver before you arrive:</p>
               <a href="${WAIVER_URL}" style="display:inline-block;background:#7a6253;color:#fff;text-decoration:none;font-weight:bold;padding:9px 16px;border-radius:10px">Sign the waiver →</a>
             </div>
             <p style="color:#5c6470;font-size:13px">Need to change your visit? Just reply or message @littlehavenplay. See you soon! — ${studio}</p></div>`;
@@ -79,7 +79,7 @@ export default async () => {
           if (!buyer.email) continue;
           const esc = s => (s || "").toString().replace(/</g, "&lt;").replace(/>/g, "&gt;");
           const waivers = (ev.waiverLink || ev.regularWaiverLink) ? `<div style="background:#fdf7f0;border:1px solid #ecdcc9;border-radius:12px;padding:12px 15px;margin:12px 0">
-            <p style="margin:0 0 8px;font-size:14px;color:#5c6470"><b>Please complete the required waiver(s) before the event</b> (both, unless already signed):</p>
+            <p style="margin:0 0 8px;font-size:14px;color:#5c6470"><b>Please sign before the event:</b></p>
             ${ev.waiverLink ? `<a href="${esc(ev.waiverLink)}" style="display:inline-block;background:#a85f59;color:#fff;text-decoration:none;font-weight:bold;padding:9px 15px;border-radius:22px;margin:3px 6px 3px 0">Event waiver →</a>` : ""}
             ${ev.regularWaiverLink ? `<a href="${esc(ev.regularWaiverLink)}" style="display:inline-block;background:#7ba676;color:#fff;text-decoration:none;font-weight:bold;padding:9px 15px;border-radius:22px;margin:3px 0">General waiver →</a>` : ""}
           </div>` : "";

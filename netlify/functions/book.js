@@ -530,9 +530,7 @@ export default async (req) => {
     } else
     if (!famStatus.isNew) {
       return json({ error: "referral", message:
-        "The referral discount is a welcome offer for families who haven't visited us before, and it looks like you've already played with us"
-        + (famStatus.match ? ` (${famStatus.match})` : "")
-        + ". Please remove the referral code. If you've earned referral credit, its code starts with LHC and goes in the store credit box." }, 409);
+        "Referral codes are for new families only. Please remove it to continue." }, 409);
     }
 
     if (myP4) {
@@ -1242,7 +1240,7 @@ async function sendConfirmation({ email, name, date, slotLabel, regular, sibling
   const isMember = !!playClubName;
   const loyaltySection = (loyaltyCards.length && !isMember) ? `
     <div style="background:#f3f7f2;border-radius:14px;padding:14px 16px;margin:18px 0">
-      <p style="margin:0 0 8px;color:#5f8060;font-weight:bold;font-size:14px">Your punch card${loyaltyCards.length > 1 ? "s" : ""} \u2014 enter the code next time to book faster</p>
+      <p style="margin:0 0 8px;color:#5f8060;font-weight:bold;font-size:14px">Your punch card${loyaltyCards.length > 1 ? "s" : ""}</p>
       <table style="width:100%;border-collapse:collapse;font-size:14px">
         <tr><td style="padding:0 9px 4px;color:#8a8276;font-size:12px">Child</td><td style="padding:0 9px 4px;text-align:center;color:#8a8276;font-size:12px">Code</td><td style="padding:0 9px 4px;text-align:right;color:#8a8276;font-size:12px">Progress</td></tr>
         ${cardRows}
@@ -1292,7 +1290,7 @@ async function sendConfirmation({ email, name, date, slotLabel, regular, sibling
     <table style="width:100%;border-collapse:collapse;font-size:15px">
       <tr><td style="padding:6px 0;color:#5c6470">Date</td><td style="padding:6px 0;text-align:right;font-weight:bold">${date}</td></tr>
       <tr><td style="padding:6px 0;color:#5c6470">Session</td><td style="padding:6px 0;text-align:right;font-weight:bold">${slotLabel}</td></tr>
-      <tr><td colspan="2" style="padding:2px 0 6px;color:#8a8276;font-size:12px">Your 2 hours start when you arrive — a few minutes late is always fine.</td></tr>
+      <tr><td colspan="2" style="padding:2px 0 6px;color:#8a8276;font-size:12px">Your 2 hours start when you arrive.</td></tr>
       <tr><td style="padding:6px 0;color:#5c6470">Children</td><td style="padding:6px 0;text-align:right;font-weight:bold">${total}</td></tr>
       <tr><td style="padding:6px 0;color:#5c6470">Admissions</td><td style="padding:6px 0;text-align:right;font-weight:bold">${lines.join("<br>")}</td></tr>
       ${passLines}
@@ -1314,7 +1312,7 @@ async function sendConfirmation({ email, name, date, slotLabel, regular, sibling
   const cardText = (loyaltyCards.length && !isMember)
     ? `YOUR PUNCH CARD${loyaltyCards.length > 1 ? "S" : ""}\n`
       + loyaltyCards.map(c => `- ${c.childName}: ${c.code} (${c.punches}/${c.needed} visits)`).join("\n")
-      + `\nEnter your code on the booking page next time to auto-fill your child's information and book faster. We track your visits automatically — after 7 visits each, the 8th is free.\n\n`
+      + `\nAfter 7 visits, the 8th is free.\n\n`
     : "";
   const text = `Your ${STUDIO_NAME} reservation is confirmed!\n\n`
     + `Date: ${date}\nSession: ${slotLabel}\nChildren: ${total}\n`

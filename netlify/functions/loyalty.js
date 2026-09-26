@@ -497,6 +497,34 @@ export default async (req) => {
     return json({ ok: true, deleted: true, code, childName: name });
   }
 
+  // Create card(s) only — no punch, no visit, no email. For putting a family in
+  // the system (e.g. a new Play Club member) so they can be linked later.
+  if (action === "family-create") {
+    const email = (b.email || "").toString().slice(0, 160).trim();
+    const phone4 = last4(b.phone);
+    const waiverSigned = (b.waiverSigned || "").toString().trim();
+    const adultNames = Array.isArray(b.adultNames) ? b.adultNames : [];
+    if (!phone4) return json({ error: "Enter the parent's phone (at least the last 4 digits)." }, 400);
+    const kids = (Array.isArray(b.children) ? b.children : [])
+      .map(c => ({ first: (c && c.first || "").toString().trim(), last: (c && c.last || "").toString().trim(), dob: (c && c.dob || "").toString().trim() }))
+      .filter(c => c.first && c.last)
+      .slice(0, 4);
+    if (!kids.length) return json({ error: "Enter at least one child's first and last name." }, 400);
+    const militaryVerified = !!b.militaryVerified;
+    const results = [];
+    for (const c of kids) {
+      const r = await addPunch(loyalty, { first: c.first, last: c.last, phone4, email, suppressEmail: true, createOnly: true, waiverSigned, adultNames, militaryVerified, dob: c.dob });
+      if (!r.error) results.push(r);
+    }
+    if (!results.length) return json({ error: "Couldn't save. Try again." }, 502);
+    const made = results.filter(r => r.isNew).length, had = results.length - made;
+    const parts = [];
+    if (made) parts.push(`Created ${made} card${made === 1 ? "" : "s"}`);
+    if (had) parts.push(`${had} already on file (updated)`);
+    return json({ ok: true, results, count: results.length,
+      message: parts.join(" · ") + ": " + results.map(r => `${r.childName} (${r.code})`).join(", ") + ". No email sent." });
+  }
+
   if (action === "family-punch") {
     const email = (b.email || "").toString().slice(0, 160).trim();
     const phone4 = last4(b.phone);

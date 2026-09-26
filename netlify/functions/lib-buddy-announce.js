@@ -54,21 +54,20 @@ export function buildEmail(r) {
   <p>Your Play Club membership now comes with a <b>free buddy pass every month</b> &mdash; ${esc(each)}, so they can bring a friend to play.</p>
   <ul style="padding-left:18px;margin:12px 0">
     <li>The friend <b>and the grown-up who brings them</b> play free.</li>
-    <li>Add your buddy when you book online &mdash; it goes on your own booking, for the same visit. We can also add them at the desk when you walk in, as long as there&rsquo;s room.</li>
+    <li>Add your buddy when you book online.</li>
     <li>${weekday ? "Your Weekday plan&rsquo;s buddy pass works Monday to Friday." : "Use it any day we&rsquo;re open."}</li>
     <li>Grip socks are still $3 if they need a pair, and they&rsquo;ll need a waiver.</li>
-    <li>A new pass arrives on the 1st of each month. This month&rsquo;s is good until ${esc(until)}.</li>
+    <li>A new pass arrives on the 1st of each month.</li>
   </ul>
   <p style="margin:18px 0"><a href="${SITE}/book.html" style="background:#c97d76;color:#fff;text-decoration:none;padding:12px 22px;border-radius:999px;font-weight:bold;display:inline-block">Book a visit with a buddy</a></p>
-  <p style="color:#5c6470;font-size:14px">Buddy passes are for friends playing alongside your member &mdash; they can&rsquo;t be used on their own or passed on.</p>
   ${footerHtml()}
 </div>`;
   const text = `A new perk for ${who}\n\nHi ${firstName(r.name)},\n\nYour Play Club membership now comes with a free buddy pass every month — ${each}, so they can bring a friend to play.\n\n`
     + `- The friend and the grown-up who brings them play free.\n`
-    + `- Add your buddy when you book online, on your own booking for the same visit. We can also add them at the desk when you walk in, if there's room.\n`
+    + `- Add your buddy when you book online.\n`
     + `- ${weekday ? "Your Weekday plan's buddy pass works Monday to Friday." : "Use it any day we're open."}\n`
     + `- Grip socks are still $3 if needed, and they'll need a waiver.\n`
-    + `- A new pass arrives on the 1st of each month. This month's is good until ${until}.\n\n`
+    + `- A new pass arrives on the 1st of each month.\n\n`
     + `Book: ${SITE}/book.html\n\n${footerText()}`;
   return { subject: `A buddy pass for ${who} every month \u{1F91D}`, html, text };
 }

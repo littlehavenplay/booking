@@ -71,15 +71,14 @@ async function sendRefill(email, e, key, from, studioEmail) {
     <h2 style="color:#a85f59;font-weight:normal">You're grandfathered in! 🎈</h2>
     <p>Hi ${esc(e.name) || "there"},</p>
     <p>Looks like your prepaid <b>${esc(e.label)}</b> is all used up — we hope the little ones had a blast!</p>
-    <p>We've retired the prepaid punch card for new customers, but because you're one of our original punch-card families, <b>you're grandfathered in at the same prices.</b> You can keep prepaying and saving:</p>
+    <p>As one of our original punch-card families, <b>you can still reload at your original prices:</b></p>
     <ul style="margin:10px 0 12px;padding-left:20px">
       <li style="margin-bottom:4px"><b>5 visits</b> — 15% off, prepaid</li>
       <li><b>10 visits</b> — 20% off each visit</li>
     </ul>
-    <p>Next time you're in, just <b>reload your existing card in store</b> and keep enjoying these member prices — nothing to do online.</p>
-    <p>Prefer not to reload? No problem — you'll simply roll onto our current <b>Loyalty Punch Card</b>: book your visits online like normal, and after 7 visits your 8th is on us automatically.</p>
+    <p>Just ask us at the desk next time you're in. Otherwise you're on our free <b>Loyalty Punch Card</b>: after 7 visits, the 8th is free.</p>
     <p style="margin-top:16px"><a href="${BOOK_URL}" style="display:inline-block;background:#c97d76;color:#fff;text-decoration:none;font-weight:bold;padding:12px 22px;border-radius:11px">Book your next visit →</a></p>
-    <p style="color:#8a8276;font-size:13px;margin-top:22px">You're receiving this one-time note because you have a punch card with us. <a href="${unsub}" style="color:#8a8276">Unsubscribe from these reminders</a>.</p>
+    <p style="color:#8a8276;font-size:13px;margin-top:22px"><a href="${unsub}" style="color:#8a8276">Unsubscribe</a></p>
     <p style="color:#5c6470;font-size:13px">See you soon! — ${STUDIO}</p></div>`;
   try {
     const res = await fetch("https://api.resend.com/emails", {

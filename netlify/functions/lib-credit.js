@@ -99,13 +99,9 @@ export async function sendCreditEmail(to, rec, isOwner) {
     const intro = rec.customIntro || "Here's a little something for you — enjoy this store credit toward your next visit!";
     const whereText = rec.scope === "openplay" ? "toward a future <b>online open-play booking</b>" : `toward your next visit at ${esc(studio)} — online or in store`;
     const useText = rec.scope === "openplay"
-      ? `<ol style="font-size:14px;margin:0;padding-left:20px;color:#5c6470">
-           <li>Visit littlehavenplay.com and pick your open-play session</li>
-           <li>At checkout, enter your code in the <b>Store Credit</b> field</li>
-           <li>The credit applies automatically 🎈</li>
-         </ol>`
-      : `<p style="font-size:14px">Use this code at checkout when you book online, or show it to us in store.</p>`;
-    const restrictionText = (rec.scope === "openplay" ? "Online open-play bookings only. " : "") + (rec.singleUse ? "One-time use — any unused balance is forfeited after redemption." : "Any unused balance carries over until it's used up or expires.");
+      ? `<p style="font-size:14px">Enter your code in the <b>Have a code?</b> box when you book online.</p>`
+      : `<p style="font-size:14px">Enter your code in the <b>Have a code?</b> box when you book online, or show it to us in store.</p>`;
+    const restrictionText = (rec.scope === "openplay" ? "Online open play only. " : "") + (rec.singleUse ? "One-time use." : "");
     subject = `A little something for you from ${studio} 💛`;
     html = `
     <div style="font-family:Arial,Helvetica,sans-serif;color:#2a2622;max-width:560px;line-height:1.6">
@@ -113,12 +109,10 @@ export async function sendCreditEmail(to, rec, isOwner) {
       <p style="font-size:15px">${hello}</p>
       <p style="font-size:15px">${intro}</p>
       ${codeBlock}
-      <p style="font-size:14px">Please enjoy <b>${money}</b> ${whereText} — redeemable within <b>${esc(rec.expiryLabel || "30 days")}</b> (by ${esc(rec.expiry)}).</p>
-      <p style="font-size:14px;margin:14px 0 4px"><b>How to redeem</b></p>
+      <p style="font-size:14px"><b>${money}</b> ${whereText}, good through ${esc(rec.expiry)}.</p>
       ${useText}
       <p style="font-size:13px;color:#8a8276;margin-top:12px">${restrictionText} No cash value.</p>
-      <p style="font-size:15px;margin-top:14px">We can't wait to see you and your little one soon!</p>
-      <p style="margin-top:12px;background:#fcfaf6;border:1px solid #efe7da;border-radius:10px;padding:11px 13px;font-size:13px;color:#5c6470"><b>Don't see this?</b> Please check your junk/spam folder.</p>
+      <p style="font-size:15px;margin-top:14px">See you soon!</p>
     </div>`;
   }
   try {
@@ -154,9 +148,7 @@ export async function sendCreditReminderEmail(to, rec, daysLeft) {
         <div style="font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#8a8276;font-weight:bold">Your credit code</div>
         <div style="font-size:28px;font-weight:900;letter-spacing:2px;color:#e0584f;margin-top:4px">${esc(rec.code)}</div>
       </div>
-      <p style="font-size:14px">Book your next visit online and enter this code at checkout — takes two seconds and it's already paid for!</p>
-      <p style="font-size:13px;color:#8a8276;margin-top:14px">Once it expires it can't be reactivated, so don't let it go to waste.</p>
-      <p style="margin-top:14px;background:#fcfaf6;border:1px solid #efe7da;border-radius:10px;padding:11px 13px;font-size:13px;color:#5c6470"><b>Don't see this?</b> Please check your junk/spam folder.</p>
+      <p style="font-size:14px">Enter it in the <b>Have a code?</b> box when you book.</p>
     </div>`;
   try {
     const res = await fetch("https://api.resend.com/emails", {

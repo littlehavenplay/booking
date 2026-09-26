@@ -52,9 +52,9 @@ export default async (req) => {
         const html = `<div style="font-family:Arial,sans-serif;color:#2a2622;line-height:1.6;max-width:560px">
           <h2 style="color:#a85f59;font-weight:normal">A spot just opened! 🎉</h2>
           <p>Hi ${esc(w.name || "there")}, good news — a space has opened up for <b>${esc(title)}</b>, and you're on our waitlist.</p>
-          <p>Spots go quickly, so if you'd still like to come, please register as soon as you can:</p>
+          <p>Spots go quickly — grab it while you can:</p>
           <p><a href="https://littlehavenplay.com/events.html" style="display:inline-block;background:#a85f59;color:#fff;text-decoration:none;font-weight:bold;padding:10px 20px;border-radius:22px">Grab your spot →</a></p>
-          <p style="color:#5c6470;font-size:13px">If it's already filled again by the time you get here, we're sorry we missed you — and we'll keep you posted on future events. — ${STUDIO_NAME}</p>
+          <p style="color:#5c6470;font-size:13px">— ${STUDIO_NAME}</p>
         </div>`;
         try {
           await fetch("https://api.resend.com/emails", {

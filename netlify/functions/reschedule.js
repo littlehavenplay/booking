@@ -272,14 +272,12 @@ async function sendReschedule(to, name, fromDate, fromLabel, toDate, toLabel, is
   const html = `
   <div style="font-family:Arial,Helvetica,sans-serif;color:#2a2622;max-width:540px;line-height:1.6">
     <h2 style="color:#a85f59;font-weight:normal">Your booking has been rescheduled ✅</h2>
-    <p>Hi ${esc(name) || "there"}, your ${what} at ${esc(studio)} has been moved as requested:</p>
+    <p>Hi ${esc(name) || "there"}, your ${what} at ${esc(studio)} has been moved:</p>
     <table style="width:100%;border-collapse:collapse;font-size:15px;margin:10px 0">
       <tr><td style="padding:6px 0;color:#8a8276;text-decoration:line-through">Previous</td><td style="padding:6px 0;text-align:right;color:#8a8276;text-decoration:line-through">${esc(fmt(fromDate))} · ${esc(fromLabel)}</td></tr>
       <tr><td style="padding:6px 0;color:#5c6470"><b>New date &amp; time</b></td><td style="padding:6px 0;text-align:right;font-weight:bold;color:#4d7848">${esc(fmt(toDate))} · ${esc(toLabel)}</td></tr>
     </table>
-    <p>Your original date and time have been <b>cancelled</b>, and your spot on the new date is confirmed. No further action or payment is needed.</p>
-    <p style="margin-top:12px">We look forward to seeing you! 💛</p>
-    <p style="margin-top:14px;background:#fcfaf6;border:1px solid #efe7da;border-radius:10px;padding:11px 13px;font-size:13px;color:#5c6470"><b>📩 Don't see this clearly?</b> Please check your junk/spam folder.</p>
+    <p>Nothing else to do. See you then! 💛</p>
   </div>`;
   try {
     const res = await fetch("https://api.resend.com/emails", {

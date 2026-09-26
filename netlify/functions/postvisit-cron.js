@@ -88,7 +88,7 @@ async function sendFollowUp(entry, fam) {
           balanceBlock = `
           <div style="background:#fdf1ec;border:1px solid #efcfc4;border-radius:14px;padding:14px 16px;margin:14px 0">
             <p style="margin:0 0 4px;font-weight:bold;color:#a85f59">You have $${((rec.amount || 0) / 100).toFixed(2)} in referral credit waiting</p>
-            <p style="margin:0;color:#5c6470;font-size:14px">Use code <b>${esc(rec.code)}</b> in the store credit box next time you book.
+            <p style="margin:0;color:#5c6470;font-size:14px">Enter <b>${esc(rec.code)}</b> in the <b>Have a code?</b> box when you book.
             ${lines.length ? "<br>" + lines.map(esc).join("<br>") : ""}</p>
           </div>`;
         }
@@ -103,9 +103,7 @@ async function sendFollowUp(entry, fam) {
   const referBlock = share ? `
     <div style="background:#e7f0df;border:1px solid #c2d7bd;border-radius:14px;padding:16px;margin:14px 0">
       <p style="margin:0 0 6px;font-weight:bold;color:#3f5d33">🎈 Know a family who'd love it here?</p>
-      <p style="margin:0 0 10px;color:#5c6470;font-size:14px">Share your code and they get <b>$5 off</b> their first visit.
-      Once they come and play, <b>$5</b> is yours. There's no limit — refer four families and that's $20 toward your next visit,
-      and it all sits on one code that keeps adding up.</p>
+      <p style="margin:0 0 10px;color:#5c6470;font-size:14px">Share your code: they get <b>$5 off</b> their first visit, and you get <b>$5</b> when they come play.</p>
       <div style="background:#fff;border:2px dashed #c2d7bd;border-radius:12px;padding:12px;text-align:center;margin:0 0 10px">
         <div style="font-size:.7rem;font-weight:bold;letter-spacing:.08em;text-transform:uppercase;color:#5c6470">Your referral code</div>
         <div style="font-family:monospace;font-size:1.5rem;font-weight:bold;color:#4d7848;letter-spacing:.06em">${esc(fam.code)}</div>
@@ -118,8 +116,7 @@ async function sendFollowUp(entry, fam) {
   const html = `
   <div style="font-family:Nunito,Arial,sans-serif;max-width:560px;margin:0 auto;color:#2a2622">
     <h2 style="color:#a85f59;font-weight:normal">Thanks for playing with us! 💛</h2>
-    <p style="color:#5c6470">Hi ${esc(firstName)} — we hope you and the little ones had a lovely time yesterday.
-    Thank you for spending part of your day at ${esc(studio)}.</p>
+    <p style="color:#5c6470">Hi ${esc(firstName)} — we hope you had a lovely time yesterday!</p>
     ${balanceBlock}
     ${reviewBlock}
     ${referBlock}
