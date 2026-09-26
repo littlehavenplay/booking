@@ -51,6 +51,24 @@ export default async (req) => {
   // Public, unauthenticated: lets the booking page auto-fill a child's name (and
   // flag an active birthday gift) from a loyalty code, without exposing anything
   // sensitive like a full birth date or contact info to whoever holds the code.
+  // Public — the booking page asks whether this family is a verified military
+  // family, from the phone + children's names, so the 10% shows before paying.
+  // Returns only yes/no; nothing else about the family.
+  if (action === "military-check") {
+    const p4 = last4(b.phone);
+    const kids = (Array.isArray(b.children) ? b.children : []).slice(0, 8)
+      .map(c => ({ first: (c && c.first || "").toString().trim(), last: (c && c.last || "").toString().trim() }))
+      .filter(c => c.first && c.last);
+    if (!p4 || !kids.length) return json({ ok: true, military: false });
+    for (const c of kids) {
+      try {
+        const r = await resolveCard(getStore("loyalty"), c.first, c.last, p4, true);
+        if (r && r.rec && r.rec.militaryVerified) return json({ ok: true, military: true });
+      } catch {}
+    }
+    return json({ ok: true, military: false });
+  }
+
   if (action === "code-check") {
     const code = normalizeCode(b.code);
     if (!code) return json({ found: false });

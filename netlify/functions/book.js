@@ -18,7 +18,7 @@ import {
   STUDIO_NAME, CLOSED_DATES, CLOSED_MESSAGE, ADDITIONAL_ADULT, isClosedWeekday, weekdayOf,
   additionalAdultsFor, additionalAdultCentsFor, GRIP_SOCK_CENTS, GRIP_SOCK_MAX,
 } from "./lib-settings.js";
-import { issueCode, sendWelcome, sendFamilyPunch, PUNCHES_FOR_REWARD, cleanName, last4 as loyaltyLast4, graduateLegacyCard } from "./lib-loyalty.js";
+import { issueCode, sendWelcome, sendFamilyPunch, PUNCHES_FOR_REWARD, cleanName, last4 as loyaltyLast4, graduateLegacyCard, resolveCard } from "./lib-loyalty.js";
 import { getActiveFamCode, logFamUse } from "./famcode.js";
 // memberCoversDate was used below but NOT imported, so every Play Club member's
 // checkout died with "memberCoversDate is not defined" — a hard 500 at payment.
@@ -247,21 +247,42 @@ export default async (req) => {
   // as military (checked ID in person, toggled on their card) — never the adult
   // add-on. Mutually exclusive with the Weekday Special / a discount code: only ONE
   // blanket discount ever applies to a booking, whichever is worth more in dollars.
+  //
+  // The family is recognised from ANY child on this booking whose card is marked
+  // military — found by loyalty code if one was given, otherwise by the child's
+  // name + the booking phone (the booking page no longer asks for a code). Once
+  // the family is verified, every PAID child on the booking gets the 10%.
+  // Children covered by an active Play Club membership are skipped: their
+  // admission is already $0. The booking page applies the exact same rule.
   let militaryAmount = 0;
   const militaryChildren = [];
-  if (childNames.some(c => c.code)) {
+  try {
     const loyaltyStore = getStore("loyalty");
+    const milP4 = loyaltyLast4(phone);
+    let familyMilitary = false;
     for (const ch of childNames) {
-      if (!ch.code || !ch.admission) continue;
-      let card = null; try { card = await loyaltyStore.get("card:" + ch.code, { type: "json" }); } catch {}
-      if (card && card.militaryVerified) {
+      let card = null;
+      if (ch.code) { try { card = await loyaltyStore.get("card:" + ch.code, { type: "json" }); } catch {} }
+      if (!card && milP4) { try { const found = await resolveCard(loyaltyStore, ch.first, ch.last, milP4, true); card = found && found.rec; } catch {} }
+      if (card && card.militaryVerified) { familyMilitary = true; break; }
+    }
+    if (familyMilitary) {
+      const milNorm = s => String(s || "").toLowerCase().replace(/[^a-z]/g, "");
+      let memberNames = null;
+      try {
+        const milPc = (body.playClubCode || "").toString().toUpperCase().replace(/[^A-Z0-9]/g, "");
+        const m = (milPc || phone) ? await findMemberFor({ code: milPc, phone }) : null;
+        if (m && memberCoversDate(m, date)) memberNames = new Set((m.children || []).map(c => milNorm(c.name)).filter(Boolean));
+      } catch { memberNames = null; }
+      for (const ch of childNames) {
+        if (!ch.admission) continue;
+        if (memberNames && memberNames.has(milNorm(ch.first + ch.last))) continue;
         const price = ch.admission === "sibling" ? PRICES.sibling : ch.admission === "infant" ? PRICES.infant : PRICES.regular;
-        militaryAmount += price;
+        militaryAmount += Math.round(price * 0.10);
         militaryChildren.push(cleanName(ch.first, ch.last));
       }
     }
-    militaryAmount = Math.round(militaryAmount * 0.10);
-  }
+  } catch { militaryAmount = 0; militaryChildren.length = 0; }
   // Reconcile: general (discount code or weekday special — already exclusive with
   // each other) vs. military — only the bigger one survives.
   if (militaryAmount > 0) {

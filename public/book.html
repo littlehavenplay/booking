@@ -1000,21 +1000,23 @@ function updateTotals(){
   // same booking who is being paid for.
   var pcCoverN = state.playClub ? Math.min(state.playClub.coveredN||0, state.playClub.maxChildren||0) : 0;
   if(state.playClub && state.playClub.coversDate===false) pcCoverN = 0;
-  var pcCodes = {};
-  if(pcCoverN>0 && state.playClub && state.playClub.selected){
-    state.playClub.selected.slice(0,pcCoverN).forEach(function(k){ if(k.code) pcCodes[String(k.code).toUpperCase()]=1; });
+  // Same rule as the server: once the family is verified military (any child's
+  // card, matched by name + phone), every PAID child gets 10%. Children covered by
+  // the membership are skipped. Matched by name, exactly like the server.
+  var milNorm=function(s){ return String(s||"").toLowerCase().replace(/[^a-z]/g,""); };
+  var pcNames = {};
+  if(state.playClub && state.playClub.coversDate!==false && state.playClub.children){
+    state.playClub.children.forEach(function(k){ if(k && k.name) pcNames[milNorm(k.name)]=1; });
   }
   let milAmt=0, milVerified=0, milOnCovered=0;
-  document.querySelectorAll(".cn-row").forEach(function(row){
-    if(row.dataset.military==="1"){
-      milVerified++;
-      var codeEl=row.querySelector(".cn-code");
-      var rc=(codeEl&&codeEl.value?String(codeEl.value).toUpperCase().trim():"");
-      if(rc && pcCodes[rc]){ milOnCovered++; return; }   // covered by membership — nothing to discount
-      var t=row.getAttribute("data-type");
-      var price = t==="sibling"?CFG.prices.sibling : t==="infant"?CFG.prices.infant : CFG.prices.regular;
-      milAmt += Math.round(price*0.10);
-    }
+  var familyMil = !!state.militaryFamily || [].some.call(document.querySelectorAll(".cn-row"),function(r){ return r.dataset.military==="1"; });
+  if(familyMil) document.querySelectorAll(".cn-row").forEach(function(row){
+    var t=row.getAttribute("data-type"); if(!t) return;
+    milVerified++;
+    var nm=milNorm(((row.querySelector(".cn-f")||{}).value||"")+((row.querySelector(".cn-l")||{}).value||""));
+    if(nm && pcNames[nm]){ milOnCovered++; return; }   // covered by membership — already $0
+    var price = t==="sibling"?CFG.prices.sibling : t==="infant"?CFG.prices.infant : CFG.prices.regular;
+    milAmt += Math.round(price*0.10);
   });
   var generalAmt=Math.max(discAmt,wdAmt);
   if(milAmt>0){ if(milAmt<=generalAmt) milAmt=0; }
@@ -2242,6 +2244,44 @@ state.gs = 0;
     apply(d.css||"");
     try{ localStorage.setItem("lhThemeCss", d.css||""); localStorage.setItem("lhThemeKey", d.theme||"default"); }catch(e){}
   }).catch(function(){});
+})();
+</script>
+<script>
+/* ---- Verified military family: 10% shows before paying ---- */
+(function(){
+  if(typeof state==="undefined") return;
+  state.militaryFamily=false;
+  var t=null, seq=0, last="";
+  function kids(){
+    return [].map.call(document.querySelectorAll("#childNames .cn-row"),function(r){
+      return { first:((r.querySelector(".cn-f")||{}).value||"").trim(), last:((r.querySelector(".cn-l")||{}).value||"").trim() };
+    }).filter(function(c){ return c.first && c.last; });
+  }
+  async function check(){
+    var phone=((document.getElementById("phone")||{}).value||"").replace(/\D/g,"");
+    var list=kids();
+    var sig=phone+"|"+JSON.stringify(list);
+    if(sig===last) return; last=sig;
+    if(phone.length<10 || !list.length){ if(state.militaryFamily){ state.militaryFamily=false; try{ updateTotals(); }catch(e){} } return; }
+    var my=++seq;
+    try{
+      var r=await (await fetch("/api/loyalty",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({action:"military-check",phone:phone,children:list})})).json();
+      if(my!==seq) return;
+      var on=!!(r && r.military);
+      if(on!==state.militaryFamily){ state.militaryFamily=on; try{ updateTotals(); }catch(e){} }
+    }catch(e){}
+  }
+  function soon(){ clearTimeout(t); t=setTimeout(check,400); }
+  document.addEventListener("input",function(e){
+    var el=e.target; if(!el||!el.classList) return;
+    if(el.id==="phone"||el.classList.contains("cn-f")||el.classList.contains("cn-l")) soon();
+  });
+  document.addEventListener("change",function(e){
+    var el=e.target; if(!el) return;
+    if(el.id==="phone"||(el.classList&&(el.classList.contains("cn-f")||el.classList.contains("cn-l")))) soon();
+  });
+  // Rows are rebuilt when admissions change, and member details can prefill the phone.
+  setInterval(check,2500);
 })();
 </script>
 </body>
