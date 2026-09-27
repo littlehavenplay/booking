@@ -96,6 +96,8 @@ footer{background:var(--charcoal);padding:2rem 3rem;display:flex;align-items:cen
 .rev-track img:hover{transform:translateY(-5px) scale(1.02);box-shadow:0 14px 32px rgba(0,0,0,.16)}
 @keyframes revScroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
 @media(max-width:600px){.rev-track img{height:165px;width:220px}}
+#revStrip img{width:400px;height:153px;object-fit:contain;object-position:center;background:transparent;box-shadow:none;border:none}
+@media(max-width:600px){#revStrip img{width:300px;height:115px}}
 @media(prefers-reduced-motion:reduce){.rev-track{animation:none}.rev-viewport{overflow-x:auto}}
 .cp-label{text-align:center;font-size:.76rem;font-weight:700;letter-spacing:.03em;color:var(--taupe);margin:2px 0 0}
 .cp-viewport{margin:2px auto 0;max-width:600px}
@@ -170,15 +172,10 @@ section[id]{scroll-margin-top:84px}
 <nav>
 <a class="logo" href="index.html"><img alt="Little Haven Play Studio" src="/assets/inline-home-01.png"/></a>
 <ul class="nav-links" id="navLinks">
-<li><a href="/aboutus.html">About Us</a></li>
 <li><a href="#openplay">Open Play</a></li>
 <li><a href="#birthday">Parties</a></li>
 <li><a href="/playclub.html">Play Club</a></li>
-<li class="mobile-only"><a href="/refer.html">Refer a Friend</a></li>
 <li><a href="/events.html">Events</a></li>
-<li><a href="/reviews.html" target="_blank" rel="noopener">Reviews</a></li>
-<li><a href="#faq">FAQ</a></li>
-<li><a href="/party-inquiry.html">Contact</a></li>
 </ul>
 <div class="nav-act">
 <button class="navburger" id="navBurger" aria-label="Open menu" aria-expanded="false" aria-controls="navLinks">☰</button>

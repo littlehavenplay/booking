@@ -52,9 +52,12 @@
   .gbadge.yelpbadge .glogo{font-weight:800;color:var(--lh-rose48);}
   .gbadge.fbbadge .glogo{font-weight:800;color:var(--lh-blue52);}
   .gallery-wrap{max-width:1040px;margin:26px auto 0;padding:0 16px;}
-  .gallery{columns:2;column-gap:16px;}
-  .gallery img{width:100%;display:block;border-radius:14px;box-shadow:var(--shadow);margin:0 0 16px;break-inside:avoid;border:1px solid rgba(0,0,0,.04);cursor:pointer;}
-  @media(max-width:760px){.gallery{columns:1;}}
+  /* Every review shows in the same size box, shaped like the standard review
+     image (1200x460). Taller uploads are scaled down to fit inside it rather than
+     stretched to full width, so all reviews read at about the same size. */
+  .gallery{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  .gallery img{width:100%;aspect-ratio:1200/460;height:auto;object-fit:contain;object-position:center;display:block;border-radius:14px;cursor:pointer;background:transparent;}
+  @media(max-width:760px){.gallery{grid-template-columns:1fr;}}
   #rvLightbox{position:fixed;inset:0;background:rgba(20,15,10,.92);display:none;align-items:center;justify-content:center;z-index:999;padding:24px;}
   #rvLightbox.open{display:flex;}
   #rvLightbox img{max-width:94vw;max-height:90vh;border-radius:10px;box-shadow:0 20px 60px rgba(0,0,0,.5);}
