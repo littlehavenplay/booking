@@ -319,7 +319,10 @@ export default async (req) => {
         code: m.code, name: m.name || "", planName: m.planName || "Play Club",
         maxChildren: m.maxChildren || (kids.length || 1),
         children: kids.map(c => ({ code: c.code || "", name: c.name })),
-        phone4: m.phone4 || "", status: st.status, active: st.status === "active",
+        // effectiveStatus() returns a plain string. Reading st.status gave
+        // undefined, so every name search said "isn't active". A cancelled
+        // membership still covers visits until its paid month ends.
+        phone4: m.phone4 || "", status: st, active: st === "active" || st === "cancelling",
         // Say WHY it matched, so staff can tell two similar names apart.
         matchedOn: kidHit ? ("child: " + kidHit.name) : parent.includes(q) ? "parent name"
                  : email.includes(q) ? "email" : "code or phone",
