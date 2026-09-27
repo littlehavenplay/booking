@@ -21,9 +21,15 @@ const STATIC = {
     const n = String(i + 1).padStart(2, "0");
     return { id: "static-inside-" + n, src: "/assets/photos/inside-" + n + ".jpg", thumb: "/assets/photos/inside-" + n + "t.jpg" };
   }),
-  reviews: Array.from({ length: 9 }, (_, i) => {
+  // review-1..8 are the originals; 9..13 are newer Google reviews redrawn in the
+  // same template and size so every review card matches.
+  reviews: Array.from({ length: 13 }, (_, i) => {
     const n = i + 1;
     return { id: "static-review-" + n, src: "/assets/reviews/review-" + n + ".png", thumb: "/assets/reviews/review-" + n + ".png" };
+  }),
+  facebook: Array.from({ length: 2 }, (_, i) => {
+    const n = i + 1;
+    return { id: "static-fb-" + n, src: "/assets/reviews/fb-" + n + ".png", thumb: "/assets/reviews/fb-" + n + ".png" };
   }),
   customer: [],
 };
