@@ -96,7 +96,7 @@ export function defaultButtonLabel(url) {
   if (u.indexOf("/event") > -1 || u.indexOf("/promo") > -1)       return "See what's on";
   if (u.indexOf("giftcard") > -1 || u.indexOf("gift-card") > -1 || u.indexOf("/cards") > -1)
                                                                    return "Get a gift card";
-  if (u.indexOf("loyalty") > -1 || u.indexOf("punchcard") > -1)   return "See your punch card";
+  if (u.indexOf("loyalty") > -1 || u.indexOf("punchcard") > -1)   return "Learn more";
   if (u.indexOf("waiver") > -1)                                   return "Sign the waiver";
   if (u.indexOf("/pass") > -1)                                    return "See passes";
   if (u.indexOf("/book") > -1)                                    return "Book your visit";

@@ -18,7 +18,7 @@ import {
   STUDIO_NAME, CLOSED_DATES, CLOSED_MESSAGE, ADDITIONAL_ADULT, isClosedWeekday, weekdayOf,
   additionalAdultsFor, additionalAdultCentsFor, GRIP_SOCK_CENTS, GRIP_SOCK_MAX,
 } from "./lib-settings.js";
-import { issueCode, sendWelcome, sendFamilyPunch, PUNCHES_FOR_REWARD, cleanName, last4 as loyaltyLast4, graduateLegacyCard, resolveCard } from "./lib-loyalty.js";
+import { issueCode, cleanName, last4 as loyaltyLast4, graduateLegacyCard, resolveCard } from "./lib-loyalty.js";
 import { getActiveFamCode, logFamUse } from "./famcode.js";
 // memberCoversDate was used below but NOT imported, so every Play Club member's
 // checkout died with "memberCoversDate is not defined" — a hard 500 at payment.
@@ -106,7 +106,7 @@ export default async (req) => {
   const discountCode = (body.discountCode || "").toString().trim().toUpperCase().replace(/\s+/g, "");
   const hasStoreCredit = !!(body.promoCode || "").toString().trim();
   if (discountCode && (hasStoreCredit || passCodes.length)) {
-    return json({ error: "discount", message: "This discount code can't be combined with store credit or punch cards. Please use it on its own (gift cards are fine)." }, 409);
+    return json({ error: "discount", message: "This discount code can't be combined with store credit or prepaid cards. Please use it on its own (gift cards are fine)." }, 409);
   }
 
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return json({ error: "Invalid date." }, 400);
@@ -997,11 +997,11 @@ export default async (req) => {
     } catch {}
   }
 
-  // ---- Loyalty punch card: auto-issue each child's code + welcome email at booking.
-  // Skipped entirely when a legacy prepaid card was used (legacy never joins loyalty
-  // for that visit). The actual PUNCH happens later, at check-in (see arrivals.js).
+  // ---- Child profiles: find or create each child's profile at booking (records,
+  // newsletter, Play Club, birthdays, military). No email — the punch program has
+  // ended. Skipped when a legacy prepaid card was used. The visit itself is
+  // recorded later, at check-in (see arrivals.js).
   const phone4 = loyaltyLast4(phone);
-  let loyaltyCards = [];   // each child's punch card — folded into the ONE confirmation email
   if (!legacyUsed && phone4 && childNames.length) {
     const loyalty = getStore("loyalty");
     const issued = [];
@@ -1037,15 +1037,7 @@ export default async (req) => {
         if (r) issued.push(r);
       } catch {}
     }
-    // Fold each child's punch card into the ONE confirmation email below — no separate
-    // welcome email at booking. Read current punches so returning families see progress.
-    for (const r of issued) {
-      if (!r || !r.code) continue;
-      let punches = 0;
-      try { const card = await loyalty.get("card:" + r.code, { type: "json" }); if (card && typeof card.punches === "number") punches = card.punches; } catch {}
-      loyaltyCards.push({ childName: r.childName, code: r.code, isNew: !!r.isNew, punches, needed: PUNCHES_FOR_REWARD });
-    }
-    // Queue a punch job for this booking; check-in (arrivals) will punch each child once.
+    // Queue a visit job for this booking; check-in (arrivals) records each child's visit once.
     try { await getStore("loyaltyjobs").setJSON("job:" + bookingId,
       { children: childNames, phone4, email, punched: false, date, at: new Date().toISOString(),
         slotLabel: (SLOTS.find(s => s.id === slot) || {}).label || slot,
@@ -1065,7 +1057,7 @@ export default async (req) => {
   try {
     await sendConfirmation({ email, name, date, slotLabel, regular, sibling, infant, adults: totalAdults, additionalAdults,
       coveredRegular, coveredInfant, coveredSibling, paidRegular, paidInfant, paidSibling, subtotal, tax, amount,
-      giftApplied, giftTotal, creditApplied, creditRemaining, cardAmount, passesUsed, discountPct, discountAmount, weekdaySpecialAmount, weekdaySpecialLabel, militaryAmount, militaryChildren, loyaltyCards,
+      giftApplied, giftTotal, creditApplied, creditRemaining, cardAmount, passesUsed, discountPct, discountAmount, weekdaySpecialAmount, weekdaySpecialLabel, militaryAmount, militaryChildren,
       // The email builder was never told about the membership, so a member saw
       // "Subtotal $19.00 / Total paid $0.00" with nothing in between explaining
       // why. All three were already calculated here and thrown away.
@@ -1095,7 +1087,7 @@ export default async (req) => {
     passesUsed,
     freeVisit: !!freeVisitCard,
     freeVisitMessage: freeVisitCard
-      ? "📋 That was the last visit on your prepaid card — it's now complete. That card type has been retired, so you're on our free Loyalty Punch Card program going forward: just book online like normal, and every 8th visit is on us."
+      ? "📋 That was the last visit on your prepaid card — it's now complete. Thank you!"
       : "",
     birthdayAmount,
     birthdayNames: birthdayApplied.map(b => b.childName),
@@ -1228,7 +1220,7 @@ function validDob(s) {
 
 // Sends the customer a confirmation + policy email via Resend.
 // If RESEND_API_KEY isn't set, this quietly does nothing.
-async function sendConfirmation({ email, name, date, slotLabel, regular, sibling, infant, adults = 0, additionalAdults = 0, coveredRegular = 0, coveredInfant = 0, paidRegular = regular, paidInfant = infant, subtotal, tax, amount, giftApplied = [], giftTotal = 0, creditApplied = 0, creditRemaining = null, cardAmount = 0, passesUsed = [], discountPct = 0, discountAmount = 0, weekdaySpecialAmount = 0, weekdaySpecialLabel = "", militaryAmount = 0, militaryChildren = [], loyaltyCards = [] , playClubName = null, playClubAmount = 0, playClubKids = [], gripSocks = 0, gripSocksAmount = 0, buddies = []}) {
+async function sendConfirmation({ email, name, date, slotLabel, regular, sibling, infant, adults = 0, additionalAdults = 0, coveredRegular = 0, coveredInfant = 0, paidRegular = regular, paidInfant = infant, subtotal, tax, amount, giftApplied = [], giftTotal = 0, creditApplied = 0, creditRemaining = null, cardAmount = 0, passesUsed = [], discountPct = 0, discountAmount = 0, weekdaySpecialAmount = 0, weekdaySpecialLabel = "", militaryAmount = 0, militaryChildren = [], playClubName = null, playClubAmount = 0, playClubKids = [], gripSocks = 0, gripSocksAmount = 0, buddies = []}) {
   const key = process.env.RESEND_API_KEY;
   if (!key || !email) return;
 
@@ -1244,29 +1236,11 @@ async function sendConfirmation({ email, name, date, slotLabel, regular, sibling
 
   // Punch card rows (visits remaining after this booking)
   const passLines = passesUsed.map(p =>
-    `<tr><td style="padding:2px 0;color:#5c6470">\u{1F39F}\uFE0F Punch card ${p.code}</td><td style="padding:2px 0;text-align:right;font-weight:bold">${(p.total && p.total >= p.visitsRemaining) ? `${p.visitsRemaining} of ${p.total} left` : `${p.visitsRemaining} left`}</td></tr>`
+    `<tr><td style="padding:2px 0;color:#5c6470">\u{1F39F}\uFE0F Prepaid card ${p.code}</td><td style="padding:2px 0;text-align:right;font-weight:bold">${(p.total && p.total >= p.visitsRemaining) ? `${p.visitsRemaining} of ${p.total} left` : `${p.visitsRemaining} left`}</td></tr>`
   ).join("");
 
-  // Combined punch-card section — folds the old separate "welcome" email into this one.
   const esc = s => (s || "").toString().replace(/</g, "&lt;").replace(/>/g, "&gt;");
-  const anyNew = loyaltyCards.some(c => c.isNew);
-  const cardRows = loyaltyCards.map(c =>
-    `<tr><td style="padding:6px 9px;border-top:1px solid #e6eee2"><b>${esc(c.childName)}</b></td>`
-    + `<td style="padding:6px 9px;border-top:1px solid #e6eee2;text-align:center;font-family:monospace;font-weight:bold;color:#a85f59;letter-spacing:1px">${esc(c.code)}</td>`
-    + `<td style="padding:6px 9px;border-top:1px solid #e6eee2;text-align:right;color:#5c6470">${c.punches}/${c.needed} visits</td></tr>`
-  ).join("");
-  // Play Club members book on a membership, not a punch card -- the card block
-  // is noise to them. Non-members keep the table (child, code, progress) but
-  // lose the paragraphs that used to wrap it.
   const isMember = !!playClubName;
-  const loyaltySection = (loyaltyCards.length && !isMember) ? `
-    <div style="background:#f3f7f2;border-radius:14px;padding:14px 16px;margin:18px 0">
-      <p style="margin:0 0 8px;color:#5f8060;font-weight:bold;font-size:14px">Your punch card${loyaltyCards.length > 1 ? "s" : ""}</p>
-      <table style="width:100%;border-collapse:collapse;font-size:14px">
-        <tr><td style="padding:0 9px 4px;color:#8a8276;font-size:12px">Child</td><td style="padding:0 9px 4px;text-align:center;color:#8a8276;font-size:12px">Code</td><td style="padding:0 9px 4px;text-align:right;color:#8a8276;font-size:12px">Progress</td></tr>
-        ${cardRows}
-      </table>
-    </div>` : "";
 
   // ---- Play Club: a soft pastel gold band, so a membership booking reads as a
   // membership booking rather than an ordinary one that happened to cost $0.
@@ -1324,17 +1298,11 @@ async function sendConfirmation({ email, name, date, slotLabel, regular, sibling
       ${buddies.length ? buddies.map(b => `<tr><td style="padding:2px 0;color:#5c6470">\u{1F91D} Buddy \u2014 ${esc(b.name)} <span style="color:#aea298">(${esc(String(b.forChild||"").split(" ")[0])}\u2019s friend)</span></td><td style="padding:2px 0;text-align:right;font-weight:bold;color:#4d7848">Free</td></tr>`).join("") : ""}
       ${payRows}
     </table>
-    ${loyaltySection}
 
     ${waiverButtonHtml(waiverUrl)}
     <p style="margin:4px 0 0;font-size:12px;color:#aea298;text-align:center">🧦 Grip socks are required for children entering the play area.</p>
   </div>`;
 
-  const cardText = (loyaltyCards.length && !isMember)
-    ? `YOUR PUNCH CARD${loyaltyCards.length > 1 ? "S" : ""}\n`
-      + loyaltyCards.map(c => `- ${c.childName}: ${c.code} (${c.punches}/${c.needed} visits)`).join("\n")
-      + `\nAfter 7 visits, the 8th is free.\n\n`
-    : "";
   const text = `Your ${STUDIO_NAME} reservation is confirmed!\n\n`
     + `Date: ${date}\nSession: ${slotLabel}\nChildren: ${total}\n`
     + `Admissions: ${lines.join(", ")}\nSubtotal: ${dollars(subtotal)}\n`
@@ -1343,7 +1311,6 @@ async function sendConfirmation({ email, name, date, slotLabel, regular, sibling
     + (gripSocksAmount > 0 ? `Grip socks \u00d7 ${gripSocks}: ${dollars(gripSocksAmount)}\n` : "")
     + buddies.map(b => `Buddy \u2014 ${b.name} (${String(b.forChild||"").split(" ")[0]}'s friend): Free\n`).join("")
     + `Total paid: ${dollars(amount)}\n\n`
-    + cardText
     + `Sign your waiver: ${waiverUrl}\n`
     + `Grip socks are required for children entering the play area.\n`
     + `\nWe can't wait to see you at ${STUDIO_NAME}!`
@@ -1353,9 +1320,6 @@ async function sendConfirmation({ email, name, date, slotLabel, regular, sibling
     from: `${STUDIO_NAME} <${from}>`,
     to: [email],
     bcc: bcc ? [bcc] : undefined,
-    // One subject line for every confirmation. The punch-card suffix made the
-    // subject long and put a detail most people don't act on in front of the
-    // thing they opened the email for.
     subject: `Your ${STUDIO_NAME} reservation is confirmed 🎈 — ${date}`,
     html: html + SIGNATURE_HTML, text,
   });

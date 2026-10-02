@@ -1,12 +1,19 @@
-// Shared loyalty punch-card logic, used by loyalty.js (staff tool), book.js
-// (auto-issue codes at booking), and checkin.js (punch at check-in).
+// Child profiles ("cards" in the loyalty store), used by loyalty.js (staff tool),
+// book.js (a profile for each child at booking) and arrivals.js (visit history).
+//
+// The "7 visits, 8th free" punch program has ENDED (Oct 2026). Profiles are still
+// created for every child (records, newsletter, Play Club, birthdays, military), but:
+//   - no punches are added and no free-visit rewards are earned,
+//   - no welcome / punch / reward emails are sent.
+// Existing cards keep their codes and old punch counts untouched. Free-visit codes
+// already emailed before the change still work when booking.
 import { getStore } from "@netlify/blobs";
 import { SIGNATURE_HTML, fromHeader, TERMS, reviewRequestHtml } from "./lib-email.js";
 
-export const PUNCHES_FOR_REWARD = 7;      // 7 paid visits → 8th is free
+export const PUNCHES_ENABLED = false;    // punch program ended — see top of file
+export const PUNCHES_FOR_REWARD = 7;      // kept only for old records
 export const REWARD_EXPIRY_DAYS = 30;
 const REWARD_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
-const HERO_IMG = "https://littlehavenplay.com/assets/punch-card-hero.jpg";
 
 export function cleanName(first, last) {
   return [String(first || "").trim(), String(last || "").trim()].filter(Boolean).join(" ");
@@ -127,8 +134,7 @@ export async function isLegacyPassCode(code) {
   } catch { return false; }
 }
 
-// Auto-issue a child's loyalty code (no punch). Creates the card if new and sends
-// the welcome email (with the punch card image). Returns { code, isNew }.
+// Find or create a child's profile (no visit counted, no email). Returns { code, isNew }.
 export async function issueCode(loyalty, { first, last, phone4, email, dob, suppressEmail, visitMeta }) {
   const { code, rec } = await resolveCard(loyalty, first, last, phone4, false);
   if (rec) {
@@ -144,13 +150,12 @@ export async function issueCode(loyalty, { first, last, phone4, email, dob, supp
     createdAt: now.toISOString(), history: [{ at: now.toISOString(), action: "issued" }], buyerEmail: (email || "").trim(),
     dob: (dob || "").trim() || undefined };
   try { await loyalty.setJSON("card:" + code, fresh); } catch {}
-  if (fresh.buyerEmail && !suppressEmail) { try { await sendWelcome(fresh); } catch {} }
   if (visitMeta) await pushVisit(loyalty, code, visitMeta, true);
   return { code, isNew: true, childName: fresh.childName, rec: fresh };
 }
 
-// Add ONE punch to a child's card. Creates the card if new (welcome email), and
-// on the 7th punch issues a free-visit reward code (reward email). Returns details.
+// Record ONE visit on a child's profile (creates the profile if new). Punches and
+// free-visit rewards only happen while PUNCHES_ENABLED is on (it's off). No emails.
 // noPunch: record the visit and everything else, but DON'T advance the loyalty
 // count. Used for a free birthday admission — the child was here, so it belongs
 // in their visit history, but a free visit shouldn't earn progress toward another
@@ -226,8 +231,10 @@ export async function addPunch(loyalty, { first, last, phone4, email, code: dire
       rewardIssued: false, militaryVerified: !!rec.militaryVerified };
   }
 
-  // A birthday admission still counts as a visit — it just doesn't earn a punch.
-  if (!noPunch) rec.punches = (rec.punches || 0) + 1;
+  // Every visit is recorded. Punches only advance while the punch program is on
+  // (it's off now), and never for a free birthday admission.
+  const punch = PUNCHES_ENABLED && !noPunch;
+  if (punch) rec.punches = (rec.punches || 0) + 1;
   rec.totalVisits = (rec.totalVisits || 0) + 1;
   rec.lastVisit = new Date().toISOString();
   rec.history = Array.isArray(rec.history) ? rec.history : [];
@@ -235,7 +242,7 @@ export async function addPunch(loyalty, { first, last, phone4, email, code: dire
   rec.history.push(noPunch
     ? { at: rec.lastVisit, action: "birthday-visit", punches: rec.punches || 0, source: via,
         note: "Free birthday admission — no punch" }
-    : { at: rec.lastVisit, action: "punch", punches: rec.punches, source: via,
+    : { at: rec.lastVisit, action: punch ? "punch" : "visit", ...(punch ? { punches: rec.punches } : {}), source: via,
         note: via === "walkin" ? "Walk-in visit" : undefined });
 
   // Stamp the birthday as used for this year so neither cron pass emails another
@@ -247,10 +254,8 @@ export async function addPunch(loyalty, { first, last, phone4, email, code: dire
     rec.birthdayUsedAt = rec.lastVisit;
   }
 
-  if (isNew && rec.buyerEmail && !suppressEmail) { try { await sendWelcome(rec); } catch {} }
-
   let rewardIssued = null;
-  if (!noPunch && rec.punches >= PUNCHES_FOR_REWARD) {
+  if (punch && rec.punches >= PUNCHES_FOR_REWARD) {
     const rewards = getStore("rewards");
     const rewardCode = await uniqueReward(rewards);
     const now = new Date();
@@ -262,7 +267,6 @@ export async function addPunch(loyalty, { first, last, phone4, email, code: dire
     rec.lastRewardCode = rewardCode;
     rec.history.push({ at: now.toISOString(), action: "reward-earned", rewardCode, expiry: exp });
     rewardIssued = { rewardCode, expiry: exp };
-    if (rec.buyerEmail && !suppressEmail) { try { await sendReward(rec, rewardCode, exp); } catch {} }
   }
 
   try { await loyalty.setJSON("card:" + code, rec); } catch { return { error: true }; }
@@ -289,42 +293,16 @@ function esc(s) { return String(s || "").replace(/</g, "&lt;").replace(/>/g, "&g
 // The review request now lives in lib-email.js so every thank-you email shares it.
 function reviewFooter() { return reviewRequestHtml(); }
 
-export async function sendWelcome(rec) {
-  const key = process.env.RESEND_API_KEY; if (!key || !rec.buyerEmail) return;
-  const from = process.env.EMAIL_FROM || "onboarding@resend.dev";
-  const bcc = process.env.STUDIO_EMAIL || undefined;
-  const studio = studioName();
-  const militaryBlock = rec.militaryVerified ? `
-    <div style="background:#f3f7ee;border:1px solid #dce8cf;border-radius:12px;padding:14px 16px;margin:14px 0">
-      <div style="font-weight:800;color:#4d7848;margin-bottom:4px">🎖️ Thank you for your service!</div>
-      <p style="margin:0;font-size:14px;color:#4d6b3e">Your card is marked as a military family &mdash; <b>10% off admission</b>.</p>
-    </div>` : "";
-  const html = `<div style="font-family:Arial,Helvetica,sans-serif;color:#2a2622;max-width:560px;margin:0 auto;line-height:1.6">
-    <img src="${HERO_IMG}" alt="Little Haven Punch Card" style="width:100%;border-radius:16px;display:block;margin:0 0 16px">
-    <h2 style="color:#a85f59;font-weight:normal;margin:0 0 4px">Welcome to our Punch Card! 🌿</h2>
-    <p style="margin:0 0 12px;color:#5c6470">Thanks for visiting ${esc(studio)}! Here's <b>${esc(rec.childName)}</b>'s punch card code.</p>
-    <div style="background:#fcfaf6;border:1px solid #efe7da;border-radius:12px;padding:14px 16px;margin:10px 0;text-align:center">
-      <div style="font-size:13px;color:#5c6470">Punch card code</div>
-      <div style="font-size:26px;font-weight:900;letter-spacing:2px;color:#a85f59;margin:4px 0">${esc(rec.code)}</div>
-    </div>
-    ${militaryBlock}
-    <p style="margin:12px 0 0;font-size:14px;color:#5c6470">After <b>7 visits</b>, the <b>8th is free!</b> 🎈</p>
-    <p style="margin:14px 0 0;font-size:13px;color:#5c6470">See you soon! — ${esc(studio)}</p>
-    ${reviewFooter()}</div>`;
-  await fetch("https://api.resend.com/emails", { method: "POST",
-    headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ from: fromHeader(from, studio), to: [rec.buyerEmail], bcc: bcc ? [bcc] : undefined,
-      subject: rec.militaryVerified ? `Your ${studio} punch card code — and thank you for your service 🎖️` : `Your ${studio} punch card code`,
-      html: html + SIGNATURE_HTML }) });
-}
+// Punch-card emails are retired (program ended). Kept as no-ops so nothing that
+// still imports them can send one by accident.
+export async function sendWelcome() { return; }
+export async function sendReward() { return; }
+export async function sendFamilyPunch() { return; }
 
-// The legacy prepaid punch card product was discontinued — it can no longer be
-// "reloaded." When one of those cards runs out, this replaces the old (wrong)
-// "reload the same code" email: it links the family into the free Loyalty Punch
-// Card program (creating their loyalty card if they don't already have one from
-// booking online) and tells them plainly there's nothing left to buy or reload —
-// they just keep booking normally and every 8th visit is free automatically.
-// Shared by book.js, checkin.js, and lib-refill.js so this logic lives in one place.
+// The legacy prepaid punch card was discontinued and can't be reloaded. When one
+// runs out, this saves a profile for the child (records only, no email) and sends
+// one short "your card is complete" note.
+// Shared by book.js and checkin.js.
 export async function graduateLegacyCard(loyalty, pass) {
   const first = (pass.childName || "").trim().split(/\s+/)[0] || "";
   const last = (pass.childName || "").trim().split(/\s+/).slice(1).join(" ") || "";
@@ -346,17 +324,11 @@ async function sendLegacyGraduationEmail(pass, card) {
   const bcc = process.env.STUDIO_EMAIL || undefined;
   const studio = studioName();
   const child = pass.childName ? ` for ${esc(pass.childName)}` : "";
-  const codeBlock = card && card.code
-    ? `<div style="background:#fcfaf6;border:1px solid #efe7da;border-radius:12px;padding:14px 16px;margin:10px 0;text-align:center">
-         <div style="font-size:13px;color:#5c6470">Your new loyalty punch card code</div>
-         <div style="font-size:26px;font-weight:900;letter-spacing:2px;color:#a85f59;margin:4px 0">${esc(card.code)}</div>
-       </div>`
-    : "";
+  const site = (process.env.SITE_URL || "https://littlehavenplay.com").replace(/\/$/, "");
   const html = `<div style="font-family:Arial,Helvetica,sans-serif;color:#2a2622;max-width:560px;margin:0 auto;line-height:1.6">
-    <h2 style="color:#a85f59;font-weight:normal;margin:0 0 4px">Your punch card is complete 🎈</h2>
-    <p style="margin:0 0 12px;color:#5c6470">Your prepaid punch card${child} is all used up — thank you for being one of our earliest families!</p>
-    <p style="margin:0 0 12px;color:#5c6470">You're now on our free <b>Loyalty Punch Card</b>: after <b>7 visits</b>, the <b>8th is free</b>.</p>
-    ${codeBlock}
+    <h2 style="color:#a85f59;font-weight:normal;margin:0 0 4px">Your prepaid card is complete 🎈</h2>
+    <p style="margin:0 0 12px;color:#5c6470">Your prepaid card${child} is all used up — thank you for being one of our earliest families!</p>
+    <p style="margin:0 0 12px;color:#5c6470">Play often? Our <a href="${site}/playclub.html" style="color:#a85f59;font-weight:bold">Play Club</a> monthly membership is the best value.</p>
     <p style="margin:14px 0 0;font-size:13px;color:#5c6470">See you soon! — ${esc(studio)}</p></div>
     ${reviewFooter()}`;
   try {
@@ -364,7 +336,7 @@ async function sendLegacyGraduationEmail(pass, card) {
       method: "POST",
       headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
       body: JSON.stringify({ from: fromHeader(from, studio), to: [to], bcc: bcc ? [bcc] : undefined,
-        subject: `Your punch card is complete — you're on our free loyalty program now`, html: html + SIGNATURE_HTML }),
+        subject: `Your prepaid card is complete`, html: html + SIGNATURE_HTML }),
     });
     return res.ok;
   } catch { return false; }
@@ -388,90 +360,20 @@ export async function sendMilitaryVerifiedEmail(to, cards) {
   const nameList = names.length > 1
     ? names.slice(0, -1).join(", ") + " and " + names.slice(-1)
     : (names[0] || "your child");
-  const codeBlocks = cards.map(c => `
-    <div style="text-align:center;margin:10px 0;background:#fcfaf6;border:1px solid #efe7da;border-radius:12px;padding:12px 16px">
-      <div style="font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:#8a8276;font-weight:bold">${esc(c.childName || "Loyalty code")}</div>
-      <div style="font-size:26px;font-weight:900;letter-spacing:2px;color:#a85f59;margin-top:2px">${esc(c.code)}</div>
-    </div>`).join("");
   const site = (process.env.SITE_URL || "https://littlehavenplay.com").replace(/\/$/, "");
   const one = cards.length === 1;
   const html = `<div style="font-family:Arial,Helvetica,sans-serif;color:#2a2622;max-width:560px;margin:0 auto;line-height:1.6">
     <h2 style="color:#a85f59;font-weight:normal;margin:0 0 4px">Thank you for your service 🎖️</h2>
-    <p><b>${esc(nameList)}</b>'s loyalty card${one ? " is" : "s are"} now marked as a military family &mdash; <b>10% off admission</b> from now on.</p>
-
-    ${codeBlocks}
+    <p><b>${esc(nameList)}</b> ${one ? "is" : "are"} now set up as a military family &mdash; <b>10% off admission</b> from now on.</p>
     <p style="margin-top:14px">We're glad to have your family with us!</p>
     <p style="font-size:14px;color:#5c6470">— ${esc(studio)}</p></div>`;
   try {
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ from: `${studio} <${process.env.EMAIL_FROM || "onboarding@resend.dev"}>`, to: [to],
+      body: JSON.stringify({ from: `${studio} <${process.env.EMAIL_FROM || "onboarding@resend.dev"}>`, to: [to], bcc: process.env.STUDIO_EMAIL ? [process.env.STUDIO_EMAIL] : undefined,
         subject: `Thank you for your service — your military discount is set up 🎖️`, html: html + SIGNATURE_HTML }),
     });
     return res.ok;
   } catch { return false; }
-}
-
-export async function sendReward(rec, rewardCode, expiry) {
-  const key = process.env.RESEND_API_KEY; if (!key || !rec.buyerEmail) return;
-  const from = process.env.EMAIL_FROM || "onboarding@resend.dev";
-  const bcc = process.env.STUDIO_EMAIL || undefined;
-  const studio = studioName();
-  const html = `<div style="font-family:Arial,Helvetica,sans-serif;color:#2a2622;max-width:560px;margin:0 auto;line-height:1.6">
-    <img src="${HERO_IMG}" alt="Little Haven Punch Card" style="width:100%;border-radius:16px;display:block;margin:0 0 16px">
-    <h2 style="color:#4d6b3e;font-weight:normal;margin:0 0 4px">You've earned a FREE visit! 🎉</h2>
-    <p style="margin:0 0 12px;color:#5c6470"><b>${esc(rec.childName)}</b> completed 7 visits — the next one is <b>on us</b>. 🎈</p>
-    <div style="background:#eaf4e4;border:1px solid #cfe6c2;border-radius:12px;padding:14px 16px;margin:10px 0;text-align:center">
-      <div style="font-size:13px;color:#4d6b3e">Your free-visit code</div>
-      <div style="font-size:26px;font-weight:900;letter-spacing:2px;color:#4d6b3e;margin:4px 0">${esc(rewardCode)}</div>
-      <div style="font-size:13px;color:#5c6470">Enter it in the <b>Have a code?</b> box when you book</div>
-    </div>
-    <p style="margin:12px 0 0;font-size:13px;color:#5c6470"><i>Valid through ${esc(expiry)}. One-time use.</i></p>
-    <p style="margin:14px 0 0;font-size:13px;color:#5c6470">Come play soon! — ${esc(studio)}</p>
-    ${reviewFooter()}</div>`;
-  await fetch("https://api.resend.com/emails", { method: "POST",
-    headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ from: fromHeader(from, studio), to: [rec.buyerEmail], bcc: bcc ? [bcc] : undefined,
-      subject: `🎉 You've earned a free visit at ${studio}!`, html: html + SIGNATURE_HTML }) });
-}
-
-// ONE combined email for a whole family (multiple children punched/created together).
-export async function sendFamilyPunch(email, results) {
-  const key = process.env.RESEND_API_KEY; if (!key || !email || !results.length) return;
-  const from = process.env.EMAIL_FROM || "onboarding@resend.dev";
-  const bcc = process.env.STUDIO_EMAIL || undefined;
-  const studio = studioName();
-  const rewards = results.filter(r => r.rewardIssued);
-  const rows = results.map(r => `<tr>
-      <td style="padding:7px 9px;font-weight:bold;border-top:1px solid #efe7da">${esc(r.childName)}</td>
-      <td style="padding:7px 9px;color:#a85f59;font-weight:900;letter-spacing:1px;border-top:1px solid #efe7da">${esc(r.code)}</td>
-      <td style="padding:7px 9px;color:#5c6470;border-top:1px solid #efe7da">${r.rewardIssued ? "🎉 FREE visit earned!" : (r.punches + "/" + r.needed + " visits")}</td>
-    </tr>`).join("");
-  const rewardBlock = rewards.length ? `<div style="background:#eaf4e4;border:1px solid #cfe6c2;border-radius:12px;padding:14px 16px;margin:12px 0">
-      <b style="color:#4d6b3e">🎉 Free visit${rewards.length > 1 ? "s" : ""} earned!</b>
-      ${rewards.map(r => `<div style="margin-top:6px;font-size:14px;color:#3f5a34">${esc(r.childName)} — code <b>${esc(r.rewardCode)}</b> (expires ${esc(r.rewardExpiry)}). Enter it in the Have a code? box when you book.</div>`).join("")}
-    </div>` : "";
-  const militaryKids = results.filter(r => r.militaryVerified);
-  const militaryBlock = militaryKids.length ? `<div style="background:#f3f7ee;border:1px solid #dce8cf;border-radius:12px;padding:14px 16px;margin:12px 0">
-      <div style="font-weight:800;color:#4d7848;margin-bottom:4px">🎖️ Thank you for your service!</div>
-      <p style="margin:0;font-size:14px;color:#4d6b3e">${militaryKids.length > 1 ? "These cards are" : "This card is"} marked as a military family &mdash; <b>10% off admission</b>.</p>
-    </div>` : "";
-  const html = `<div style="font-family:Arial,Helvetica,sans-serif;color:#2a2622;max-width:560px;margin:0 auto;line-height:1.6">
-    <img src="${HERO_IMG}" alt="Little Haven Punch Card" style="width:100%;border-radius:16px;display:block;margin:0 0 16px">
-    <h2 style="color:#a85f59;font-weight:normal;margin:0 0 4px">Your family's punch cards 🌿</h2>
-    <p style="margin:0 0 12px;color:#5c6470">Thanks for visiting ${esc(studio)}! Here are your punch cards.</p>
-    <table style="width:100%;border-collapse:collapse;background:#fcfaf6;border:1px solid #efe7da;border-radius:12px;overflow:hidden">
-      <tr style="background:#f3ede3"><th style="padding:7px 9px;text-align:left;font-size:12px;color:#5c6470">Child</th><th style="padding:7px 9px;text-align:left;font-size:12px;color:#5c6470">Code</th><th style="padding:7px 9px;text-align:left;font-size:12px;color:#5c6470">Progress</th></tr>
-      ${rows}
-    </table>
-    ${rewardBlock}
-    ${militaryBlock}
-    <p style="margin:12px 0 0;font-size:14px;color:#5c6470">After <b>7 visits</b> each, the <b>8th is free!</b> 🎈</p>
-    <p style="margin:14px 0 0;font-size:13px;color:#5c6470">See you soon! — ${esc(studio)}</p>
-    ${reviewFooter()}</div>`;
-  await fetch("https://api.resend.com/emails", { method: "POST",
-    headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ from: fromHeader(from, studio), to: [email], bcc: bcc ? [bcc] : undefined,
-      subject: `Your ${studio} punch cards 🎈`, html: html + SIGNATURE_HTML }) });
 }

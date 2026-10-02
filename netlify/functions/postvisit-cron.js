@@ -128,7 +128,7 @@ async function sendFollowUp(entry, fam) {
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ from: fromHeader(from, studio), to: [entry.email],
+      body: JSON.stringify({ from: fromHeader(from, studio), to: [entry.email], bcc: process.env.STUDIO_EMAIL ? [process.env.STUDIO_EMAIL] : undefined,
         subject: `Thanks for playing with us! 💛`, html: html + SIGNATURE_HTML }),
     });
     return res.ok;

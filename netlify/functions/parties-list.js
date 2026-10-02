@@ -2,8 +2,8 @@
 //   { key }                              -> all parties, chronological (soonest first)
 //   { key, action:"mark-paid", date, partySlot, paid } -> toggle deposit paid
 import { getStore } from "@netlify/blobs";
-import { SIGNATURE_HTML, fromHeader } from "./lib-email.js";
-import { slotKey, WAIVER_URL } from "./lib-settings.js";
+import { slotKey } from "./lib-settings.js";
+import { sendPartyConfirmedOnce } from "./lib-party-confirm.js";
 
 export default async (req) => {
   if (req.method !== "POST") return json({ error: "Use POST." }, 405);
@@ -22,8 +22,10 @@ export default async (req) => {
     r.depositPaid = !!b.paid;
     if (r.depositPaid && r.status === "pending-deposit") r.status = "deposit-paid";
     try { await store.setJSON(k, r); } catch { return json({ error: "Couldn't save. Try again." }, 502); }
-    if (b.paid) { try { await emailConfirmed(r); } catch {} }
-    return json({ ok: true });
+    // One confirmation per party, ever — re-marking paid never re-sends.
+    let emailed = "";
+    if (b.paid) { try { emailed = await sendPartyConfirmedOnce(k, r); } catch {} }
+    return json({ ok: true, emailed });
   }
 
   let keys = [];
@@ -46,22 +48,5 @@ export default async (req) => {
   parties.sort((a, c) => (a.date + a.partySlot).localeCompare(c.date + c.partySlot));
   return json({ ok: true, parties, count: parties.length });
 };
-async function emailConfirmed(r) {
-  const key = process.env.RESEND_API_KEY, from = process.env.EMAIL_FROM || "onboarding@resend.dev", studioEmail = process.env.STUDIO_EMAIL;
-  const studio = "Little Haven Play Studio";
-  if (!key || !r || !r.email) return;
-  const esc = s => (s || "").toString().replace(/</g, "&lt;").replace(/>/g, "&gt;");
-  const html = `<div style="font-family:Arial,sans-serif;color:#2a2622;line-height:1.6;max-width:540px">
-    <h2 style="color:#a85f59;font-weight:normal">Your party is confirmed! 🎉</h2>
-    <p>Hi ${esc(r.name)}, your deposit is in and ${esc(r.childName) ? esc(r.childName) + "'s" : "your"} party is officially booked for <b>${esc(r.date)} · ${esc(r.slotLabel)}</b> (${esc(r.packageLabel || r.package)}). We can't wait to celebrate! 🎂</p>
-    <div style="background:#f3f0ff;border-radius:12px;padding:14px 16px;margin:14px 0">
-      <p style="margin:0 0 6px;font-weight:bold;color:#5b4636">📋 Don't forget the waiver!</p>
-      <p style="margin:0 0 10px;color:#5c6470;font-size:14px">Every guest must sign before arrival to avoid delays. Please forward this link to all your guests:</p>
-      <a href="${WAIVER_URL}" style="display:inline-block;background:#7a6253;color:#fff;text-decoration:none;font-weight:bold;padding:10px 18px;border-radius:10px">Sign the waiver →</a>
-    </div>
-    <p style="color:#5c6470;font-size:13px">Reply anytime or message @littlehavenplay. — ${studio}</p></div>`;
-  await fetch("https://api.resend.com/emails", { method: "POST", headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ from: fromHeader(from, studio), to: [r.email], bcc: studioEmail ? [studioEmail] : undefined, subject: `Your party is confirmed — ${r.date}`, html: html + SIGNATURE_HTML }) });
-}
 function json(obj, status = 200) { return new Response(JSON.stringify(obj), { status, headers: { "content-type": "application/json", "cache-control": "no-store" } }); }
 export const config = { path: "/api/parties-list" };

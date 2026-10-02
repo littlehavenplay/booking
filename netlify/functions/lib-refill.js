@@ -71,19 +71,19 @@ async function sendRefill(email, e, key, from, studioEmail) {
     <h2 style="color:#a85f59;font-weight:normal">You're grandfathered in! 🎈</h2>
     <p>Hi ${esc(e.name) || "there"},</p>
     <p>Looks like your prepaid <b>${esc(e.label)}</b> is all used up — we hope the little ones had a blast!</p>
-    <p>As one of our original punch-card families, <b>you can still reload at your original prices:</b></p>
+    <p>As one of our original prepaid-card families, <b>you can still reload at your original prices:</b></p>
     <ul style="margin:10px 0 12px;padding-left:20px">
       <li style="margin-bottom:4px"><b>5 visits</b> — 15% off, prepaid</li>
       <li><b>10 visits</b> — 20% off each visit</li>
     </ul>
-    <p>Just ask us at the desk next time you're in. Otherwise you're on our free <b>Loyalty Punch Card</b>: after 7 visits, the 8th is free.</p>
+    <p>Just ask us at the desk next time you're in.</p>
     <p style="margin-top:16px"><a href="${BOOK_URL}" style="display:inline-block;background:#c97d76;color:#fff;text-decoration:none;font-weight:bold;padding:12px 22px;border-radius:11px">Book your next visit →</a></p>
     <p style="color:#8a8276;font-size:13px;margin-top:22px"><a href="${unsub}" style="color:#8a8276">Unsubscribe</a></p>
     <p style="color:#5c6470;font-size:13px">See you soon! — ${STUDIO}</p></div>`;
   try {
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST", headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ from: `${STUDIO} <${from}>`, to: [email], bcc: studioEmail ? [studioEmail] : undefined, subject: `You're grandfathered in — keep your Little Haven punch card benefits 🎈`, html: html + signatureFor(TERMS.punchcards) }),
+      body: JSON.stringify({ from: `${STUDIO} <${from}>`, to: [email], bcc: studioEmail ? [studioEmail] : undefined, subject: `You're grandfathered in — reload at your original prices 🎈`, html: html + signatureFor(TERMS.punchcards) }),
     });
     return res.ok;
   } catch { return false; }

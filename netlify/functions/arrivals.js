@@ -4,7 +4,7 @@
 //   { key, date, id, arrived:true|false, action:"set" } -> { ok, arrivals }
 import { getStore } from "@netlify/blobs";
 import { findFamilyByCode, creditReferrer, reconcileLots, lotSummaryLines, last4 as refLast4 } from "./lib-referral.js";
-import { addPunch, issueCode, sendFamilyPunch } from "./lib-loyalty.js";
+import { addPunch, issueCode } from "./lib-loyalty.js";
 import { listAllKeys } from "./lib-blobs.js";
 import { fromHeader, SIGNATURE_HTML } from "./lib-email.js";
 
@@ -140,17 +140,13 @@ export default async (req) => {
                   const r = await issueCode(loyalty, { first: ch.first, last: ch.last, phone4, email, suppressEmail: true, visitMeta });
                   loyaltyPunches.push({ childName: r.childName, code: r.code, freeAdmission: true });
                 } else {
-                  // Everything else (card, gift card, store credit, discount, military,
-                  // weekday special) is a paid visit → punch the card.
+                  // Everything else is a paid visit → record it on the profile
+                  // (no punch — the punch program has ended).
                   const r = await addPunch(loyalty, { first: ch.first, last: ch.last, phone4, email, suppressEmail: isFamily, visitMeta });
                   if (!r.error) loyaltyPunches.push({ childName: r.childName, code: r.code, punches: r.punches,
                     needed: r.needed, rewardIssued: r.rewardIssued, rewardCode: r.rewardCode });
                 }
               } catch {}
-            }
-            // Family: at most ONE combined email, and only if someone earned a free visit.
-            if (isFamily && email && loyaltyPunches.some(p => p.rewardIssued)) {
-              try { await sendFamilyPunch(email, loyaltyPunches); } catch {}
             }
             entry.loyaltyPunched = true;
             try { await bstore.setJSON(bookingKey, rec); } catch {}

@@ -16,7 +16,7 @@ import { makeCredit, sendCreditEmail, ownerCopy } from "./lib-credit.js";
 
 const GRACE_MINUTES = 60;          // how late = a no-show
 const CREDIT_EXPIRY_DAYS = 14;
-const NOSHOW_INTRO = "We held your spot but it looks like you weren't able to make it in today — no worries, these things happen! We've gone ahead and released the reservation and set you up with a courtesy credit so you can rebook whenever works for you.";
+const NOSHOW_INTRO = "Sorry we missed you today! We've released your reservation and added a courtesy credit so you can rebook any time.";
 
 export default async () => {
   const dryRun = (process.env.NOSHOW_AUTO_CANCEL || "true").toLowerCase() === "false";

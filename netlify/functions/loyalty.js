@@ -12,7 +12,7 @@ import { listAllKeys } from "./lib-blobs.js";
 import { getActiveFamCode } from "./famcode.js";
 import {
   PUNCHES_FOR_REWARD, resolveCard, addPunch, cleanName, last4, normalizeCode,
-  isLegacyPassCode, sendFamilyPunch, sendMilitaryVerifiedEmail,
+  isLegacyPassCode, sendMilitaryVerifiedEmail,
 } from "./lib-loyalty.js";
 
 export default async (req) => {
@@ -327,7 +327,7 @@ export default async (req) => {
       }
     } catch { return json({ error: "Couldn't read the cards. Try again." }, 502); }
     return json({ ok: true, scanned, added, already, skippedUnsub, noEmail,
-      message: `${added} punch-card email${added === 1 ? "" : "s"} added to the newsletter list. ${already} were already on it, ${skippedUnsub} had unsubscribed (left alone), ${noEmail} cards had no email.` });
+      message: `${added} profile email${added === 1 ? "" : "s"} added to the newsletter list. ${already} were already on it, ${skippedUnsub} had unsubscribed (left alone), ${noEmail} profiles had no email.` });
   }
 
   if (action === "visit-history") {
@@ -343,7 +343,7 @@ export default async (req) => {
     const direct = normalizeCode(b.code);
     if (direct && await isLegacyPassCode(direct)) {
       return json({ ok: true, legacy: true, code: direct,
-        message: "This is a pre-paid LEGACY punch card — not part of the loyalty program, so it doesn't earn loyalty punches." });
+        message: "This is a legacy prepaid card, not a child profile." });
     }
     let code = direct, rec = null;
     if (direct) { try { rec = await loyalty.get("card:" + direct, { type: "json" }); } catch { rec = null; } }
@@ -463,18 +463,16 @@ export default async (req) => {
     const bYear = birthday ? (todayPacific() || "").slice(0, 4) : null;
     const adultNames = Array.isArray(b.adultNames) ? b.adultNames : [];
     if (direct) {
-      if (await isLegacyPassCode(direct)) return json({ error: "That's a legacy prepaid card — don't punch it here." }, 409);
+      if (await isLegacyPassCode(direct)) return json({ error: "That's a legacy prepaid card — use the Legacy prepaid cards tool." }, 409);
       let exists = null; try { exists = await loyalty.get("card:" + direct, { type: "json" }); } catch {}
-      if (!exists) return json({ error: "No loyalty card found for that code." }, 404);
+      if (!exists) return json({ error: "No profile found for that code." }, 404);
       const r = await addPunch(loyalty, { code: direct, waiverSigned, adultNames, noPunch: birthday, birthdayYear: bYear,
         visitMeta: { date: todayPacific(), source: src, birthday, walkin } });
-      if (r.error) return json({ error: "Couldn't save the punch. Try again." }, 502);
+      if (r.error) return json({ error: "Couldn't save. Try again." }, 502);
       return json({ ok: true, ...r,
         message: birthday
-          ? `🎂 Birthday visit recorded for ${r.childName} (${r.code}). No punch added, and no birthday code will be emailed again this year. Still ${r.punches}/${r.needed} toward a free visit.`
-          : r.rewardIssued
-            ? `${r.childName} earned a FREE visit! Reward code ${r.rewardCode} was emailed (expires ${r.rewardExpiry}).`
-            : `Punched! ${r.childName} (${r.code}) now has ${r.punches}/${r.needed} visits toward a free one.` });
+          ? `🎂 Birthday visit recorded for ${r.childName} (${r.code}). No birthday code will be emailed again this year.`
+          : `Visit recorded for ${r.childName} (${r.code}).` });
     }
     const first = (b.childFirst || "").toString().trim();
     const last  = (b.childLast || "").toString().trim();
@@ -487,13 +485,11 @@ export default async (req) => {
     const r = await addPunch(loyalty, { first, last, phone4, email, waiverSigned, adultNames, militaryVerified, dob,
       noPunch: birthday, birthdayYear: bYear,
       visitMeta: { date: todayPacific(), source: src, birthday, walkin } });
-    if (r.error) return json({ error: r.message || "Couldn't save the punch. Try again." }, 502);
+    if (r.error) return json({ error: r.message || "Couldn't save. Try again." }, 502);
     if (birthday) return json({ ok: true, ...r,
-      message: `🎂 Birthday visit recorded for ${r.childName} (${r.code}). No punch added, and no birthday code will be emailed again this year.` });
+      message: `🎂 Birthday visit recorded for ${r.childName} (${r.code}). No birthday code will be emailed again this year.` });
     return json({ ok: true, ...r,
-      message: r.rewardIssued
-        ? `${r.childName} earned a FREE visit! Reward code ${r.rewardCode} was emailed (expires ${r.rewardExpiry}).`
-        : `Punched! ${r.childName} (${r.code}) now has ${r.punches}/${r.needed} visits toward a free one.` });
+      message: `${r.isNew ? "Profile created and visit" : "Visit"} recorded for ${r.childName} (${r.code}).` });
   }
 
   if (action === "delete") {
@@ -509,7 +505,7 @@ export default async (req) => {
       const r = await resolveCard(loyalty, first, last, p4, false);
       code = r.code; rec = r.rec;
     }
-    if (!code || !rec) return json({ error: "No loyalty card found for that code." }, 404);
+    if (!code || !rec) return json({ error: "No profile found for that code." }, 404);
     const name = rec.childName || "";
     try { await loyalty.delete("card:" + code); } catch { return json({ error: "Couldn't delete the card. Try again." }, 502); }
     return json({ ok: true, deleted: true, code, childName: name });
@@ -537,7 +533,7 @@ export default async (req) => {
     if (!results.length) return json({ error: "Couldn't save. Try again." }, 502);
     const made = results.filter(r => r.isNew).length, had = results.length - made;
     const parts = [];
-    if (made) parts.push(`Created ${made} card${made === 1 ? "" : "s"}`);
+    if (made) parts.push(`Created ${made} profile${made === 1 ? "" : "s"}`);
     if (had) parts.push(`${had} already on file (updated)`);
     return json({ ok: true, results, count: results.length,
       message: parts.join(" · ") + ": " + results.map(r => `${r.childName} (${r.code})`).join(", ") + ". No email sent." });
@@ -560,11 +556,9 @@ export default async (req) => {
       const r = await addPunch(loyalty, { first: c.first, last: c.last, phone4, email, suppressEmail: true, waiverSigned, adultNames, militaryVerified, dob: c.dob, visitMeta: { date: todayPacific(), source: "manual" } });
       if (!r.error) results.push(r);
     }
-    if (!results.length) return json({ error: "Couldn't save the punches. Try again." }, 502);
-    if (email) { try { await sendFamilyPunch(email, results); } catch {} }
-    const rewardCount = results.filter(r => r.rewardIssued).length;
-    return json({ ok: true, results, count: results.length, rewardCount,
-      message: `Punched ${results.length} child${results.length === 1 ? "" : "ren"}${email ? " — one combined email sent" : ""}${rewardCount ? ` · ${rewardCount} free visit${rewardCount === 1 ? "" : "s"} earned!` : ""}.` });
+    if (!results.length) return json({ error: "Couldn't save. Try again." }, 502);
+    return json({ ok: true, results, count: results.length,
+      message: `Visit recorded for ${results.map(r => `${r.childName} (${r.code})`).join(", ")}.` });
   }
 
   // Set a waiver "signed" date for a child (or the whole family by phone). Expiry = signed + 365 days.
@@ -610,7 +604,7 @@ export default async (req) => {
       let r = null; try { r = await loyalty.get("card:" + code, { type: "json" }); } catch {}
       if (r) targets.push(r);
     }
-    if (!targets.length) return json({ error: "No matching loyalty card found." }, 404);
+    if (!targets.length) return json({ error: "No matching profile found." }, 404);
     // The child's badge reads the card-level waiverSigned date, not the adult list.
     // So adding the FIRST adult with a signed date has to fill that in too —
     // otherwise the family shows an adult signed and the child still reads

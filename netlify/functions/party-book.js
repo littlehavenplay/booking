@@ -82,6 +82,9 @@ export default async (req) => {
     } } : {}),
     childName, name, phone, email, kids, adults, comment,
     at: new Date().toISOString(),
+    // Booked in store = the customer gets their "party is booked" email right now,
+    // so marking the deposit paid later must not send a second confirmation.
+    ...(isStaff && email ? { confirmEmailedAt: new Date().toISOString() } : {}),
   };
   try { await parties.setJSON(key, record); }
   catch { return json({ error: "Couldn't save the reservation. Please try again." }, 502); }

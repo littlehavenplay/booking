@@ -122,10 +122,10 @@ export default async (req) => {
       ok: true, slot, slotLabel: chosen.label, atLabel,
       visitsRemaining: p.visitsRemaining, code, label: p.label || "",
       freeVisit, graduated: freeVisit, reminderEmailed,
-      celebration: freeVisit ? "📋 That was their last prepaid visit. This card is now complete — they're on our free loyalty program going forward, no reload available." : "",
+      celebration: freeVisit ? "📋 That was their last prepaid visit. This card is now complete." : "",
       children: hourKids, cap, remaining: Math.max(0, cap - hourKids), over: hourKids > cap,
       message: freeVisit
-        ? `Pass ${code} is now used up — that was their last prepaid visit (already paid for, not free). This card is retired; they're automatically on the free loyalty program going forward.`
+        ? `Pass ${code} is now used up — that was their last prepaid visit (already paid for, not free). This card is now complete.`
         : `Checked in ${count} on pass ${code} to ${chosen.label}. ${p.visitsRemaining} visit(s) left.`,
     });
   }

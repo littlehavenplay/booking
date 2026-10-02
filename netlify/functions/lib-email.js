@@ -102,9 +102,23 @@ export async function sendOwnerAlert(subject, bodyHtml, extraTo) {
 // POSTs the email and, if it fails with a rate-limit (429) or server error (5xx) or a
 // network hiccup, waits briefly and retries ONCE. This keeps confirmations from being
 // dropped or delayed during bursts of activity. Returns true on success; never throws.
+// Every customer email copies the studio (BCC), so the owner sees exactly what
+// went out. Skipped when the studio is already a recipient. opts.noBcc lets a
+// bulk send (e.g. a newsletter) opt out.
+export function withStudioBcc(payload) {
+  const studio = (process.env.STUDIO_EMAIL || "").trim();
+  if (!studio || !payload || payload.noBcc) { if (payload) delete payload.noBcc; return payload; }
+  const list = v => (Array.isArray(v) ? v : (v ? [v] : [])).map(x => String(x).toLowerCase());
+  const lower = studio.toLowerCase();
+  const already = list(payload.to).some(x => x.includes(lower)) || list(payload.cc).some(x => x.includes(lower)) || list(payload.bcc).some(x => x.includes(lower));
+  if (already) return payload;
+  return { ...payload, bcc: [...(Array.isArray(payload.bcc) ? payload.bcc : (payload.bcc ? [payload.bcc] : [])), studio] };
+}
+
 export async function resendEmail(payload, opts = {}) {
   const key = process.env.RESEND_API_KEY;
   if (!key) return false;
+  payload = withStudioBcc(payload);
   const body = JSON.stringify(payload);
 
   // ---- Why this key exists ----------------------------------------------

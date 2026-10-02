@@ -906,7 +906,7 @@ async function cnLookupCode(row, code){
       row.querySelector(".cn-f").value=parts[0]||""; row.querySelector(".cn-l").value=parts.slice(1).join(" ")||"";
       cnSetReadonly(row,true,r.hasDob);
       row.dataset.military=r.militaryVerified?"1":"0";
-      const _prog=(typeof r.punches==="number")?(" \u00b7 "+r.punches+"/"+r.needed+" visits \u2014 your 8th is free! \ud83c\udf88"):"";
+      const _prog="";
       const dInp=row.querySelector(".cn-d");
       if(r.hasDob){
         dInp.value=""; dInp.style.borderColor=""; dInp.placeholder="🔒 Birthday on file";
@@ -1118,7 +1118,7 @@ function updateTotals(){
       : `Only ${a.remaining} spot${a.remaining===1?"":"s"} left at that time.`; }
   else if(!$("#name").value.trim()){ ok=false; note="Please enter your full name."; }
   else if(!/^\S+@\S+\.\S+$/.test($("#email").value.trim())){ ok=false; note="Please enter a valid email."; }
-  else if((($("#phone")||{}).value||"").replace(/\D/g,"").length<10){ ok=false; note="Please enter your phone number — it sets up your child's free punch card."; }
+  else if((($("#phone")||{}).value||"").replace(/\D/g,"").length<10){ ok=false; note="Please enter your phone number."; }
   else if(!agreed){ ok=false; note="Please agree to the policy to continue."; }
   $("#leftNote").textContent=note;
   $("#leftNote").style.color = ok ? "var(--ink-soft)" : "var(--red)";
@@ -1296,8 +1296,8 @@ function collectBooking(){
       code:((r.querySelector(".cn-code")||{}).value||"").trim().toUpperCase(),
       admission:r.getAttribute("data-type")||"",
     }));
-  if(childRows.some(c=>!c.first||!c.last)){ showMsg("Please enter each child's first AND last name — the last name is required so we can set up their punch card.","err"); return null; }
-  if((($("#phone")||{}).value||"").replace(/\D/g,"").length<10){ showMsg("Please enter your phone number — it's how we set up and find your child's free Loyalty Punch Card, and how you're automatically punched in at check-in.","err"); return null; }
+  if(childRows.some(c=>!c.first||!c.last)){ showMsg("Please enter each child's first AND last name.","err"); return null; }
+  if((($("#phone")||{}).value||"").replace(/\D/g,"").length<10){ showMsg("Please enter your phone number.","err"); return null; }
   const badDob=childRows.find(c=>c.dobRaw&&!isValidDob(c.dobRaw));
   if(badDob){ showMsg("Please check the birthday for "+(badDob.first||"your child")+" — use mm/dd/yyyy (for example 04/09/2021), or leave it blank.","err"); return null; }
   return childRows.filter(c=>c.first&&c.last).map(c=>({
@@ -2123,7 +2123,7 @@ state.gs = 0;
      still exists, it just lives behind a small (?) until someone asks for it.
 
      Usage:  <label>Reward code <button type="button" class="hlp"
-                data-help="Earned your 8th visit? Enter it here.">?</button></label>
+                data-help="Enter your code here.">?</button></label>
 
      Behaviour: click or hover to open, click anywhere / Escape to close, only one
      open at a time. Keyboard reachable and screen-reader labelled. No dependencies.

@@ -154,7 +154,7 @@ export async function sendCreditReminderEmail(to, rec, daysLeft) {
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ from: fromHeader(from, studio), to: [to], subject, html: html + SIGNATURE_HTML }),
+      body: JSON.stringify({ from: fromHeader(from, studio), to: [to], bcc: process.env.STUDIO_EMAIL ? [process.env.STUDIO_EMAIL] : undefined, subject, html: html + SIGNATURE_HTML }),
     });
     return res.ok;
   } catch { return false; }

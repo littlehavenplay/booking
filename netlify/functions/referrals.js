@@ -255,7 +255,7 @@ export default async (req) => {
     if (!fp4) return json({ error: "Enter the friend's phone number." }, 400);
     if (fp4 === fam.phone4) return json({ error: "That's the same phone number as the referrer." }, 400);
     if (!(await isNewFamily(b.friendPhone))) {
-      return json({ error: "That phone already has a loyalty card, so they're not a new family." }, 409);
+      return json({ error: "That phone already has a profile with us, so they're not a new family." }, 409);
     }
     const existing = await findReferralForFriend(store, fp4);
     if (existing) return json({ error: "That family has already been referred once." }, 409);

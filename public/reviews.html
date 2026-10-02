@@ -141,7 +141,9 @@
     try{
       var rr=await (await fetch("/api/site-photos?set="+set)).json();
       (rr.photos||[]).forEach(function(p){
-        var im=document.createElement("img"); im.alt=altText; im.loading="lazy"; im.src=p.src;
+        var im=document.createElement("img"); im.alt=altText; im.loading="lazy";
+        im.onerror=function(){ if(im.parentNode) im.parentNode.removeChild(im); };   // never show a broken image
+        im.src=p.src;
         im.addEventListener("click",function(){ openLb(im.currentSrc||im.src, im.alt); });
         host.appendChild(im);
       });

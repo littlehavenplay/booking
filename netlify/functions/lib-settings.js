@@ -165,17 +165,15 @@ export const GRIP_SOCK_MAX = 10;
 // Flat fallback (used only by older code paths). Live rule is additionalAdultCentsFor(date).
 export const ADDITIONAL_ADULT = parseInt(process.env.ADDITIONAL_ADULT_CENTS || "500", 10); // $5
 
-export const PASS_POLICY_TITLE = "Little Haven Punch Card Policy";
+export const PASS_POLICY_TITLE = "Prepaid Card Policy (no longer sold)";
 export const PASS_POLICY_LINES = [
-  "Every punch card is 8 visits for the price of 7 — pay for 7 visits and your 8th visit is free.",
+  "Prepaid punch cards are no longer sold. This policy applies only to existing cards until they are used up.",
   "Toddler and Baby/Infant punch cards include admission for 2 adults per visit. Additional adults are $5 per person, per visit.",
   "The Sibling Add-On punch card does not include any adults of its own and may only be used on the same visit as a paid or carded Toddler admission. It cannot be redeemed on its own.",
   "Sibling Add-On punch cards are valid for Open Play Sessions only.",
   "Free coffee from our self-serve station is included for punch card holders on each visit.",
   "Visits are tracked digitally. Use your punch card code at checkout to redeem a visit.",
-  "When your card is used up, that prepaid product is no longer available — you're automatically moved to our free Loyalty Punch Card program, where every 8th visit is free with no purchase needed.",
   "Punch cards are valid for Open Play Sessions only.",
-  "Legacy prepaid punch cards are no longer sold — this policy applies only to existing prepaid cards still being used down. New families join our free Loyalty Punch Card program automatically.",
   "A valid punch card code must be entered at checkout when reserving a play session.",
   "Reservations are subject to availability and capacity limits.",
   "Punch cards are non-refundable, non-transferable, and have no cash value.",
