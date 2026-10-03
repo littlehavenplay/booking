@@ -817,6 +817,7 @@
     <div class="out" id="rtFbOut"></div>
   </div>
 
+  <style>#sec-photos .phTab{border:2px solid transparent}#sec-photos .phTab.alt{background:#fff!important;color:#5b4636!important;border-color:#e2d6c6}#sec-photos .phTab:not(.alt){background:#3b2d24!important;color:#fff!important;border-color:#3b2d24}#sec-photos .phTab:not(.alt)::before{content:"\2713  "}</style>
   <div class="card" id="sec-photos">
     <h2>📸 Site photos</h2>
     <p class="note">Upload, remove, or reorder photos shown on your website.<button type="button" class="hlp" data-help="Upload, remove, or reorder photos shown on your website. <b>Reviews</b>, <b>Yelp reviews</b>, and <b>Facebook reviews</b> each appear in their own carousels on the Reviews page (Reviews also shows on the homepage). <b>Interior</b> appear in the homepage &quot;Take a Look Inside&quot; slideshow. <b>Customer photos</b> are real photos your families attached to Google reviews — they show in the smaller strip right under the review carousel. Photos marked <b>BUILT-IN</b> ship with the site — removing one hides it from the site rather than deleting it. Use ↑ / ↓ to reorder — changes save automatically.">?</button></p>
@@ -828,11 +829,31 @@
       <button type="button" class="phTab alt" data-set="customer">📸 Customer photos</button>
       <button type="button" class="phTab alt" data-set="pastevents">🎉 Past events</button>
     </div>
-    <label>Add a photo (JPG or PNG, under ~5MB)</label>
+    <div id="phCurrent" style="background:#f3ede4;border-radius:10px;padding:9px 12px;margin:0 0 10px;font-weight:800;color:#3b2d24">Showing &amp; uploading to: <span id="phCurrentName">🎈 Reviews</span></div>
+      <label>Add a photo (JPG or PNG, under ~5MB)</label>
     <input type="file" id="phFile" accept="image/png,image/jpeg,image/webp" multiple>
     <button id="phUpload">⬆️ Upload photo(s)</button>
     <div class="out" id="phOut"></div>
     <div id="phGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px;margin-top:14px"></div>
+  </div>
+
+  <div class="card" id="sec-textlist">
+    <h2>📱 Text list</h2>
+    <p class="note" style="margin-top:-2px">Everyone who agreed to marketing texts. Download the list and upload it to your texting service &mdash; it sends the texts and handles STOP replies.</p>
+    <p class="note">Sign-up page to share: <a href="/texts.html" target="_blank" rel="noopener"><b>littlehavenplay.com/texts.html</b></a></p>
+    <div id="tlStats" class="note"></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" id="tlLoad" style="margin:0">Load</button><button type="button" id="tlExport" class="alt" style="margin:0">Download list (CSV)</button></div>
+    <details style="margin-top:12px"><summary style="cursor:pointer;font-weight:800">Add someone who signed up in person</summary>
+      <div class="row" style="margin-top:8px"><div><label>First name</label><input type="text" id="tlName"></div><div><label>Mobile</label><input type="tel" id="tlPhone"></div></div>
+      <label style="display:flex;gap:8px;align-items:flex-start;text-transform:none;letter-spacing:0;font-weight:700;color:var(--charcoal)"><input type="checkbox" id="tlOk" style="width:auto;margin-top:3px"> They agreed to get marketing texts (signed our sign-up sheet or said yes in person).</label>
+      <button type="button" id="tlAdd" style="margin-top:8px">Add to text list</button>
+    </details>
+    <details style="margin-top:10px"><summary style="cursor:pointer;font-weight:800">Paste opt-outs from your texting service</summary>
+      <p class="note">Export the "unsubscribed" numbers from your texting service and paste them here so nobody gets re-added.</p>
+      <textarea id="tlStops" placeholder="One number per line"></textarea>
+      <button type="button" id="tlStopBtn" style="margin-top:8px">Mark as opted out</button>
+    </details>
+    <div class="out" id="tlOut"></div>
   </div>
 
   <div class="card" id="sec-news">
@@ -1688,7 +1709,18 @@ window.phMove=async function(id,dir){
   var key=$("#key").value.trim(); if(!key){alert("Enter your admin key (top of page).");return;}
   try{ await fetch("/api/site-photos",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key,action:"reorder",set:phSet,order:phList.map(function(p){return p.id;})})}); }catch(e){}
 };
-document.querySelectorAll(".phTab").forEach(function(bt){ bt.onclick=function(){ phSet=bt.getAttribute("data-set"); document.querySelectorAll(".phTab").forEach(function(x){x.className="phTab alt";}); bt.className="phTab"; phLoad(); }; });
+function phSelect(set){
+  var bt=document.querySelector('.phTab[data-set="'+set+'"]'); if(!bt) return;
+  phSet=set;
+  document.querySelectorAll(".phTab").forEach(function(x){ x.className="phTab alt"; x.setAttribute("aria-pressed","false"); });
+  bt.className="phTab"; bt.setAttribute("aria-pressed","true");
+  var nm=bt.textContent.trim();
+  if($("#phCurrentName")) $("#phCurrentName").textContent=nm;
+  if($("#phUpload")) $("#phUpload").textContent="\u2B06\uFE0F Upload to "+nm.replace(/^\S+\s/,"");
+  try{ sessionStorage.setItem("lh_ph_set",set); }catch(e){}
+  phLoad();
+}
+document.querySelectorAll(".phTab").forEach(function(bt){ bt.onclick=function(){ phSelect(bt.getAttribute("data-set")); }; });
 function phReadFile(f){
   return new Promise(function(resolve,reject){
     var rd=new FileReader();
@@ -1715,12 +1747,12 @@ if($("#phUpload")) $("#phUpload").onclick=async function(){
     }catch(e){ failCount++; }
   }
   $("#phFile").value="";
-  if(failCount===0){ out.className="out ok"; out.textContent="\u2705 Uploaded "+okCount+" photo"+(okCount===1?"":"s")+"! They'll show on the site shortly (hard-refresh to see them)."; }
+  if(failCount===0){ out.className="out ok"; out.textContent="\u2705 Uploaded "+okCount+" photo"+(okCount===1?"":"s")+" to "+(($("#phCurrentName")||{}).textContent||phSet)+". They'll show on the site shortly."; }
   else { out.className="out err"; out.textContent="Uploaded "+okCount+", but "+failCount+" failed \u2014 try those again."; }
   phLoad();
   $("#phUpload").disabled=false;
 };
-phLoad();
+(function(){ var saved=null; try{ saved=sessionStorage.getItem("lh_ph_set"); }catch(e){} phSelect(saved&&document.querySelector('.phTab[data-set="'+saved+'"]')?saved:"reviews"); })();
 var RT_PREFIX={google:"rt",yelp:"rtYelp",facebook:"rtFb"};
 async function rtLoad(platform){
   var p=RT_PREFIX[platform]||"rt"; var starsEl="#"+p+"Stars", countEl="#"+p+"Count";
@@ -1877,7 +1909,9 @@ function renderParties(){
       +'<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">'+(p.depositPaid
           ?'<button onclick="markPaid(\''+p.date+'\',\''+p.partySlot+'\',false)" style="margin:0;background:#9aa0a6;font-size:.8rem;padding:6px 12px">Undo deposit paid</button>'
           :'<button onclick="markPaid(\''+p.date+'\',\''+p.partySlot+'\',true)" style="margin:0;font-size:.8rem;padding:6px 12px">Mark deposit paid</button>')
+        +'<button onclick="ptGuests(\''+p.date+'\',\''+p.partySlot+'\',this)" class="alt" style="margin:0;font-size:.8rem;padding:6px 12px">\uD83C\uDF88 Guest list</button>'
         +'<button onclick="releaseParty(\''+p.date+'\',\''+p.partySlot+'\')" class="alt" style="margin:0;background:#fbe6e2;color:#b5382f;font-size:.8rem;padding:6px 12px">Release slot</button></div>'
+      +'<div id="gl-'+p.date+'-'+p.partySlot+'"></div>'
       +'</div>';});
   $("#ptList").innerHTML=h;
 }
@@ -1896,6 +1930,52 @@ async function markPaid(date,slot,paid){
 }
 if($("#pcLoad"))$("#pcLoad").onclick=loadPasses;
 if($("#ptLoad"))$("#ptLoad").onclick=loadParties;
+// ---- Party invitation & guest list (per party) ----
+async function ptGuests(date,slot,btn){
+  var box=document.getElementById("gl-"+date+"-"+slot); if(!box) return;
+  if(box.dataset.open==="1"&&btn){ box.dataset.open=""; box.innerHTML=""; return; }
+  var key=_pkey(); if(!key){ alert("Sign in first."); return; }
+  box.dataset.open="1"; box.innerHTML='<div class="note" style="margin-top:8px">Loading guest list…</div>';
+  try{
+    var r=await (await fetch("/api/invite",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key:key,action:"staff-get",date:date,partySlot:slot})})).json();
+    if(!r.ok){ box.innerHTML='<div class="out err" style="display:block">'+esc(r.error||"Couldn't load.")+'</div>'; return; }
+    var T=r.totals||{}, p=r.pkg;
+    var over=p&&((T.kids||0)>p.kidsIncl||(T.adults||0)>p.adultsIncl);
+    var rows=(r.rsvps||[]).slice().sort(function(a,b){return (a.attending==="yes"?0:1)-(b.attending==="yes"?0:1)||String(a.name).localeCompare(String(b.name));}).map(function(g){
+      var yes=g.attending==="yes";
+      return '<tr style="'+(yes?"":"opacity:.55")+'"><td style="padding:6px 8px;border-top:1px solid #efe7da"><label style="display:flex;gap:6px;align-items:center;text-transform:none;letter-spacing:0;font-weight:700;color:inherit;margin:0"><input type="checkbox" style="width:auto;margin:0"'+(yes?"":" disabled")+'> '+esc(g.name)+'</label></td>'
+        +'<td style="padding:6px 8px;border-top:1px solid #efe7da">'+(yes?esc((g.kids||[]).join(", ")):"Can\u2019t come")+'</td>'
+        +'<td style="padding:6px 8px;border-top:1px solid #efe7da;text-align:center">'+(yes?(g.adults||0):"")+'</td>'
+        +'<td style="padding:6px 8px;border-top:1px solid #efe7da;font-size:.8rem">'+esc(g.phone||"")+(g.phone&&g.email?"<br>":"")+esc(g.email||"")+(g.note?'<br><i>'+esc(g.note)+'</i>':"")+'</td></tr>';
+    }).join("");
+    box.innerHTML='<div style="margin-top:10px;background:#fdf8f3;border:1px solid #efe7da;border-radius:12px;padding:12px">'
+      +'<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:8px"><b>Guest list</b>'
+        +'<span style="background:#e7f0df;color:#3f5d33;border-radius:999px;padding:2px 10px;font-weight:800;font-size:.78rem">'+(T.kids||0)+' kids · '+(T.adults||0)+' adults</span>'
+        +(p?'<span style="font-size:.78rem;color:'+(over?"#a5651a;font-weight:800":"#8a7d6a")+'">'+esc(p.label)+' includes '+p.kidsIncl+' kids, '+p.adultsIncl+' adults'+(over?' \u2014 over':'')+'</span>':'')
+      +'</div>'
+      +(rows?'<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:.86rem;background:#fff;border-radius:8px"><tr style="text-align:left;color:#8a7d6a;font-size:.75rem"><th style="padding:6px 8px">Grown-up (tick on arrival)</th><th style="padding:6px 8px">Kids</th><th style="padding:6px 8px">Adults</th><th style="padding:6px 8px">Contact</th></tr>'+rows+'</table></div>'
+        :'<div class="note">No RSVPs yet.</div>')
+      +'<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px">'
+        +'<a href="'+esc(r.guestUrl)+'" target="_blank" rel="noopener" style="font-size:.8rem;font-weight:800;color:#a85f59">Open invitation</a>'
+        +'<span style="color:#ccc">|</span><a href="'+esc(r.hostUrl)+'" target="_blank" rel="noopener" style="font-size:.8rem;font-weight:800;color:#a85f59">Host page</a>'
+        +'<span style="color:#ccc">|</span><button type="button" class="plain-link" onclick="ptCopy(\''+esc(r.hostUrl)+'\',this)" style="all:unset;cursor:pointer;font-size:.8rem;font-weight:800;color:#a85f59">Copy host link</button>'
+        +'<span style="color:#ccc">|</span><button type="button" onclick="ptSendHost(\''+date+'\',\''+slot+'\',this)" style="all:unset;cursor:pointer;font-size:.8rem;font-weight:800;color:#a85f59">Email host their link</button>'
+        +'<span style="color:#ccc">|</span><button type="button" onclick="ptGuests(\''+date+'\',\''+slot+'\')" style="all:unset;cursor:pointer;font-size:.8rem;font-weight:800;color:#a85f59">Refresh</button>'
+      +'</div>'
+      +(r.hostEmailedAt?'<div class="note" style="margin-top:4px">Host link last emailed '+esc(new Date(r.hostEmailedAt).toLocaleString())+'</div>':'')
+    +'</div>';
+  }catch(e){ box.innerHTML='<div class="out err" style="display:block">Network error.</div>'; }
+}
+async function ptCopy(url,b){ try{ await navigator.clipboard.writeText(url); b.textContent="Copied"; }catch(e){ prompt("Copy the host link:",url); } }
+async function ptSendHost(date,slot,b){
+  var key=_pkey(); if(!key) return;
+  if(!confirm("Email the family their invitation link?")) return;
+  b.textContent="Sending…";
+  try{ var r=await (await fetch("/api/invite",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key:key,action:"staff-send-host",date:date,partySlot:slot})})).json();
+    b.textContent=r.ok?"Emailed":"Email host their link"; if(!r.ok) alert(r.message||r.error||"Couldn't send."); }
+  catch(e){ b.textContent="Email host their link"; alert("Network error."); }
+}
+window.ptGuests=ptGuests; window.ptCopy=ptCopy; window.ptSendHost=ptSendHost;
 window.renderPasses=renderPasses;window.markPaid=markPaid;window.releaseParty=releaseParty;
 function reloadRoster(){ if($("#rosDate").value && $("#key").value.trim()) $("#rosView").click(); }
 $("#awAdd").onclick=async()=>{
@@ -2502,7 +2582,7 @@ if($("#wsSave")) $("#wsSave").onclick=async function(){
     {t:"\uD83C\uDF9F\uFE0F Play Club", c:"#7b5ea7", bg:"#f2edf9", ids:["sec-playclub","sec-playclub-members"]},
     {t:"\uD83C\uDF89 Parties & Events", c:"#d9a441", bg:"#fbf3e1", ids:["sec-parties","sec-events","sec-promos","sec-partners"]},
     {t:"\uD83D\uDCF8 Website Photos", c:"#b48ec2", bg:"#f4eef7", ids:["sec-photos","sec-rating"]},
-    {t:"\u2699\uFE0F Hours & Settings", c:"#a89a89", bg:"#f2ede7", ids:["sec-prices","sec-closures","sec-weekly","sec-seasonal","sec-weekday-special","sec-news","sec-newsletter"]}
+    {t:"\u2699\uFE0F Hours & Settings", c:"#a89a89", bg:"#f2ede7", ids:["sec-prices","sec-closures","sec-weekly","sec-seasonal","sec-weekday-special","sec-news","sec-newsletter","sec-textlist"]}
   ];
   var TABSETS=[
     {ids:["sec-issue","sec-redeem"], labels:["Issue a credit","Redeem a credit"]},
@@ -2668,7 +2748,7 @@ if($("#wsSave")) $("#wsSave").onclick=async function(){
    throws, the compact mode is removed so all tools remain visible (graceful fallback). */
 (function(){
   try{
-    var NAV = [["Today \u2014 Check-in & Walk-ins",[{"href":"/loyalty.html","label":"Child Profiles \u2197"},{"id":"sec-bookings"},{"id":"sec-schedule"},{"id":"sec-walkin"},{"id":"sec-legacy"},{"id":"sec-addbooking"},{"id":"sec-loyalty-list"},{"href":"/headcount.html","label":"Head count \u2197"}]],["Birthday Club",[{"id":"sec-birthdays"},{"id":"sec-birthdaycode"}]],["Capacity Control",[{"id":"sec-party"},{"id":"sec-reschedule"},{"id":"sec-partyoff"}]],["Credits, Codes & Bookings",[{"id":"sec-issue"},{"id":"sec-redeem"},{"id":"sec-credit-backfill"},{"id":"sec-code"},{"id":"sec-failed"},{"id":"sec-discount"},{"id":"sec-deposit"},{"id":"sec-grandfather"}]],["Parties & Events",[{"id":"sec-parties"},{"id":"sec-events"},{"id":"sec-promos"},{"id":"sec-partners"}]],["Website Photos",[{"id":"sec-photos"},{"id":"sec-rating"}]],["Hours & Settings",[{"id":"sec-prices"},{"id":"sec-closures"},{"id":"sec-weekly"},{"id":"sec-seasonal"},{"id":"sec-weekday-special"},{"id":"sec-news"},{"id":"sec-newsletter"}]]];
+    var NAV = [["Today \u2014 Check-in & Walk-ins",[{"href":"/loyalty.html","label":"Child Profiles \u2197"},{"id":"sec-bookings"},{"id":"sec-schedule"},{"id":"sec-walkin"},{"id":"sec-legacy"},{"id":"sec-addbooking"},{"id":"sec-loyalty-list"},{"href":"/headcount.html","label":"Head count \u2197"}]],["Birthday Club",[{"id":"sec-birthdays"},{"id":"sec-birthdaycode"}]],["Capacity Control",[{"id":"sec-party"},{"id":"sec-reschedule"},{"id":"sec-partyoff"}]],["Credits, Codes & Bookings",[{"id":"sec-issue"},{"id":"sec-redeem"},{"id":"sec-credit-backfill"},{"id":"sec-code"},{"id":"sec-failed"},{"id":"sec-discount"},{"id":"sec-deposit"},{"id":"sec-grandfather"}]],["Parties & Events",[{"id":"sec-parties"},{"id":"sec-events"},{"id":"sec-promos"},{"id":"sec-partners"}]],["Website Photos",[{"id":"sec-photos"},{"id":"sec-rating"}]],["Hours & Settings",[{"id":"sec-prices"},{"id":"sec-closures"},{"id":"sec-weekly"},{"id":"sec-seasonal"},{"id":"sec-weekday-special"},{"id":"sec-news"},{"id":"sec-newsletter"},{"id":"sec-textlist"}]]];
     var sideNav=document.getElementById('sideNav');
     var secMenu=document.getElementById('secMenu');
     var seen={};
@@ -4246,6 +4326,46 @@ if($("#baSend")) $("#baSend").onclick=baSend;
   $("#lgSearch").addEventListener("focus",function(){ load().then(render); });
   $("#lgSearch").addEventListener("keydown",function(e){ if(e.key==="Enter"){ e.preventDefault(); load().then(render); } });
   $("#lgLoad").onclick=function(){ load(true).then(render); };
+})();
+</script>
+<script>
+/* ---- Text list (SMS opt-ins) ---- */
+(function(){
+  var $=function(s){return document.querySelector(s);};
+  if(!$("#sec-textlist")) return;
+  function K(){ try{ return typeof _pkey==="function"?_pkey():""; }catch(e){ return ""; } }
+  function esc(t){return String(t==null?"":t).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});}
+  function out(cls,msg){ var o=$("#tlOut"); o.style.display="block"; o.className="out "+cls; o.textContent=msg; }
+  async function call(body){ body.key=K(); return (await fetch("/api/sms",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)})).json(); }
+  async function stats(){
+    if(!K()){ out("err","Sign in first."); return; }
+    try{ var r=await call({action:"stats"});
+      if(!r.ok){ out("err",r.error||"Couldn't load."); return; }
+      var src=Object.keys(r.bySource||{}).map(function(k){return esc(k)+": "+r.bySource[k];}).join(" · ");
+      $("#tlStats").innerHTML='<b style="font-size:1.1rem;color:var(--charcoal)">'+r.subscribed+'</b> on the list'+(r.optedOut?' · '+r.optedOut+' opted out':'')+(src?'<br>'+src:'')
+        +(r.latest&&r.latest.length?'<br>Latest: '+r.latest.map(function(x){return esc(x.name||"(no name)")+' '+esc(x.phone);}).join(", "):'');
+    }catch(e){ out("err","Network error."); }
+  }
+  $("#tlLoad").onclick=stats;
+  $("#tlExport").onclick=async function(){
+    if(!K()){ out("err","Sign in first."); return; }
+    try{ var r=await call({action:"export"});
+      if(!r.ok){ out("err",r.error||"Couldn't export."); return; }
+      var a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([r.csv],{type:"text/csv"}));
+      a.download="little-haven-text-list-"+new Date().toISOString().slice(0,10)+".csv"; document.body.appendChild(a); a.click(); a.remove();
+      out("ok","Downloaded "+r.count+" number"+(r.count===1?"":"s")+".");
+    }catch(e){ out("err","Network error."); }
+  };
+  $("#tlAdd").onclick=async function(){
+    try{ var r=await call({action:"add",name:$("#tlName").value.trim(),phone:$("#tlPhone").value.trim(),confirmed:$("#tlOk").checked});
+      if(r.ok){ out("ok",r.message); $("#tlName").value=""; $("#tlPhone").value=""; $("#tlOk").checked=false; stats(); } else out("err",r.error||"Couldn't add.");
+    }catch(e){ out("err","Network error."); }
+  };
+  $("#tlStopBtn").onclick=async function(){
+    try{ var r=await call({action:"import-optouts",text:$("#tlStops").value});
+      if(r.ok){ out("ok",r.message); $("#tlStops").value=""; stats(); } else out("err",r.error||"Couldn't save.");
+    }catch(e){ out("err","Network error."); }
+  };
 })();
 </script>
 </body>

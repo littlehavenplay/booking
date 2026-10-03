@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Your Party Invitation · Little Haven Play Studio</title>
+<meta name="robots" content="noindex">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#fbf7f1;--card:#ffffff;--ink:#3b2d24;--soft:#76675c;--line:#ecdfd2;--rose:#c97d76;--rose-deep:#a85f59;--rose-pale:#fdf1ec;--sage:#5f8a5a;--sage-pale:#e9f1e3;--warn:#a5651a;--warn-pale:#fdf3e2}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Nunito,system-ui,-apple-system,"Segoe UI",sans-serif;font-size:16px;line-height:1.55}
+.top{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;max-width:980px;margin:0 auto}
+.top a{color:var(--rose-deep);font-weight:800;text-decoration:none;font-size:.95rem}
+.wrap{max-width:980px;margin:0 auto;padding:0 16px 60px}
+h1{font-family:Fredoka,Nunito,sans-serif;font-weight:600;font-size:clamp(1.8rem,6vw,2.4rem);line-height:1.1;margin:8px 0 4px}
+.sub{color:var(--soft);margin:0 0 18px}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:22px;align-items:start}
+@media (max-width:860px){.grid{grid-template-columns:minmax(0,1fr)}}
+section{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:20px 18px;margin-bottom:18px}
+section h2{font-family:Fredoka,Nunito,sans-serif;font-weight:600;font-size:1.35rem;margin:0 0 4px;display:flex;align-items:center;gap:10px}
+.step{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--rose);color:#fff;font:700 .95rem Nunito,sans-serif;flex:none}
+.hint{color:var(--soft);margin:0 0 14px;font-size:.93rem}
+.themes{display:grid;grid-template-columns:repeat(auto-fill,minmax(122px,1fr));gap:10px}
+.theme{display:block;min-height:0;width:100%;border:2px solid var(--line);border-radius:14px;padding:0;background:#fff;cursor:pointer;overflow:hidden;text-align:left;font:inherit;color:var(--ink)}
+.theme svg{display:block;width:100%;height:48px}
+.theme span{display:block;padding:6px 9px 8px;font-weight:800;font-size:.85rem}
+.theme[aria-pressed="true"]{border-color:var(--rose-deep);box-shadow:0 0 0 3px var(--rose-pale)}
+label.f{display:block;font-weight:800;font-size:.9rem;margin:14px 0 5px}
+label.f small{font-weight:600;color:var(--soft)}
+input[type=text],input[type=number],input[type=date],input[type=email],textarea{width:100%;font:inherit;font-size:16px;color:var(--ink);background:#fff;border:1.5px solid var(--line);border-radius:12px;padding:11px 12px}
+textarea{min-height:84px;resize:vertical}
+.row2{display:grid;grid-template-columns:120px 1fr;gap:10px}
+.row2b{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.photo{display:flex;align-items:center;gap:14px;margin-top:6px}
+.photo img{width:72px;height:72px;border-radius:50%;object-fit:cover;border:3px solid var(--rose-pale)}
+.photo .ph{width:72px;height:72px;border-radius:50%;background:var(--rose-pale);display:grid;place-items:center;color:var(--rose-deep);font-size:1.6rem}
+button,.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:46px;padding:0 18px;border-radius:999px;border:0;background:var(--rose);color:#fff;font:800 .98rem Nunito,sans-serif;cursor:pointer;text-decoration:none}
+button.alt,.btn.alt{background:#fff;color:var(--rose-deep);box-shadow:inset 0 0 0 2px var(--rose)}
+button.plain{background:none;color:var(--rose-deep);min-height:auto;padding:4px 0}
+button:disabled{opacity:.55;cursor:default}
+button:focus-visible,.btn:focus-visible,.theme:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid var(--rose-deep);outline-offset:2px}
+.status{font-size:.86rem;color:var(--soft);min-height:1.2em;margin-top:10px}
+.status.ok{color:var(--sage)} .status.err{color:#b0473f;font-weight:700}
+.share{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.share .big{grid-column:1/-1;min-height:56px;font-size:1.08rem}
+.linkbox{display:flex;gap:8px;margin-top:12px}
+.linkbox input{flex:1;min-width:0;font-size:.9rem;color:var(--soft)}
+details{margin-top:14px;border-top:1px dashed var(--line);padding-top:12px}
+summary{cursor:pointer;font-weight:800;color:var(--rose-deep)}
+.preview{position:sticky;top:12px}
+.mprev{display:none;margin-top:12px;font-weight:800;color:var(--rose-deep)}
+@media (max-width:860px){.mprev{display:inline-block}}
+.frame{width:100%;height:680px;border:0;border-radius:18px;background:#fff;box-shadow:0 18px 40px -28px rgba(40,25,10,.6)}
+@media (max-width:860px){.preview{position:static}.frame{height:620px}}
+.totals{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 10px}
+.pill{background:var(--sage-pale);color:#3f5d33;border-radius:999px;padding:5px 12px;font-weight:800;font-size:.88rem}
+.pill.no{background:#f3eee8;color:var(--soft)}
+.cap{font-size:.9rem;color:var(--soft);margin:0 0 12px}
+.cap.over{color:var(--warn);background:var(--warn-pale);border-radius:10px;padding:8px 10px}
+.guest{border-top:1px solid var(--line);padding:12px 0;display:grid;grid-template-columns:1fr auto;gap:4px 10px}
+.guest:first-child{border-top:0}
+.guest b{font-size:1rem}
+.tag{font-size:.75rem;font-weight:800;border-radius:999px;padding:2px 9px;margin-left:6px;vertical-align:2px}
+.tag.yes{background:var(--sage-pale);color:#3f5d33}.tag.no{background:#f3eee8;color:var(--soft)}
+.gmeta{grid-column:1/-1;color:var(--soft);font-size:.9rem}
+.gmeta a{color:var(--rose-deep);font-weight:700}
+.rm{background:none;color:var(--soft);min-height:32px;padding:0 6px;font-size:1.2rem}
+.empty{color:var(--soft);background:var(--rose-pale);border-radius:12px;padding:14px;text-align:center}
+.gate{max-width:520px;margin:60px auto;text-align:center;color:var(--soft)}
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+<div class="top"><a href="/">Little Haven Play Studio</a><a href="/parties.html">Parties</a></div>
+<div class="wrap">
+  <div id="gate" class="gate">Loading your invitation…</div>
+  <div id="app" class="hidden">
+    <h1 id="title">Your party invitation</h1>
+    <p class="sub" id="when"></p>
+    <div class="grid">
+      <div>
+        <section aria-labelledby="h1s">
+          <h2 id="h1s"><span class="step">1</span>Make it yours</h2>
+          <p class="hint">Changes save on their own. The preview shows exactly what guests will see.</p>
+          <div class="themes" id="themes" role="group" aria-label="Design"></div>
+          <div class="row2">
+            <div><label class="f" for="age">Turning</label><input type="number" id="age" min="1" max="18" inputmode="numeric" placeholder="e.g. 4"></div>
+            <div><label class="f" for="hl">Headline <small>(optional)</small></label><input type="text" id="hl" maxlength="80"></div>
+          </div>
+          <label class="f" for="msg">Message to guests <small>(optional)</small></label>
+          <textarea id="msg" maxlength="400" placeholder="Come climb, slide and dive into the ball pit with us! Pizza and cake to follow."></textarea>
+          <label class="f" for="by">RSVP by <small>(optional)</small></label>
+          <input type="date" id="by">
+          <label class="f">Photo <small>(optional)</small></label>
+          <div class="photo"><div id="phShow" class="ph" aria-hidden="true">🎂</div>
+            <div><button type="button" class="alt" id="phPick">Add a photo</button> <button type="button" class="plain hidden" id="phRm">Remove</button>
+              <input type="file" id="phFile" accept="image/*" class="hidden"></div></div>
+          <div class="status" id="st1" aria-live="polite"></div>
+          <a class="mprev" id="mprev" href="#" target="_blank" rel="noopener">See full preview</a>
+        </section>
+
+        <section aria-labelledby="h2s">
+          <h2 id="h2s"><span class="step">2</span>Send it to your guests</h2>
+          <p class="hint">Share one link by text, group chat or email. Guests RSVP and sign the waiver from it.</p>
+          <div class="share">
+            <button type="button" class="big" id="shShare">Share invitation</button>
+            <a class="btn alt" id="shText" href="#">Text it</a>
+            <a class="btn alt" id="shMail" href="#">Email it</a>
+          </div>
+          <div class="linkbox"><input type="text" id="link" readonly aria-label="Invitation link"><button type="button" class="alt" id="shCopy">Copy</button></div>
+          <details>
+            <summary>Or we'll email it for you</summary>
+            <label class="f" for="emails">Guest emails <small>(separate with commas or new lines)</small></label>
+            <textarea id="emails" placeholder="grandma@email.com, sam@email.com"></textarea>
+            <button type="button" id="emSend" style="margin-top:10px">Email invitations</button>
+            <div class="status" id="st2" aria-live="polite"></div>
+          </details>
+        </section>
+
+        <section aria-labelledby="h3s">
+          <h2 id="h3s"><span class="step">3</span>Guest list</h2>
+          <div class="totals" id="totals"></div>
+          <p class="cap" id="cap"></p>
+          <div id="guests"></div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px">
+            <button type="button" class="alt" id="refresh">Refresh list</button>
+            <a class="btn alt" id="remind" href="#">Text a waiver reminder</a>
+          </div>
+          <p class="hint" style="margin-top:12px">The day before the party, we email a waiver reminder to every guest who RSVP'd yes with an email.</p>
+        </section>
+      </div>
+      <div class="preview">
+        <iframe class="frame" id="frame" title="Invitation preview" loading="lazy"></iframe>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+(function(){
+  var $=function(s){return document.getElementById(s);};
+  var q=new URLSearchParams(location.search), ID=(q.get("i")||"").toLowerCase(), TOK=q.get("t")||"";
+  var D=null, saving=null, dirty=false;
+  var ART={}; // small theme thumbnails
+  function esc(t){return String(t==null?"":t).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});}
+  async function api(body){ body.i=ID; body.t=TOK; var r=await fetch("/api/invite",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)}); return r.json(); }
+  function say(el,msg,cls){ var s=$(el); s.className="status"+(cls?" "+cls:""); s.textContent=msg||""; }
+  function isIOS(){ return /iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1); }
+  function smsHref(body){ return "sms:"+(isIOS()?"&":"?")+"body="+encodeURIComponent(body); }
+
+  function inviteText(){
+    var age=parseInt($("age").value,10), f=(D.party.childName||"").split(/\s+/)[0]||"our little one";
+    var ord=age>0?(age+(["th","st","nd","rd"][(age%100-20)%10]||["th","st","nd","rd"][age%100]||"th")+" "):"";
+    return "You're invited to "+f+"'s "+ord+"birthday party! 🎈 "+D.party.prettyDate+", "+D.party.time+" at Little Haven Play Studio. RSVP and sign the waiver here: "+D.guestUrl;
+  }
+  function reminderText(){
+    var f=(D.party.childName||"").split(/\s+/)[0]||"the";
+    return "Reminder: "+f+"'s party is "+D.party.prettyDate+", "+D.party.time+" at Little Haven Play Studio. Please sign the waiver before you come so check-in is quick: "+D.guestUrl;
+  }
+  function refreshShare(){
+    $("link").value=D.guestUrl;
+    $("shText").href=smsHref(inviteText());
+    $("shMail").href="mailto:?subject="+encodeURIComponent("You're invited! 🎈")+"&body="+encodeURIComponent(inviteText());
+    $("remind").href=smsHref(reminderText());
+  }
+  function reloadPreview(){ $("frame").src="/i/"+ID+"?preview=1&v="+Date.now(); $("mprev").href="/i/"+ID+"?preview=1"; }
+
+  function renderThemes(){
+    var box=$("themes"); box.innerHTML="";
+    D.themes.forEach(function(t){
+      var b=document.createElement("button"); b.type="button"; b.className="theme"; b.setAttribute("aria-pressed",String(t.id===D.design.theme));
+      b.innerHTML='<svg viewBox="0 0 120 48" aria-hidden="true"><rect width="120" height="48" fill="'+t.bg+'"/><circle cx="24" cy="24" r="11" fill="'+t.accent+'"/><rect x="42" y="17" width="58" height="6" rx="3" fill="'+t.ink+'" opacity=".75"/><rect x="42" y="28" width="38" height="5" rx="2.5" fill="'+t.ink+'" opacity=".35"/></svg><span>'+esc(t.label)+'</span>';
+      b.onclick=function(){ D.design.theme=t.id; renderThemes(); save(true); };
+      box.appendChild(b);
+    });
+  }
+  function renderPhoto(){
+    var has=!!D.design.photo;
+    var el=$("phShow");
+    if(has){ var img=document.createElement("img"); img.id="phShow"; img.alt="Your invitation photo"; img.src=D.design.photo; el.replaceWith(img); }
+    else if(el.tagName==="IMG"){ var d=document.createElement("div"); d.id="phShow"; d.className="ph"; d.textContent="🎂"; d.setAttribute("aria-hidden","true"); el.replaceWith(d); }
+    $("phPick").textContent=has?"Change photo":"Add a photo";
+    $("phRm").classList.toggle("hidden",!has);
+  }
+  function renderGuests(){
+    var T=D.totals||{families:0,kids:0,adults:0,no:0};
+    $("totals").innerHTML='<span class="pill">'+T.kids+' kid'+(T.kids===1?"":"s")+'</span><span class="pill">'+T.adults+' adult'+(T.adults===1?"":"s")+'</span><span class="pill">'+T.families+' famil'+(T.families===1?"y":"ies")+' coming</span>'+(T.no?'<span class="pill no">'+T.no+' can’t make it</span>':'');
+    var cap=$("cap"), p=D.pkg;
+    if(p){ var overK=T.kids-p.kidsIncl, overA=T.adults-p.adultsIncl;
+      if(overK>0||overA>0){ cap.className="cap over"; cap.textContent="Your "+p.label+" includes "+p.kidsIncl+" kids and "+p.adultsIncl+" adults. You're "+[overK>0?overK+" kid"+(overK===1?"":"s"):"",overA>0?overA+" adult"+(overA===1?"":"s"):""].filter(Boolean).join(" and ")+" over — extra guests are added to your balance on party day."; }
+      else { cap.className="cap"; cap.textContent="Your "+p.label+" includes "+p.kidsIncl+" kids and "+p.adultsIncl+" adults."; }
+    } else cap.textContent="";
+    var g=$("guests");
+    if(!D.rsvps.length){ g.innerHTML='<div class="empty">No RSVPs yet. Share your invitation and they’ll show up here.</div>'; return; }
+    g.innerHTML=D.rsvps.slice().sort(function(a,b){ return (a.attending==="yes"?0:1)-(b.attending==="yes"?0:1); }).map(function(r){
+      var yes=r.attending==="yes";
+      var contact=[r.phone?'<a href="tel:'+esc(r.phone.replace(/[^\d+]/g,""))+'">'+esc(r.phone)+'</a>':"", r.email?'<a href="mailto:'+esc(r.email)+'">'+esc(r.email)+'</a>':""].filter(Boolean).join(" · ");
+      return '<div class="guest"><div><b>'+esc(r.name)+'</b><span class="tag '+(yes?"yes":"no")+'">'+(yes?"Coming":"Can’t come")+'</span></div>'
+        +'<button type="button" class="rm" data-id="'+esc(r.id)+'" aria-label="Remove '+esc(r.name)+'">×</button>'
+        +'<div class="gmeta">'+(yes?('Kids: '+esc((r.kids||[]).join(", ")||"—")+' · Adults: '+(r.adults||0)+'<br>'):"")+contact+(r.note?'<br>“'+esc(r.note)+'”':"")+'</div></div>';
+    }).join("");
+    Array.prototype.forEach.call(g.querySelectorAll(".rm"),function(b){ b.onclick=async function(){
+      if(!confirm("Remove this RSVP from your guest list?")) return;
+      var r=await api({action:"host-remove-rsvp",rsvpId:b.getAttribute("data-id")}); if(r&&r.ok) load(true); }; });
+  }
+
+  async function load(listOnly){
+    try{
+      var r=await api({action:"host-get"});
+      if(!r||!r.ok){ $("gate").textContent=(r&&r.error)||"This link isn't valid. Use the link from your party confirmation email."; return; }
+      if(listOnly&&D){ D.rsvps=r.rsvps; D.totals=r.totals; renderGuests(); return; }
+      D=r;
+      var f=(D.party.childName||"").split(/\s+/)[0]||"Your";
+      $("title").textContent=f+"’s party invitation";
+      $("when").textContent=D.party.prettyDate+" · "+D.party.time+" · Little Haven Play Studio";
+      $("age").value=D.design.age||""; $("hl").value=D.design.headline||""; $("hl").placeholder=D.design.defaultHeadline;
+      $("msg").value=D.design.message||""; $("by").value=D.design.rsvpBy||"";
+      $("gate").classList.add("hidden"); $("app").classList.remove("hidden");
+      renderThemes(); renderPhoto(); renderGuests(); refreshShare(); reloadPreview();
+    }catch(e){ $("gate").textContent="No connection. Check your signal and reload the page."; }
+  }
+
+  var tmr=null;
+  function queueSave(){ dirty=true; say("st1","Saving…"); clearTimeout(tmr); tmr=setTimeout(function(){ save(false); },700); refreshShare(); }
+  async function save(now){
+    clearTimeout(tmr); say("st1","Saving…");
+    try{
+      var r=await api({action:"host-save",theme:D.design.theme,age:$("age").value,headline:$("hl").value,message:$("msg").value,rsvpBy:$("by").value});
+      if(r&&r.ok){ dirty=false; $("hl").placeholder=r.defaultHeadline; say("st1","Saved","ok"); reloadPreview(); refreshShare(); }
+      else say("st1",(r&&r.error)||"Couldn't save. Try again.","err");
+    }catch(e){ say("st1","No connection — your changes aren't saved yet.","err"); }
+  }
+  ["age","hl","msg","by"].forEach(function(id){ $(id).addEventListener("input",queueSave); });
+  window.addEventListener("beforeunload",function(e){ if(dirty){ e.preventDefault(); e.returnValue=""; } });
+
+  // Photo: shrink on the phone before upload so it's quick on cell data.
+  $("phPick").onclick=function(){ $("phFile").click(); };
+  $("phFile").onchange=function(){
+    var file=this.files&&this.files[0]; if(!file) return;
+    say("st1","Uploading photo…");
+    var img=new Image(), url=URL.createObjectURL(file);
+    img.onload=async function(){
+      var max=1000, w=img.naturalWidth, h=img.naturalHeight, s=Math.min(1,max/Math.max(w,h));
+      var c=document.createElement("canvas"); c.width=Math.round(w*s); c.height=Math.round(h*s);
+      c.getContext("2d").drawImage(img,0,0,c.width,c.height); URL.revokeObjectURL(url);
+      var data=c.toDataURL("image/jpeg",0.82);
+      try{ var r=await api({action:"host-photo",dataUrl:data});
+        if(r&&r.ok){ D.design.photo=r.photo; renderPhoto(); say("st1","Photo added","ok"); reloadPreview(); }
+        else say("st1",(r&&r.error)||"Couldn't upload that photo.","err");
+      }catch(e){ say("st1","Couldn't upload — check your connection.","err"); }
+      $("phFile").value="";
+    };
+    img.onerror=function(){ say("st1","That file isn't a photo we can use. Try a JPG or PNG.","err"); };
+    img.src=url;
+  };
+  $("phRm").onclick=async function(){
+    var r=await api({action:"host-photo",dataUrl:""});
+    if(r&&r.ok){ D.design.photo=""; renderPhoto(); say("st1","Photo removed","ok"); reloadPreview(); }
+  };
+
+  $("shShare").onclick=async function(){
+    if(navigator.share){ try{ await navigator.share({title:"You're invited! 🎈",text:inviteText().replace(D.guestUrl,"").trim(),url:D.guestUrl}); }catch(e){} }
+    else { copy(); }
+  };
+  async function copy(){
+    try{ await navigator.clipboard.writeText(D.guestUrl); $("shCopy").textContent="Copied"; }
+    catch(e){ $("link").select(); document.execCommand("copy"); $("shCopy").textContent="Copied"; }
+    setTimeout(function(){ $("shCopy").textContent="Copy"; },1800);
+  }
+  $("shCopy").onclick=copy;
+  $("emSend").onclick=async function(){
+    var v=$("emails").value.trim(); if(!v){ say("st2","Add at least one email.","err"); return; }
+    var b=this; b.disabled=true; say("st2","Sending…");
+    try{ var r=await api({action:"host-email",emails:v});
+      if(r&&r.ok){ say("st2","Sent to "+r.sent+" guest"+(r.sent===1?"":"s")+"."+(r.invalid&&r.invalid.length?" Skipped (not an email): "+r.invalid.join(", "):"")+(r.skipped?" "+r.skipped+" left over — send the rest in another batch.":""),"ok"); $("emails").value=""; }
+      else say("st2",(r&&r.error)||"Couldn't send. Try again.","err");
+    }catch(e){ say("st2","No connection. Try again.","err"); }
+    b.disabled=false;
+  };
+  $("refresh").onclick=function(){ load(true); };
+  if(!ID||!TOK){ $("gate").textContent="This link is missing part of the address. Use the link from your party confirmation email."; return; }
+  load(false);
+})();
+</script>
+</body>
+</html>

@@ -11,6 +11,7 @@
 import { getStore } from "@netlify/blobs";
 import { PARTY_SLOTS, WAIVER_URL } from "./lib-settings.js";
 import { SIGNATURE_HTML, fromHeader, resendEmail } from "./lib-email.js";
+import { ensureInvite, hostInviteBlockHtml } from "./lib-invite.js";
 
 const esc = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
@@ -33,6 +34,7 @@ export function partyConfirmedHtml(r) {
       <p style="margin:0 0 10px;color:#5c6470;font-size:14px">📋 Please forward the waiver to your guests so everyone signs before arriving:</p>
       <a href="${WAIVER_URL}" style="display:inline-block;background:#7a6253;color:#fff;text-decoration:none;font-weight:bold;padding:10px 18px;border-radius:10px">Sign the waiver →</a>
     </div>
+    ${hostInviteBlockHtml(r.invite)}
     <p style="color:#5c6470;margin:0 0 6px">The remaining balance is due on the day of the party.</p>
     <p style="color:#5c6470;font-size:13px;margin:0">Questions? Just reply to this email. — ${esc(studio)}</p>
   </div>`;
@@ -45,8 +47,10 @@ export async function sendPartyConfirmedOnce(key, r) {
   const store = getStore({ name: "parties", consistency: "strong" });
   let fresh = null;
   try { fresh = await store.get(key, { type: "json" }); } catch {}
-  const rec = fresh || r;
+  let rec = fresh || r;
   if (rec.confirmEmailedAt) return "already-sent";
+  // Every confirmed party gets its invitation links; the email carries the host's.
+  try { rec = await ensureInvite(key, rec); } catch {}
 
   const studio = process.env.STUDIO_NAME || "Little Haven Play Studio";
   const from = process.env.EMAIL_FROM || "onboarding@resend.dev";

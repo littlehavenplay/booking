@@ -133,8 +133,8 @@ export function buildCampaignHtml(campaign) {
       </div>
       <div style="padding:0 26px">${SIGNATURE_HTML}</div>
       <div style="padding:16px 26px 24px;color:#9a8d80;font-size:12px;line-height:1.6;text-align:center">
-        You're receiving this because you've visited ${esc(studio)} or signed up for updates.
-        We only email occasionally &mdash; never spam.<br>
+        This is a promotional email from ${esc(studio)}, 58080 29 Palms Hwy, Yucca Valley, CA 92284.<br>
+        You're receiving it because you've visited us or signed up for updates. We only email occasionally.<br>
         <a href="{{{RESEND_UNSUBSCRIBE_URL}}}" style="color:#a85f59;font-weight:700">Unsubscribe instantly</a> &middot; you'll be removed right away.
       </div>
     </div>

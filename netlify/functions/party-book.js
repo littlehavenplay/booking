@@ -8,6 +8,7 @@
 import { getStore } from "@netlify/blobs";
 import { getLivePartyPromo, promoValue, promoLabel } from "./partypromo.js";
 import { SIGNATURE_HTML, signatureFor, TERMS } from "./lib-email.js";
+import { ensureInvite, hostInviteBlockHtml } from "./lib-invite.js";
 import {
   PARTY_SLOTS, PARTY_SLOT_IDS, PARTY_PACKAGES, isPartyDay,
   PARTY_BOOKING_MIN_DAYS, slotKey, STUDIO_NAME, WAIVER_URL,
@@ -100,6 +101,8 @@ export default async (req) => {
     } catch {}
   }
 
+  // Booked in store = already confirmed, so the family gets their invitation link now.
+  if (isStaff) { try { await ensureInvite(key, record); } catch {} }
   await emailStudio(record);
   await emailCustomer(record, isStaff ? null : pkg.link);
 
@@ -174,7 +177,7 @@ async function emailCustomer(r, depositLink) {
     </div>
     ${pending && depositLink
       ? `<p style="margin:16px 0"><a href="${depositLink}" style="display:inline-block;background:#c97d76;color:#fff;text-decoration:none;font-weight:bold;padding:13px 22px;border-radius:12px">Pay your deposit to confirm →</a></p><p style="color:#5c6470;font-size:13px">Your time is held, but it isn't confirmed until the deposit is paid.</p>`
-      : `<p style="color:#5f7d52;font-weight:bold;margin:16px 0">Your reservation is confirmed — we can't wait to celebrate! 🎂</p>`}
+      : `<p style="color:#5f7d52;font-weight:bold;margin:16px 0">Your reservation is confirmed — we can't wait to celebrate! 🎂</p>${hostInviteBlockHtml(r.invite)}`}
     ${r.promo ? `<div style="background:#e7f0df;border:1px solid #c2d7bd;border-radius:12px;padding:14px 16px;margin:14px 0">
       <p style="margin:0 0 6px;font-weight:bold;color:#3f5d33">🎉 ${esc(r.promo.name)} — ${esc(r.promo.label)} applied!</p>
       <p style="margin:0;color:#5c6470;font-size:14px">Thank you for taking advantage of our special! Your deposit stays the same,

@@ -1,6 +1,7 @@
 // Scheduled daily — emails every host whose party is TOMORROW a "big day" reminder + waiver nudge.
 import { getStore } from "@netlify/blobs";
-import { SIGNATURE_HTML, fromHeader } from "./lib-email.js";
+import { SIGNATURE_HTML, fromHeader, resendEmail, signatureFor, TERMS } from "./lib-email.js";
+import { listRsvps, guestReminderEmail, hostUrl, invitesStore } from "./lib-invite.js";
 import { WAIVER_URL } from "./lib-settings.js";
 import { eventPacificParts } from "./lib-closures.js";
 
@@ -22,7 +23,9 @@ export default async () => {
   for (const k of keys) {
     try {
       const r = await store.get(k, { type: "json" });
-      if (!r || r.date !== tomorrow || !r.email) continue;
+      if (!r || r.date !== tomorrow) continue;
+      sent += await remindGuests(r, from, studio);
+      if (!r.email) continue;
       const esc = s => (s || "").toString().replace(/</g, "&lt;").replace(/>/g, "&gt;");
       const html = `<div style="font-family:Arial,sans-serif;color:#2a2622;line-height:1.6;max-width:560px">
         <h2 style="color:#a85f59;font-weight:normal">Tomorrow's the big day! 🎉</h2>
@@ -32,6 +35,7 @@ export default async () => {
           <p style="margin:0 0 10px;color:#5c6470;font-size:14px">Please forward this to your guests so everyone signs before arriving:</p>
           <a href="${WAIVER_URL}" style="display:inline-block;background:#7a6253;color:#fff;text-decoration:none;font-weight:bold;padding:10px 18px;border-radius:10px">Sign the waiver →</a>
         </div>
+        ${r.invite && r.invite.id ? `<p style="margin:0 0 12px"><a href="${hostUrl(r.invite)}" style="color:#a85f59;font-weight:bold">See your guest list</a> · We've emailed a waiver reminder to everyone who RSVP'd with an email.</p>` : ""}
         <p style="color:#5c6470;font-size:13px">See you soon! Reply or message @littlehavenplay with any last-minute questions. — ${studio}</p></div>`;
       await fetch("https://api.resend.com/emails", { method: "POST", headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
         body: JSON.stringify({ from: fromHeader(from, studio), to: [r.email], bcc: studioEmail ? [studioEmail] : undefined, subject: `Tomorrow's the big day — ${r.childName}'s party! 🎈`, html: html + SIGNATURE_HTML }) });
@@ -100,3 +104,20 @@ export default async () => {
 };
 // 10am Pacific (17:00 UTC during PDT). Runs daily.
 export const config = { schedule: "0 * * * *" };   // hourly; the handler only proceeds at 10 AM Pacific
+
+// The day before a party: one waiver reminder to each family that RSVP'd yes
+// with an email. Marked on the RSVP so a re-run never sends it twice.
+async function remindGuests(r, from, studio) {
+  if (!r.invite || !r.invite.id) return 0;
+  let n = 0;
+  let list = []; try { list = await listRsvps(r.invite.id); } catch {}
+  const st = invitesStore();
+  for (const g of list) {
+    if (g.attending !== "yes" || !g.email || g.remindedAt) continue;
+    const { subject, html } = guestReminderEmail(r, g);
+    const ok = await resendEmail({ from: fromHeader(from, studio), to: [g.email], subject, html: html + signatureFor(TERMS.parties) },
+      { idempotencyKey: "guest-reminder:" + r.invite.id + ":" + g.id });
+    if (ok) { n++; g.remindedAt = new Date().toISOString(); try { await st.setJSON("rsvp:" + r.invite.id + ":" + g.id, g); } catch {} }
+  }
+  return n;
+}

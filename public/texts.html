@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Be the First to Know · Little Haven Play Studio</title>
+<meta name="description" content="Event announcements, open play deals and party dates from Little Haven Play Studio in Yucca Valley, by text.">
+<meta property="og:title" content="Be the first to know — Little Haven texts">
+<meta property="og:description" content="Events, deals and party dates from Little Haven Play Studio, a few texts a month.">
+<meta property="og:image" content="https://littlehavenplay.com/invite-balloons.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32.png">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#fbf7f1;--card:#fff;--ink:#3b2d24;--soft:#76675c;--line:#ecdfd2;--rose:#c97d76;--rose-deep:#a85f59;--rose-pale:#fdf1ec;--sage:#5f8a5a}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Nunito,system-ui,-apple-system,"Segoe UI",sans-serif;font-size:17px;line-height:1.55}
+.top{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;max-width:560px;margin:0 auto}
+.top a{color:var(--rose-deep);font-weight:800;text-decoration:none;font-size:.95rem}
+.wrap{max-width:560px;margin:0 auto;padding:6px 16px 60px}
+.phone{width:84px;height:84px;border-radius:24px;background:var(--rose-pale);display:grid;place-items:center;margin:10px 0 14px}
+h1{font-family:"Cormorant Garamond",Georgia,serif;font-weight:500;font-size:clamp(2.3rem,9vw,3.1rem);line-height:1.02;margin:0 0 10px}
+.lede{color:var(--soft);margin:0 0 22px;max-width:42ch}
+form,.card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:20px 18px}
+label.f{display:block;font-weight:800;font-size:.9rem;margin:0 0 5px}
+input[type=text],input[type=tel]{width:100%;font:inherit;font-size:16px;color:var(--ink);background:#fff;border:1.5px solid var(--line);border-radius:12px;padding:12px 13px;margin-bottom:14px}
+.agree{display:grid;grid-template-columns:22px 1fr;gap:10px;font-size:.82rem;color:var(--soft);line-height:1.45;margin:2px 0 16px}
+.agree input{width:20px;height:20px;margin:1px 0 0;accent-color:var(--rose)}
+.agree b{color:var(--ink);font-size:.92rem}
+button{width:100%;min-height:52px;border:0;border-radius:999px;background:var(--rose);color:#fff;font:800 1.02rem Nunito,sans-serif;cursor:pointer}
+button:disabled{opacity:.55}
+button:focus-visible,input:focus-visible,a:focus-visible{outline:3px solid var(--rose-deep);outline-offset:2px}
+.err{display:none;margin-top:12px;background:#fde8e5;color:#9b2f25;border-radius:10px;padding:10px 12px;font-weight:700;font-size:.92rem}
+.done{text-align:center}
+.done h2{font-family:"Cormorant Garamond",Georgia,serif;font-weight:500;font-size:2rem;margin:4px 0 6px}
+.done p{color:var(--soft);margin:0}
+.stop{margin-top:22px;text-align:center;font-size:.9rem;color:var(--soft)}
+.stop button.link{all:unset;cursor:pointer;color:var(--rose-deep);font-weight:800}
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+<div class="top"><a href="/">Little Haven Play Studio</a><a href="/events.html">Events</a></div>
+<div class="wrap">
+  <div class="phone" aria-hidden="true"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#a85f59" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M10.5 18.5h3"/><path d="M9 8.5h6M9 11.5h4"/></svg></div>
+  <h1>Be the first to know</h1>
+  <p class="lede">Get texts about new events, open play deals and party dates before they fill up. Just a few a month.</p>
+
+  <form id="f" novalidate>
+    <label class="f" for="nm">First name</label>
+    <input type="text" id="nm" autocomplete="given-name">
+    <label class="f" for="ph">Mobile number</label>
+    <input type="tel" id="ph" autocomplete="tel" inputmode="tel" placeholder="(760) 555-1234">
+    <input type="text" id="hp" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px">
+    <label class="agree"><input type="checkbox" id="ok"><span><b>Yes, text me Little Haven Play Studio news, events &amp; deals.</b><br>Recurring automated marketing texts to the number provided. Consent isn't required to buy anything. Msg frequency varies. Msg &amp; data rates may apply. Reply STOP to opt out, HELP for help. <a href="/terms.html#privacy" style="color:var(--rose-deep)">Terms &amp; privacy</a></span></label>
+    <button type="submit" id="go">Sign me up</button>
+    <div class="err" id="er" role="alert"></div>
+  </form>
+
+  <div class="card done hidden" id="dn" aria-live="polite">
+    <h2>You're on the list</h2>
+    <p>Watch for our next text. Reply STOP anytime to opt out.</p>
+  </div>
+
+  <div class="stop" id="stopWrap">Don't want texts anymore? <button type="button" class="link" id="stopOpen">Stop texts</button></div>
+  <form id="sf" class="hidden" style="margin-top:12px" novalidate>
+    <label class="f" for="sph">Mobile number to remove</label>
+    <input type="tel" id="sph" autocomplete="tel" inputmode="tel">
+    <button type="submit" id="sgo">Stop my texts</button>
+    <div class="err" id="ser" role="alert"></div>
+  </form>
+  <div class="card done hidden" id="sdn" style="margin-top:12px"><p>Done. You won't get marketing texts from us anymore.</p></div>
+</div>
+<script>
+(function(){
+  var $=function(s){return document.getElementById(s);};
+  var src=new URLSearchParams(location.search).get("src")||"signup-page";
+  function bad(el,m){ el.textContent=m; el.style.display="block"; }
+  $("f").onsubmit=async function(e){
+    e.preventDefault(); var er=$("er"); er.style.display="none";
+    var ph=$("ph").value.replace(/\D/g,""); if(ph.length===11&&ph[0]==="1") ph=ph.slice(1);
+    if(ph.length!==10) return bad(er,"Enter your 10-digit mobile number.");
+    if(!$("ok").checked) return bad(er,"Tick the box to agree to texts.");
+    var go=$("go"); go.disabled=true; go.textContent="Signing you up…";
+    try{
+      var r=await (await fetch("/api/sms",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({action:"subscribe",phone:ph,name:$("nm").value.trim(),consent:true,source:src,website:$("hp").value})})).json();
+      if(r&&r.ok){ $("f").classList.add("hidden"); $("dn").classList.remove("hidden"); }
+      else bad(er,(r&&r.error)||"Couldn't sign you up. Try again.");
+    }catch(x){ bad(er,"No connection. Try again."); }
+    go.disabled=false; go.textContent="Sign me up";
+  };
+  $("stopOpen").onclick=function(){ $("sf").classList.remove("hidden"); $("stopWrap").classList.add("hidden"); $("sph").focus(); };
+  $("sf").onsubmit=async function(e){
+    e.preventDefault(); var er=$("ser"); er.style.display="none";
+    var ph=$("sph").value.replace(/\D/g,""); if(ph.length===11&&ph[0]==="1") ph=ph.slice(1);
+    if(ph.length!==10) return bad(er,"Enter the 10-digit number you signed up with.");
+    try{ var r=await (await fetch("/api/sms",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({action:"unsubscribe",phone:ph})})).json();
+      if(r&&r.ok){ $("sf").classList.add("hidden"); $("sdn").classList.remove("hidden"); } else bad(er,(r&&r.error)||"Try again.");
+    }catch(x){ bad(er,"No connection. Try again."); }
+  };
+  if(location.hash==="#stop") $("stopOpen").click();
+})();
+</script>
+</body>
+</html>
