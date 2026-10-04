@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>About Us · Little Haven Play Studio</title>
-<meta name="description" content="Little Haven was born from a simple feeling: our littles deserve a place of their own. A safe, welcoming indoor play space in the high desert." />
+<meta name="description" content="Hey parents, we get it. Little Haven is a safe, soft indoor play space in Yucca Valley where kids can be kids." />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400&family=Nunito+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -145,6 +145,24 @@
     margin: 0 0 1.5rem;
     color: var(--brown-soft);
   }
+  /* ---------- "We get it" ---------- */
+  .hero .hey { font-family: var(--display); font-style: italic; font-size: clamp(1.3rem, 3.4vw, 1.8rem); color: var(--brown-soft); margin: 0 0 .2rem; }
+  .hero h1 { font-size: clamp(3.4rem, 13vw, 6.4rem); line-height: .95; letter-spacing: -.02em; color: var(--sage-deep); margin-bottom: 0; max-width: none; }
+  .moments { max-width: 560px; margin: 0 auto; padding: .5rem clamp(1.25rem, 5vw, 2rem) 0; text-align: center; }
+  .moments ul { list-style: none; margin: 0; padding: 0; }
+  .moments li { font-size: 1.02rem; color: var(--brown-soft); padding: 1rem 0; border-top: 2px dotted var(--pink); line-height: 1.35; }
+  .moments li:first-child { border-top: 0; }
+  .moments li b { display: block; font-family: var(--display); font-weight: 600; font-size: clamp(1.7rem, 6.5vw, 2.3rem); line-height: 1.1; color: var(--brown); letter-spacing: -.01em; margin-bottom: .15rem; }
+  .moments .again { font-family: var(--display); font-style: italic; font-size: clamp(2.2rem, 8vw, 3.2rem); color: var(--sage-deep); margin: 1.4rem 0 0; line-height: 1.1; }
+  .answer { max-width: 620px; margin: 0 auto; padding: clamp(2rem, 6vw, 3.2rem) clamp(1.25rem, 5vw, 2rem) clamp(2.5rem, 6vw, 3.5rem); text-align: center; }
+  .answer .lead { font-size: clamp(1.25rem, 3.4vw, 1.5rem); color: var(--brown-soft); margin: 0 0 1.1rem; }
+  .answer .lead b { font-family: var(--display); font-size: 1.35em; color: var(--brown); font-weight: 600; }
+  .chips { display: flex; flex-wrap: wrap; justify-content: center; gap: .6rem; margin: 0 0 1.2rem; }
+  .chips span { background: var(--mint); color: var(--brown); font-weight: 700; font-size: 1.02rem; padding: .55rem 1.1rem; border-radius: 999px; }
+  .chips span:nth-child(2) { background: var(--pink); }
+  .chips span:nth-child(3) { background: var(--cream); }
+  .chips span:nth-child(4) { background: var(--mint); }
+  .answer .for { color: var(--brown-soft); font-size: 1.02rem; margin: 0 auto; max-width: 30ch; }
   .pull {
     font-family: var(--display);
     font-style: italic;
@@ -307,86 +325,32 @@
       <span class="blob b1"></span>
       <span class="blob b2"></span>
       <span class="blob b3"></span>
-      <p class="eyebrow reveal">Our Story</p>
-      <h1 class="reveal">A place for our <em>littles</em> to grow, play &amp; belong.</h1>
-      <p class="lede reveal">Little Haven was born from a simple feeling: our littles deserve a space of their very own.</p>
+      <p class="hey reveal">Hey parents,</p>
+      <h1 class="reveal">We get it.</h1>
     </section>
 
-    <!-- STORY -->
-    <section class="story">
-      <p class="reveal">Here in the high desert, our lives are always in motion — families passing through on their way to Joshua Tree, military families settling in and finding their footing, and longtime neighbors raising their littles right alongside ours. Through all of it, there was never a space made just for the smallest among us. So we made one, with love, for you.</p>
-
-      <p class="reveal">We believe the years from birth to age six are some of the most precious a person will ever know. This is when our littles learn to share, to play side by side, to make their very first friends, and to discover the whole wide world through their senses and their imaginations. Every pretend tea party, every squish of sensory play, every shy little hello is doing big, beautiful work.</p>
-
-      <p class="reveal">We also know the desert doesn't always make that easy. When it's too hot, too cold, or too windy to play outside, it can feel like the weather is standing between us and the time we long to spend together. Little Haven is our answer — a safe, cozy indoor space where mamas, dadas, nanas, and every caregiver can slow down, be fully present, and make the kind of memories that stay.</p>
-
-      <div class="pull reveal">There's nothing sweeter than watching your little one light up while you're right there beside them.</div>
-
-      <p class="reveal">Yes, we live in a fast-paced world, and screens fill so much of our days. We feel it too — and it's exactly why we built this place. In these early years, real play, real movement, and real connection matter more than ever. Watching a little one beam while their grown-up plays along, and seeing the quiet relief on a caregiver's face knowing their child is safe and free to explore — that's the most fulfilling part of what we do.</p>
-
-      <p class="reveal" style="text-align:center; font-family:var(--display); font-style:italic; color:var(--sage-deep); font-size:1.25rem;">That's what Little Haven is for.</p>
+    <section class="moments" aria-label="We get it">
+      <ul class="reveal">
+        <li><b>6 a.m.</b> wake-ups with a full tank of energy</li>
+        <li><b>"Can we go somewhere?"</b> before your coffee</li>
+        <li><b>Too hot</b> to play outside</li>
+        <li><b>No nap.</b> Big meltdown.</li>
+        <li><b>No room</b> for play dates</li>
+        <li><b>The perfect party</b> without the stress</li>
+      </ul>
+      <p class="again reveal">We get it.</p>
     </section>
 
-    <!-- SCIENCE -->
-    <section class="science">
-      <div class="science-inner">
-        <p class="eyebrow reveal">The Science</p>
-        <h2 class="reveal">Why the first years matter so much</h2>
-        <p class="intro reveal">We didn't build Little Haven on a feeling alone. The science of early childhood backs up what we see on the play floor every day.</p>
-
-        <div class="cards">
-          <!-- Card 1 -->
-          <div class="card reveal">
-            <svg class="icon" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-              <path d="M22 18c-6 0-10 4-10 10 0 3 1 5 3 7-1 2-1 5 1 7 2 2 5 2 7 1 1 2 4 3 6 3V20c-2 0-5 1-7 3-0-3-0-5 0-5z" fill="var(--lh-sage86)" stroke="var(--lh-rose22)" stroke-width="2.2" stroke-linejoin="round"/>
-              <path d="M42 18c6 0 10 4 10 10 0 3-1 5-3 7 1 2 1 5-1 7-2 2-5 2-7 1-1 2-4 3-6 3V20c2 0 5 1 7 3 0-3 0-5 0-5z" fill="var(--lh-rose88)" stroke="var(--lh-rose22)" stroke-width="2.2" stroke-linejoin="round"/>
-              <path d="M32 14v4M28 10l3 4M36 10l-3 4" stroke="var(--lh-olive44)" stroke-width="2.2" stroke-linecap="round"/>
-              <circle cx="32" cy="8" r="2.6" fill="var(--lh-sage74)" stroke="var(--lh-rose22)" stroke-width="1.6"/>
-            </svg>
-            <div class="stat">80%</div>
-            <h3>A brain growing fast</h3>
-            <p>From birth to age three, a child's brain develops faster than at any other time in life, reaching about 80% of its adult size.</p>
-          </div>
-
-          <!-- Card 2 -->
-          <div class="card reveal">
-            <svg class="icon" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-              <line x1="16" y1="20" x2="32" y2="14" stroke="var(--lh-olive53)" stroke-width="2.2" stroke-linecap="round"/>
-              <line x1="32" y1="14" x2="48" y2="22" stroke="var(--lh-olive53)" stroke-width="2.2" stroke-linecap="round"/>
-              <line x1="16" y1="20" x2="22" y2="40" stroke="var(--lh-olive53)" stroke-width="2.2" stroke-linecap="round"/>
-              <line x1="48" y1="22" x2="44" y2="42" stroke="var(--lh-olive53)" stroke-width="2.2" stroke-linecap="round"/>
-              <line x1="22" y1="40" x2="38" y2="50" stroke="var(--lh-olive53)" stroke-width="2.2" stroke-linecap="round"/>
-              <line x1="44" y1="42" x2="38" y2="50" stroke="var(--lh-olive53)" stroke-width="2.2" stroke-linecap="round"/>
-              <line x1="32" y1="14" x2="22" y2="40" stroke="var(--lh-olive53)" stroke-width="2.2" stroke-linecap="round"/>
-              <circle cx="16" cy="20" r="5" fill="var(--lh-rose88)" stroke="var(--lh-rose22)" stroke-width="2"/>
-              <circle cx="32" cy="14" r="5" fill="var(--lh-sage86)" stroke="var(--lh-rose22)" stroke-width="2"/>
-              <circle cx="48" cy="22" r="5" fill="var(--lh-sage86)" stroke="var(--lh-rose22)" stroke-width="2"/>
-              <circle cx="22" cy="40" r="5" fill="var(--lh-sage86)" stroke="var(--lh-rose22)" stroke-width="2"/>
-              <circle cx="44" cy="42" r="5" fill="var(--lh-rose88)" stroke="var(--lh-rose22)" stroke-width="2"/>
-              <circle cx="38" cy="50" r="5" fill="var(--lh-rose88)" stroke="var(--lh-rose22)" stroke-width="2"/>
-            </svg>
-            <div class="stat">1 million+</div>
-            <h3>Connections each second</h3>
-            <p>In these first years the brain forms over a million new neural connections every second, keeping the pathways that early experiences reinforce.</p>
-          </div>
-
-          <!-- Card 3 -->
-          <div class="card reveal">
-            <svg class="icon" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-              <path d="M44 18c-3.2 0-6 1.8-7.5 4.4C35 19.8 32.2 18 29 18c-4.7 0-8.5 3.8-8.5 8.5 0 7 8 12 16 18 8-6 16-11 16-18C52.5 21.8 48.7 18 44 18z" fill="var(--lh-rose88)" stroke="var(--lh-rose22)" stroke-width="2.2" stroke-linejoin="round"/>
-              <path d="M14 32c-2.2 0-4 1.8-4 4 0 3.4 4 6 8 9 4-3 8-5.6 8-9 0-2.2-1.8-4-4-4-1.5 0-2.8.8-3.5 2-.7-1.2-2-2-4.5-2z" fill="var(--lh-sage86)" stroke="var(--lh-rose22)" stroke-width="2" stroke-linejoin="round"/>
-            </svg>
-            <div class="stat">A lifelong blueprint</div>
-            <h3>Connection that lasts</h3>
-            <p>The warmth and responsiveness a child feels from caregivers in these years shapes how they handle stress, form relationships, and see themselves for decades to come.</p>
-          </div>
-        </div>
+    <section class="answer reveal">
+      <p class="lead">So we made a place for <b>all of it.</b></p>
+      <div class="chips">
+        <span>Soft play</span><span>Padded floors</span><span>Room to grow &amp; explore</span><span>Friends to make</span>
       </div>
+      <p class="for">For burning off energy, first steps and birthday parties you actually get to enjoy.</p>
     </section>
 
-    <!-- CLOSING -->
     <section class="closing">
-      <p>Every hour of play here helps shape the wonderful little person your child is becoming.</p>
+      <p>Little Haven.<br>Made for littles,<br>made for you.</p>
       <a class="btn" href="/book">Come play with us</a>
     </section>
   </main>
@@ -395,7 +359,7 @@
     <div class="word">Little Haven Play Studio</div>
     <div class="links">
       <a href="https://instagram.com/littlehavenplay" target="_blank" rel="noopener">Instagram</a> ·
-      <a href="https://facebook.com/littlehavenplay" target="_blank" rel="noopener">Facebook</a>
+      <a href="https://facebook.com/littlehavenplay" target="_blank" rel="noopener">Facebook</a> ·
       <a href="https://www.tiktok.com/@littlehavenplay" target="_blank" rel="noopener">TikTok</a> ·
       <a href="mailto:hello@littlehavenplay.com">hello@littlehavenplay.com</a>
     </div>
