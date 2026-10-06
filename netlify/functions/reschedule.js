@@ -10,7 +10,6 @@ import { SLOT_IDS, SLOTS, ALL_SLOT_IDS, slotLabel, PARTY_SLOT_IDS, PARTY_SLOTS, 
 import { getClosure, slotBlockedByClosure } from "./lib-closures.js";
 import { loadSeasonal, loadWeekly } from "./lib-hours.js";
 import { makeCredit, sendCreditEmail, ownerCopy } from "./lib-credit.js";
-import { release as releaseBuddies, monthKeyOf } from "./lib-buddypass.js";
 
 export default async (req) => {
   if (req.method !== "POST") return json({ error: "Use POST." }, 405);
@@ -76,9 +75,8 @@ export default async (req) => {
     if (idx < 0) return json({ error: "That booking couldn't be found." }, 404);
     const entry = fromRec.bookings[idx];
     const childCount = (entry.regular || 0) + (entry.sibling || 0) + (entry.infant || 0)
-      // Buddy-pass friends take real spots too. They are counted into the slot
-      // total when booked, so they must come back out here -- otherwise every
-      // cancelled buddy booking would leave phantom occupied spots behind.
+      // Older bookings (before buddy passes were retired, Oct 2026) may include
+      // friends who took real spots. Count them so the spots come back out.
       + (Array.isArray(entry.buddies) ? entry.buddies.length : 0);
 
     // Capacity check on the new slot (warn but allow override)
@@ -156,20 +154,14 @@ export default async (req) => {
     if (idx < 0) return json({ error: "Booking not found." }, 404);
     const entry = rec.bookings[idx];
     const childCount = (entry.regular || 0) + (entry.sibling || 0) + (entry.infant || 0)
-      // Buddy-pass friends take real spots too. They are counted into the slot
-      // total when booked, so they must come back out here -- otherwise every
-      // cancelled buddy booking would leave phantom occupied spots behind.
+      // Older bookings (before buddy passes were retired, Oct 2026) may include
+      // friends who took real spots. Count them so the spots come back out.
       + (Array.isArray(entry.buddies) ? entry.buddies.length : 0);
 
     // Release the spot (frees capacity, reopens online)
     rec.bookings.splice(idx, 1);
     rec.children = Math.max(0, (rec.children || 0) - childCount);
     try { await bookings.setJSON(fromKey, rec); } catch { return json({ error: "Couldn't release the spot." }, 502); }
-
-    // A cancelled booking gives its buddy passes back for that month.
-    if (entry.playClubCode && Array.isArray(entry.buddies) && entry.buddies.length) {
-      try { await releaseBuddies(entry.playClubCode, monthKeyOf(fromDate), { booking: entry.id }); } catch {}
-    }
 
     const fromLabel = slotLabel(fromSlot);
     const reason = (b.reason || `Cancelled booking — ${entry.name || "guest"}, ${fromDate} ${fromLabel}`).toString().slice(0, 200);

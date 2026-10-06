@@ -52,9 +52,8 @@ export default async () => {
       checked++;
 
       const childCount = (entry.regular || 0) + (entry.sibling || 0) + (entry.infant || 0)
-      // Buddy-pass friends take real spots too. They are counted into the slot
-      // total when booked, so they must come back out here -- otherwise every
-      // cancelled buddy booking would leave phantom occupied spots behind.
+      // Older bookings (before buddy passes were retired, Oct 2026) may include
+      // friends who took real spots. Count them so the spots come back out.
       + (Array.isArray(entry.buddies) ? entry.buddies.length : 0);
       const giftPaid = Array.isArray(entry.giftCards) ? entry.giftCards.reduce((n, g) => n + (g.applied || 0), 0) : 0;
       const paidCents = (entry.cardPaid || 0) + giftPaid + (entry.creditApplied || 0);

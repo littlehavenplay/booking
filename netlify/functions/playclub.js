@@ -21,7 +21,6 @@ import { getStore } from "@netlify/blobs";
 import { listAllKeys } from "./lib-blobs.js";
 import { isWeekend, memberCoversDate, coverAdmissionFor, coverCompositionFor } from "./lib-playclub.js";
 import { resendEmail } from "./lib-email.js";
-import { ensureIssued, unusedPasses, monthKeyOf, monthEnd } from "./lib-buddypass.js";
 
 const STORE = "site";
 const PLANS = "playclub:plans";
@@ -214,6 +213,8 @@ export async function sendWelcomeEmail(m, plan) {
           <td style="padding:6px 0"><b>Up to ${cap}</b></td></tr>
       <tr><td style="padding:6px 0;color:#5c6470">Covers</td>
           <td style="padding:6px 0">${kids || "your children"}</td></tr>
+      <tr><td style="padding:6px 0;color:#5c6470">Perk</td>
+          <td style="padding:6px 0">\uD83E\uDDC3 Complimentary snack + juice box for each child, every visit</td></tr>
       <tr><td style="padding:6px 0;color:#5c6470">Membership no.</td>
           <td style="padding:6px 0;font-family:monospace"><b>${esc(m.code)}</b></td></tr>
       ${m.startDate ? `<tr><td style="padding:6px 0;color:#5c6470">Begins</td><td style="padding:6px 0">${esc(m.startDate)}</td></tr>` : ""}
@@ -358,21 +359,7 @@ export default async (req) => {
     const forDate = (b.date || "").toString();
     const dateOk = !forDate || memberCoversDate(m, forDate);
 
-    // Buddy passes available for the chosen date: that month's set, unused, and
-    // only when the plan covers the date (a Weekday pass can't do a Saturday).
-    // Issued lazily here if the 1st's run hasn't reached this member yet; that
-    // is idempotent, so it can never create a second set.
-    let buddyPasses = [], buddyMonth = "", buddyExpires = "";
-    if (/^\d{4}-\d{2}-\d{2}$/.test(forDate) && dateOk) {
-      try {
-        buddyMonth = monthKeyOf(forDate);
-        buddyExpires = monthEnd(buddyMonth);
-        const rec = await ensureIssued(m, buddyMonth);
-        buddyPasses = unusedPasses(rec).map(p => ({ id: p.id, ref: p.ref, child: p.child }));
-      } catch { buddyPasses = []; }
-    }
     return json({
-      buddyPasses, buddyMonth, buddyExpires,
       member: true, code: m.code, name: m.name || "",
       planName: (plan && plan.name) || m.planName || "Play Club",
       planKind: m.planKind || "anyday",

@@ -52,9 +52,8 @@ export default async (req) => {
             childNames: Array.isArray(b.childNames) ? b.childNames : [], playClubCode: b.playClubCode || null,
             buddies: Array.isArray(b.buddies) ? b.buddies.map(x => ({ name: x.name || "", forChild: x.forChild || "" })) : [] });
         } else {
-          // Buddy-pass friends are real children in the room, so they count in
-          // the headcount. Without this the roster showed Isaac's group of 4
-          // as 2, while the booking system (correctly) held 4 spots.
+          // Older bookings (before buddy passes were retired, Oct 2026) may
+          // include friends; they're real children in the room, so they count.
           const buddies = Array.isArray(b.buddies) ? b.buddies : [];
           const children = (b.regular || 0) + (b.sibling || 0) + (b.infant || 0) + buddies.length;
           const adults = typeof b.adultsTotal === "number"
