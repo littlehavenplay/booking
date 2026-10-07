@@ -214,7 +214,7 @@ export async function sendWelcomeEmail(m, plan) {
       <tr><td style="padding:6px 0;color:#5c6470">Covers</td>
           <td style="padding:6px 0">${kids || "your children"}</td></tr>
       <tr><td style="padding:6px 0;color:#5c6470">Perk</td>
-          <td style="padding:6px 0">\uD83E\uDDC3 Complimentary snack + juice box for each child, every visit</td></tr>
+          <td style="padding:6px 0">\uD83E\uDDC3 Complimentary snack or juice box for each child, every visit</td></tr>
       <tr><td style="padding:6px 0;color:#5c6470">Membership no.</td>
           <td style="padding:6px 0;font-family:monospace"><b>${esc(m.code)}</b></td></tr>
       ${m.startDate ? `<tr><td style="padding:6px 0;color:#5c6470">Begins</td><td style="padding:6px 0">${esc(m.startDate)}</td></tr>` : ""}

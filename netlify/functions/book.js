@@ -1226,7 +1226,7 @@ async function sendConfirmation({ email, name, date, slotLabel, regular, sibling
       ${militaryAmount > 0 ? `<tr><td style="padding:2px 0;color:#7ba676">🎖️ Military discount (10% off)</td><td style="padding:2px 0;text-align:right;font-weight:bold;color:#7ba676">−${dollars(militaryAmount)}</td></tr>` : ""}
       ${memberRow}
       ${gripSocksAmount > 0 ? `<tr><td style="padding:2px 0;color:#5c6470">\u{1F9E6} Grip socks \u00d7 ${gripSocks}</td><td style="padding:2px 0;text-align:right;font-weight:bold">${dollars(gripSocksAmount)}</td></tr>` : ""}
-      ${isMember ? `<tr><td colspan="2" style="padding:2px 0;color:#8a6b2f">\u{1F9C3} Complimentary snack + juice box for each Play Club child</td></tr>` : ""}
+      ${isMember ? `<tr><td colspan="2" style="padding:2px 0;color:#8a6b2f">\u{1F9C3} Complimentary snack or juice box for each Play Club child</td></tr>` : ""}
       ${payRows}
     </table>
 
@@ -1240,7 +1240,7 @@ async function sendConfirmation({ email, name, date, slotLabel, regular, sibling
     + (isMember && playClubAmount > 0
         ? `Play Club${kidList ? ` — ${kidList}` : ""}: −${dollars(playClubAmount)}\n` : "")
     + (gripSocksAmount > 0 ? `Grip socks \u00d7 ${gripSocks}: ${dollars(gripSocksAmount)}\n` : "")
-    + (isMember ? `Complimentary snack + juice box for each Play Club child\n` : "")
+    + (isMember ? `Complimentary snack or juice box for each Play Club child\n` : "")
     + `Total paid: ${dollars(amount)}\n\n`
     + `Sign your waiver: ${waiverUrl}\n`
     + `Grip socks are required for children entering the play area.\n`
