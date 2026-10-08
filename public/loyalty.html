@@ -525,14 +525,15 @@ async function refreshCard(code){
 window.refreshCard=refreshCard;
 
 window.birthdayVisit=async function(code,name){
-  if(!confirm("Record a FREE BIRTHDAY ADMISSION for "+(name||code)+"?\n\n\u2022 Counts as a visit in their history\n\u2022 No further birthday code will be emailed this year")) return;
+  if(!confirm("\uD83C\uDF82 FREE BIRTHDAY VISIT for "+(name||code)+"?\n\n\u2022 Checks them in on today's roster as a birthday visit\n\u2022 Uses up their free birthday visit for this year (no birthday code will be sent)")) return;
   const key=KEY;
   if(!key){ alert("Enter your admin key (top of page)."); return; }
+  var ad=prompt("How many adults are with them?","1"); if(ad===null) return;
   try{
-    const r=await (await fetch("/api/loyalty",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key,action:"punch",code,birthday:true})})).json();
+    const r=await (await fetch("/api/checkin",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key,action:"profile",codes:[code],birthdayCodes:[code],adults:ad,waiverConfirmed:true})})).json();
     if(r.ok){
       await refreshCard(code);
-      alert("\uD83C\uDF82 Birthday visit recorded for "+(r.childName||name)+".");
+      alert("\uD83C\uDF82 "+(r.message||"Birthday visit checked in."));
     } else { alert(r.error||"Couldn't record it."); }
   }catch(e){ alert("Network error."); }
 };

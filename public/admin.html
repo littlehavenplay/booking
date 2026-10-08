@@ -166,6 +166,8 @@
         <label>Phone, child name, or parent name</label>
         <div class="row"><div><input type="text" id="lwPhone" placeholder="760-555-1234  ·  Silas  ·  Ruiz" autocomplete="off"></div><div style="flex:0 0 auto"><button id="lwFind" style="margin-top:0">Find</button></div></div>
         <div id="lwResults" style="margin:8px 0"></div>
+        <div style="display:flex;align-items:center;gap:8px;margin:2px 0 6px"><label for="lwAdultsNow" style="margin:0;white-space:nowrap">Adults with them today</label><input type="number" id="lwAdultsNow" min="0" max="20" value="1" style="max-width:80px;margin:0"></div>
+        <div class="out" id="lwCheckOut"></div>
         <details id="lwNewWrap" style="border-top:1px dashed #e2d9cc;padding-top:10px">
           <summary style="cursor:pointer;font-weight:800;color:var(--rose-deep);font-size:.9rem">➕ New profile / add a child</summary>
           <div style="margin-top:10px">
@@ -182,7 +184,7 @@
               <input type="text" id="lwAdults" placeholder="e.g. Maria Gomez, John Gomez">
               <label style="display:flex;align-items:center;gap:8px;font-weight:700;font-size:.8rem;color:var(--charcoal);margin:12px 0 0;cursor:pointer;text-transform:none;letter-spacing:0"><input type="checkbox" id="lwMilitary" style="width:auto"> 🎖️ Verified military family (10% off)</label>
             </div>
-            <div style="display:flex;gap:8px;flex-wrap:wrap"><button id="lwCreateOnly" style="flex:1">Create</button></div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap"><button id="lwCreateOnly" style="flex:1">Create</button><button id="lwCreateCheckin" style="flex:1;background:#3f7d5c">Create &amp; check in</button></div>
             <div class="out" id="lwOut"></div>
           </div>
         </details>
@@ -1286,7 +1288,7 @@ $("#rosView").onclick=async()=>{
           const tag=c.type==="pass"?('Pass '+esc(c.code||'')+(c.childName?' ('+esc(c.childName)+')':''))
             /* Play Club walk-ins carry the children's names, so show who came
                rather than an anonymous "Walk-in" row. */
-            :(c.playClubCode?('<span style="color:#8a6b2f;font-weight:800">\u2726 Play Club</span>'+(c.childNames&&c.childNames.length?(' ('+esc(c.childNames.join(', '))+')'):'')+((c.buddies&&c.buddies.length)?('<div style="font-size:.72rem;font-weight:700;color:#8a6b2f;margin-top:2px">\u{1F91D} '+c.buddies.map(function(x){return esc(x.name)+' ('+esc(String(x.forChild||'').split(' ')[0])+'\u2019s friend)';}).join(', ')+' \u00b7 needs waiver</div>'):'')):'Walk-in');
+            :lhWalkinTag(c);
           html+='<tr style="border-top:1px solid #f0e9df">'
               +'<td style="padding:6px 0;font-weight:700">'+c.atLabel+'</td>'
               +'<td style="padding:6px 0">'+tag+'</td>'
@@ -2789,6 +2791,25 @@ if($("#wsSave")) $("#wsSave").onclick=async function(){
 </script>
 
 <script>
+/* Roster label for a desk check-in: parent + children's names (from their
+   profiles) and a birthday badge, like an online booking. Plain walk-ins with
+   no profile still read "Walk-in". */
+function lhWalkinTag(c){
+  function e(t){return String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+  var names=(c.childNames||[]).filter(Boolean), bd=(c.birthdayNames||[]);
+  function kid(n){ return e(n)+(bd.indexOf(n)>=0?' 🎂':''); }
+  var bdBadge=bd.length?' <span style="font-size:.66rem;font-weight:900;color:#a85f59;background:#fdeee9;border:1px solid #f3d3cb;border-radius:6px;padding:1px 6px;white-space:nowrap">🎂 BIRTHDAY VISIT</span>':'';
+  if(c.playClubCode){
+    return '<span style="color:#8a6b2f;font-weight:800">✦ Play Club</span>'+(names.length?(' ('+names.map(kid).join(', ')+')'):'')+bdBadge
+      +((c.buddies&&c.buddies.length)?('<div style="font-size:.72rem;font-weight:700;color:#8a6b2f;margin-top:2px">\u{1F91D} '+c.buddies.map(function(x){return e(x.name)+' ('+e(String(x.forChild||'').split(' ')[0])+'’s friend)';}).join(', ')+' · needs waiver</div>'):'');
+  }
+  if(!c.parentName && !names.length) return 'Walk-in';
+  var wk=' <span style="font-size:.64rem;font-weight:800;color:#5c6470;background:#f1ece4;border-radius:6px;padding:1px 6px;white-space:nowrap">WALK-IN</span>';
+  if(c.parentName) return '<b>'+e(c.parentName)+'</b>'+wk+bdBadge+(names.length?'<div style="font-size:.75rem;font-weight:600;color:#4d7848;margin-top:2px">🧒 '+names.map(kid).join(', ')+'</div>':'');
+  return '<b>'+names.map(kid).join(', ')+'</b>'+wk+bdBadge;
+}
+</script>
+<script>
 (function(){
   var $=function(s){return document.querySelector(s);};
   function KEY(){ return ($("#key")&&$("#key").value.trim())||""; }
@@ -2804,13 +2825,13 @@ if($("#wsSave")) $("#wsSave").onclick=async function(){
       var adults=(c.waiverAdults&&c.waiverAdults.length)?'<div class="note" style="margin:2px 0 0">Adults on file: '+c.waiverAdults.map(esc).join(', ')+'</div>':'<div class="note" style="margin:2px 0 0;color:#b5622f">No adult names on file \u2014 add today\u2019s adult on WaiverMaster</div>';
       return '<div style="border:1px solid #eadfce;border-radius:10px;padding:10px 12px;margin-bottom:8px;background:#fff">'
         +'<div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><div><b>'+esc(c.childName)+'</b> <span style="font-family:monospace;color:var(--rose-deep)">'+esc(c.code)+'</span><br><span class="note">'+(c.dob?'\uD83C\uDF82 '+esc(c.dob):'')+(c.phone4?' \u00b7 \u260E \u2026'+esc(c.phone4):'')+(c.parentName?' \u00b7 '+esc(c.parentName):'')+'</span></div>'
-        +'<button class="lwPunch" data-code="'+esc(c.code)+'" title="Logs a walk-in for the numbers on the left AND records their visit" style="margin:0;padding:8px 14px;white-space:nowrap">\u2795 Check in</button><button class="lwPunchOnly" data-code="'+esc(c.code)+'" title="Record the visit only — no walk-in logged" style="margin:0 0 0 6px;padding:8px 12px;white-space:nowrap;background:#f4ece1;color:#5c6470">Visit only</button>'
-        +'<button class="lwBday" data-code="'+esc(c.code)+'" data-name="'+esc(c.childName||"")+'" title="Free birthday admission \u2014 recorded in their history" style="margin:0 0 0 6px;padding:8px 12px;white-space:nowrap;background:#fdeee9;color:#a85f59">\uD83C\uDF82 Birthday visit</button></div>'
-        +'<div style="margin-top:6px">'+waiverBadge(c)+'</div>'+adults+'</div>';
+        +'<button class="lwPunch" data-code="'+esc(c.code)+'" title="Puts them on the roster by name AND records the visit" style="margin:0;padding:8px 14px;white-space:nowrap">\u2795 Check in</button><button class="lwPunchOnly" data-code="'+esc(c.code)+'" title="Record the visit only — no walk-in logged" style="margin:0 0 0 6px;padding:8px 12px;white-space:nowrap;background:#f4ece1;color:#5c6470">Visit only</button>'
+        +'<button class="lwBday" data-code="'+esc(c.code)+'" data-name="'+esc(c.childName||"")+'" title="Checks them in as their free birthday visit and uses it up for this year" style="margin:0 0 0 6px;padding:8px 12px;white-space:nowrap;background:#fdeee9;color:#a85f59">\uD83C\uDF82 Birthday visit</button></div>'
+        +(bdayThisWeek(c.dob)?'<div style="margin-top:6px;font-weight:800;color:#a85f59">\uD83C\uDF82 Birthday this week!</div>':'')+'<div style="margin-top:6px">'+waiverBadge(c)+'</div>'+adults+'</div>';
     }).join('');
-    Array.prototype.forEach.call(document.querySelectorAll('.lwPunch'),function(b){ b.onclick=function(){ punchExisting(b.getAttribute('data-code'), b, true); }; });
+    Array.prototype.forEach.call(document.querySelectorAll('.lwPunch'),function(b){ b.onclick=function(){ checkinOne(b.getAttribute('data-code'), b, false); }; });
     Array.prototype.forEach.call(document.querySelectorAll('.lwPunchOnly'),function(b){ b.onclick=function(){ punchExisting(b.getAttribute('data-code'), b, false); }; });
-    Array.prototype.forEach.call(document.querySelectorAll('.lwBday'),function(b){ b.onclick=function(){ birthdayVisit(b.getAttribute('data-code'), b.getAttribute('data-name'), b); }; });
+    Array.prototype.forEach.call(document.querySelectorAll('.lwBday'),function(b){ b.onclick=function(){ checkinOne(b.getAttribute('data-code'), b, true, b.getAttribute('data-name')); }; });
   }
   async function lwFind(){
     var key=KEY(); var box=$('#lwResults'); var q=($('#lwPhone').value||'').trim();
@@ -2823,16 +2844,40 @@ if($("#wsSave")) $("#wsSave").onclick=async function(){
       renderCards(r.cards||[]);
     }catch(e){ box.innerHTML='<div class="out err" style="display:block">Network error.</div>'; }
   }
-  // Free birthday admission: logs the visit, adds NO punch, and marks the
-  // birthday used for this year so no further code gets emailed.
-  async function birthdayVisit(code, name, btn){
-    if(!confirm('Record a FREE BIRTHDAY ADMISSION for '+(name||code)+'?\n\n\u2022 Counts as a visit in their history\n\u2022 No further birthday code will be emailed this year')) return;
-    var key=KEY(); if(!key){ alert('Enter your '+KLABEL+' first.'); return; }
-    btn.disabled=true; btn.textContent='Recording\u2026';
-    try{ var r=await (await fetch('/api/loyalty',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({key:key,action:'punch',code:code,birthday:true})})).json();
-      if(r.ok){ btn.textContent='\uD83C\uDF82 Birthday visit logged'; btn.style.background='#e7f0df'; btn.style.color='#3f7d5c'; }
-      else { btn.disabled=false; btn.textContent='\uD83C\uDF82 Birthday visit'; alert(r.error||'Could not record it.'); }
-    }catch(e){ btn.disabled=false; btn.textContent='\uD83C\uDF82 Birthday visit'; alert('Network error.'); }
+  // Is this child's birthday in the current Sun-Sat week?
+  function bdayThisWeek(dob){
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(dob||'')) return false;
+    var t=todayISO(), d=new Date(t+'T12:00:00Z'), dow=d.getUTCDay();
+    var sun=new Date(d.getTime()-dow*864e5).toISOString().slice(0,10), sat=new Date(d.getTime()+(6-dow)*864e5).toISOString().slice(0,10);
+    var y=+t.slice(0,4);
+    return [y-1,y,y+1].some(function(yy){ var x=yy+dob.slice(4); return x>=sun&&x<=sat; });
+  }
+  function adultsNow(){ var el=$('#lwAdultsNow'); var v=el?parseInt(el.value,10):NaN; return (isNaN(v)||v<0)?1:v; }
+  function refreshRoster(){ try{ if(typeof loadDay==='function') loadDay(); }catch(e){} try{ if(typeof reloadRoster==='function') reloadRoster(); }catch(e){} }
+  function checkMsg(ok,txt){ var o=$('#lwCheckOut'); if(!o) return; o.className='out '+(ok?'ok':'err'); o.style.display='block'; o.textContent=(ok?'\u2713 ':'')+txt; }
+  // Check children in FROM THEIR PROFILES: a roster row with their names + adults
+  // (siblings join the same row), a visit on each profile's history, and for a
+  // birthday visit, the free birthday visit used up for the year.
+  async function profileCheckin(codes, birthdayCodes){
+    var key=KEY(); if(!key) return {error:'Enter your '+KLABEL+' first.'};
+    var body={key:key,action:'profile',codes:codes,birthdayCodes:birthdayCodes||[],adults:adultsNow(),waiverConfirmed:true};
+    var slotEl=$('#wiSlot')||$('#awSlot'); if(slotEl&&slotEl.value&&slotEl.value!=='auto') body.slot=slotEl.value;
+    try{ return await (await fetch('/api/checkin',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)})).json(); }
+    catch(e){ return {error:'Network error.'}; }
+  }
+  async function checkinOne(code, btn, bday, name){
+    if(bday && !confirm('\uD83C\uDF82 FREE BIRTHDAY VISIT for '+(name||code)+'?\n\n\u2022 Checks them in on the roster as a birthday visit\n\u2022 Uses up their free birthday visit for this year (no birthday code will be sent)')) return;
+    var label=btn.textContent; btn.disabled=true; btn.textContent='Working\u2026';
+    var r=await profileCheckin([code], bday?[code]:[]);
+    if(r&&r.ok){
+      btn.textContent=bday?'\uD83C\uDF82 Birthday visit \u2713':'\u2713 Checked in';
+      btn.style.background=bday?'#e7f0df':'#3f7d5c'; if(bday) btn.style.color='#3f7d5c';
+      checkMsg(true, r.message||'Checked in.');
+      refreshRoster();
+    } else {
+      btn.disabled=false; btn.textContent=label;
+      checkMsg(false, (r&&r.error)||'Could not check in.');
+    }
   }
   // One button does both jobs: punch the card AND log the walk-in against the
   // session's capacity. Doing them separately was two steps for one real-world
@@ -2874,22 +2919,51 @@ if($("#wsSave")) $("#wsSave").onclick=async function(){
   if($('#lwFind')) $('#lwFind').onclick=lwFind;
   if($('#lwPhone')) $('#lwPhone').addEventListener('keydown',function(e){ if(e.key==='Enter'){ e.preventDefault(); lwFind(); } });
   if($('#lwAddKid')) $('#lwAddKid').onclick=function(){ var d=document.createElement('div'); d.innerHTML=kidRow(); $('#lwKids').appendChild(d.firstChild); };
-    // Create only: saves the card(s) so the family is in the system. No punch, no visit, no email.
-  if($('#lwCreateOnly')) $('#lwCreateOnly').onclick=async function(){
-    var key=KEY(); var out=$('#lwOut'); var btn=$('#lwCreateOnly');
+    // Create: saves the profile(s) only -- no visit, no email.
+    // Create & check in: saves them AND puts them on today's roster by name.
+  async function createProfiles(andCheckin){
+    var key=KEY(); var out=$('#lwOut'); var btn=andCheckin?$('#lwCreateCheckin'):$('#lwCreateOnly'); var btnLabel=btn.textContent;
     if(!key){ out.className='out err'; out.style.display='block'; out.textContent='Enter your '+KLABEL+' first.'; return; }
     var phone=(($('#lwNewPhone')&&$('#lwNewPhone').value)||$('#lwPhone').value||'').trim();
     var kids=[].map.call(document.querySelectorAll('#lwKids .lw-kid'),function(r){return {first:r.querySelector('.lwF').value.trim(),last:r.querySelector('.lwL').value.trim(),dob:r.querySelector('.lwD').value};}).filter(function(c){return c.first&&c.last;});
     if(phone.replace(/\D/g,'').length<4){ out.className='out err'; out.style.display='block'; out.textContent='Enter the parent phone.'; return; }
     if(!kids.length){ out.className='out err'; out.style.display='block'; out.textContent='Enter at least one child first + last name.'; return; }
+    // Birthday this week? Offer the free birthday visit right away.
+    var bdayKids=[];
+    if(andCheckin){
+      var bk=kids.filter(function(c){ return bdayThisWeek(c.dob); });
+      if(bk.length && confirm('\uD83C\uDF82 It\u2019s '+bk.map(function(c){return c.first;}).join(' & ')+'\u2019s birthday week!\n\nOK = check in as their FREE BIRTHDAY VISIT (uses it up for this year)\nCancel = regular check-in')) bdayKids=bk;
+    }
     var email=($('#lwEmail').value||'').trim(), waiverSigned=$('#lwWaiver').value||'', adultNames=($('#lwAdults').value||'').split(',').map(function(s){return s.trim();}).filter(Boolean), military=$('#lwMilitary').checked;
     btn.disabled=true; btn.textContent='Saving\u2026';
     try{ var r=await (await fetch('/api/loyalty',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({key:key,action:'family-create',children:kids,phone:phone,email:email,waiverSigned:waiverSigned,adultNames:adultNames,militaryVerified:military})})).json();
-      if(r.ok){ out.className='out ok'; out.style.display='block'; out.textContent='\u2713 '+r.message; $('#lwKids').innerHTML=kidRow(); $('#lwEmail').value='';$('#lwWaiver').value='';$('#lwAdults').value='';$('#lwMilitary').checked=false; lwFind(); }
+      if(r.ok){
+        var msg='\u2713 '+r.message, ok=true;
+        if(andCheckin){
+          var nk=function(t){return String(t||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();};
+          var codes=(r.results||[]).map(function(x){return x.code;});
+          var bdayCodes=(r.results||[]).filter(function(x){ return bdayKids.some(function(c){ return nk(c.first+' '+c.last)===nk(x.childName); }); }).map(function(x){return x.code;});
+          btn.textContent='Checking in\u2026';
+          var c2=await profileCheckin(codes, bdayCodes);
+          // Birthday visit already used this year: check them in as a regular visit instead.
+          if(c2&&!c2.ok&&c2.birthdayUsed){
+            var why=c2.error||''; c2=await profileCheckin(codes, []);
+            if(c2&&c2.ok){ ok=false; c2.message='\u26a0\ufe0f '+why.replace(/ Check them in as a regular visit instead\.?$/,'')+' Checked in as a regular visit: '+c2.message; }
+          }
+          if(c2&&c2.ok){ msg+=' \u00b7 '+c2.message; refreshRoster(); }
+          else { ok=false; msg+=' \u00b7 NOT checked in: '+((c2&&c2.error)||'try the Check in button.'); }
+        }
+        out.className='out '+(ok?'ok':'err'); out.style.display='block'; out.textContent=msg;
+        $('#lwKids').innerHTML=kidRow(); $('#lwEmail').value='';$('#lwWaiver').value='';$('#lwAdults').value='';$('#lwMilitary').checked=false;
+        $('#lwPhone').value=phone;
+        lwFind();
+      }
       else { out.className='out err'; out.style.display='block'; out.textContent=r.error||'Could not create.'; }
     }catch(e){ out.className='out err'; out.style.display='block'; out.textContent='Network error.'; }
-    btn.disabled=false; btn.textContent='Create';
-  };
+    btn.disabled=false; btn.textContent=btnLabel;
+  }
+  if($('#lwCreateOnly')) $('#lwCreateOnly').onclick=function(){ createProfiles(false); };
+  if($('#lwCreateCheckin')) $('#lwCreateCheckin').onclick=function(){ createProfiles(true); };
 })();
 </script><script>
 (function(){

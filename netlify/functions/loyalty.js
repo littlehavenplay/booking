@@ -9,6 +9,7 @@
 import { getStore } from "@netlify/blobs";
 import { isDeletedCode } from "./lib-deleted-codes.js";
 import { listAllKeys } from "./lib-blobs.js";
+import { birthdayUsedThisYear, markBirthdayUsed } from "./lib-birthday.js";
 import { getActiveFamCode } from "./famcode.js";
 import {
   PUNCHES_FOR_REWARD, resolveCard, addPunch, cleanName, last4, normalizeCode,
@@ -466,9 +467,15 @@ export default async (req) => {
       if (await isLegacyPassCode(direct)) return json({ error: "That's a legacy prepaid card — use the Legacy prepaid cards tool." }, 409);
       let exists = null; try { exists = await loyalty.get("card:" + direct, { type: "json" }); } catch {}
       if (!exists) return json({ error: "No profile found for that code." }, 404);
+      // One free birthday visit per child per year (all of that child's profiles).
+      if (birthday) {
+        const chk = await birthdayUsedThisYear(loyalty, { code: direct, childName: exists.childName, dob: exists.dob || "", year: bYear });
+        if (chk.used) return json({ error: `${(exists.childName || "This child").split(" ")[0]} already had their free birthday visit this year (${chk.how}${chk.at ? ", " + String(chk.at).slice(0, 10) : ""}).` }, 409);
+      }
       const r = await addPunch(loyalty, { code: direct, waiverSigned, adultNames, noPunch: birthday, birthdayYear: bYear,
         visitMeta: { date: todayPacific(), source: src, birthday, walkin } });
       if (r.error) return json({ error: "Couldn't save. Try again." }, 502);
+      if (birthday) { try { await markBirthdayUsed({ loyaltyCodes: [direct], childName: exists.childName, dob: exists.dob || "", year: bYear, usedBy: "desk", reason: "Free birthday visit at the desk" }); } catch {} }
       return json({ ok: true, ...r,
         message: birthday
           ? `🎂 Birthday visit recorded for ${r.childName} (${r.code}). No birthday code will be emailed again this year.`

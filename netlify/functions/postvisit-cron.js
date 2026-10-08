@@ -4,6 +4,8 @@
 // Timing is deliberate — the morning after, not the same evening. Parents are
 // getting kids to bed at 7pm; a 10am email the next day gets read.
 //
+// Play Club members: at most one every 14 days (they come often).
+//
 // One email per booking, ever. `postVisitSentAt` is written onto the booking
 // record itself, so a re-run (or a manual invoke) can't send a second copy.
 //
@@ -27,6 +29,10 @@ function addDays(dateStr, n) {
   d.setDate(d.getDate() + n);
   return d.toISOString().slice(0, 10);
 }
+// Play Club families: one thank-you email per 14 days at most.
+const PLAYCLUB_EVERY_DAYS = 14;
+let playClubMemberFor = async () => null;
+function daysBetween(a, b) { return Math.round((Date.parse(b + "T12:00:00Z") - Date.parse(a + "T12:00:00Z")) / 86400000); }
 const esc = (s) => String(s == null ? "" : s).replace(/[&<>"]/g,
   c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
@@ -39,6 +45,16 @@ export default async () => {
   try { arrivedMap = (await arrivals.get(yesterday, { type: "json" })) || {}; } catch { arrivedMap = {}; }
   const arrivedIds = new Set(Object.keys(arrivedMap).filter(k => arrivedMap[k]));
   if (!arrivedIds.size) return new Response("no arrivals", { status: 200 });
+
+  const throttle = getStore("postvisit");
+  let members = null;
+  playClubMemberFor = async (entry) => {
+    if (members === null) { try { members = (await getStore("site").get("playclub:members", { type: "json" })) || []; } catch { members = []; } }
+    const code = String(entry.playClubCode || "").toUpperCase();
+    const email = String(entry.email || "").trim().toLowerCase();
+    return members.find(m => m && m.active !== false && m.code &&
+      ((code && m.code === code) || (email && String(m.email || "").trim().toLowerCase() === email))) || null;
+  };
 
   let sent = 0, skipped = 0, failed = 0;
   let keys = [];
@@ -56,9 +72,23 @@ export default async () => {
       if (entry.postVisitSentAt) { skipped++; continue; }
       if (!entry.email) { skipped++; continue; }
 
+      // Play Club members visit often, so they get this email at most once
+      // every 2 weeks instead of after every visit.
+      const member = await playClubMemberFor(entry);
+      if (member) {
+        let last = null; try { last = await throttle.get("pc:" + member.code, { type: "json" }); } catch {}
+        if (last && last.date && daysBetween(last.date, pacificToday()) < PLAYCLUB_EVERY_DAYS) {
+          entry.postVisitSentAt = "skipped: Play Club member, thanked " + last.date;
+          touched = true; skipped++; continue;
+        }
+      }
+
       const fam = await getOrCreateFamilyCode(entry.phone, { name: entry.name, email: entry.email });
       const ok = await sendFollowUp(entry, fam);
-      if (ok) { entry.postVisitSentAt = new Date().toISOString(); touched = true; sent++; }
+      if (ok) {
+        entry.postVisitSentAt = new Date().toISOString(); touched = true; sent++;
+        if (member) { try { await throttle.setJSON("pc:" + member.code, { date: pacificToday(), email: entry.email }); } catch {} }
+      }
       else failed++;
     }
     if (touched) { try { await bookings.setJSON(key, rec); } catch {} }

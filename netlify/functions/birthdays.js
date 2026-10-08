@@ -13,7 +13,7 @@
 // free-visit reward mechanism (one free child admission). They are valid on the
 // birthday ONLY (validFrom === expiry === the birthday) and single-use.
 import { getStore } from "@netlify/blobs";
-import { nextOccurrence, ageOn, issueBirthdayCode, birthdayWeek } from "./lib-birthday.js";
+import { nextOccurrence, ageOn, issueBirthdayCode, birthdayWeek, findChildCards, birthdayUsedThisYear, sendBirthdayEmail } from "./lib-birthday.js";
 import { normalizeCode } from "./lib-loyalty.js";
 
 // Whole years completed as of today, Pacific.
@@ -96,8 +96,29 @@ export default async (req) => {
     const first = parts[0] || "", last = parts.slice(1).join(" ") || "";
     const when = nextOccurrence(card.dob);
     const week = birthdayWeek(when);
+    // One free birthday visit per child per year.
+    const usedChk = await birthdayUsedThisYear(loyalty, { code, childName: card.childName, dob: card.dob, year: when.slice(0, 4) });
+    if (usedChk.used) return json({ error: `${first || "This child"} already had their free birthday visit this year (${usedChk.how}${usedChk.at ? ", " + String(usedChk.at).slice(0, 10) : ""}). No new code issued.` }, 409);
+
     const result = await issueBirthdayCode({ first, last, email: card.buyerEmail, dob: card.dob, code }, week, code, { manual: true });
     if (!result.ok) return json({ error: result.error }, 502);
+
+    // Same child on other profiles (e.g. the other parent's): same code, emailed
+    // to each of their addresses too, and marked so the daily run doesn't resend.
+    let others = [];
+    try { others = (await findChildCards(loyalty, { code, childName: card.childName, dob: card.dob })).filter(c => c.code !== code); } catch {}
+    const mailed = new Set([String(card.buyerEmail).toLowerCase()]);
+    let extraSent = 0;
+    for (const o of others) {
+      const e = String(o.buyerEmail || "").trim();
+      if (e && !mailed.has(e.toLowerCase())) {
+        mailed.add(e.toLowerCase());
+        if (await sendBirthdayEmail({ first, last, email: e, dob: card.dob }, result.code, week, { forceSend: true }).catch(() => false)) extraSent++;
+      }
+      o.lastSentYear = when.slice(0, 4); o.dayOfSentYear = when.slice(0, 4);
+      o.lastCode = result.code; o.activeBirthdayCode = result.code; o.activeBirthdayExpiry = week.validUntil;
+      try { await loyalty.setJSON("card:" + o.code, o); } catch {}
+    }
 
     // issueBirthdayCode writes activeBirthdayCode onto the card, so re-read it here.
     // Writing back the copy we loaded before that call would wipe those fields and
@@ -117,7 +138,7 @@ export default async (req) => {
       message: `Birthday gift ${result.code} for ${first} — valid their birthday week (${result.validFrom} to ${result.validUntil}).` +
                (result.reused ? " (Reused their existing code for this week — no duplicate issued.)" : "") +
                (result.emailed
-                 ? " Emailed to the family."
+                 ? (extraSent ? ` Emailed to the family (${extraSent + 1} addresses).` : " Emailed to the family.")
                  : " (Email didn't send — check the email service, and share the code directly for now.)") });
   }
 

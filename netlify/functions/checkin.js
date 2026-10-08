@@ -5,6 +5,11 @@
 // Body:
 //   { key, action:"walkin", count }                  -> log N walk-in children
 //   { key, action:"pass", code, count }              -> use N visits on a pass + count them
+//   { key, action:"profile", codes:[...], adults, birthdayCodes:[...] }
+//                                                    -> check in children from their profiles:
+//                                                       roster row with names + adults, a visit on
+//                                                       each profile, and (birthdayCodes) the free
+//                                                       birthday visit used up for the year
 //   { key, action:"remove", date, slot, entryId }    -> undo a walk-in / pass check-in
 //
 // Walk-ins & pass check-ins are auto-assigned to the session whose START time is
@@ -13,7 +18,8 @@
 import { getStore } from "@netlify/blobs";
 import { ARRIVAL, openPlayForDate, slotCap, slotKey, PARTY_SLOT_IDS, hoursFor, countHourChildren } from "./lib-settings.js";
 import { loadSeasonal, loadWeekly } from "./lib-hours.js";
-import { graduateLegacyCard } from "./lib-loyalty.js";
+import { graduateLegacyCard, addPunch, normalizeCode } from "./lib-loyalty.js";
+import { birthdayUsedThisYear, markBirthdayUsed, findChildCards } from "./lib-birthday.js";
 import { findMemberFor, memberCoversDate } from "./lib-playclub.js";
 
 export default async (req) => {
@@ -46,6 +52,11 @@ export default async (req) => {
     rec.bookings.splice(idx, 1);
     rec.children = Math.max(0, (rec.children || 0) - n);
     try { await bookings.setJSON(key, rec); } catch { return json({ error: "Couldn't update. Try again." }, 502); }
+    // Desk check-in from a profile: take the visit back off each child's history,
+    // and give back a birthday visit that was marked used by this check-in.
+    if (entry.source === "profile" && Array.isArray(entry.profileCodes) && entry.profileCodes.length) {
+      try { await undoProfileVisits(entry, date); } catch {}
+    }
     // If it was a pass check-in, give the visits back to the pass
     if (entry.type === "pass" && entry.code) {
       const passes = getStore("passes");
@@ -125,6 +136,121 @@ export default async (req) => {
     });
   }
 
+  // ---- CHECK IN FROM A CHILD PROFILE ----
+  // Siblings checked in one after another land on ONE roster row for the family
+  // (same phone), like an online booking: parent name, children's names, adults.
+  if (action === "profile") {
+    const codes = [...new Set((Array.isArray(b.codes) ? b.codes : [b.code]).map(normalizeCode).filter(Boolean))].slice(0, 8);
+    if (!codes.length) return json({ error: "Pick a child profile to check in." }, 400);
+    const bdaySet = new Set((Array.isArray(b.birthdayCodes) ? b.birthdayCodes : []).map(normalizeCode).filter(Boolean));
+    const adultsRaw = b.adults;
+    const adultCount = (adultsRaw === undefined || adultsRaw === null || adultsRaw === "")
+      ? 1 : Math.max(0, Math.min(20, parseInt(adultsRaw, 10) || 0));
+    const loyalty = getStore("loyalty");
+    const cards = [];
+    for (const c of codes) {
+      let card = null; try { card = await loyalty.get("card:" + c, { type: "json", consistency: "strong" }); } catch {}
+      if (!card) return json({ error: `No profile found for ${c}.` }, 404);
+      card.code = card.code || c;
+      cards.push(card);
+    }
+    const year = date.slice(0, 4);
+    const first = (n) => String(n || "").trim().split(/\s+/)[0] || "This child";
+
+    // One free birthday visit per child per year -- checked BEFORE anything is saved.
+    for (const card of cards) {
+      if (!bdaySet.has(card.code)) continue;
+      const chk = await birthdayUsedThisYear(loyalty, { code: card.code, childName: card.childName, dob: card.dob || "", year });
+      if (chk.used) {
+        return json({ error: `${first(card.childName)} already had their free birthday visit this year (${chk.how}${chk.at ? ", " + String(chk.at).slice(0, 10) : ""}). Check them in as a regular visit instead.`, birthdayUsed: true }, 409);
+      }
+    }
+
+    // Find this family's row in this arrival time, if one of them is already checked in.
+    const famKey = (cards[0].phone4 || "").toString();
+    let rec = null; try { rec = await bookings.get(key, { type: "json", consistency: "strong" }); } catch {}
+    if (!rec || typeof rec.children !== "number") rec = { children: 0, bookings: [] };
+    rec.bookings = Array.isArray(rec.bookings) ? rec.bookings : [];
+    let entry = rec.bookings.find(e => e && e.type === "walkin" && e.source === "profile" &&
+      ((famKey && e.familyKey === famKey) || (e.profileCodes || []).some(pc => codes.includes(pc))));
+    const already = entry ? cards.filter(c => (entry.profileCodes || []).includes(c.code)) : [];
+    const fresh = cards.filter(c => !already.includes(c));
+    if (!fresh.length) {
+      // Already on the roster, and now staff tapped Birthday visit: turn that
+      // check-in into the free birthday visit instead of adding them twice.
+      const upgrades = already.filter(c => bdaySet.has(c.code) && !(entry.birthdayCodes || []).includes(c.code));
+      if (upgrades.length) {
+        for (const card of upgrades) {
+          await markBirthdayUsed({ loyaltyCodes: [card.code], childName: card.childName, dob: card.dob || "", year,
+            usedBy: "desk", reason: "Free birthday visit at the desk" });
+          try {
+            const c2 = await loyalty.get("card:" + card.code, { type: "json", consistency: "strong" });
+            if (c2) {
+              (c2.visits || []).forEach(v => { if (v.bookingId === entry.id) { v.source = "birthday"; v.admission = "birthday"; v.freeAdmission = true; } });
+              c2.history = Array.isArray(c2.history) ? c2.history : [];
+              c2.history.push({ at: new Date().toISOString(), action: "birthday-visit", source: "walkin", note: "Free birthday admission" });
+              await loyalty.setJSON("card:" + card.code, c2);
+            }
+          } catch {}
+          entry.birthdayNames = (entry.birthdayNames || []).concat([card.childName || card.code]);
+          entry.birthdayCodes = (entry.birthdayCodes || []).concat([card.code]);
+        }
+        try { await bookings.setJSON(key, rec); } catch { return json({ error: "Couldn't update the roster. Try again." }, 502); }
+        return json({ ok: true, slot, slotLabel: chosen.label, atLabel: entry.atLabel, entryId: entry.id, upgraded: true,
+          checkedIn: upgrades.map(c => ({ code: c.code, childName: c.childName || "", birthday: true })),
+          message: `${upgrades.map(c => first(c.childName)).join(" & ")} \u{1F382} already checked in. Now marked as the free birthday visit for ${year}.` });
+      }
+      return json({ error: `${already.map(c => first(c.childName)).join(" & ")} ${already.length === 1 ? "is" : "are"} already checked in at ${entry.atLabel || chosen.label}.`, already: true }, 409);
+    }
+
+    const entryId = entry ? entry.id : crypto.randomUUID();
+    const isNewEntry = !entry;
+    if (!entry) {
+      const pc = cards[0];
+      const adultsOnFile = Array.isArray(pc.waiverAdults) ? pc.waiverAdults.map(a => (a && a.name) || a).filter(Boolean) : [];
+      entry = { id: entryId, type: "walkin", source: "profile", children: 0, adults: adultCount, at: atISO, atLabel,
+        waiverConfirmed, waiverConfirmedAt: waiverConfirmed ? atISO : null,
+        parentName: String(pc.parentName || adultsOnFile[0] || "").slice(0, 80),
+        familyKey: famKey, childNames: [], profileCodes: [], birthdayNames: [], birthdayCodes: [], playClubCode: null };
+    } else {
+      entry.adults = Math.max(entry.adults || 0, adultCount);
+    }
+
+    // Visit history on each child's profile (tagged with this roster row so a
+    // Remove takes it back off), and the birthday visit marked used.
+    const done = [];
+    for (const card of fresh) {
+      const isBday = bdaySet.has(card.code);
+      const r = await addPunch(loyalty, { code: card.code, noPunch: isBday, birthdayYear: isBday ? year : null,
+        visitMeta: { date, source: isBday ? "birthday" : "walkin", slotLabel: chosen.label, bookingId: entryId,
+          admission: isBday ? "birthday" : "regular", birthday: isBday, walkin: true } });
+      if (r && r.error) return json({ error: "Couldn't save the visit. Try again." }, 502);
+      if (isBday) {
+        await markBirthdayUsed({ loyaltyCodes: [card.code], childName: card.childName, dob: card.dob || "", year,
+          usedBy: "desk", reason: "Free birthday visit at the desk" });
+        entry.birthdayNames.push(card.childName || card.code);
+        entry.birthdayCodes.push(card.code);
+      }
+      entry.childNames.push(card.childName || card.code);
+      entry.profileCodes.push(card.code);
+      done.push({ code: card.code, childName: card.childName || "", birthday: isBday });
+    }
+    entry.children = (entry.children || 0) + fresh.length;
+    if (isNewEntry) rec.bookings.push(entry);
+    rec.children = (rec.children || 0) + fresh.length;
+    try { await bookings.setJSON(key, rec); } catch { return json({ error: "Couldn't update the roster. Try again." }, 502); }
+
+    const hourKids = await countHourChildren(bookings, date, slot);
+    const names = done.map(d => first(d.childName) + (d.birthday ? " \u{1F382}" : "")).join(", ");
+    return json({
+      ok: true, slot, slotLabel: chosen.label, atLabel, entryId, checkedIn: done, merged: !isNewEntry,
+      children: hourKids, cap, remaining: Math.max(0, cap - hourKids), over: hourKids > cap,
+      message: `Checked in ${names} → ${chosen.label}` +
+        (done.some(d => d.birthday) ? " · free birthday visit used for " + year : "") +
+        (isNewEntry ? ` · ${entry.adults} adult${entry.adults === 1 ? "" : "s"}` : " · added to their family on the roster") + ".",
+    });
+  }
+
   // ---- WALK-IN ----
   if (action === "walkin") {
     const count = Math.max(1, parseInt(b.count, 10) || 0);
@@ -155,6 +281,47 @@ export default async (req) => {
 
   return json({ error: "Unknown action." }, 400);
 };
+
+// Reverse a profile check-in: remove the visit it added to each child's history,
+// and if it used up a birthday visit, give that back (and un-retire the codes it
+// retired) so a mis-click doesn't cost the child their birthday visit.
+async function undoProfileVisits(entry, date) {
+  const loyalty = getStore("loyalty");
+  const year = String(date).slice(0, 4);
+  for (const code of entry.profileCodes) {
+    let card = null; try { card = await loyalty.get("card:" + code, { type: "json", consistency: "strong" }); } catch {}
+    if (!card) continue;
+    const before = Array.isArray(card.visits) ? card.visits.length : 0;
+    card.visits = (card.visits || []).filter(v => v.bookingId !== entry.id);
+    if (card.visits.length < before) card.totalVisits = Math.max(0, (card.totalVisits || 0) - (before - card.visits.length));
+    card.history = Array.isArray(card.history) ? card.history : [];
+    card.history.push({ at: new Date().toISOString(), action: "checkin-removed", note: "Desk check-in removed from the roster" });
+    try { await loyalty.setJSON("card:" + code, card); } catch {}
+    if ((entry.birthdayCodes || []).includes(code)) {
+      const sameKid = await findChildCards(loyalty, { code, childName: card.childName, dob: card.dob || "" }).catch(() => []);
+      for (const c of sameKid) {
+        if (c.birthdayUsedYear !== year) continue;
+        delete c.birthdayUsedYear; delete c.birthdayUsedAt;
+        // Leave lastSentYear alone if a code was really emailed; otherwise reopen it.
+        if (!c.lastCode) { delete c.lastSentYear; delete c.dayOfSentYear; }
+        try { await loyalty.setJSON("card:" + c.code, c); } catch {}
+      }
+      try {
+        const rewards = getStore("rewards");
+        const { listAllKeys } = await import("./lib-blobs.js");
+        for (const k of await listAllKeys(rewards, { prefix: "reward:" })) {
+          let r = null; try { r = await rewards.get(k, { type: "json" }); } catch { continue; }
+          if (r && r.kind === "birthday" && r.voidedReason === "Free birthday visit at the desk" &&
+              String(r.validFrom || "").slice(0, 4) === year &&
+              (r.loyaltyCode === code || String(r.childName || "").toLowerCase().trim() === String(card.childName || "").toLowerCase().trim())) {
+            r.used = false; delete r.usedAt; delete r.usedBy; delete r.voidedReason;
+            try { await rewards.setJSON(k, r); } catch {}
+          }
+        }
+      } catch {}
+    }
+  }
+}
 
 async function addToSession(bookings, key, entry) {
   let rec = null; try { rec = await bookings.get(key, { type: "json", consistency: "strong" }); } catch {}

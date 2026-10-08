@@ -32,6 +32,7 @@ import { FRIEND_DISCOUNT_CENTS, findFamilyByCode, familyStatus, normalizeRef, la
 import { loadSeasonal, loadWeekly } from "./lib-hours.js";
 import { getClosure, slotBlockedByClosure, getEventHold } from "./lib-closures.js";
 import { getWeekdaySpecial } from "./lib-weekday.js";
+import { markBirthdayUsed } from "./lib-birthday.js";
 
 export default async (req) => {
   if (req.method !== "POST") return json({ error: "Use POST." }, 405);
@@ -770,6 +771,13 @@ export default async (req) => {
     fresh.used = true;
     fresh.usedAt = new Date().toISOString(); fresh.usedBy = email; fresh.bookingId = payment?.id || null;
     try { await rewardStore.setJSON("reward:" + rewardCode, fresh); } catch {}
+    // One free birthday visit per child: retire any other birthday code this
+    // child has (e.g. one sent to the other parent's profile).
+    if (fresh.kind === "birthday") {
+      try { await markBirthdayUsed({ loyaltyCodes: [fresh.loyaltyCode], childName: fresh.childName, dob: fresh.dob || "",
+        year: String(fresh.validFrom || date).slice(0, 4), exceptCode: rewardCode, usedBy: email,
+        reason: "Birthday visit used with code " + rewardCode }); } catch {}
+    }
   }
 
   // Burn each birthday reward used, and clear it off the linked loyalty card.
@@ -782,6 +790,9 @@ export default async (req) => {
       fresh.used = true;
       fresh.usedAt = new Date().toISOString(); fresh.usedBy = email; fresh.bookingId = payment?.id || null;
       try { await rewardStore.setJSON("reward:" + b.code, fresh); } catch {}
+      try { await markBirthdayUsed({ loyaltyCodes: [fresh.loyaltyCode], childName: fresh.childName, dob: fresh.dob || "",
+        year: String(fresh.validFrom || date).slice(0, 4), exceptCode: b.code, usedBy: email,
+        reason: "Birthday visit used with code " + b.code }); } catch {}
       const lc = fresh.loyaltyCode;
       if (lc) {
         try {
@@ -1226,7 +1237,6 @@ async function sendConfirmation({ email, name, date, slotLabel, regular, sibling
       ${militaryAmount > 0 ? `<tr><td style="padding:2px 0;color:#7ba676">🎖️ Military discount (10% off)</td><td style="padding:2px 0;text-align:right;font-weight:bold;color:#7ba676">−${dollars(militaryAmount)}</td></tr>` : ""}
       ${memberRow}
       ${gripSocksAmount > 0 ? `<tr><td style="padding:2px 0;color:#5c6470">\u{1F9E6} Grip socks \u00d7 ${gripSocks}</td><td style="padding:2px 0;text-align:right;font-weight:bold">${dollars(gripSocksAmount)}</td></tr>` : ""}
-      ${isMember ? `<tr><td colspan="2" style="padding:2px 0;color:#8a6b2f">\u{1F9C3} Complimentary snack or juice box for each Play Club child</td></tr>` : ""}
       ${payRows}
     </table>
 
@@ -1240,7 +1250,6 @@ async function sendConfirmation({ email, name, date, slotLabel, regular, sibling
     + (isMember && playClubAmount > 0
         ? `Play Club${kidList ? ` — ${kidList}` : ""}: −${dollars(playClubAmount)}\n` : "")
     + (gripSocksAmount > 0 ? `Grip socks \u00d7 ${gripSocks}: ${dollars(gripSocksAmount)}\n` : "")
-    + (isMember ? `Complimentary snack or juice box for each Play Club child\n` : "")
     + `Total paid: ${dollars(amount)}\n\n`
     + `Sign your waiver: ${waiverUrl}\n`
     + `Grip socks are required for children entering the play area.\n`

@@ -50,6 +50,8 @@ export default async (req) => {
             // Carried through so the roster can label a Play Club walk-in and
             // name the children, instead of showing a bare headcount.
             childNames: Array.isArray(b.childNames) ? b.childNames : [], playClubCode: b.playClubCode || null,
+            parentName: b.parentName || "", profileCodes: Array.isArray(b.profileCodes) ? b.profileCodes : [],
+            birthdayNames: Array.isArray(b.birthdayNames) ? b.birthdayNames : [], source: b.source || "",
             buddies: Array.isArray(b.buddies) ? b.buddies.map(x => ({ name: x.name || "", forChild: x.forChild || "" })) : [] });
         } else {
           // Older bookings (before buddy passes were retired, Oct 2026) may

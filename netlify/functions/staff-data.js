@@ -57,7 +57,12 @@ export default async (req) => {
         if (x.type === "walkin" || x.type === "pass") {
           adultsTotal += x.type === "walkin" ? (x.adults || 0) : 1;   // walk-in: entered; pass: 1 included
           checkins.push({ id: x.id, type: x.type, slot: mid, arrivalLabel, children: x.children || 0, adults: x.type === "walkin" ? (x.adults || 0) : 1,
-            code: x.code || null, childName: x.childName || "", atLabel: x.atLabel || "", at: x.at || null, legacy });
+            code: x.code || null, childName: x.childName || "", atLabel: x.atLabel || "", at: x.at || null, legacy,
+            // Who walked in: names from their profiles (or a Play Club check-in),
+            // the parent, and whether it was a free birthday visit.
+            childNames: Array.isArray(x.childNames) ? x.childNames : [], playClubCode: x.playClubCode || null,
+            parentName: x.parentName || "", profileCodes: Array.isArray(x.profileCodes) ? x.profileCodes : [],
+            birthdayNames: Array.isArray(x.birthdayNames) ? x.birthdayNames : [], source: x.source || "" });
         } else {
           const adults = typeof x.adultsTotal === "number"
             ? x.adultsTotal

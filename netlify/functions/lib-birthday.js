@@ -47,30 +47,121 @@ export function birthdayWeek(dateISO) {
 // Matches on the loyalty code when there is one, otherwise on the child's name.
 // Name-only matching could in theory collide for two children with identical names;
 // the cost of that is one missed email, never a duplicate code — the right way round.
-export async function findExistingBirthdayReward({ loyaltyCode, childName, validFrom, validUntil }) {
-  const rewards = getStore("rewards");
-  const wantName = (childName || "").trim().toLowerCase();
-  const wantCode = (loyaltyCode || "").trim().toUpperCase();
-  let keys = [];
-  try { keys = await listAllKeys(rewards, { prefix: "reward:" }); } catch { return null; }
+// ONE CHILD = ONE BIRTHDAY CODE (Oct 2026).
+// The same child can be on file more than once -- e.g. Mom's profile and Dad's
+// profile each list Grace, under two different phone numbers. Those used to be
+// treated as two children, so each parent got a DIFFERENT code (two free visits).
+// A child is now identified by NAME + BIRTH DATE as well as by profile code, so
+// every profile for that child shares one code, and the same code is emailed to
+// every address on file.
+export function childNameKey(s) { return String(s || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim(); }
 
+function sameBirthdayChild(r, { loyaltyCodes, childName, dob }) {
+  const codes = (loyaltyCodes || []).map(c => String(c || "").trim().toUpperCase()).filter(Boolean);
+  if (codes.length && r.loyaltyCode && codes.includes(String(r.loyaltyCode).trim().toUpperCase())) return true;
+  const want = childNameKey(childName);
+  if (!want || childNameKey(r.childName) !== want) return false;
+  // Same name but a different birth date on file = a different child.
+  if (dob && r.dob && dob !== r.dob) return false;
+  return true;
+}
+
+// Every birthday reward for this child whose window overlaps validFrom..validUntil.
+export async function findBirthdayRewards({ loyaltyCode, loyaltyCodes, childName, dob, validFrom, validUntil }) {
+  const rewards = getStore("rewards");
+  const codes = (loyaltyCodes || []).concat(loyaltyCode ? [loyaltyCode] : []);
+  let keys = [];
+  try { keys = await listAllKeys(rewards, { prefix: "reward:" }); } catch { return []; }
+  const out = [];
   for (const k of keys) {
     let r = null;
     try { r = await rewards.get(k, { type: "json" }); } catch { continue; }
     if (!r || r.kind !== "birthday") continue;
-
-    const sameChild =
-      (wantCode && (r.loyaltyCode || "").trim().toUpperCase() === wantCode) ||
-      (!wantCode && wantName && (r.childName || "").trim().toLowerCase() === wantName);
-    if (!sameChild) continue;
-
-    // Overlapping date windows means this birthday is already covered.
+    if (!sameBirthdayChild(r, { loyaltyCodes: codes, childName, dob })) continue;
     const rFrom = r.validFrom || "", rUntil = r.expiry || r.validFrom || "";
     if (rFrom && validUntil && rFrom > validUntil) continue;
     if (rUntil && validFrom && rUntil < validFrom) continue;
-    return r;
+    out.push(r);
   }
-  return null;
+  // Oldest first, so every caller settles on the same code.
+  out.sort((a, b) => String(a.issuedAt || "").localeCompare(String(b.issuedAt || "")));
+  return out;
+}
+
+// Has this child ALREADY got a birthday code covering this window?
+// This is the backstop that stops a family ever receiving two codes for one
+// birthday. It reads the rewards store directly instead of trusting a flag on the
+// profile, so it still works when staff issued a code by hand.
+export async function findExistingBirthdayReward(opts) {
+  const all = await findBirthdayRewards(opts);
+  return all.length ? all[0] : null;
+}
+
+// Every profile on file for this child (same name + same birth date), across
+// families/phone numbers. Falls back to just the one profile when there's no DOB.
+export async function findChildCards(loyalty, { code, childName, dob }) {
+  const out = [];
+  const want = childNameKey(childName);
+  let keys = [];
+  try { keys = await listAllKeys(loyalty, { prefix: "card:" }); } catch {}
+  for (const k of keys) {
+    let c = null; try { c = await loyalty.get(k, { type: "json" }); } catch { continue; }
+    if (!c) continue;
+    const cc = c.code || k.slice(5);
+    if (code && cc === code) { out.push(c); continue; }
+    if (dob && want && c.dob === dob && childNameKey(c.childName) === want) out.push(c);
+  }
+  return out;
+}
+
+// The child used their free birthday visit (at the desk, or a code online).
+// Retire every OTHER birthday code for that child for the same birthday, and mark
+// every profile for that child so no new code is emailed this year.
+export async function markBirthdayUsed({ loyaltyCodes, childName, dob, year, exceptCode, usedBy, reason }) {
+  const y = String(year || new Date().toISOString().slice(0, 4));
+  const burned = [];
+  try {
+    const rewards = getStore("rewards");
+    const list = await findBirthdayRewards({ loyaltyCodes, childName, dob, validFrom: y + "-01-01", validUntil: y + "-12-31" });
+    for (const r of list) {
+      if (r.used || r.code === exceptCode) continue;
+      r.used = true; r.usedAt = new Date().toISOString(); r.usedBy = usedBy || "";
+      r.voidedReason = reason || "Birthday visit already used";
+      try { await rewards.setJSON("reward:" + r.code, r); burned.push(r.code); } catch {}
+    }
+  } catch {}
+  try {
+    const loyalty = getStore("loyalty");
+    const seen = new Set();
+    const cards = [];
+    for (const lc of (loyaltyCodes || []).filter(Boolean)) {
+      for (const c of await findChildCards(loyalty, { code: lc, childName, dob })) {
+        if (!seen.has(c.code)) { seen.add(c.code); cards.push(c); }
+      }
+    }
+    if (!cards.length && dob) for (const c of await findChildCards(loyalty, { childName, dob })) cards.push(c);
+    for (const c of cards) {
+      c.birthdayUsedYear = y; c.lastSentYear = y; c.dayOfSentYear = y;
+      if (!c.birthdayUsedAt || String(c.birthdayUsedAt).slice(0, 4) !== y) c.birthdayUsedAt = new Date().toISOString();
+      delete c.activeBirthdayCode; delete c.activeBirthdayExpiry;
+      try { await loyalty.setJSON("card:" + c.code, c); } catch {}
+    }
+  } catch {}
+  return burned;
+}
+
+// Has this child already had their free birthday visit in `year`? Checks every
+// profile for the child and every birthday code issued to them.
+export async function birthdayUsedThisYear(loyalty, { code, childName, dob, year }) {
+  const y = String(year);
+  const cards = await findChildCards(loyalty, { code, childName, dob });
+  const hit = cards.find(c => c.birthdayUsedYear === y);
+  if (hit) return { used: true, at: hit.birthdayUsedAt || "", how: "birthday visit" };
+  const list = await findBirthdayRewards({ loyaltyCodes: cards.map(c => c.code).concat(code ? [code] : []), childName, dob,
+    validFrom: y + "-01-01", validUntil: y + "-12-31" });
+  const usedR = list.find(r => r.used && !r.voidedReason);
+  if (usedR) return { used: true, at: usedR.usedAt || "", how: "birthday code " + usedR.code };
+  return { used: false };
 }
 
 export async function issueBirthdayCode(rec, when, loyaltyCode, meta = {}) {
@@ -87,6 +178,7 @@ export async function issueBirthdayCode(rec, when, loyaltyCode, meta = {}) {
       const already = await findExistingBirthdayReward({
         loyaltyCode: loyaltyCode || rec.code || null,
         childName: ((rec.first || "") + " " + (rec.last || "")).trim(),
+        dob: rec.dob || "",
         validFrom, validUntil,
       });
       if (already && already.code) {
@@ -159,6 +251,7 @@ export async function issueBirthdayCode(rec, when, loyaltyCode, meta = {}) {
       code, type: "free-visit", kind: "birthday", source: "birthday",
       childName: ((rec.first || "") + " " + (rec.last || "")).trim(),
       loyaltyCode: loyaltyCode || rec.code || null,
+      dob: rec.dob || "",
       validFrom, expiry: validUntil, used: false,
       issuedAt: new Date().toISOString(),
       // Set when staff issued this by hand. The daily cron treats a manual code as
@@ -250,7 +343,7 @@ export async function sendBirthdayEmail(rec, code, when, opts = {}) {
          // code went out earlier today. Only the automatic run uses the stable
          // key that collapses accidental repeats.
          ? {}
-         : { idempotencyKey: `bday-advance:${code}` });
+         : { idempotencyKey: `bday-advance:${code}:${String(rec.email).toLowerCase()}` });
 }
 
 export async function sendBirthdayDayOfEmail(rec, code, when, validUntil) {
@@ -303,7 +396,7 @@ export async function sendBirthdayDayOfEmail(rec, code, when, validUntil) {
   return await resendEmail({
       from: fromHeader(from, studio), to: [rec.email], bcc: bcc ? [bcc] : undefined,
       subject: `🎉 Happy Birthday${rec.first ? " " + rec.first : ""}! Your free visit is good all week`, html: html + SIGNATURE_HTML,
-    }, { idempotencyKey: `bday-dayof:${code}` });
+    }, { idempotencyKey: `bday-dayof:${code}:${String(rec.email).toLowerCase()}` });
 }
 
 export function prettyDate(iso) {
