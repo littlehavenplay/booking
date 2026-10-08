@@ -9,7 +9,7 @@
 //
 // Runs every day at 15:00 UTC (~8am Pacific). Netlify handles the schedule.
 import { getStore } from "@netlify/blobs";
-import { issueBirthdayCode, sendBirthdayEmail, sendBirthdayDayOfEmail, birthdayWeek, findExistingBirthdayReward, nextOccurrence, childNameKey } from "./lib-birthday.js";
+import { issueBirthdayCode, sendBirthdayEmail, sendBirthdayDayOfEmail, birthdayWeek, findExistingBirthdayReward, nextOccurrence, childNameKey, sameChildCard } from "./lib-birthday.js";
 
 function splitName(childName) {
   const parts = (childName || "").trim().split(/\s+/);
@@ -37,10 +37,12 @@ export default async () => {
   // name + same birth date -- so the child gets ONE code, and that same code is
   // emailed to every address on file (each email BCCs the studio).
   const groups = new Map();
+  const noDob = [];   // profiles without a birthday on them (e.g. made at the desk)
   for (const k of keys) {
     let card = null; try { card = await loyalty.get(k, { type: "json" }); } catch {}
-    if (!card || !card.dob || !/^\d{4}-\d{2}-\d{2}$/.test(card.dob)) continue;
+    if (!card) continue;
     card.code = card.code || k.slice(5);   // "card:" prefix is 5 chars
+    if (!card.dob || !/^\d{4}-\d{2}-\d{2}$/.test(card.dob)) { if (card.birthdayUsedYear) noDob.push(card); continue; }
     const gk = childNameKey(card.childName) + "|" + card.dob;
     if (!groups.has(gk)) groups.set(gk, []);
     groups.get(gk).push(card);
@@ -67,6 +69,11 @@ export default async () => {
     const dob = lead.dob;
     const cmm = dob.slice(5, 7), cdd = dob.slice(8, 10);
     const allCodes = cards.map(c => c.code);
+    // Birthday visit already used this year -- on any of this child's profiles,
+    // including one without the birthday filled in (same name + phone/email).
+    const usedIn = (y) => cards.some(c => c.birthdayUsedYear === y) ||
+      noDob.some(n => n.birthdayUsedYear === y && cards.some(c =>
+        sameChildCard(n, { childName: c.childName, dob: "", phone4: c.phone4, email: c.buyerEmail })));
     const { first, last } = splitName(lead.childName);
 
     // When this child's birthday next falls, and how far off it is.
@@ -81,7 +88,7 @@ export default async () => {
     if (daysAway >= 1 && daysAway <= ADVANCE_DAYS) {
       checked++;
       const pending = cards.filter(c => c.lastSentYear !== year && c.buyerEmail);
-      if (cards.some(c => c.birthdayUsedYear === year)) {
+      if (usedIn(year)) {
         // Already had their free birthday visit this year (e.g. a new profile
         // created at the desk on their birthday). No code, ever.
         for (const c of pending) { c.lastSentYear = year; await save(c); }
@@ -141,7 +148,7 @@ export default async () => {
       dayChecked++;
       const pending = cards.filter(c => c.dayOfSentYear !== todayYear && c.buyerEmail);
       if (!pending.length) { daySkipped++; continue; }
-      if (cards.some(c => c.birthdayUsedYear === todayYear)) {
+      if (usedIn(todayYear)) {
         for (const c of pending) { c.dayOfSentYear = todayYear; await save(c); }
         daySkipped++;
         continue;

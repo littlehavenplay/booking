@@ -19,7 +19,8 @@ import { getStore } from "@netlify/blobs";
 import { ARRIVAL, openPlayForDate, slotCap, slotKey, PARTY_SLOT_IDS, hoursFor, countHourChildren } from "./lib-settings.js";
 import { loadSeasonal, loadWeekly } from "./lib-hours.js";
 import { graduateLegacyCard, addPunch, normalizeCode } from "./lib-loyalty.js";
-import { birthdayUsedThisYear, markBirthdayUsed, findChildCards } from "./lib-birthday.js";
+import { birthdayUsedThisYear, markBirthdayUsed, findChildCards, childNameKey } from "./lib-birthday.js";
+import { listAllKeys } from "./lib-blobs.js";
 import { findMemberFor, memberCoversDate } from "./lib-playclub.js";
 
 export default async (req) => {
@@ -147,7 +148,7 @@ export default async (req) => {
     const adultCount = (adultsRaw === undefined || adultsRaw === null || adultsRaw === "")
       ? 1 : Math.max(0, Math.min(20, parseInt(adultsRaw, 10) || 0));
     const loyalty = getStore("loyalty");
-    const cards = [];
+    let cards = [];
     for (const c of codes) {
       let card = null; try { card = await loyalty.get("card:" + c, { type: "json", consistency: "strong" }); } catch {}
       if (!card) return json({ error: `No profile found for ${c}.` }, 404);
@@ -163,6 +164,45 @@ export default async (req) => {
       const chk = await birthdayUsedThisYear(loyalty, { code: card.code, childName: card.childName, dob: card.dob || "", year });
       if (chk.used) {
         return json({ error: `${first(card.childName)} already had their free birthday visit this year (${chk.how}${chk.at ? ", " + String(chk.at).slice(0, 10) : ""}). Check them in as a regular visit instead.`, birthdayUsed: true }, 409);
+      }
+    }
+
+    // Already on today's roster from an ONLINE booking? Don't add a second row.
+    // A birthday visit is marked on that booking instead; a regular check-in is
+    // done by ticking them as arrived on the booking.
+    const online = await onlineBookingsFor(bookings, date, cards);
+    if (online.size) {
+      const plain = cards.filter(c => online.has(c.code) && !bdaySet.has(c.code));
+      if (plain.length) {
+        const o = online.get(plain[0].code);
+        return json({ error: `${plain.map(c => first(c.childName)).join(" & ")} booked online today (${o.entry.name || "online booking"}${o.arrivalLabel ? ", " + o.arrivalLabel : ""}) and ${plain.length === 1 ? "is" : "are"} already on the roster. Tick them as arrived there.`, onlineBooking: true }, 409);
+      }
+      const marked = [];
+      for (const card of cards.filter(c => online.has(c.code))) {
+        const o = online.get(card.code);
+        await markBirthdayUsed({ loyaltyCodes: [card.code], childName: card.childName, dob: card.dob || "", year,
+          usedBy: "desk", reason: "Free birthday visit at the desk" });
+        // If they were already ticked as arrived, that visit becomes the birthday visit.
+        try {
+          for (const c2 of await findChildCards(loyalty, { code: card.code, childName: card.childName, dob: card.dob || "" })) {
+            let hit = false;
+            (c2.visits || []).forEach(v => { if (v.bookingId === o.entry.id) { v.source = "birthday"; v.admission = "birthday"; v.freeAdmission = true; hit = true; } });
+            c2.history = Array.isArray(c2.history) ? c2.history : [];
+            if (c2.code === card.code || hit) {
+              c2.history.push({ at: new Date().toISOString(), action: "birthday-visit", source: "online-booking", note: "Free birthday admission (online booking)" });
+              await loyalty.setJSON("card:" + c2.code, c2);
+            }
+          }
+        } catch {}
+        o.entry.birthdayNames = Array.isArray(o.entry.birthdayNames) ? o.entry.birthdayNames : [];
+        if (!o.entry.birthdayNames.includes(card.childName)) o.entry.birthdayNames.push(card.childName || card.code);
+        try { await bookings.setJSON(o.key, o.rec); } catch {}
+        marked.push(first(card.childName));
+      }
+      cards = cards.filter(c => !online.has(c.code));
+      if (!cards.length) {
+        return json({ ok: true, onlineBooking: true, slot, slotLabel: chosen.label,
+          message: `${marked.join(" & ")} \u{1F382} already on today's roster from an online booking. Marked as the free birthday visit for ${year}.` });
       }
     }
 
@@ -281,6 +321,27 @@ export default async (req) => {
 
   return json({ error: "Unknown action." }, 400);
 };
+
+// Online bookings today that include these children (matched by name). Each
+// result: { key, rec, entry, arrivalLabel }, keyed by the child's profile code.
+async function onlineBookingsFor(bookings, date, cards) {
+  const found = new Map();
+  let keys = [];
+  try { keys = await listAllKeys(bookings, { prefix: date + "__" }); } catch { return found; }
+  for (const key of keys) {
+    let rec = null; try { rec = await bookings.get(key, { type: "json", consistency: "strong" }); } catch {}
+    if (!rec || !Array.isArray(rec.bookings)) continue;
+    for (const entry of rec.bookings) {
+      if (!entry || entry.type === "walkin" || entry.type === "pass" || !Array.isArray(entry.childNames)) continue;
+      const names = entry.childNames.map(c => childNameKey(typeof c === "string" ? c : ((c && c.first || "") + " " + (c && c.last || ""))));
+      for (const card of cards) {
+        if (found.has(card.code)) continue;
+        if (names.includes(childNameKey(card.childName))) found.set(card.code, { key, rec, entry, arrivalLabel: (ARRIVAL[key.split("__")[1]] || {}).label || "" });
+      }
+    }
+  }
+  return found;
+}
 
 // Reverse a profile check-in: remove the visit it added to each child's history,
 // and if it used up a birthday visit, give that back (and un-retire the codes it

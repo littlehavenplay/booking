@@ -82,7 +82,8 @@ export default async (req) => {
             regular: x.regular || 0, sibling: x.sibling || 0, infant: x.infant || 0, adults,
             at: x.at || null, cardLast4: x.cardLast4 || null, paid,
             playClub: x.playClubCode || null, playClubName: x.playClubName || null,
-            gripSocks: x.gripSocks || 0 });
+            gripSocks: x.gripSocks || 0,
+            birthdayNames: Array.isArray(x.birthdayNames) ? x.birthdayNames : [] });
         }
       }
     }

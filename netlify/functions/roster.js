@@ -72,7 +72,8 @@ export default async (req) => {
             paid: paid.join(" + ") || "—", at: b.at || null,
             // Named so staff know who's coming and can check each has a waiver.
             buddies: buddies.map(x => ({ name: x.name || "", forChild: x.forChild || "" })),
-            playClubCode: b.playClubCode || null });
+            playClubCode: b.playClubCode || null,
+            birthdayNames: Array.isArray(b.birthdayNames) ? b.birthdayNames : [] });
         }
       }
     }

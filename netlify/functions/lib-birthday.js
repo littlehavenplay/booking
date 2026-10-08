@@ -97,19 +97,38 @@ export async function findExistingBirthdayReward(opts) {
   return all.length ? all[0] : null;
 }
 
-// Every profile on file for this child (same name + same birth date), across
-// families/phone numbers. Falls back to just the one profile when there's no DOB.
-export async function findChildCards(loyalty, { code, childName, dob }) {
-  const out = [];
+// Every profile on file for this child. Same child =
+//   same name + same birth date (any family/phone -- e.g. Mom's and Dad's), or
+//   same name + same phone or email when one of the profiles has no birth date
+//   on it (e.g. a profile made at the desk without the birthday filled in).
+export function sameChildCard(c, { code, childName, dob, phone4, email }) {
+  const cc = c.code || "";
+  if (code && cc === code) return true;
   const want = childNameKey(childName);
+  if (!want || childNameKey(c.childName) !== want) return false;
+  if (dob && c.dob) return c.dob === dob;
+  const em = String(email || "").trim().toLowerCase();
+  return !!((phone4 && c.phone4 === phone4) || (em && String(c.buyerEmail || "").trim().toLowerCase() === em));
+}
+export async function findChildCards(loyalty, { code, childName, dob, phone4, email }) {
+  // Fill in what we know about this child from their own profile.
+  if (code && (!childName || phone4 === undefined)) {
+    try {
+      const own = await loyalty.get("card:" + code, { type: "json" });
+      if (own) {
+        childName = childName || own.childName; dob = dob || own.dob || "";
+        phone4 = phone4 || own.phone4 || ""; email = email || own.buyerEmail || "";
+      }
+    } catch {}
+  }
+  const out = [];
   let keys = [];
   try { keys = await listAllKeys(loyalty, { prefix: "card:" }); } catch {}
   for (const k of keys) {
     let c = null; try { c = await loyalty.get(k, { type: "json" }); } catch { continue; }
     if (!c) continue;
-    const cc = c.code || k.slice(5);
-    if (code && cc === code) { out.push(c); continue; }
-    if (dob && want && c.dob === dob && childNameKey(c.childName) === want) out.push(c);
+    c.code = c.code || k.slice(5);
+    if (sameChildCard(c, { code, childName, dob, phone4, email })) out.push(c);
   }
   return out;
 }
@@ -135,7 +154,7 @@ export async function markBirthdayUsed({ loyaltyCodes, childName, dob, year, exc
     const seen = new Set();
     const cards = [];
     for (const lc of (loyaltyCodes || []).filter(Boolean)) {
-      for (const c of await findChildCards(loyalty, { code: lc, childName, dob })) {
+      for (const c of await findChildCards(loyalty, { code: lc, childName, dob: dob || undefined })) {
         if (!seen.has(c.code)) { seen.add(c.code); cards.push(c); }
       }
     }

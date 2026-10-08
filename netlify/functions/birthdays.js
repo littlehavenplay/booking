@@ -13,7 +13,7 @@
 // free-visit reward mechanism (one free child admission). They are valid on the
 // birthday ONLY (validFrom === expiry === the birthday) and single-use.
 import { getStore } from "@netlify/blobs";
-import { nextOccurrence, ageOn, issueBirthdayCode, birthdayWeek, findChildCards, birthdayUsedThisYear, sendBirthdayEmail } from "./lib-birthday.js";
+import { nextOccurrence, ageOn, issueBirthdayCode, birthdayWeek, findChildCards, birthdayUsedThisYear, sendBirthdayEmail, sameChildCard, markBirthdayUsed } from "./lib-birthday.js";
 import { normalizeCode } from "./lib-loyalty.js";
 
 // Whole years completed as of today, Pacific.
@@ -46,8 +46,13 @@ export default async (req) => {
     let keys = [];
     try { const r = await loyalty.list({ prefix: "card:" }); keys = (r.blobs || []).map(x => x.key); } catch {}
     const rows = [];
-    for (const k of keys) {
-      let rec = null; try { rec = await loyalty.get(k, { type: "json" }); } catch {}
+    // Every profile, so a birthday visit saved on ANY of the child's profiles
+    // (e.g. one made at the desk without the birthday) shows as redeemed here.
+    const allCards = [];
+    for (const k of keys) { let c = null; try { c = await loyalty.get(k, { type: "json" }); } catch {} if (c) { c.code = c.code || k.slice(5); allCards.push(c); } }
+    const rewards = getStore("rewards");
+    for (const rec of allCards) {
+      const k = "card:" + rec.code;
       if (!rec || !rec.dob) continue;
       const cmm = rec.dob.slice(5, 7), cdd = rec.dob.slice(8, 10);
       if (!all && cmm !== month) continue;
@@ -64,12 +69,37 @@ export default async (req) => {
         birthdayUsedYear: rec.birthdayUsedYear || null,
         email: rec.buyerEmail || "", phone: rec.phone || "",
         lastSentYear: rec.lastSentYear || null, lastCode: rec.lastCode || "",
+        ...(await redeemedFor(rec, allCards, rewards)),
       });
     }
     // Sort by month+day together (not day alone) — otherwise "all months" mode would
     // group every 1st-of-the-month before every 2nd, regardless of which month.
     rows.sort((a, c) => ((a.month || "") + (a.day || "")).localeCompare((c.month || "") + (c.day || "")));
     return json({ ok: true, month: all ? "all" : month, rows, count: rows.length });
+  }
+
+  // Staff: mark this child's free birthday visit as REDEEMED for the year
+  // (e.g. it was used at the desk but didn't get recorded). Applies to every
+  // profile for the child, retires any unused birthday code, and stops the
+  // automatic birthday emails for that year.
+  if (action === "mark-used") {
+    const code = normalizeCode(b.code);
+    let card = null; try { card = await loyalty.get("card:" + code, { type: "json" }); } catch {}
+    if (!card) return json({ error: "That child's record wasn't found." }, 404);
+    const year = /^\d{4}$/.test(String(b.year || "")) ? String(b.year)
+      : new Date().toLocaleDateString("en-CA", { timeZone: "America/Los_Angeles" }).slice(0, 4);
+    await markBirthdayUsed({ loyaltyCodes: [code], childName: card.childName, dob: card.dob || "", year,
+      usedBy: "staff", reason: "Marked redeemed by staff" });
+    try {
+      const fresh = await loyalty.get("card:" + code, { type: "json" });
+      if (fresh) {
+        fresh.history = Array.isArray(fresh.history) ? fresh.history : [];
+        fresh.history.push({ at: new Date().toISOString(), action: "birthday-marked-redeemed", year });
+        await loyalty.setJSON("card:" + code, fresh);
+      }
+    } catch {}
+    const first = (card.childName || "").split(" ")[0] || "This child";
+    return json({ ok: true, message: `\u{1F382} ${first}'s ${year} birthday visit is marked redeemed. No birthday code will be sent this year.` });
   }
 
   if (action === "remove") {
@@ -206,3 +236,25 @@ function json(obj, status = 200) {
   return new Response(JSON.stringify(obj), { status, headers: { "content-type": "application/json", "cache-control": "no-store" } });
 }
 export const config = { path: "/api/birthdays" };
+
+// Has this child's birthday visit been used? Looks at every profile for the
+// child, and at the birthday code that was sent (used online).
+async function redeemedFor(rec, allCards, rewards) {
+  const mine = allCards.filter(c => sameChildCard(c, { code: rec.code, childName: rec.childName, dob: rec.dob,
+    phone4: rec.phone4, email: rec.buyerEmail }) || sameChildCard(rec, { childName: c.childName, dob: c.dob, phone4: c.phone4, email: c.buyerEmail }));
+  let best = null;
+  for (const c of mine) {
+    if (c.birthdayUsedYear && (!best || c.birthdayUsedYear > best.redeemedYear)) {
+      best = { redeemedYear: c.birthdayUsedYear, redeemedAt: c.birthdayUsedAt || "", redeemedHow: "birthday visit" };
+    }
+  }
+  const codes = [...new Set(mine.map(c => c.lastCode).filter(Boolean))];
+  for (const bc of codes) {
+    let r = null; try { r = await rewards.get("reward:" + bc, { type: "json" }); } catch {}
+    if (r && r.used && !r.voidedReason) {
+      const y = String(r.validFrom || r.usedAt || "").slice(0, 4);
+      if (!best || y > best.redeemedYear) best = { redeemedYear: y, redeemedAt: r.usedAt || "", redeemedHow: "code " + bc };
+    }
+  }
+  return best || { redeemedYear: null };
+}
