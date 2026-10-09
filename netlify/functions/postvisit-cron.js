@@ -52,8 +52,46 @@ export default async () => {
     if (members === null) { try { members = (await getStore("site").get("playclub:members", { type: "json" })) || []; } catch { members = []; } }
     const code = String(entry.playClubCode || "").toUpperCase();
     const email = String(entry.email || "").trim().toLowerCase();
+    const phone = String(entry.phone || "").replace(/\D/g, "").slice(-10);
+    // A member counts whether or not they used the membership on this booking
+    // (e.g. an extra child, or a day their plan doesn't cover): matched by
+    // membership code, email, or full phone number.
     return members.find(m => m && m.active !== false && m.code &&
-      ((code && m.code === code) || (email && String(m.email || "").trim().toLowerCase() === email))) || null;
+      ((code && m.code === code) ||
+       (email && String(m.email || "").trim().toLowerCase() === email) ||
+       (phone.length === 10 && String(m.phone || "").replace(/\D/g, "").slice(-10) === phone))) || null;
+  };
+  const sameMember = (m, e) => {
+    if (!m || !e) return false;
+    const email = String(e.email || "").trim().toLowerCase();
+    const phone = String(e.phone || "").replace(/\D/g, "").slice(-10);
+    return (e.playClubCode && String(e.playClubCode).toUpperCase() === m.code) ||
+      (email && String(m.email || "").trim().toLowerCase() === email) ||
+      (phone.length === 10 && String(m.phone || "").replace(/\D/g, "").slice(-10) === phone);
+  };
+  // When was this member last sent a thank-you? The saved date, or -- for
+  // emails sent before that was being saved -- the thank-you stamped on any of
+  // their bookings in the last 2 weeks.
+  const lastThanked = {};
+  const lastThankedFor = async (m) => {
+    if (lastThanked[m.code] !== undefined) return lastThanked[m.code];
+    let best = "";
+    try { const t = await throttle.get("pc:" + m.code, { type: "json" }); if (t && t.date) best = t.date; } catch {}
+    const from = addDays(pacificToday(), -PLAYCLUB_EVERY_DAYS);
+    for (const k of keys) {
+      const d = k.slice(0, 10);
+      if (d < from || d >= yesterday) continue;
+      let r = null; try { r = await bookings.get(k, { type: "json" }); } catch {}
+      for (const e of (r && r.bookings) || []) {
+        const at = String((e && e.postVisitSentAt) || "");
+        if (/^\d{4}-\d{2}-\d{2}/.test(at) && sameMember(m, e)) {
+          const sd = new Date(at).toLocaleDateString("en-CA", { timeZone: "America/Los_Angeles" });
+          if (sd > best) best = sd;
+        }
+      }
+    }
+    lastThanked[m.code] = best;
+    return best;
   };
 
   let sent = 0, skipped = 0, failed = 0;
@@ -76,9 +114,9 @@ export default async () => {
       // every 2 weeks instead of after every visit.
       const member = await playClubMemberFor(entry);
       if (member) {
-        let last = null; try { last = await throttle.get("pc:" + member.code, { type: "json" }); } catch {}
-        if (last && last.date && daysBetween(last.date, pacificToday()) < PLAYCLUB_EVERY_DAYS) {
-          entry.postVisitSentAt = "skipped: Play Club member, thanked " + last.date;
+        const lastDate = await lastThankedFor(member);
+        if (lastDate && daysBetween(lastDate, pacificToday()) < PLAYCLUB_EVERY_DAYS) {
+          entry.postVisitSentAt = "skipped: Play Club member, thanked " + lastDate;
           touched = true; skipped++; continue;
         }
       }
@@ -87,7 +125,10 @@ export default async () => {
       const ok = await sendFollowUp(entry, fam);
       if (ok) {
         entry.postVisitSentAt = new Date().toISOString(); touched = true; sent++;
-        if (member) { try { await throttle.setJSON("pc:" + member.code, { date: pacificToday(), email: entry.email }); } catch {} }
+        if (member) {
+          lastThanked[member.code] = pacificToday();
+          try { await throttle.setJSON("pc:" + member.code, { date: pacificToday(), email: entry.email }); } catch {}
+        }
       }
       else failed++;
     }
